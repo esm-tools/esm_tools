@@ -43,6 +43,18 @@ lpj_guess:
     resolution: TL255 #if it's not set i dosen't work!
     TM5: 0
 
+    # Select the grid product explicitly, independently of resolution.
+    # "legacy" uses L<nnn> with land=1/ocean=0; "coupled_land" uses
+    # <resolution>-land with land=0/ocean=1 and the atmosphere/FESOM-adapted
+    # coastline. Existing continuations on an L-grid must override this to
+    # legacy in their runscript.
+    grid_product: coupled_land
+    choose_grid_product:
+        legacy:
+            selected_grid_name: "L${oasis_grid_name}"
+        coupled_land:
+            selected_grid_name: "${resolution}-land"
+
     # Enumeration for parallel run directories (run1, run2, ..., runN)
     nproc: 8
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
@@ -55,7 +67,27 @@ lpj_guess:
             branch: main
         4.1.2:
             runscript_name: run_coupled_4_1_2.ins
-            git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
+            # 2026-09-25: awiesm3 develop* build lpj_guess_awiesm3, the branch the
+            # AWI and SMHI lines converge on. It carries the land-grid work (LPJ-GUESS
+            # land mask from the coastline, Raupach roughness to OpenIFS as GUE_Z0HV,
+            # LUH3 crop fractions) merged with Laszlo Hajdu's canopy work (stem area
+            # index via ltos, shrubs routed to low IFS vegetation, iftreefracca 1) and
+            # his nitrogen roundoff and land-use transfer fix.
+            #
+            # The grid is now chosen by configuration rather than hard-coded: the
+            # branch reads grid_product and grid_name from lpjg_steps.yaml, which
+            # lpjg_steps.yaml.j2 already writes as coupled_land and <mygrid>-land.
+            #
+            # ltos has to be set in the instruction file the run actually reads.
+            # framework.cpp:1063 hard-wires the name to guess.ins, and awiesm3.yaml
+            # renders one per LPJ-GUESS rank into runPROC_NUM/. That guess.ins imports
+            # ecearth.ins, which awiesm3.yaml renders from namelists/lpj_guess/
+            # ecearth.ins.j2. So ecearth.ins.j2 is the live file. The top-level
+            # global.ins and run_coupled_4_1_2.ins are staged but never reached, which
+            # is why they can disagree with it: global.ins carried iftreefracca 1 while
+            # the file being read carried 0. Without ltos there the canopy code is
+            # compiled and never exercised, silently.
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
             branch: lpj_guess_awiesm3
             install_bins: build/guess
             executable: guess
@@ -111,6 +143,11 @@ lpj_guess:
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
     out_date_folder: "${end_date!syear!smonth!sday}"
+
+    # Prescribed peat fraction. LPJ-GUESS checks this map against the peat stands
+    # in the restart and stops on any difference, so an experiment has to keep
+    # the map its state was built with. Set peat_map in the runscript to pin one.
+    peat_map: ${input_dir}/peat/${resolution}_peat_frac.txt
 
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
     ndep_input_dir: ${input_dir}/ndep/${resolution}/
@@ -298,7 +335,7 @@ lpj_guess:
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
-        peat: ${input_dir}/peat/${resolution}_peat_frac.txt
+        peat: ${peat_map}
         simfire_ba: ${fire_input_dir}/simfire_monthly_ba.nc
         simfire_popdens: ${fire_input_dir}/annual_population_density.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${slt_dir}/slt_${resolution}.nc

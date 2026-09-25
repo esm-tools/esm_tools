@@ -111,6 +111,11 @@ use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}
 {% if lpj_guess.use_luh3_input | default(0) == 1 %}
 file_luh3_states "{{lpj_guess.file_luh3_states | default('../landuse/luh3_states.nc')}}"
 file_luh3_management "{{lpj_guess.file_luh3_management | default('../landuse/luh3_management.nc')}}"
+{% if lpj_guess.file_luh3_natural_override is defined %}
+! Audited cells allowed to be NATURAL=1 where all 12 LUH3 states are fill (4.1.11 refuses
+! to substitute otherwise): coastline-gridlist cells LUH3 never covered (lakes, islands).
+file_luh3_natural_override "{{lpj_guess.file_luh3_natural_override}}"
+{% endif %}
 {% if lpj_guess.use_luh3_yearly_transitions | default(0) == 1 %}
 ! Yearly transition files mode
 use_luh3_yearly_transitions 1

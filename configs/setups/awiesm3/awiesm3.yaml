@@ -164,7 +164,7 @@ general:
             with_co2_oce_coupling: false
             with_co2_veg_coupling: false
         develop:
-            major_version: v3.4
+            major_version: v3.5
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
@@ -176,7 +176,7 @@ general:
             with_co2_veg_coupling: false
             
         develop-cc:
-            major_version: v3.4
+            major_version: v3.5
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
@@ -192,7 +192,7 @@ general:
         # (and reproduced by any user) from a single esm_master target:
         #   esm_master comp-awiesm3-develop-is
         develop-is:
-            major_version: v3.4
+            major_version: v3.5
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             # NB: pism + debm + ismm are built via the coupling above, but must NOT
@@ -366,6 +366,8 @@ oifs:
                         LRDALB: false
                     NAMCLDP:
                         RVICE: 0.16
+        # v3.5: the develop* variants. The coupling differences live in the
+        # oasis3mct block. v3.4.x is untouched.
         "v3.5":
             with_xios: true
             build_type: 'release'
@@ -385,6 +387,82 @@ oifs:
                         LRDALB: false
                     NAMCLDP:
                         RVICE: 0.16
+                    # A_Q_ice carries the heat leaving the IFS sea-ice column.
+                    NAMECECFG:
+                        ECE_CPL_FESOM_ICE_QOUT: true
+            # LR tuning (TCO95L91 with FESOM CORE3). TCO319 runs default physics.
+            choose_resolution:
+                TCO95:
+                    add_add_namelist_changes:
+                        fort.4:
+                            NAMVDFS:
+                                RSBLB: 2.0
+                            NAMCLDP:
+                                # Reduced ice nuclei over the ocean (factor RCL_INPSEA) below the
+                                # pressure RCL_INPPMIN: brighter supercooled cloud. The mixed-phase
+                                # window sits at 900-550 hPa over the Southern Ocean and 600-300 hPa
+                                # in the tropics (sucldp.F90), so RCL_INPPMIN should stay near or
+                                # above 50000; lower values add tropical, not Southern Ocean, cloud.
+                                RCL_INPSEA: 0.1
+                                # 70000 Pa follows sucldp.F90's own recommendation.
+                                RCL_INPPMIN: 70000.0
+                                # RSNOWLIN2 is deliberately unset, leaving the code default
+                                # 0.030. Raising it to 0.04 warms the Southern Ocean by
+                                # +0.61 W/m2 net at a cost of +0.42 W/m2 globally.
+                            NAERAD:
+                                # Background marine CCN over sea ice [cm-3]. Switches on the
+                                # open-water weighting of the Genthon (1992) whitecap sea-salt
+                                # source, which OpenIFS otherwise evaluates over sea ice too,
+                                # where there is no open water to raise spray from. That gives
+                                # Nd ~49 cm-3 over the summer Arctic pack against 10-30
+                                # observed, and 50-57 W/m2 too much shortwave removed at the
+                                # observed cloud cover. At 15.0 the melt-season effect is
+                                # SWdn +15.3 W/m2 and cloud attenuation -16.0, with clear-sky
+                                # flux and cloud amount unchanged.
+                                # Negative disables it. Requires an OpenIFS carrying
+                                # pr10/seaice-marine-ccn; an older binary aborts on the
+                                # unknown namelist name.
+                                RCCNSEAICE: 15.0
+                            NAMGWWMS:
+                                GGAUSSB: -0.5
+                            NAMCUMF:
+                                ENTSTPC3: 1
+                            NAMSURFTUNE:
+                                "ECE_TUNE_RVRSMIN(3)": 1000.0
+                                "ECE_TUNE_RVRSMIN(4)": 1000.0
+                                "ECE_TUNE_RVRSMIN(9)": 225.0
+                                ECE_SNOW_SCF: 3
+                                ECE_SNOW_SCF_RHOREF: 200.0
+                                ECE_SNOW_SCF_DCL: 0.014
+                                ECE_SNOW_SCF_DCH: 0.026
+                                ECE_SNOW_SCF_MD: 4.70
+                                ECE_SNOW_SCF_BL: 1.46
+                                ECE_SNOW_SCF_BH: 0.40
+                                ECE_SNOW_SCF_DCMAX: 0.30
+                                ECE_SNOW_SCF_SCALE: 1.0
+                                ECE_SNOW_SCF_SWEMIN: 15.0
+                                "ECE_TUNE_RVVEGALB(1,1)": 0.023500
+                                "ECE_TUNE_RVVEGALB(1,2)": 0.030240
+                                "ECE_TUNE_RVVEGALB(1,3)": 0.252561
+                                "ECE_TUNE_RVVEGALB(1,4)": 0.284663
+                                "ECE_TUNE_RVVEGALB(10,1)": 0.022748
+                                "ECE_TUNE_RVVEGALB(10,2)": 0.026933
+                                "ECE_TUNE_RVVEGALB(10,3)": 0.234026
+                                "ECE_TUNE_RVVEGALB(10,4)": 0.253862
+                                "ECE_TUNE_RVVEGALB(11,1)": 0.047943
+                                "ECE_TUNE_RVVEGALB(11,2)": 0.078395
+                                "ECE_TUNE_RVVEGALB(11,3)": 0.185338
+                                "ECE_TUNE_RVVEGALB(11,4)": 0.262827
+                                "ECE_TUNE_SOILALB(1)": 0.95
+                                "ECE_TUNE_SOILALB(2)": 0.95
+                                "ECE_TUNE_SOILALB(3)": 0.95
+                                "ECE_TUNE_SOILALB(4)": 0.95
+                    add_input_files:
+                        dust_clim: dust_clim
+                    add_input_sources:
+                        dust_clim: ${input_dir}/cmip7-data/dust/onlinedust_v4_rmp.nc
+                    add_input_in_work:
+                        dust_clim: composition/onlinedust_v4_rmp.nc
 
     choose_general.version:
         # NAMMCC: coupled-slab mode, pairs with the develop* FESOM build.
@@ -481,7 +559,7 @@ oifs:
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
-        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY,
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_Ice_tskin, A_CurX, A_CurY, A_WindX, A_WindY,
         A_FCO2_oce, A_XCO2_oce]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
@@ -589,6 +667,17 @@ oifs:
 
 fesom:
     version: "2.7"
+    # Where the parallel FESOM restart is read from. Deliberately a variable and
+    # not written straight into restart_in_sources: the v3.5 arm of
+    # choose_general.major_version wants the date-stamped name, and the ">1" arm
+    # of choose_general.chunk_number wants the submesh-remapped copy, and two
+    # choose_ blocks at the same hierarchy level may not define the same key.
+    # esm_tools rejects that with "Choose conflict", which from 2026-09-09
+    # (8ca594cda) made every iteratively coupled run die at chunk 2, in the
+    # resubmission inside the job, so the chain stopped with nothing queued and
+    # no error anywhere a user would look.
+    par_oce_restart_source: "fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc"
+    par_ice_restart_source: "fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc"
     time_step: 1800
     resolution: CORE2
     lresume: false
@@ -637,7 +726,8 @@ fesom:
             ocp_tool_dir: ""
     choose_general.with_co2_oce_coupling:
         true:
-            branch: fesom2.6_recom_awiesm3_co2_coupling
+            # The REcoM CO2 coupling (fesom2.6_recom_awiesm3_co2_coupling) is in
+            # fesom2 main since #806, so the branch comes from the version ("2.7-main").
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
             # Derive the REcoM &parecomsetup gates from recom_setting so the BGC
@@ -694,12 +784,12 @@ fesom:
         true:
             comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
                          -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                        ${yac_flag} ${meshpart_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        ${yac_flag} ${meshpart_flag} ${sp_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
         false:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
                          -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                        ${yac_flag} ${meshpart_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        ${yac_flag} ${meshpart_flag} ${sp_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
     choose_general.oasis_with_yac:
         true:
@@ -723,10 +813,24 @@ fesom:
     # can partition submeshes natively (no Singularity/user-namespaces needed).
     meshpart_flag: ""
     # Single-precision FESOM (-DUSE_SINGLE_PRECISION=ON) is opt-in per version.
-    # Default off (double precision). Only the develop* variants enable it, via
-    # choose_general.version below. Released tags v3.4.2 and below stay double;
+    # Default off (double precision). Only develop and develop-is enable it, via
+    # choose_general.version below; develop-cc stays double because of REcoM. Released tags v3.4.2 and below stay double;
     # v3.5+ can opt in later once validated.
     fesom_sp_flag: ""
+    # Working precision. FESOM main gained -DUSE_SINGLE_PRECISION (WP=real32);
+    # default off, so nothing changes unless a runscript asks for it. The
+    # OIFS-via-OASIS path is the one coupled mode the FESOM guard allows
+    # (src/CMakeLists.txt:100-155): exfld is typed WP_full so the OASIS transient
+    # stays real64, and the coupling MPI calls use MPI_WP rather than a hardcoded
+    # MPI_DOUBLE_PRECISION. FESOM_COUPLED without OIFS, USE_YAC and
+    # ENABLE_IFS_INTERFACE are still refused by that guard, correctly.
+    single_precision: false
+    sp_flag: ""
+    choose_single_precision:
+        true:
+            sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+        false:
+            sp_flag: ""
     model_dir: ${general.model_dir}/${fesom.destination}
     setup_dir: ${general.model_dir}
 
@@ -772,6 +876,8 @@ fesom:
                 namelist.ice:
                     ice_therm:
                         use_meltponds: true
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
         "v3.5":
             version: "2.8"
             with_xios: true
@@ -783,14 +889,217 @@ fesom:
                     restart_log:
                         raw_restart_length_unit: "off"
                         bin_restart_length_unit: "off"
+                    # The v3.5 namcouple always carries tsk_ico (A_Ice_tskin).
+                    run_config:
+                        use_atm_ice_tskin: true
                 namelist.tra:
                     tracer_phys:
                         surf_relax_s: "0.0"
                 namelist.ice:
                     ice_therm:
                         use_meltponds: true
+            # LR tuning (FESOM CORE3 with TCO95L91). DARS2 keeps the defaults.
+            choose_resolution:
+                CORE3:
+                    add_namelist_changes:
+                        namelist.config:
+                            run_config:
+                                # Ice-shelf basal melt calibrated to the observed Antarctic total
+                                # (1100-1325 Gt/yr): factor on the three-equation transfer
+                                # velocities, FESOM PR #1064. Needs a FESOM that carries the
+                                # parameter (branch feat/cavity-gamma-scale or main after the
+                                # merge); older code dies at the namelist read.
+                                cavity_gamma_scale: 0.6
+                        namelist.oce:
+                            oce_dyn:
+                                spp: false
+                                K_GM_max: 2500.0
+                                Redi_Kmax: 1000.0
+                                # Vertical mixing (oce_setup_step.F90 code 56). Four schemes
+                                # were run 20 years, 2020-2039, from one restart, differing
+                                # only in this line: both KPP variants lose Antarctic summer
+                                # ice, both TKE variants grow it, and cvmix_KPP reproduces
+                                # the KPP control closely enough to serve as the null.
+                                # TKE+IDEMIX against TKE alone on the same years:
+                                #     SH Feb volume  1.62 (+0.83/dec)  vs 1.31 (+0.42)  obs ~2.07
+                                #     SH Feb extent  2.26              vs 1.95          obs ~3.0
+                                #     T2m 60-90S    +0.569             vs +0.664
+                                # the closest this campaign has come to the observed
+                                # Antarctic summer pack. Cavity basal melt 2030-2039 falls
+                                # 1256 -> 1062 Gt/yr (cvmix_KPP 1284, cvmix_TKE 1174),
+                                # towards Adusumilli 2020 (~1100) from Rignot 2013 (~1500).
+                                #
+                                # The cost is northern and it is not small: NH April volume
+                                # 38.04 rising at +2.46/decade against 31.19 observed, where
+                                # TKE alone sits at 35.17 and is flat. Watch NH April volume.
+                                #
+                                # TKE carries prognostic state that KPP does not. Older
+                                # restarts have no tke.nc; io_restart.F90 registers it with
+                                # def_node_var_optional, so the missing file is skipped
+                                # rather than fatal and TKE spins up from tke_min = 1e-06.
+                                # That takes hours to days, so the first year after a switch
+                                # is not meaningful.
+                                mix_scheme: 'cvmix_TKE+cvmix_IDEMIX'
+                        namelist.tra:
+                            tracer_phys:
+                                # momix is Timmermann & Beckmann (2004),
+                                # src/oce_mo_conv.F90: south of momix_lat = -50, at open-ocean
+                                # nodes only, it adds momix_kv to Kv inside the Monin-Obukhov
+                                # length. At 0.01 m2/s that is 2000x the background 5e-6,
+                                # under the winter pack.
+                                #
+                                # Off by measurement: a paired 10-year experiment gives JJA
+                                # 55-80S ocean T2m bias +1.49 -> +0.98 K, 60-78S winter mixed
+                                # layer 312 -> 524 m, JJA SH ice extent 17.58 -> 19.81
+                                # (HadISST 21.71).
+                                #
+                                # momix_kv is left set so the dose is on record; it is inert
+                                # while use_momix is false.
+                                use_momix: false
+                                momix_kv: 0.01
+                        namelist.cvmix:
+                            param_kpp:
+                                kpp_av0: 0.003
+                                kpp_kv0: 0.003
+                                kpp_avbckg: 5.0e-05
+                                kpp_kvbckg: 5.0e-06
+                            param_idemix:
+                                # BOTH IDEMIX forcing files come from the fesom pool, at the
+                                # same relative layout on every machine, so neither is a
+                                # machine path. The shipped namelist mixes machines - its
+                                # surforc is a DKRZ /pool/data path and its botforc an
+                                # /albedo/pool one - and only one of the two ever resolves.
+                                #
+                                # A new machine therefore needs both files placed under
+                                # <fesom pool>/forcing/idemix/ in this layout.
+                                idemix_surforc_file: ${fesom.pool_dir}/forcing/idemix/fourier_smooth_2005_cfsr_inert_rgrid.nc
+                                idemix_botforc_file: ${fesom.pool_dir}/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc
+                                # Normalisation target = this file's own area integral,
+                                # 0.918 TW, matching its Etot_in_TW_bin attribute. REQUIRES a
+                                # FESOM carrying the MPI_WP fix (FESOM PR #1087): without it
+                                # glb_Etot is memory-dependent garbage and this rescale
+                                # amplifies it. Verified in PICAL_cvTKEIDEMIX, where
+                                # Etot_bot goes 0.9135067 -> 0.9179869 TW.
+                                idemix_botforc_Etot: 9.17987e11
+                        namelist.ice:
+                            meltpond:
+                                pndaspect: 1.6
+                                rfracmax: 0.6
+                                # The four ice_therm albedos below are POND-FREE:
+                                # ice_thermo_cpl.F90 builds alb_noponds from them and only
+                                # then calls meltpond_albedo, which applies albpnd flat over
+                                # the pond fraction. Darkening them to stand in for ponds
+                                # double-counts the ponds. albpnd, albi and albim are FESOM's
+                                # own values (MOD_ICE.F90:85-88, ice_meltponds.F90:32);
+                                # albsn and albsnm are held below FESOM's, see there.
+                                albpnd: 0.20
+                            ice_therm:
+                                snowmelt_tgate: false
+                                alb_tramp: 1.0
+                                # The two snow albedos do different jobs, measured on the
+                                # model's own melt seasons (ice_albedo_requirement.py):
+                                #                d(alb)/d(albsn)   d(alb)/d(albsnm)
+                                #     NH JJA          0.149             0.504
+                                #     SH DJF          0.908             0.051
+                                # The Antarctic pack surface rarely reaches the melting
+                                # point, so fmelt ~ 0 there and albsn carries the southern
+                                # response; albsnm is the Arctic knob. Both stay global -
+                                # the split is measured surface state, not hemispheric
+                                # tuning.
+                                #
+                                # albsnm is held BELOW FESOM's own 0.77 on purpose. At 0.77
+                                # the Arctic ice volume runs away and does not equilibrate:
+                                # NH annual 24.0 -> 47.9 x10^3 km3 over 150 years, still
+                                # climbing at +1.63/decade, because brighter melting snow
+                                # stops the summer pack clearing its snow and locks in the
+                                # bright albedo. The margin is the NH melt-season snow-free
+                                # fraction: 6.3 % healthy, 1.2 % in the runaway.
+                                #
+                                # albsn 0.80 is set for the Antarctic, where the pack
+                                # carries roughly the right September extent with about
+                                # half the observed volume. It delivers SH +10.0 W/m2,
+                                # essentially the +10.4 the Antarctic has been measured to
+                                # absorb and settle at, and NH +4.6. Bracketed: at 0.83 the
+                                # fmelt feedback grew the northern forcing to 7.3 W/m2,
+                                # past the 5.5 at which the Arctic goes unstable; at 0.78
+                                # the Arctic sat below a pre-2000 observational reference
+                                # it should exceed. albi/albim are FESOM's own values.
+                                albsn: 0.80
+                                albsnm: 0.65
+                                albi: 0.70
+                                albim: 0.68
+            # FESOM 2.8 renamed the NetCDF restarts, and v3.5 is the first
+            # awiesm3 to build a FESOM that carries the rename. Pre-2.8 wrote one
+            # directory per year, named by that year and holding every restart
+            # record written during it (fesom.1359.oce.restart). From 2.8 there
+            # is one directory per restart *instant*, stamped with the date of
+            # that instant (fesom.1360-01-01.oce.restart) -- see nc_restart_path()
+            # in fesom-2.7/src/io_restart.F90 and calendar_stamp() in
+            # fortran_utils.F90.
+            #
+            # The reader still falls back to the old name, so a leg branched off a
+            # pre-2.8 restart keeps working; but the writer only ever emits the new
+            # name. With the unmodified 2.7 patterns esm_tools therefore collected
+            # nothing at the end of a leg: restart/fesom stayed empty and the next
+            # leg died reading a file that had never been staged -- while the date
+            # file advanced, so the wreckage looked like progress. That is what
+            # killed 11Y legs 2 and 3 (2026-09-09) after leg 1 had run its ten
+            # years cleanly.
+            #
+            # The stamp on the restart a leg *writes* is the start of the next leg
+            # (next_date); the stamp on the one it *reads* is its own start_date.
+            # The legacy pair is kept alongside so that branching off a pre-2.8
+            # experiment still finds its parent; whichever of the two is absent is
+            # a permitted absence, not an error.
+            #
+            # This lives here rather than under fesom-2.7.yaml's "2.7-main"
+            # choose_version arm because that key is only reached by esm_master
+            # when building; at runtime the setup pins fesom version "2.7" (which
+            # also picks the namelist directory), so a choose_version arm would
+            # never fire for a run.
+            restart_in_in_work:
+                par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
+                par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
+                par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+            restart_in_sources:
+                par_oce_restart: ${fesom.par_oce_restart_source}
+                par_ice_restart: ${fesom.par_ice_restart_source}
+                par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
+                par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+            add_restart_in_files:
+                par_oce_restart_legacy: par_oce_restart_legacy
+                par_ice_restart_legacy: par_ice_restart_legacy
+            allowed_missing_files:
+                - "fesom\\..*\\.(oce|ice)\\.restart.*"
+            restart_out_in_work:
+                par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_raw_restart_tar: fesom_raw_restart.tar.*
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+                fesom_bin_restart_tar: fesom_bin_restart.tar.*
+            restart_out_sources:
+                par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_raw_restart_tar: fesom_raw_restart.tar.*
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+                fesom_bin_restart_tar: fesom_bin_restart.tar.*
 
-    # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop/v3.5
+    # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop
     # branches — reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is
     # unstable on coarse meshes (e.g. CORE2), so other resolutions keep
     # their per-mesh whichEVP default from fesom-2.7.yaml / fesom-2.8.yaml.
@@ -803,7 +1112,11 @@ fesom:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop-cc:
-            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            # Double precision: REcoM hardcodes its own WP = 8
+            # (src/recom/recom_modules.F90), so with FESOM's WP = real32 every
+            # REcoM array handed to a FESOM reader is a type mismatch and
+            # gen_surface_forcing.F90 does not compile.
+            fesom_sp_flag: ""
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         # -is (ice-sheet coupled) variant additionally builds the native FESOM
@@ -916,9 +1229,12 @@ fesom:
                         namelist.dyn:
                             dynamics_general:   # vertical-velocity splitting: prevents cfl_z blowup at cavity columns
                                 use_wsplit: ".true."
-                    restart_in_sources:      # ice2fesom remapped ocean+ice onto the submesh
-                        par_oce_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
-                        par_ice_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
+                    # ice2fesom remapped ocean+ice onto the submesh. Sets the source
+                    # variable rather than restart_in_sources directly, so this stays
+                    # the only choose_ block defining that key (see the variable's
+                    # definition at the top of the fesom section).
+                    par_oce_restart_source: "${general.experiment_couple_dir}/restart_remapped/*.nc"
+                    par_ice_restart_source: "${general.experiment_couple_dir}/restart_remapped/*.nc"
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
     remove_forcing_files:
@@ -1011,12 +1327,28 @@ lpj_guess:
 
     coupling_fields:
         "[[veg_atm_fields-->FIELD]]":
-            grid: ${lpj_guess.mygrid}-land
+            grid: ${lpj_guess.selected_grid_name}
 
     resolution: ${oifs.resolution}
+
+    # LR (TCO95 with FESOM CORE3): soil temperature from IFS; cells the LUH3 data
+    # never covers on the CORE3 coastline are authorised as natural.
+    choose_general.major_version:
+        "v3.5":
+            # Peat capped at the smallest natural fraction LUH3 has in the cell
+            # over 0850-2024, so the peat area always fits inside natural land.
+            # A state built with the uncapped map does not load with this one;
+            # such an experiment sets lpj_guess.peat_map back in its runscript.
+            peat_map: ${input_dir}/peat/${resolution}_peat_frac_Lund_corrected_0850-2024.txt
+            choose_resolution:
+                TCO95:
+                    add_config_sources:
+                        "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.useifssoiltemp1.j2
+                    file_luh3_natural_override: ${input_dir}/land_use/TCO95/luh3_natural_override_TCO95_CORE3.txt
+
     grids:
-        ${resolution}-land:
-            name: ${resolution}-land
+        ${selected_grid_name}:
+            name: ${selected_grid_name}
             nx: "${nx}"
             ny: "${ny}"
             oasis_grid_type: "D"
@@ -1415,14 +1747,24 @@ oasis3mct:
             rst_co2_ao_name: 'rst_co2_ao'
             rst_co2_av_name: 'rst_co2_av'
 
-        'v3.5':
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
+        "v3.5":
             add_process_ordering:
                 - xios
             coupling_target_fields:
                 rstas.nc:
                     - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
                     - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                    - 'heat_ico <--gauswgt_gsmart-- A_Q_ice'
+                    # GSSMAR, not GSMART: A_Q_ice changes sign between the hemispheres, so the
+                    # multiplicative correction's denominator passes through zero and the factor
+                    # blows up near it. Measured over a coupled year, GSMART delivered 9105
+                    # excursions above 1 kW/m2 onto ice (max 22550); GSSMAR delivered none.
+                    - 'heat_ico <--gauswgt_gssmar-- A_Q_ice'
+                    # Ice-tile skin temperature: the anchor FESOM's implicit skin solve is
+                    # expanded about. No CONSERV - a global conservation correction on a
+                    # temperature is meaningless.
+                    - 'tsk_ico <--gauswgt_i-- A_Ice_tskin'
                       #                    - 'heat_ico <--bicubic-- A_Q_ice'
                     - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                     - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
@@ -1493,12 +1835,12 @@ oasis3mct:
         'feom->atma':
             lag: ${o2a_lag}
             seq: ${o2a_seq}
-        '${lpj_guess.mygrid}-land->atma':
+        '${lpj_guess.selected_grid_name}->atma':
             lag: ${v2a_lag}
             seq: ${v2a_seq}
             coupling_time_step: ${land_atmo_coupling_time_step}
             lag_overwrite: true
-        'atma->${lpj_guess.mygrid}-land':
+        'atma->${lpj_guess.selected_grid_name}':
             lag: ${a2v_lag}
             seq: ${a2v_seq}
             coupling_time_step: ${land_atmo_coupling_time_step}
@@ -1593,6 +1935,22 @@ oasis3mct:
         # GSSPOS blows up when the summed target residual is ~0 while the source
         # residual is small but non-zero (OASIS aborts: "gsspos sumdst is zero but
         # sumsrc is not"). GSMART is robust to that degenerate sum.
+        # Picks whichever conservation correction distorts the field least at each
+        # coupling step - per-sign multiplicative (GSSPOS), whole-field multiplicative
+        # (GLBPOS), or additive (GLOBAL) - instead of GSMART's single fallback for the
+        # exactly-zero denominator. Needs OASIS with CONSERV method GSSMAR.
+        gauswgt_gssmar:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+            postprocessing:
+                conserv:
+                    method: gssmar
+                    algorithm: opt
         gauswgt_gsmart:
             time_transformation: conserv
             remapping:
@@ -1835,7 +2193,9 @@ computer:
                 albedo:
                     mpi_implementation: openmpi_2026
                     load_python: true
-        v3.5:
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
+        "v3.5":
             choose_name:
                 juwels:
                     iolibraries: system_libs

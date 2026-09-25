@@ -615,6 +615,62 @@ contains
     end subroutine remap_elem_field_3d
 
     !===========================================================================
+    ! Remap a 2D element field. Same correspondence as remap_elem_field_3d --
+    ! an element survives if all three of its nodes are unchanged and the old
+    ! mesh has an element on the mapped triple -- without the vertical loop.
+    ! Needed since FESOM fcce4535 put the EVP stresses sigma11/12/22 into the
+    ! ice restart on elements; before that every ice restart field was 2D on
+    ! nodes, which is the assumption remap_ice still documents.
+    subroutine remap_elem_field_2d(field_old, field_new, &
+                                    mesh_old, mesh_new, node_flag)
+        real(WP),           intent(in)  :: field_old(:)    ! (elem2D_old)
+        real(WP),           allocatable,intent(out) :: field_new(:)
+        type(t_mesh_remap), intent(in)  :: mesh_old, mesh_new
+        integer,            intent(in)  :: node_flag(:)    ! on nodes of new mesh
+
+        integer :: e_new, e_old, j, n_base
+        integer :: nodes_new(3), nodes_old(3)
+        logical :: all_unchanged
+        integer :: n_kept, n_donor, n_zero
+
+        allocate(field_new(mesh_new%elem2D))
+        field_new = 0.0_WP
+        n_kept = 0 ; n_donor = 0 ; n_zero = 0
+
+        do e_new = 1, mesh_new%elem2D
+            nodes_new = mesh_new%elem2D_nodes(1:3, e_new)
+            all_unchanged = all(node_flag(nodes_new) == FLAG_UNCHANGED)
+
+            if (all_unchanged) then
+                do j = 1, 3
+                    n_base       = mesh_new%nod_map(nodes_new(j))
+                    nodes_old(j) = mesh_old%map_base_to_mesh(n_base)
+                end do
+                call find_old_elem(nodes_old, mesh_old, e_old)
+                if (e_old > 0) then
+                    field_new(e_new) = field_old(e_old)
+                    n_kept = n_kept + 1
+                else
+                    n_zero = n_zero + 1
+                end if
+            else if (allocated(elem_donor)) then
+                if (elem_donor(e_new) > 0) then
+                    field_new(e_new) = field_old(elem_donor(e_new))
+                    n_donor = n_donor + 1
+                else
+                    n_zero = n_zero + 1
+                end if
+            else
+                n_zero = n_zero + 1
+            end if
+        end do
+
+        write(*,*) '     --> elements: kept ', n_kept, ', from donor ', n_donor, &
+                   ', zeroed ', n_zero
+
+    end subroutine remap_elem_field_2d
+
+    !===========================================================================
     ! Find old element index given three old node indices.
     ! Iterates elements incident to nodes_old(1) (typically <= 6 of them on a
     ! triangulated mesh) and returns the one that also contains node(2) and
@@ -752,13 +808,19 @@ contains
      end subroutine write_nc_3d
     !===========================================================================
     subroutine write_nc_2d(filename, varname, long_name, units, &
-                            field, nnod, time_val, iter_val)
+                            field, nnod, time_val, iter_val, dim_name)
         character(len=*), intent(in) :: filename, varname, long_name, units
         real(WP),         intent(in) :: field(:)
         integer,          intent(in) :: nnod
         real(WP),         intent(in) :: time_val
         integer,          intent(in) :: iter_val
+        ! Spatial dimension name. Optional and defaulting to 'node' so every
+        ! existing caller is unchanged; element fields pass 'elem'. write_nc_3d
+        ! has always taken this, write_nc_2d had it hardwired, and that is what
+        ! wrote the EVP stresses out as node fields.
+        character(len=*), intent(in), optional :: dim_name
 
+        character(len=16) :: sdim
         integer :: ncid, varid_data, varid_time, varid_iter
         integer :: dim_time, dim_nod
 
@@ -766,8 +828,10 @@ contains
                       'create '//trim(filename))
         call nc_check(nf90_def_dim(ncid, 'time', nf90_unlimited, dim_time), &
                       'def_dim time')
-        call nc_check(nf90_def_dim(ncid, 'node', nnod, dim_nod), &
-                      'def_dim node')
+        sdim = 'node'
+        if (present(dim_name)) sdim = dim_name
+        call nc_check(nf90_def_dim(ncid, trim(sdim), nnod, dim_nod), &
+                      'def_dim '//trim(sdim))
         call nc_check(nf90_def_var(ncid, 'time', nf90_double, [dim_time], varid_time), &
                       'def_var time')
         call nc_check(nf90_def_var(ncid, 'iter', nf90_int,    [dim_time], varid_iter), &
@@ -887,7 +951,10 @@ contains
         ! adding a new prognostic field needs no change here.
         call list_restart_fields(path_old, flds, nflds)
         do ifld = 1, nflds
+            ! Both thickness fields are special-cased below. hnode_new used to
+            ! fall through to remap_field_auto and be filled like a tracer.
             if (trim(flds(ifld)) == 'hnode') cycle      ! special-cased below
+            if (trim(flds(ifld)) == 'hnode_new') cycle  ! same, see remap_hnode
             write(*,*) ' --> '//trim(flds(ifld))//'.nc'
             call system_clock(c0)
             call remap_field_auto(path_old, path_new, trim(flds(ifld)), &
@@ -906,7 +973,19 @@ contains
         ! new nodes get nominal layer thickness from zbar
         write(*,*) ' --> hnode.nc'
         call remap_hnode(mesh_old, mesh_new, node_flag, &
-                          path_old, path_new, time_val, iter_val)
+                          path_old, path_new, time_val, iter_val, 'hnode')
+
+        ! hnode_new: the ALE thickness FESOM actually divides by on the next step.
+        ! Test the file, not flds -- that array is deallocated a few lines above.
+        block
+          logical :: has_hn
+          inquire(file=trim(path_old)//'hnode_new.nc', exist=has_hn)
+          if (has_hn) then
+              write(*,*) ' --> hnode_new.nc'
+              call remap_hnode(mesh_old, mesh_new, node_flag, &
+                                path_old, path_new, time_val, iter_val, 'hnode_new')
+          end if
+        end block
 
         !_______________________________________________________________________
         ! Seed newly-iced columns from nearby EXISTING cavity water. Where the
@@ -1459,6 +1538,10 @@ contains
 
         integer            :: ncid, varid, ndims, dimids(8), nz, status
         character(len=64)  :: spatial_dim, lev_dim
+        ! Kept from the source file. Writing varname/'-' instead turned
+        ! "EVP internal stress sigma11", N/m into "sigma11", "-", which makes a
+        ! remapped restart hard to tell from a damaged one by eye.
+        character(len=256) :: src_long, src_units
         logical            :: is_3d, is_elem, zero_new
         character(len=512) :: fin, fout
         real(WP), allocatable :: f2o(:), f2n(:), f3o(:,:), f3n(:,:)
@@ -1485,6 +1568,12 @@ contains
         if (ndims >= 3) call nc_check( &
             nf90_inquire_dimension(ncid, dimids(2), name=lev_dim), &
             'inq level dim '//trim(varname))
+        src_long  = trim(varname)
+        src_units = '-'
+        if (nf90_get_att(ncid, varid, 'long_name', src_long) /= nf90_noerr) &
+            src_long = trim(varname)
+        if (nf90_get_att(ncid, varid, 'units', src_units) /= nf90_noerr) &
+            src_units = '-'
         call nc_check(nf90_close(ncid), 'close '//trim(fin))
 
         is_elem  = (index(spatial_dim, 'elem') > 0)
@@ -1499,7 +1588,19 @@ contains
         is_3d    = (ndims >= 3)
         zero_new = .not. (is_3d .and. .not. is_elem)   ! extrapolate only 3D node fields
 
-        if (.not. is_3d) then
+        if (.not. is_3d .and. is_elem) then
+            ! 2D on elements. This case did not exist before FESOM fcce4535 and
+            ! fell through to the node branch below, which remapped it with the
+            ! node donor map and wrote it with dimension 'node' at nod2D length.
+            ! FESOM then refused its own restart with "NetCDF: Invalid dimension
+            ! ID or name" at the first mesh-change leg, twenty minutes into the
+            ! run and looking like an I/O fault (orog2, 2026-09-18).
+            call read_restart_var_2d(path_old, varname, f2o)
+            call remap_elem_field_2d(f2o, f2n, mesh_old, mesh_new, node_flag)
+            call write_nc_2d(fout, varname, trim(src_long), trim(src_units), &
+                              f2n, mesh_new%elem2D, time_val, iter_val, 'elem')
+            deallocate(f2o, f2n)
+        else if (.not. is_3d) then
             call read_restart_var_2d(path_old, varname, f2o)
             ! ice_donor is forwarded whether present or not (an absent optional
             ! stays absent through the call -> ocean 2D fields are unaffected).
@@ -1539,14 +1640,14 @@ contains
                 end block
             end if
 
-            call write_nc_2d(fout, varname, varname, '-', f2n, &
-                              mesh_new%nod2D, time_val, iter_val)
+            call write_nc_2d(fout, varname, trim(src_long), trim(src_units), &
+                              f2n, mesh_new%nod2D, time_val, iter_val)
             deallocate(f2o, f2n)
         else if (is_elem) then
             call read_restart_var_3d(path_old, varname, f3o)
             call remap_elem_field_3d(f3o, f3n, mesh_old, mesh_new, node_flag)
             nz = size(f3o, 1)
-            call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
+            call write_nc_3d(fout, varname, trim(src_long), trim(src_units), f3n, nz, &
                               mesh_new%elem2D, 'elem', time_val, iter_val, lev_dim)
             deallocate(f3o, f3n)
         else
@@ -1556,7 +1657,7 @@ contains
             call remap_node_field_3d(f3o, f3n, mesh_old, mesh_new, node_flag, &
                                       set_new_to_zero=zero_new, ice_donor=ice_donor)
             nz = size(f3o, 1)
-            call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
+            call write_nc_3d(fout, varname, trim(src_long), trim(src_units), f3n, nz, &
                               mesh_new%nod2D, 'node', time_val, iter_val, lev_dim)
             deallocate(f3o, f3n)
         end if
@@ -1564,8 +1665,10 @@ contains
 
     !===========================================================================
     ! Remap the sea-ice restart. The field set is discovered from the ice restart
-    ! directory and dispatched by remap_field_auto (all ice fields are 2D node-
-    ! based, so newly-exposed ocean nodes are zeroed = ice-free). Reads from
+    ! directory and dispatched by remap_field_auto. Ice fields were all 2D on
+    ! nodes until FESOM fcce4535 added the EVP stresses sigma11/12/22 on
+    ! elements, so the dispatch is by dimension name and not by assumption;
+    ! newly-exposed ocean nodes are zeroed = ice-free. Reads from
     ! path_ice_old (fesom.<year-1>.ice.restart) and writes into path_new (the
     ! flat restart_remapped output dir).
     subroutine remap_ice(mesh_old, mesh_new, node_flag, &
@@ -1664,12 +1767,24 @@ contains
     !===========================================================================
     ! hnode needs special treatment: new levels get nominal thickness
     subroutine remap_hnode(mesh_old, mesh_new, node_flag, &
-                            path_old, path_new, time_val, iter_val)
+                            path_old, path_new, time_val, iter_val, varname)
         type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
         integer,            intent(in) :: node_flag(:)
         character(len=*),   intent(in) :: path_old, path_new
         real(WP),           intent(in) :: time_val
         integer,            intent(in) :: iter_val
+        ! Which thickness field to remap: 'hnode' or 'hnode_new'. Both are layer
+        ! thicknesses and both need the geometry treatment below; only 'hnode'
+        ! used to come here. 'hnode_new' went through remap_field_auto, whose
+        ! donor fallback HOLDS THE DONOR'S DEEPEST VALUE below the donor column's
+        ! own bottom. That is right for a tracer and wrong for a thickness: on an
+        ! emerged column it wrote a constant 15 m where the true thicknesses are
+        ! 20, 25, 30, 40, 50 m. FESOM's ALE divides tracer tendencies by the
+        ! layer thickness, so the understatement amplified them by up to 3.3x
+        ! and the column reached -5.3 C in a single step (orog3/4/5, Amery,
+        ! 2026-09-18/19).
+        character(len=*),   intent(in), optional :: varname
+        character(len=32) :: vname
 
         real(WP), allocatable :: hnode_old(:,:), hnode_new(:,:)
         real(WP), allocatable :: eta_new(:)
@@ -1712,14 +1827,17 @@ contains
               call nc_check(nf90_close(ncid_g), 'close guard')
           end if
         end block
-        call read_restart_var_3d(trim(path_old), 'hnode', hnode_old)
+        vname = 'hnode'
+        if (present(varname)) vname = varname
+        call read_restart_var_3d(trim(path_old), trim(vname), hnode_old)
         ! staged (already remapped) ssh on the NEW mesh, for ALE consistency:
         ! changed columns must satisfy sum(hnode) = D + eta (zstar), else the
         ! mismatch is a standing dh/dt / deta/dt source at t=0.
         call read_restart_var_2d(trim(path_new), 'ssh', eta_new)
         ! preserve hnode's vertical-dimension name from the source file
-        call nc_check(nf90_open(trim(path_old)//'hnode.nc', nf90_nowrite, ncid_h), 'open hnode')
-        call nc_check(nf90_inq_varid(ncid_h, 'hnode', varid_h), 'inq hnode var')
+        call nc_check(nf90_open(trim(path_old)//trim(vname)//'.nc', nf90_nowrite, ncid_h), &
+                      'open '//trim(vname))
+        call nc_check(nf90_inq_varid(ncid_h, trim(vname), varid_h), 'inq '//trim(vname)//' var')
         call nc_check(nf90_inquire_variable(ncid_h, varid_h, dimids=ddids), 'inq hnode dims')
         call nc_check(nf90_inquire_dimension(ncid_h, ddids(2), name=lev_dim), 'inq hnode lev dim')
         call nc_check(nf90_close(ncid_h), 'close hnode')
@@ -1812,7 +1930,7 @@ contains
             end if
         end do
 
-        call write_nc_3d(trim(path_new)//'hnode.nc', 'hnode', &
+        call write_nc_3d(trim(path_new)//trim(vname)//'.nc', trim(vname), &
                           'layer thickness at node', 'm', &
                           hnode_new, nl1, nod_new, 'node', time_val, iter_val, lev_dim)
         deallocate(hnode_old, hnode_new, eta_new)

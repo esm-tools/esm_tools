@@ -92,8 +92,13 @@ fesom:
             forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
             mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
         albedo:
-            climate_data_dir: "${pool_dir}/FESOM/hydrography/"
-            mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+            # /albedo/pool/FESOM is the FESOM1 pool: its meshes_default/core2
+            # carries FESOM1 partitioning (rpart.out "288p", empty
+            # my_list*.out), which FESOM2 reads as an end-of-file on every
+            # rank. The FESOM2 pool is /albedo/pool/FESOM2.
+            climate_data_dir: "${pool_dir}/FESOM2/hydrography/"
+            forcing_data_dir: "${pool_dir}/FESOM2/forcing/"
+            mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
@@ -499,6 +504,11 @@ fesom:
                     paths:
                             MeshPath: "${mesh_dir}"
                             ClimateDataPath: "${climate_data_dir}"
+                            # Inert as long as namelist.forcing carries absolute
+                            # file names, which is what this config writes, but
+                            # left at a levante path it shows up as a missing
+                            # file in every run report.
+                            ForcingDataPath: "${forcing_data_dir}/${forcing_folder}/"
                             ResultPath: "${work_dir}"
                     timestep:
                             step_per_day: "${steps_per_day}"

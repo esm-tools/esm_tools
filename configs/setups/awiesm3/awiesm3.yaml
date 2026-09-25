@@ -879,7 +879,6 @@ fesom:
         # v3.5: the develop* variants. Identical to v3.4 here; the coupling
         # differences live in the oasis3mct block. v3.4.x is untouched.
         "v3.5":
-            version: "2.8"
             with_xios: true
             add_namelist_changes:
                 namelist.config:

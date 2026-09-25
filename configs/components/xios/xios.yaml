@@ -541,6 +541,13 @@ xios:
     choose_fesom_in_setup:
         true:
             fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
+            # Target grid for the regridded (regular lat/lon) FESOM output.
+            # domain_def_fesom.xml.j2 always references these, so they need a
+            # value even when regridding is off. The coupled setups override
+            # them; without a default here a standalone FESOM+XIOS run renders
+            # the template with an undefined variable.
+            fesom_regular_res_lon: 720
+            fesom_regular_res_lat: 360
             choose_fesom.cmip7_cmor_output:
                 true:
                     fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml_cmip7"

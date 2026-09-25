@@ -6,6 +6,9 @@ separate process, so every worker used here is defined at module scope.
 
 from __future__ import annotations
 
+import time
+from concurrent.futures import TimeoutError as FutureTimeoutError
+
 import pytest
 
 from esm_catalog.scan.parallel import parallel_map
@@ -21,6 +24,19 @@ def _boom(n: int) -> int:
     if n == 3:
         raise ValueError("worker refused input 3")
     return n * n
+
+
+def _hang_on_three(n: int) -> int:
+    """Never return for the input ``3`` (simulates a stuck C call); else square."""
+    if n == 3:
+        time.sleep(60)
+    return n * n
+
+
+def _on_timeout_negate(n: int) -> int:
+    """The ``on_timeout`` fallback used by the tests below: ``-n``, so it is
+    distinguishable from a real (always non-negative) squared result."""
+    return -n
 
 
 def test_empty_inputs_short_circuit():
@@ -51,6 +67,23 @@ def test_worker_exception_propagates():
     # A worker raising for one input must surface the error, not swallow it.
     with pytest.raises(ValueError, match="worker refused input 3"):
         parallel_map([1, 2, 3, 4], _boom)
+
+
+def test_timeout_replaces_overrun_input_and_keeps_going():
+    inputs = [1, 2, 3, 4, 5]
+    start = time.monotonic()
+    result = parallel_map(
+        inputs, _hang_on_three, jobs=2, timeout=2, on_timeout=_on_timeout_negate
+    )
+    elapsed = time.monotonic() - start
+
+    assert elapsed < 30  # nowhere near the 60s hang -- proves it was killed, not awaited
+    assert result == [1, 4, -3, 16, 25]
+
+
+def test_timeout_without_on_timeout_reraises():
+    with pytest.raises(FutureTimeoutError):
+        parallel_map([1, 2, 3], _hang_on_three, jobs=2, timeout=2)
 
 
 @pytest.mark.slow

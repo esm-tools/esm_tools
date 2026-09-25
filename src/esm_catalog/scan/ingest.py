@@ -20,8 +20,6 @@ from __future__ import annotations
 
 import json
 import os
-import signal
-from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -68,35 +66,6 @@ class ScanError(Exception):
     """Raised in ``--strict`` mode when any file failed to scan."""
 
 
-class _ReadTimeoutError(Exception):
-    """A single file's read exceeded :data:`_READ_TIMEOUT_SECONDS`."""
-
-
-@contextmanager
-def _read_timeout(seconds: int):
-    """Abort the enclosed block with :class:`_ReadTimeoutError` after *seconds*.
-
-    Uses ``SIGALRM``, so it only works on Unix and only in the main thread of
-    whatever process runs it -- true here, since each worker process runs
-    exactly one file at a time on its own main thread. A non-positive timeout
-    or a platform without ``SIGALRM`` disables the guard.
-    """
-    if seconds <= 0 or not hasattr(signal, "SIGALRM"):
-        yield
-        return
-
-    def _on_alarm(signum, frame):
-        raise _ReadTimeoutError(f"read timed out after {seconds}s")
-
-    previous = signal.signal(signal.SIGALRM, _on_alarm)
-    signal.alarm(seconds)
-    try:
-        yield
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, previous)
-
-
 @dataclass(frozen=True)
 class _ReadResult:
     """One worker's outcome: metadata on success, else a failure or unsupported flag.
@@ -117,27 +86,29 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
 
     A file the scan simply cannot handle — an unrecognised format, or a format
     with no registered reader — is flagged ``unsupported`` (a clean skip, not a
-    failure). Any other reader error, including exceeding
-    :data:`_READ_TIMEOUT_SECONDS`, is caught and returned as a
-    :class:`ScanFailure`: a single bad or pathologically slow file must not
-    stall a multi-hour scan.
+    failure). Any other reader error is caught and returned as a
+    :class:`ScanFailure`: a single bad file must not abort a multi-hour scan.
+    The *timeout* on a pathologically slow read (e.g. cfgrib stuck reindexing
+    a file over contended NFS) is enforced by the caller
+    (:func:`~esm_catalog.scan.parallel.parallel_map`'s ``timeout``), not here
+    -- killing this function's own process mid-C-call was tried first and
+    rejected (see :data:`_READ_TIMEOUT_SECONDS`).
     """
     try:
-        with _read_timeout(_READ_TIMEOUT_SECONDS):
-            try:
-                file_format = detect(output_file.path)
-                reader = reader_for(file_format)
-            except (UnknownFormatError, LookupError):
-                return _ReadResult(output_file, None, None, unsupported=True)
-            file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
-            file_metadata.component = output_file.component
-            file_metadata.role = output_file.role
-            file_metadata.category = output_file.category
-            # A walked outdata file (no outdata_targets entry) carries no declared
-            # stream -- fall back to its own primary variable, the closest thing
-            # to a stream identity a raw filesystem walk can offer.
-            file_metadata.stream = output_file.stream or file_metadata.variable
-            return _ReadResult(output_file, file_metadata, None)
+        file_format = detect(output_file.path)
+        reader = reader_for(file_format)
+    except (UnknownFormatError, LookupError):
+        return _ReadResult(output_file, None, None, unsupported=True)
+    try:
+        file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
+        file_metadata.component = output_file.component
+        file_metadata.role = output_file.role
+        file_metadata.category = output_file.category
+        # A walked outdata file (no outdata_targets entry) carries no declared
+        # stream -- fall back to its own primary variable, the closest thing
+        # to a stream identity a raw filesystem walk can offer.
+        file_metadata.stream = output_file.stream or file_metadata.variable
+        return _ReadResult(output_file, file_metadata, None)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)
     except (
@@ -146,6 +117,30 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
         return _ReadResult(
             output_file, None, ScanFailure(str(output_file.path), repr(exc))
         )
+
+
+def _on_read_timeout(output_file: OutputFile) -> _ReadResult:
+    """The result recorded when *output_file* exceeds :data:`_READ_TIMEOUT_SECONDS`.
+
+    Passed to :func:`~esm_catalog.scan.parallel.parallel_map` as ``on_timeout``:
+    it kills and replaces the whole worker pool rather than the file's own
+    process. Interrupting the read via a Python-level signal inside the
+    worker (an earlier version of this used ``signal.alarm``) does not work:
+    eccodes is not signal-safe, and forcing an exception mid-C-call left its
+    internal GRIB handle table corrupted, cascading into a wall of unrelated
+    "Exception ignored in Message.__del__" errors -- and the worker, no
+    longer trustworthy, could still hang afterwards (confirmed live: stuck on
+    the same file 19 minutes past its 300s alarm). Killing the whole pool
+    from the driver, outside any process that might be mid-C-call, is the
+    only thing that is actually safe.
+    """
+    return _ReadResult(
+        output_file,
+        None,
+        ScanFailure(
+            str(output_file.path), f"read timed out after {_READ_TIMEOUT_SECONDS}s"
+        ),
+    )
 
 
 def scan_experiment(
@@ -240,6 +235,10 @@ def scan_experiment(
         on_item=_tick,
         initializer=worker_initializer,
         initargs=worker_initargs,
+        # Dask has its own scheduling/retry story; this timeout is
+        # process-pool-specific (kills and replaces that pool on overrun).
+        timeout=None if distributed else _READ_TIMEOUT_SECONDS,
+        on_timeout=_on_read_timeout,
     )
     _emit("writing")
 

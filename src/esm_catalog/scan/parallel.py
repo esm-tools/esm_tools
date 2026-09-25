@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Callable, Optional, Sequence, TypeVar
 
 try:
@@ -62,6 +63,8 @@ def parallel_map(
     on_item: Optional[Callable[[Input], None]] = None,
     initializer: Optional[Callable[..., None]] = None,
     initargs: Sequence[object] = (),
+    timeout: Optional[float] = None,
+    on_timeout: Optional[Callable[[Input], Result]] = None,
 ) -> list[Result]:
     """Apply *worker* to every input in parallel, preserving input order.
 
@@ -96,6 +99,15 @@ def parallel_map(
         process** at startup — the standard ``ProcessPoolExecutor`` hook. Use it
         to set up per-worker process state (e.g. quiet a noisy library's
         logging, which a spawned worker does not inherit from the parent).
+    timeout, on_timeout : optional
+        **Process-pool backend only** (ignored when ``distributed=True`` --
+        Dask has its own scheduling story). When *timeout* (seconds) is given,
+        an input whose *worker* call overruns it is abandoned: the whole pool
+        is killed and replaced (see :func:`_process_map` for why the *whole*
+        pool, not just that one worker), and *on_timeout* is called with the
+        overrun input to produce the result recorded in its place. Required
+        together -- *on_timeout* with no *timeout* never fires; *timeout* with
+        no *on_timeout* raises.
 
     Returns
     -------
@@ -123,6 +135,8 @@ def parallel_map(
         on_item=on_item,
         initializer=initializer,
         initargs=initargs,
+        timeout=timeout,
+        on_timeout=on_timeout,
     )
 
 
@@ -135,6 +149,8 @@ def _process_map(
     on_item: Optional[Callable[[Input], None]] = None,
     initializer: Optional[Callable[..., None]] = None,
     initargs: Sequence[object] = (),
+    timeout: Optional[float] = None,
+    on_timeout: Optional[Callable[[Input], Result]] = None,
 ) -> list[Result]:
     """Run *worker* over *inputs* on a ``ProcessPoolExecutor``, in order.
 
@@ -142,20 +158,103 @@ def _process_map(
     worker exception when that result is consumed, giving us both the ordering
     and the fail-loud semantics for free. Iterating it (rather than ``list()``)
     lets *on_item* tick once per collected result, still in input order.
+
+    Without *timeout*, this is exactly that. With it, ``executor.map`` cannot
+    be used (it has no per-result timeout that lets processing continue), so
+    each input is submitted individually and awaited with
+    ``future.result(timeout=timeout)`` instead.
     """
     tag = label or "parallel-map"
     _logger.info(
         "{}: mapping {} inputs over process pool (jobs={})", tag, len(inputs), jobs
     )
-    with ProcessPoolExecutor(
+    if timeout is None:
+        with ProcessPoolExecutor(
+            max_workers=jobs, initializer=initializer, initargs=tuple(initargs)
+        ) as executor:
+            results: list[Result] = []
+            for item, result in zip(inputs, executor.map(worker, inputs)):
+                results.append(result)
+                if on_item is not None:
+                    on_item(item)
+            return results
+    return _process_map_with_timeout(
+        inputs,
+        worker,
+        jobs=jobs,
+        tag=tag,
+        on_item=on_item,
+        initializer=initializer,
+        initargs=initargs,
+        timeout=timeout,
+        on_timeout=on_timeout,
+    )
+
+
+def _process_map_with_timeout(
+    inputs: list[Input],
+    worker: Worker,
+    *,
+    jobs: Optional[int],
+    tag: str,
+    on_item: Optional[Callable[[Input], None]],
+    initializer: Optional[Callable[..., None]],
+    initargs: Sequence[object],
+    timeout: float,
+    on_timeout: Optional[Callable[[Input], Result]],
+) -> list[Result]:
+    """The *timeout*-enforcing path of :func:`_process_map`.
+
+    A worker stuck deep in a non-interruptible C call (confirmed live: cfgrib
+    reindexing a GRIB file) cannot be stopped by anything run *inside* that
+    worker's own process -- a signal handler there does not preempt C code,
+    and forcing an exception mid-call can leave a C library's internal state
+    corrupted for whatever else that worker reads afterwards. The only
+    reliably safe thing to kill is the worker process itself, from outside,
+    once it has proven unresponsive. Since a specific pending future cannot be
+    mapped back to the OS process running it through the public API, an
+    overrun kills and replaces the *entire* pool -- simple, and correct,
+    at the cost of re-running whatever else was in flight in that pool.
+    """
+    results: list[Result] = []
+    pending = list(inputs)
+    executor = ProcessPoolExecutor(
         max_workers=jobs, initializer=initializer, initargs=tuple(initargs)
-    ) as executor:
-        results: list[Result] = []
-        for item, result in zip(inputs, executor.map(worker, inputs)):
+    )
+    try:
+        futures = [executor.submit(worker, item) for item in pending]
+        i = 0
+        while i < len(pending):
+            item = pending[i]
+            try:
+                result = futures[i].result(timeout=timeout)
+            except FutureTimeoutError:
+                _logger.warning(
+                    "{}: {} exceeded {}s; killing its worker pool",
+                    tag, item, timeout,
+                )
+                # Snapshot before shutdown() -- it clears ._processes to None
+                # almost immediately, before the OS processes are reaped.
+                stuck_workers = list(getattr(executor, "_processes", {}).values())
+                executor.shutdown(wait=False, cancel_futures=True)
+                for proc in stuck_workers:
+                    if proc.is_alive():
+                        proc.kill()
+                if on_timeout is None:
+                    raise
+                result = on_timeout(item)
+                remaining = pending[i + 1 :]
+                executor = ProcessPoolExecutor(
+                    max_workers=jobs, initializer=initializer, initargs=tuple(initargs)
+                )
+                futures[i + 1 :] = [executor.submit(worker, it) for it in remaining]
             results.append(result)
             if on_item is not None:
                 on_item(item)
+            i += 1
         return results
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 def _dask_map(

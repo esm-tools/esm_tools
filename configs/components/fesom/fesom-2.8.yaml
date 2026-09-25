@@ -92,8 +92,13 @@ fesom:
             forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
             mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
         albedo:
-            climate_data_dir: "${pool_dir}/FESOM/hydrography/"
-            mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+            # /albedo/pool/FESOM is the FESOM1 pool: its meshes_default/core2
+            # carries FESOM1 partitioning (rpart.out "288p", empty
+            # my_list*.out), which FESOM2 reads as an end-of-file on every
+            # rank. The FESOM2 pool is /albedo/pool/FESOM2.
+            climate_data_dir: "${pool_dir}/FESOM2/hydrography/"
+            forcing_data_dir: "${pool_dir}/FESOM2/forcing/"
+            mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
@@ -499,6 +504,11 @@ fesom:
                     paths:
                             MeshPath: "${mesh_dir}"
                             ClimateDataPath: "${climate_data_dir}"
+                            # Inert as long as namelist.forcing carries absolute
+                            # file names, which is what this config writes, but
+                            # left at a levante path it shows up as a missing
+                            # file in every run report.
+                            ForcingDataPath: "${forcing_data_dir}/${forcing_folder}/"
                             ResultPath: "${work_dir}"
                     timestep:
                             step_per_day: "${steps_per_day}"
@@ -596,12 +606,15 @@ fesom:
 
     # Route FESOM output through XIOS instead of its own writer. Needs a
     # binary built with -DFESOM_WITH_XIOS=ON, ie fesom version 2.8.0-xios.
-    # Four of the six XMLs are taken from the model's own docs/xios_xml/, so
-    # they always match the source that is built. Two are replaced: the
-    # bundled iodef.xml is the AWI-ESM3 coupled variant, and the bundled
-    # file_def_fesom.xml requests six fields on grid_2d_elem that abort the
-    # run (see the comment in the replacement).
+    # Three of the six XMLs are taken from the model's own docs/xios_xml/, so
+    # they always match the source that is built. Three are replaced:
+    #   iodef.xml        the bundled one is the AWI-ESM3 coupled variant
+    #   file_def_fesom.xml   what is written, and how often
+    #   context_fesom.xml    the bundled one has every diagnostic switch off,
+    #                        and with XIOS on, namelist.io is not read, so the
+    #                        XML is the only way to switch one on
     with_xios: false
+
     choose_with_xios:
             true:
                     add_config_files:
@@ -614,7 +627,7 @@ fesom:
                             xios_grid_def:   xios_grid_def
                     add_config_sources:
                             xios_iodef:      "${namelist_dir}/xios/iodef.xml"
-                            xios_context:    "${model_dir}/docs/xios_xml/context_fesom.xml"
+                            xios_context:    "${namelist_dir}/xios/context_fesom.xml"
                             xios_field_def:  "${model_dir}/docs/xios_xml/field_def_fesom.xml"
                             xios_file_def:   "${namelist_dir}/xios/file_def_fesom.xml"
                             xios_axis_def:   "${model_dir}/docs/xios_xml/axis_def_fesom.xml"
@@ -628,12 +641,10 @@ fesom:
                             xios_axis_def:   "axis_def_fesom.xml"
                             xios_domain_def: "domain_def_fesom.xml"
                             xios_grid_def:   "grid_def_fesom.xml"
-                    # In attached mode every rank writes its own file, named
-                    # <var>.fesom_<start>-<end>_<rank>.nc.
-                    add_outdata_sources:
-                            fesom_xios: "*.fesom_*.nc"
-                    add_outdata_targets:
-                            fesom_xios: "*.fesom_*.nc"
+                    # No outdata entry of its own: file_def_fesom.xml names
+                    # the files <var>.fesom.<year>.nc, the same as FESOM's own
+                    # writer, so the "*.fesom.*.nc" pattern above collects
+                    # them and everything downstream sees no difference.
 
     use_landice_water: False
     choose_general.iterative_coupling:

@@ -14,7 +14,19 @@ general:
         final_date: '2021-01-01'
         base_dir: "/albedo/work/projects/p_awiesm3_cmip7/runtime/fesom-2.8/"
         nyear: 10
-        use_venv: False
+        # CONTAINED RUN. esm_runscripts builds <exp>/.venv_esmtools once, clones
+        # esm_tools into it at install_esm_tools_branch and restarts the job
+        # inside it; every later leg reuses that venv. Without this the chained
+        # legs read ~/esm_tools live, so checking out another branch there
+        # deletes configs/setups/fesom2-xios from under a running experiment and
+        # the leg finishes but never tidies or resubmits. That happened to
+        # cycle4's 1978-1987 leg on 2026-09-25.
+        #
+        # install_esm_tools_branch is LOAD-BEARING: the venv clones
+        # github.com/esm-tools/esm_tools with -b <that branch>, and this setup
+        # (fesom2-xios) and its coupling exist only on this branch.
+        use_venv: True
+        install_esm_tools_branch: 'feat/fesom-2.8-xios-detached'
 
 computer:
         # The multi-prog hostfile, one srun, one MPI_COMM_WORLD. The packjob

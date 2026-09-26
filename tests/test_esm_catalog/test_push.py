@@ -168,9 +168,9 @@ def test_expand_paths_recurses_and_skips_workspace_state(tmp_path):
     (catalog / "items" / "s.parquet").write_bytes(b"")
 
     names = [p.name for p in pushmod.expand_paths([catalog])]
-    assert "collection.json" in names          # top-level collection
-    assert "s.parquet" in names                # shard found in items/ subdir
-    assert "esm-catalog.json" not in names     # workspace state skipped, not an error
+    assert "collection.json" in names  # top-level collection
+    assert "s.parquet" in names  # shard found in items/ subdir
+    assert "esm-catalog.json" not in names  # workspace state skipped, not an error
 
 
 def test_push_paths_over_catalog_layout(tmp_path):
@@ -185,7 +185,9 @@ def test_push_paths_over_catalog_layout(tmp_path):
     (catalog / "esm-catalog.json").write_text(
         json.dumps({"experiment_id": "c", "scanned": {}})
     )
-    write_shard([_item("a", "c"), _item("b", "c")], UPath(catalog / "items" / "s.parquet"))
+    write_shard(
+        [_item("a", "c"), _item("b", "c")], UPath(catalog / "items" / "s.parquet")
+    )
 
     calls: list[tuple[str, str]] = []
 
@@ -193,17 +195,19 @@ def test_push_paths_over_catalog_layout(tmp_path):
         calls.append((request.method, request.url.path))
         return httpx.Response(201, json={})
 
-    client = StacClient("https://host/api", "tok", transport=httpx.MockTransport(responder))
+    client = StacClient(
+        "https://host/api", "tok", transport=httpx.MockTransport(responder)
+    )
     summary = pushmod.push_paths([catalog], client)
 
     assert summary.errors == []
     assert (summary.collections, summary.shards, summary.items) == (1, 1, 2)
     paths = [p for _, p in calls]
-    assert "/api/collections" in paths                     # collection upserted
-    assert "/api/collections/c" in paths                   # collection extent fetched
-    assert "/api/collections/c/items/a" in paths            # merge-fetch + upsert, per item id
+    assert "/api/collections" in paths  # collection upserted
+    assert "/api/collections/c" in paths  # collection extent fetched
+    assert "/api/collections/c/items/a" in paths  # merge-fetch + upsert, per item id
     assert "/api/collections/c/items/b" in paths
-    assert not any("esm-catalog" in p for p in paths)      # state file never sent
+    assert not any("esm-catalog" in p for p in paths)  # state file never sent
 
 
 def test_upsert_reports_redirect_actionably():
@@ -243,7 +247,9 @@ def test_queryable_delta_only_new_keys(tmp_path, monkeypatch):
     import esm_catalog.push as p
 
     monkeypatch.setattr(
-        p, "registered_queryables", lambda url, verify: {"nml__echam__namelist_echam__radctl__co2vmr", "datetime"}
+        p,
+        "registered_queryables",
+        lambda url, verify: {"nml__echam__namelist_echam__radctl__co2vmr", "datetime"},
     )
     delta = p.queryable_delta(catalog, "https://host/api", True)
     assert delta is not None and delta.name == "queryables-delta.json"
@@ -256,7 +262,9 @@ def test_queryable_delta_none_when_all_registered(tmp_path, monkeypatch):
     _write_queryables(catalog, {"nml__a__b__c__d": {"type": "number"}})
     import esm_catalog.push as p
 
-    monkeypatch.setattr(p, "registered_queryables", lambda url, verify: {"nml__a__b__c__d"})
+    monkeypatch.setattr(
+        p, "registered_queryables", lambda url, verify: {"nml__a__b__c__d"}
+    )
     assert p.queryable_delta(catalog, "https://host/api", True) is None
     assert not (catalog / "queryables-delta.json").exists()
 
@@ -284,7 +292,9 @@ def test_queryable_delta_absent_when_no_sidecar(tmp_path, monkeypatch):
 
 def test_registered_queryables_parses_properties():
     def handler(request):
-        return httpx.Response(200, json={"properties": {"a": {}, "b": {}, "datetime": {}}})
+        return httpx.Response(
+            200, json={"properties": {"a": {}, "b": {}, "datetime": {}}}
+        )
 
     import esm_catalog.push as p
 
@@ -294,7 +304,11 @@ def test_registered_queryables_parses_properties():
     real_get = _httpx.get
 
     def fake_get(url, **kw):
-        return httpx.Response(200, json={"properties": {"a": {}, "b": {}}}, request=httpx.Request("GET", url))
+        return httpx.Response(
+            200,
+            json={"properties": {"a": {}, "b": {}}},
+            request=httpx.Request("GET", url),
+        )
 
     _httpx.get = fake_get
     try:
@@ -306,7 +320,9 @@ def test_registered_queryables_parses_properties():
 def test_expand_paths_skips_queryables_sidecar(tmp_path):
     catalog = tmp_path / "catalog"
     catalog.mkdir()
-    (catalog / "collection.json").write_text(json.dumps({"type": "Collection", "id": "c"}))
+    (catalog / "collection.json").write_text(
+        json.dumps({"type": "Collection", "id": "c"})
+    )
     (catalog / "queryables.json").write_text(json.dumps({"properties": {}}))
     (catalog / "esm-catalog.json").write_text(json.dumps({"scanned": {}}))
 
@@ -328,8 +344,12 @@ def _asset_item(item_id, collection, asset_key, dt="2020-01-01T00:00:00Z"):
 
 
 def test_merge_item_accumulates_assets_from_existing_and_incoming():
-    existing = _asset_item("fesom-restart", "c", "oce_restart_2000", dt="2000-01-01T00:00:00Z")
-    incoming = [_asset_item("fesom-restart", "c", "ice_restart_2000", dt="2000-01-01T00:00:00Z")]
+    existing = _asset_item(
+        "fesom-restart", "c", "oce_restart_2000", dt="2000-01-01T00:00:00Z"
+    )
+    incoming = [
+        _asset_item("fesom-restart", "c", "ice_restart_2000", dt="2000-01-01T00:00:00Z")
+    ]
 
     merged = pushmod.merge_item(existing, incoming)
 
@@ -338,8 +358,12 @@ def test_merge_item_accumulates_assets_from_existing_and_incoming():
 
 
 def test_merge_item_widens_start_end_across_checkpoints():
-    existing = _asset_item("fesom-restart", "c", "oce_restart_2000", dt="2000-01-01T00:00:00Z")
-    incoming = [_asset_item("fesom-restart", "c", "oce_restart_2001", dt="2001-01-01T00:00:00Z")]
+    existing = _asset_item(
+        "fesom-restart", "c", "oce_restart_2000", dt="2000-01-01T00:00:00Z"
+    )
+    incoming = [
+        _asset_item("fesom-restart", "c", "oce_restart_2001", dt="2001-01-01T00:00:00Z")
+    ]
 
     merged = pushmod.merge_item(existing, incoming)
 
@@ -357,7 +381,9 @@ def test_merge_item_first_push_has_no_existing():
 
 def test_merge_item_repush_same_asset_key_is_idempotent():
     existing = _asset_item("fesom-restart", "c", "oce_restart_2000")
-    incoming = [_asset_item("fesom-restart", "c", "oce_restart_2000")]  # same key, re-pushed
+    incoming = [
+        _asset_item("fesom-restart", "c", "oce_restart_2000")
+    ]  # same key, re-pushed
 
     merged = pushmod.merge_item(existing, incoming)
 
@@ -386,3 +412,43 @@ def test_merge_item_drops_null_assets_from_columnar_round_trip():
         "200002": row_b["assets"]["200002"],
     }
     assert None not in merged["assets"].values()
+
+
+def test_merge_item_removed_assets_tombstone_deletes_from_existing():
+    existing = _asset_item("echam-ts", "c", "200001")
+    existing["assets"]["200002"] = {"href": "file:///200002.nc"}
+    tombstone = _asset_item(
+        "echam-ts", "c", "200001"
+    )  # placeholder row, real work is removed_assets
+    tombstone["removed_assets"] = ["200002"]
+
+    merged = pushmod.merge_item(existing, [tombstone])
+
+    assert set(merged["assets"]) == {"200001"}
+    assert "removed_assets" not in merged  # bookkeeping, never a real STAC field
+
+
+def test_merge_item_removed_assets_tombstone_beats_an_add_in_the_same_batch():
+    # Confirmed the resolution deliberately chosen: within one merge_item
+    # call, removal always wins over addition of the same key, regardless of
+    # which incoming row comes first -- add-then-rm and rm-then-add both net
+    # out to "not present".
+    add_row = _asset_item("echam-ts", "c", "200002")
+    rm_row = _asset_item("echam-ts", "c", "200001")
+    rm_row["removed_assets"] = ["200002"]
+
+    merged_add_then_rm = pushmod.merge_item(None, [add_row, rm_row])
+    merged_rm_then_add = pushmod.merge_item(None, [rm_row, add_row])
+
+    assert "200002" not in merged_add_then_rm["assets"]
+    assert "200002" not in merged_rm_then_add["assets"]
+
+
+def test_merge_item_removed_assets_is_a_noop_for_a_key_not_present():
+    existing = _asset_item("echam-ts", "c", "200001")
+    tombstone = _asset_item("echam-ts", "c", "200001")
+    tombstone["removed_assets"] = ["some-key-never-added"]
+
+    merged = pushmod.merge_item(existing, [tombstone])
+
+    assert set(merged["assets"]) == {"200001"}

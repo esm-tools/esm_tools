@@ -13,10 +13,13 @@
   targets exist before the items land.
 
 All writes go through the STAC API (authenticated, role-gated) and use *upsert*
-semantics, so re-pushing the same object is harmless. Nothing is ever deleted.
-Re-pushing the same shard is also idempotent for a growing Item specifically:
-asset keys are deterministic (see :mod:`esm_catalog.item`), so merging the
-same asset in twice overwrites the same key with the same value.
+semantics, so re-pushing the same object is harmless. A whole Item/Collection
+is never deleted by pushing; one asset key can be, via a shard row's
+``removed_assets`` tombstone (see :func:`merge_item`) -- e.g. from the
+``esm-catalog rm asset`` CLI command, never from a normal ``scan``. Re-pushing
+the same shard is also idempotent for a growing Item specifically: asset keys
+are deterministic (see :mod:`esm_catalog.item`), so merging the same asset in
+twice overwrites the same key with the same value.
 """
 
 from __future__ import annotations
@@ -262,22 +265,34 @@ def _real_assets(item: StacObject) -> dict:
     return {k: v for k, v in item.get("assets", {}).items() if v is not None}
 
 
-def merge_item(existing: Optional[StacObject], incoming: list[StacObject]) -> StacObject:
+def merge_item(
+    existing: Optional[StacObject], incoming: list[StacObject]
+) -> StacObject:
     """Merge *incoming* single-asset shard rows (all sharing one Item id) into
     *existing* (the server's current state for that id, or None if this is
     the first time this stream has ever been pushed).
 
     Assets merge by key (append-only in practice -- see item.py's asset-key
     scheme, which makes re-pushing the same file idempotent rather than
-    duplicating it). start_datetime/end_datetime widen to cover every asset
-    now on the item, existing and incoming alike.
+    duplicating it), *except* for a key listed in any incoming row's
+    ``removed_assets`` (a deliberate tombstone -- e.g. from the ``rm asset``
+    CLI command) -- that key is dropped from the merged result regardless of
+    whether it came from *existing* or from an earlier row in this same
+    *incoming* batch. Distinct from :func:`_real_assets`'s null-filtering:
+    that drops a *different* row's key showing up as an Arrow schema-union
+    artifact, never a real value; ``removed_assets`` is an explicit,
+    deliberate instruction, never ambiguous with it. start_datetime/
+    end_datetime widen to cover every asset now on the item, existing and
+    incoming alike.
     """
     # Base on an incoming row, never on existing -- existing is a server
     # response of unknown/possibly-partial shape, while every incoming row is
     # a freshly-built Item guaranteed to carry id/collection/type. Only its
     # assets and temporal span get widened with whatever existing adds.
     base = dict(incoming[0])
+    base.pop("removed_assets", None)  # bookkeeping, not a real STAC field
     assets = _real_assets(existing) if existing is not None else {}
+    removed: set = set()
     starts, ends = [], []
     if existing is not None:
         s, e = _item_span(existing)
@@ -287,11 +302,14 @@ def merge_item(existing: Optional[StacObject], incoming: list[StacObject]) -> St
             ends.append(e)
     for item in incoming:
         assets.update(_real_assets(item))
+        removed.update(item.get("removed_assets") or [])
         s, e = _item_span(item)
         if s:
             starts.append(s)
         if e:
             ends.append(e)
+    for key in removed:
+        assets.pop(key, None)
 
     base["assets"] = assets
     if starts and ends:
@@ -412,7 +430,11 @@ def queryable_delta(
         already = registered_queryables(api_url, verify_tls)
     except Exception:  # noqa: BLE001 — unreachable server -> emit the full set
         already = set()
-    new = {name: definition for name, definition in properties.items() if name not in already}
+    new = {
+        name: definition
+        for name, definition in properties.items()
+        if name not in already
+    }
     if not new:
         return None
     delta_path = catalog_dir / QUERYABLES_DELTA_FILENAME

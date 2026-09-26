@@ -6,7 +6,9 @@
     source_files         -> the run's OutputFiles (path, component, stream, role, md5)
     _triage             -> which files need a real read vs a path-facet shortcut
     parallel_map(read)  -> FileMetadata per file (in worker processes)
-    make_item           -> a STAC Item per file (in this process)
+    make_item           -> a single-asset STAC Item per file (in this process;
+                           reconciled into one growing Item per (component,
+                           stream) at push time, not here -- see item.py)
     write_shard         -> <expid>_stac_<runstamp>.parquet (new) + <expid>_stac_fx.parquet (rewritten)
     make_collection     -> collection.json (extent widened over all items)
 
@@ -26,7 +28,6 @@ from __future__ import annotations
 
 import json
 import os
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Optional
@@ -58,6 +59,7 @@ from esm_catalog.scan.workspace import (
     catalog_dir,
     load_state,
     save_state,
+    stream_key,
 )
 from esm_catalog.storage.geoparquet import fx_shard_name, ts_shard_name, write_shard
 from esm_catalog.types import FileMetadata
@@ -266,7 +268,12 @@ class _Triage:
     their real read result is compared against the frozen schema."""
 
 
-def _triage(todo: list[OutputFile], revalidate_every: int) -> _Triage:
+def _triage(
+    todo: list[OutputFile],
+    revalidate_every: int,
+    persisted_schema: dict[tuple[Optional[str], Optional[str]], FileMetadata],
+    persisted_occurrences: dict[str, int],
+) -> _Triage:
     """Split *todo* into what genuinely needs reading and what a path-facet
     extractor can shortcut, without touching the filesystem.
 
@@ -274,17 +281,24 @@ def _triage(todo: list[OutputFile], revalidate_every: int) -> _Triage:
     -- confirmed live: a real experiment's declared ``outdata_targets`` can
     be entirely stale, meaning every file is discovered through the
     undeclared filesystem walk and carries no stream identity of its own
-    until a facet extractor (or a real read) supplies one. A stream's first
-    file always needs a real read (nothing to freeze from yet). After that,
-    every ``revalidate_every``-th file of the same stream is still read for
-    real -- a trust-but-verify check against schema drift (a resolution
-    change, a variable added mid-run) -- everything else tries the
-    path-facet shortcut, falling back to a real read when no extractor
+    until a facet extractor (or a real read) supplies one.
+
+    A stream's first occurrence needs a real read only if nothing is known
+    about it yet -- *including* from a previous scan (``persisted_schema``,
+    ``<exp_root>/catalog/esm-catalog.json``'s ``schema_by_stream``): an
+    incrementally-growing experiment that has already been scanned once
+    should not need to re-establish the same handful of streams' schemas on
+    every later scan. Once a stream is known (this run or a prior one),
+    every ``revalidate_every``-th occurrence -- counted in
+    ``persisted_occurrences``, so the cadence survives across scans too --
+    is still read for real, a trust-but-verify check against schema drift
+    (a resolution change, a variable added mid-run). Everything else tries
+    the path-facet shortcut, falling back to a real read when no extractor
     claims it (or claims it without full enough confidence to name a
     stream).
     """
     stream_first_seen: dict[tuple[Optional[str], Optional[str]], OutputFile] = {}
-    occurrences: dict[tuple[Optional[str], Optional[str]], int] = defaultdict(int)
+    seen_this_run: set[tuple[Optional[str], Optional[str]]] = set()
     must_read: list[OutputFile] = []
     facet_candidates: list[tuple[OutputFile, str, datetime]] = []
     revalidation_paths: set[str] = set()
@@ -292,12 +306,19 @@ def _triage(todo: list[OutputFile], revalidate_every: int) -> _Triage:
         facets = _try_path_facets(output_file)
         stream, start = facets if facets is not None else (output_file.stream, None)
         key = (output_file.component, stream)
-        occurrences[key] += 1
-        if key not in stream_first_seen:
+        truly_unknown = key not in seen_this_run and key not in persisted_schema
+        seen_this_run.add(key)
+        skey = stream_key(*key)
+        # Counted even for the very first occurrence (matching the prior
+        # in-run-only counter's semantics): a checkpoint fires at an
+        # absolute occurrence count, not "count since it became known".
+        count = persisted_occurrences.get(skey, 0) + 1
+        persisted_occurrences[skey] = count
+        if truly_unknown:
             stream_first_seen[key] = output_file
             must_read.append(output_file)
             continue
-        if revalidate_every and occurrences[key] % revalidate_every == 0:
+        if revalidate_every and count % revalidate_every == 0:
             must_read.append(output_file)
             revalidation_paths.add(str(output_file.path))
             continue
@@ -379,11 +400,15 @@ def scan_experiment(
         Raise :class:`ScanError` if any file failed to read.
     revalidate_every : int, optional
         Once a ``(component, stream)``'s schema is frozen (from its first
-        file), every this-many-th later file of that stream is still read for
-        real rather than shortcut via a path-facet datetime -- catches schema
-        drift a shortcut would otherwise mask forever. ``0`` disables it,
-        trusting the frozen schema for the rest of the scan. Defaults to
-        :data:`_REVALIDATE_EVERY` (``ESM_CATALOG_REVALIDATE_EVERY``).
+        file, this scan or a previous one -- see ``schema_by_stream`` on
+        :class:`~esm_catalog.scan.workspace.WorkspaceState`), every
+        this-many-th later occurrence of that stream is still read for real
+        rather than shortcut via a path-facet datetime -- catches schema
+        drift a shortcut would otherwise mask forever. The occurrence count
+        is itself persisted (``occurrences_since_check``), so the cadence
+        holds across scans, not just within one. ``0`` disables it, trusting
+        the frozen schema indefinitely. Defaults to :data:`_REVALIDATE_EVERY`
+        (``ESM_CATALOG_REVALIDATE_EVERY``).
     on_progress : Callable or None, optional
         Called with a :class:`ProgressEvent` as the scan advances (sourcing ->
         reading, one per file -> writing). A UI-free hook: the CLI renders a
@@ -414,15 +439,22 @@ def scan_experiment(
     state = load_state(catalog) or WorkspaceState(
         experiment_id=exp_metadata.experiment_id
     )
+    persisted_schema: dict[tuple[Optional[str], Optional[str]], FileMetadata] = {
+        tuple(skey.split("|", 1)): metadata
+        for skey, metadata in state.schema_by_stream.items()
+    }
 
     todo = [file for file in files if str(file.path) not in state.scanned]
     # Schema (variables/dims/geometry/format) is a stream-level fact once
     # Item = (component, stream) -- confirmed live: re-deriving it file by
     # file, for tens of thousands of files of the same handful of streams,
-    # is the actual bulk of scan cost. Only a stream's first file (plus
-    # periodic revalidation checkpoints) needs a real read; everything else
-    # tries a path-facet datetime and reuses the frozen schema.
-    triage = _triage(todo, revalidate_every)
+    # is the actual bulk of scan cost. Only a stream's first-ever occurrence
+    # (this scan or a previous one -- persisted_schema) plus periodic
+    # revalidation checkpoints need a real read; everything else tries a
+    # path-facet datetime and reuses the frozen schema.
+    triage = _triage(
+        todo, revalidate_every, persisted_schema, state.occurrences_since_check
+    )
     must_read = triage.must_read
     read_count = 0
     _emit("reading", 0, len(todo))
@@ -461,19 +493,31 @@ def scan_experiment(
         timeout=None if distributed else _READ_TIMEOUT_SECONDS,
         on_timeout=_on_read_timeout,
     )
-    result_by_path = {str(r.output_file.path): r for r in must_results}
-
-    frozen_schema: dict = {}
-    for key, first_file in triage.stream_first_seen.items():
-        first_result = result_by_path[str(first_file.path)]
-        if first_result.file_metadata is not None:
-            frozen_schema[key] = first_result.file_metadata
     shortcut_keys = {
         (of.component, stream) for of, stream, _ in triage.facet_candidates
     }
+    # Drift-check a revalidation checkpoint's fresh read against what was
+    # trusted *before* this run touched it (persisted_schema) -- compare
+    # against the about-to-be-refreshed frozen_schema built below instead,
+    # and a checkpoint's own new read would trivially match itself, silently
+    # defeating the whole check.
     for result in must_results:
         if str(result.output_file.path) in triage.revalidation_paths:
-            _warn_on_schema_drift(result, frozen_schema, shortcut_keys)
+            _warn_on_schema_drift(result, persisted_schema, shortcut_keys)
+
+    # Refresh (not just first-establish): any must_read result that
+    # succeeded -- a stream's genuine first-ever read, a revalidation
+    # checkpoint, or a one-off fallback when path-facet couldn't name a
+    # datetime -- is a real, current read of that stream and updates the
+    # trusted schema (and resets its persisted revalidation countdown)
+    # accordingly, not just the narrower first-occurrence case.
+    frozen_schema: dict = dict(persisted_schema)
+    for result in must_results:
+        if result.file_metadata is None:
+            continue
+        key = (result.output_file.component, result.file_metadata.stream)
+        frozen_schema[key] = result.file_metadata
+        state.occurrences_since_check[stream_key(*key)] = 0
 
     synthesized_results = []
     for output_file, stream, start in triage.facet_candidates:
@@ -535,6 +579,11 @@ def scan_experiment(
     )
     _write_failures(catalog, failures)
     _write_queryables(catalog, exp_metadata)
+    # Persist this run's (re-)established schemas so the *next* scan -- or a
+    # single-file `add`/`validate` -- can shortcut a stream from its very
+    # first occurrence, not just within this one run.
+    for key, metadata in frozen_schema.items():
+        state.schema_by_stream[stream_key(*key)] = metadata
     save_state(catalog, state)
 
     if strict and failures:

@@ -24,6 +24,7 @@ import esm_catalog.scan.ingest as ingest
 from esm_catalog.scan.ingest import _ReadResult, _triage, _warn_on_schema_drift
 from esm_catalog.scan.ingest import scan_experiment
 from esm_catalog.scan.types import OutputFile
+from esm_catalog.scan.workspace import load_state
 from esm_catalog.types import FileMetadata
 
 _EXPID = "historical_c14_init"
@@ -37,7 +38,9 @@ def _echam_file(yyyymm: str, day: str = "01") -> OutputFile:
 def test_triage_first_file_always_must_read_rest_shortcut_via_path_facets():
     files = [_echam_file(m) for m in ("200001", "200002", "200003")]
 
-    triage = _triage(files, revalidate_every=0)
+    triage = _triage(
+        files, revalidate_every=0, persisted_schema={}, persisted_occurrences={}
+    )
 
     assert triage.must_read == [files[0]]
     assert [f for f, _, _ in triage.facet_candidates] == files[1:]
@@ -51,7 +54,9 @@ def test_triage_first_file_always_must_read_rest_shortcut_via_path_facets():
 def test_triage_revalidate_every_forces_periodic_real_reads():
     files = [_echam_file(f"2000{m:02d}") for m in range(1, 7)]
 
-    triage = _triage(files, revalidate_every=2)
+    triage = _triage(
+        files, revalidate_every=2, persisted_schema={}, persisted_occurrences={}
+    )
 
     # occurrence 1 (first, always) + occurrences 2, 4, 6 (checkpoints)
     assert triage.must_read == [files[0], files[1], files[3], files[5]]
@@ -66,7 +71,9 @@ def test_triage_revalidate_every_forces_periodic_real_reads():
 def test_triage_revalidate_every_zero_never_revalidates():
     files = [_echam_file(f"2000{m:02d}") for m in range(1, 11)]
 
-    triage = _triage(files, revalidate_every=0)
+    triage = _triage(
+        files, revalidate_every=0, persisted_schema={}, persisted_occurrences={}
+    )
 
     assert triage.must_read == [files[0]]
     assert triage.revalidation_paths == set()
@@ -80,7 +87,9 @@ def test_triage_falls_back_to_must_read_when_no_extractor_claims_the_path():
         for i in range(3)
     ]
 
-    triage = _triage(files, revalidate_every=0)
+    triage = _triage(
+        files, revalidate_every=0, persisted_schema={}, persisted_occurrences={}
+    )
 
     assert triage.must_read == files
     assert triage.facet_candidates == []
@@ -101,13 +110,69 @@ def test_triage_recovers_stream_for_walked_undeclared_files():
         for yyyymm in ("200001", "200002", "200003")
     ]
 
-    triage = _triage(files, revalidate_every=0)
+    triage = _triage(
+        files, revalidate_every=0, persisted_schema={}, persisted_occurrences={}
+    )
 
     assert triage.must_read == [files[0]]
     assert [f for f, _, _ in triage.facet_candidates] == files[1:]
     assert [s for _, s, _ in triage.facet_candidates] == ["echam", "echam"]
     # The grouping key uses the resolved stream, not the (missing) declared one.
     assert list(triage.stream_first_seen.keys()) == [("echam", "echam")]
+
+
+def test_triage_shortcuts_even_the_very_first_occurrence_when_schema_is_persisted():
+    """The cross-scan cache's whole point: an incrementally re-scanned
+    experiment should not re-establish a stream's schema every time -- a
+    stream already known from a *previous* scan (persisted_schema) never
+    needs a real read at all, not even for what would otherwise be treated
+    as this run's "first" occurrence."""
+    files = [_echam_file(m) for m in ("200001", "200002", "200003")]
+    persisted_schema = {("echam", "echam"): FileMetadata(variable="temp")}
+
+    triage = _triage(
+        files,
+        revalidate_every=0,
+        persisted_schema=persisted_schema,
+        persisted_occurrences={},
+    )
+
+    assert triage.must_read == []
+    assert triage.stream_first_seen == {}
+    assert [f for f, _, _ in triage.facet_candidates] == files
+
+
+def test_triage_revalidation_counter_persists_and_is_shared_across_calls():
+    """occurrences_since_check is the caller's own dict -- _triage mutates it
+    in place so the cadence survives across separate scan invocations, not
+    just within one call's todo list."""
+    persisted_schema = {("echam", "echam"): FileMetadata(variable="temp")}
+    occurrences: dict = {}
+
+    # First call: 2 files against a revalidate_every=3 cadence -- neither
+    # crosses the threshold yet.
+    first_batch = [_echam_file(m) for m in ("200001", "200002")]
+    triage1 = _triage(
+        first_batch,
+        revalidate_every=3,
+        persisted_schema=persisted_schema,
+        persisted_occurrences=occurrences,
+    )
+    assert triage1.revalidation_paths == set()
+    assert occurrences == {"echam|echam": 2}
+
+    # Second call (e.g. a later, separate scan run): occurrence 3 (the
+    # counter carrying over from the first call) trips the checkpoint.
+    second_batch = [_echam_file("200003")]
+    triage2 = _triage(
+        second_batch,
+        revalidate_every=3,
+        persisted_schema=persisted_schema,
+        persisted_occurrences=occurrences,
+    )
+    assert triage2.must_read == second_batch
+    assert triage2.revalidation_paths == {str(second_batch[0].path)}
+    assert occurrences == {"echam|echam": 3}
 
 
 def test_warn_on_schema_drift_logs_when_variables_differ(monkeypatch):
@@ -284,3 +349,52 @@ def test_scan_shortcuts_walked_undeclared_files_too(tmp_path):
     start, end = collection_doc["extent"]["temporal"]["interval"][0]
     assert start.startswith("2000-01")
     assert end.startswith("2000-06")
+
+
+def test_schema_cache_survives_a_second_scan_of_the_same_experiment(tmp_path):
+    """The cross-scan cache's real payoff: an incrementally-growing
+    experiment scanned again later should not re-establish a stream's
+    schema from scratch -- the *new* files' very first occurrence should
+    already shortcut, using what a previous, separate scan_experiment call
+    persisted.
+
+    Proven without instrumenting _read_output_file directly (it runs in a
+    worker process via the process pool -- a monkeypatched closure cannot be
+    pickled across that boundary, see test_scan_parallel.py's own module-
+    level-function requirement). Instead the second batch's files are
+    genuinely unreadable garbage bytes: if the shortcut correctly applies,
+    they are never opened at all and the scan still succeeds; if it fell
+    back to a real read, garbage content would surface as a ScanFailure.
+    """
+    exp_root = UPath(tmp_path)
+    for yyyymm in _MONTHS[:3]:
+        _write_run_segment(exp_root, yyyymm)
+    scan_experiment(exp_root, revalidate_every=0)
+
+    state = load_state(exp_root / "catalog")
+    assert "echam|echam" in state.schema_by_stream
+
+    for yyyymm in _MONTHS[3:]:
+        year, month = int(yyyymm[:4]), int(yyyymm[4:])
+        echam_file = exp_root / "outdata" / "echam" / f"{_EXPID}_{yyyymm}.01_echam"
+        echam_file.write_bytes(b"not a real netcdf file")  # garbage on purpose
+
+        config_dir = exp_root / "config"
+        doc = {
+            "general": {
+                "expid": _EXPID,
+                "start_date": f"{year}-{month:02d}-01",
+                "end_date": f"{year}-{month:02d}-30",
+            },
+            "echam": {"outdata_targets": {"echam": str(echam_file)}},
+        }
+        stamp = f"{year}{month:02d}01-{year}{month:02d}30"
+        with (config_dir / f"{_EXPID}_finished_config.yaml_{stamp}").open("w") as f:
+            YAML(typ="safe").dump(doc, f)
+
+    report = scan_experiment(exp_root, revalidate_every=0)
+
+    assert report.items == 3  # only the 3 new (garbage-content) months
+    # No real read was attempted on the garbage files -- the shortcut used
+    # the schema already known from the first scan instead.
+    assert report.failures == ()

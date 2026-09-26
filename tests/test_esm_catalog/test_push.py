@@ -452,3 +452,36 @@ def test_merge_item_removed_assets_is_a_noop_for_a_key_not_present():
     merged = pushmod.merge_item(existing, [tombstone])
 
     assert set(merged["assets"]) == {"200001"}
+
+
+def test_merge_item_preserves_existing_geometry_on_a_tombstone_only_push():
+    """A real bug this session: base = dict(incoming[0]) unconditionally
+    meant a tombstone-only row (no meaningful geometry/properties of its
+    own, e.g. from `rm asset`) would silently overwrite the item's real
+    published geometry with placeholder garbage. existing (when it looks
+    like a real Item -- has a "collection") must win as the template."""
+    existing = _asset_item("echam-ts", "c", "200001")
+    existing["geometry"] = {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]],
+    }
+    existing["properties"]["frequency"] = "mon"
+
+    tombstone = {
+        "type": "Feature",
+        "id": "echam-ts",
+        "collection": "c",
+        "geometry": {
+            "type": "Point",
+            "coordinates": [0.0, 0.0],
+        },  # placeholder, not real
+        "properties": {},
+        "assets": {},
+        "removed_assets": ["200001"],
+    }
+
+    merged = pushmod.merge_item(existing, [tombstone])
+
+    assert merged["geometry"] == existing["geometry"]
+    assert merged["properties"]["frequency"] == "mon"
+    assert merged["assets"] == {}

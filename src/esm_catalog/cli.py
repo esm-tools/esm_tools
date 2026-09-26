@@ -13,6 +13,14 @@ A large scan is distributed across SLURM instead::
     esm-catalog distributed render-scripts VARS_FILE   # sched/worker/driver/cleanup .sbatch
     esm-catalog scan --distributed --scheduler tcp://...  # what the driver script runs
 
+One-off manual edits outside a full scan -- e.g. registering a file scan
+never saw, or dropping a bad asset -- each write exactly one local shard
+(same 'push' afterwards to ship it), never touch the network themselves::
+
+    esm-catalog add asset <component>-<stream> FILE...   # cache-shortcut when possible
+    esm-catalog validate <component>-<stream> FILE       # always a real, authoritative read
+    esm-catalog rm asset <component>-<stream> ASSET_KEY  # tombstone; push then drops it
+
 On disk, ``<exp_root>/catalog/`` holds the catalog PFS-friendly: one
 ``collection.json`` plus sharded stac-geoparquet (a handful of files, never one
 JSON per item), and an ``esm-catalog.json`` workspace-state file (experiment id
@@ -491,6 +499,251 @@ def scan(
         f"skipped {report.skipped}, unsupported {report.unsupported}, "
         f"failed {len(report.failures)}"
     )
+
+
+def _parse_item_id(item_id: str) -> tuple[str, str]:
+    """Split an Item id (``{component}-{stream}``, see item.py's ``_build_id``)
+    back into its two parts. Splits on the *first* ``-`` only, so a stream
+    name may itself contain one (component names never do, in practice)."""
+    if "-" not in item_id:
+        raise click.ClickException(
+            f"{item_id!r} is not a valid item id (expected '<component>-<stream>')"
+        )
+    component, stream = item_id.split("-", 1)
+    return component, stream
+
+
+def _ad_hoc_shard_path(catalog, item_id: str):
+    """A unique shard filename for a single hand-authored operation (``add``/
+    ``validate``/``rm``) -- distinct from a real scan's own
+    ``ts_shard_name``/``fx_shard_name`` convention, so the two are never
+    confused (and never collide) on disk."""
+    import uuid
+
+    items_dir = catalog / "items"
+    items_dir.mkdir(parents=True, exist_ok=True)
+    safe_id = item_id.replace("/", "_")
+    return items_dir / f"manual_{safe_id}_{uuid.uuid4().hex[:8]}.parquet"
+
+
+def _resolve_catalog(exp_root: str, catalog_dir_opt: Optional[str]):
+    from upath import UPath
+
+    from esm_catalog.scan.workspace import catalog_dir as default_catalog_dir
+
+    root = UPath(exp_root)
+    catalog = UPath(catalog_dir_opt) if catalog_dir_opt else default_catalog_dir(root)
+    return root, catalog
+
+
+@main.group()
+def add() -> None:
+    """Add something to the catalog directly, without a full scan."""
+
+
+@add.command("asset")
+@click.argument("item_id")
+@click.argument(
+    "files", nargs=-1, required=True, type=click.Path(exists=True, path_type=Path)
+)
+@click.option(
+    "--exp-root", default=".", help="Experiment root (for its finished_config)."
+)
+@click.option("--catalog-dir", default=None, help="Defaults to <exp-root>/catalog.")
+@click.option(
+    "--role", default="data", type=click.Choice(["data", "restart"]), show_default=True
+)
+@click.option(
+    "--category",
+    default=None,
+    help="Restart category (e.g. 'oce_restart'); only meaningful with --role restart.",
+)
+def add_asset(
+    item_id: str,
+    files: tuple[Path, ...],
+    exp_root: str,
+    catalog_dir: Optional[str],
+    role: str,
+    category: Optional[str],
+) -> None:
+    """Add one or more FILES as assets of ITEM_ID (``<component>-<stream>``).
+
+    Writes one local shard under the catalog's items/ directory -- run
+    'esm-catalog push' afterwards to ship it. Reuses ITEM_ID's cached schema
+    (see 'esm-catalog scan') when available, falling back to a real read
+    only for this stream's genuine first-ever asset. A single deliberate
+    operation touching N files always writes exactly one shard, however
+    many files are given -- to add an experiment's worth of files in bulk,
+    use 'esm-catalog scan' instead.
+    """
+    from upath import UPath
+
+    from esm_catalog.item import make_item
+    from esm_catalog.scan.ingest import ingest_single_file
+    from esm_catalog.scan.sourcing import source_experiment
+    from esm_catalog.scan.types import OutputFile
+    from esm_catalog.scan.workspace import WorkspaceState, load_state, save_state
+    from esm_catalog.storage.geoparquet import write_shard
+
+    component, stream = _parse_item_id(item_id)
+    root, catalog = _resolve_catalog(exp_root, catalog_dir)
+    exp_metadata = source_experiment(root)
+    state = load_state(catalog) or WorkspaceState(
+        experiment_id=exp_metadata.experiment_id
+    )
+
+    items = []
+    for file_path in files:
+        output_file = OutputFile(
+            path=UPath(file_path),
+            component=component,
+            stream=stream,
+            role=role,
+            category=category,
+        )
+        result = ingest_single_file(output_file, state, force_read=False)
+        if result.unsupported:
+            click.secho(f"skipped {file_path} (unsupported format)", fg="yellow")
+            continue
+        if result.failure is not None:
+            click.secho(f"failed {file_path}: {result.failure.error}", fg="red")
+            continue
+        items.append(make_item(output_file.path, result.file_metadata, exp_metadata))
+
+    if not items:
+        raise click.ClickException("no file could be added; see errors above")
+
+    shard_path = _ad_hoc_shard_path(catalog, item_id)
+    write_shard(items, shard_path)
+    save_state(catalog, state)
+    click.echo(f"added {len(items)} asset(s) to {item_id} -> {shard_path}")
+
+
+@main.group("rm")
+def rm_group() -> None:
+    """Remove something from the catalog directly, without a full scan."""
+
+
+@rm_group.command("asset")
+@click.argument("item_id")
+@click.argument("asset_key")
+@click.option(
+    "--exp-root", default=".", help="Experiment root (for its finished_config)."
+)
+@click.option("--catalog-dir", default=None, help="Defaults to <exp-root>/catalog.")
+def rm_asset(
+    item_id: str, asset_key: str, exp_root: str, catalog_dir: Optional[str]
+) -> None:
+    """Mark ASSET_KEY on ITEM_ID for removal.
+
+    Writes a tombstone as one local shard row -- run 'esm-catalog push'
+    afterwards to actually apply it (merge_item drops the key on push; this
+    command alone changes nothing on the server). A whole Item/Collection is
+    never deleted this way, only one asset key.
+    """
+    from datetime import datetime, timezone
+
+    import pystac
+
+    from esm_catalog.scan.sourcing import source_experiment
+    from esm_catalog.storage.geoparquet import write_shard
+
+    _parse_item_id(item_id)  # validated for a clear error message
+    root, catalog = _resolve_catalog(exp_root, catalog_dir)
+    exp_metadata = source_experiment(root)
+
+    tombstone = pystac.Item(
+        id=item_id,
+        # A tombstone carries no meaningful geometry/properties of its own
+        # (see push.merge_item: existing, not this row, is the template
+        # once a real item already exists) -- this placeholder exists only
+        # because pystac.Item requires *some* geometry/datetime. collection
+        # still must be real: push groups items by it to know which
+        # server collection to route the upsert into. The one asset entry
+        # is a harmless self-canceling placeholder, not real data -- pyarrow
+        # cannot serialize a struct with zero fields ("assets" with no
+        # child), and this key is itself named in removed_assets below, so
+        # it (or whatever real entry already exists under the same key) is
+        # dropped by the merge regardless.
+        geometry={"type": "Point", "coordinates": [0.0, 0.0]},
+        bbox=[0.0, 0.0, 0.0, 0.0],
+        datetime=datetime.now(timezone.utc),
+        properties={},
+        assets={asset_key: pystac.Asset(href="about:blank", roles=["tombstone"])},
+        collection=exp_metadata.collection_id,
+    )
+    tombstone.extra_fields["removed_assets"] = [asset_key]
+
+    shard_path = _ad_hoc_shard_path(catalog, item_id)
+    write_shard([tombstone], shard_path)
+    click.echo(f"marked {asset_key!r} on {item_id} for removal -> {shard_path}")
+
+
+@main.command()
+@click.argument("item_id")
+@click.argument("file", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--exp-root", default=".", help="Experiment root (for its finished_config)."
+)
+@click.option("--catalog-dir", default=None, help="Defaults to <exp-root>/catalog.")
+@click.option(
+    "--role", default="data", type=click.Choice(["data", "restart"]), show_default=True
+)
+@click.option(
+    "--category",
+    default=None,
+    help="Restart category (e.g. 'oce_restart'); only meaningful with --role restart.",
+)
+def validate(
+    item_id: str,
+    file: Path,
+    exp_root: str,
+    catalog_dir: Optional[str],
+    role: str,
+    category: Optional[str],
+) -> None:
+    """Force a real read of FILE for ITEM_ID, refreshing its cached schema.
+
+    Unlike 'esm-catalog add asset', never trusts a cached schema shortcut --
+    always opens FILE. Writes one local shard row (same as 'add'); run
+    'esm-catalog push' afterwards to ship it. Does not participate in
+    'esm-catalog scan --revalidate-every''s periodic checkpoint cadence --
+    a one-off manual check has no "occurrence count" to advance.
+    """
+    from upath import UPath
+
+    from esm_catalog.item import make_item
+    from esm_catalog.scan.ingest import ingest_single_file
+    from esm_catalog.scan.sourcing import source_experiment
+    from esm_catalog.scan.types import OutputFile
+    from esm_catalog.scan.workspace import WorkspaceState, load_state, save_state
+    from esm_catalog.storage.geoparquet import write_shard
+
+    component, stream = _parse_item_id(item_id)
+    root, catalog = _resolve_catalog(exp_root, catalog_dir)
+    exp_metadata = source_experiment(root)
+    state = load_state(catalog) or WorkspaceState(
+        experiment_id=exp_metadata.experiment_id
+    )
+
+    output_file = OutputFile(
+        path=UPath(file),
+        component=component,
+        stream=stream,
+        role=role,
+        category=category,
+    )
+    result = ingest_single_file(output_file, state, force_read=True)
+    if result.unsupported:
+        raise click.ClickException(f"{file}: unsupported format")
+    if result.failure is not None:
+        raise click.ClickException(f"{file}: {result.failure.error}")
+
+    item = make_item(output_file.path, result.file_metadata, exp_metadata)
+    shard_path = _ad_hoc_shard_path(catalog, item_id)
+    write_shard([item], shard_path)
+    save_state(catalog, state)
+    click.echo(f"validated {file} for {item_id} -> {shard_path}")
 
 
 @main.command()

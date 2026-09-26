@@ -329,6 +329,66 @@ def _triage(
     return _Triage(must_read, facet_candidates, stream_first_seen, revalidation_paths)
 
 
+def ingest_single_file(
+    output_file: OutputFile, state: WorkspaceState, *, force_read: bool
+) -> _ReadResult:
+    """Ingest one file outside a full scan -- the shared engine behind the
+    ``esm-catalog add`` and ``validate`` CLI commands (a full ``scan`` is the
+    only bulk path; these are the single-file primitives it is itself built
+    from, per the file's own item id -- so there is exactly one
+    implementation of "ingest a file", not a separate one for the CLI
+    commands vs the batch scan loop).
+
+    *output_file* must already carry both ``component`` and ``stream`` --
+    unlike a full scan's undeclared/walked files, a single-file operation's
+    caller always knows both from the item id it was given (``add``/
+    ``validate <item> <file>`` -- see :func:`~esm_catalog.item._build_id`),
+    so there is no path-facet-based stream *recovery* to do here, only
+    (optionally) a datetime shortcut.
+
+    *force_read* always performs a real read (``validate``'s contract: an
+    authoritative, current check, regardless of any cached schema).
+    Otherwise (``add``), an already-cached schema for this
+    ``(component, stream)`` is reused via the path-facet datetime shortcut,
+    falling back to a real read only when nothing is cached yet (this
+    stream's genuine first asset) or the path-facet extractor cannot
+    confidently confirm *this* file belongs to the expected stream.
+
+    A successful real read refreshes ``state.schema_by_stream`` in place
+    (mutated, not returned -- the caller is responsible for
+    :func:`~esm_catalog.scan.workspace.save_state` once it is done writing
+    the resulting shard). ``state.occurrences_since_check`` is deliberately
+    never touched here -- see the module docstring on
+    :class:`~esm_catalog.scan.workspace.WorkspaceState`: a one-off,
+    human-driven single-file operation has no "occurrence count" to advance
+    or trip a revalidation checkpoint from.
+    """
+    key = (output_file.component, output_file.stream)
+    skey = stream_key(*key)
+
+    if not force_read:
+        template = state.schema_by_stream.get(skey)
+        if template is not None:
+            facets = _try_path_facets(output_file)
+            if facets is not None and facets[0] == output_file.stream:
+                _, start = facets
+                return _ReadResult(
+                    output_file,
+                    _synthesize_from_template(
+                        output_file, template, output_file.stream, start
+                    ),
+                    None,
+                )
+
+    result = _read_output_file(output_file)
+    if result.file_metadata is not None:
+        resolved_key = stream_key(
+            result.output_file.component, result.file_metadata.stream
+        )
+        state.schema_by_stream[resolved_key] = result.file_metadata
+    return result
+
+
 def _variable_names(metadata: FileMetadata) -> set:
     return {v.name for v in metadata.variables}
 

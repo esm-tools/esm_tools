@@ -285,11 +285,25 @@ def merge_item(
     end_datetime widen to cover every asset now on the item, existing and
     incoming alike.
     """
-    # Base on an incoming row, never on existing -- existing is a server
-    # response of unknown/possibly-partial shape, while every incoming row is
-    # a freshly-built Item guaranteed to carry id/collection/type. Only its
-    # assets and temporal span get widened with whatever existing adds.
-    base = dict(incoming[0])
+    # Prefer existing (the server's current, presumably complete state) as
+    # the template for everything OTHER than assets/dates -- geometry, bbox,
+    # every registered extension's properties. Confirmed live: basing this
+    # on an incoming row unconditionally is actively wrong for a
+    # single-asset-only or tombstone-only push (e.g. `rm asset`, or a
+    # schema-shortcut synthesized row) -- those rows carry no meaningful
+    # geometry/properties of their own, and would otherwise silently
+    # overwrite the item's real published ones with placeholder garbage.
+    # Only trusted when it actually looks like a real Item ("collection" is
+    # STAC-mandatory, so a genuine existing item always has it) -- guards
+    # against a degenerate/partial GET response. incoming[0] is the
+    # fallback template on a genuine first-ever push for this id (existing
+    # is None or unusably thin), where it is guaranteed to be a real,
+    # freshly scanned Item -- there is nothing else to base it on.
+    base = (
+        dict(existing)
+        if existing is not None and existing.get("collection")
+        else dict(incoming[0])
+    )
     base.pop("removed_assets", None)  # bookkeeping, not a real STAC field
     assets = _real_assets(existing) if existing is not None else {}
     removed: set = set()

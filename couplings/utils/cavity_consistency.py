@@ -23,7 +23,7 @@ REFREEZING at 1.8-2.0 m/yr, against a cavity melt of 0.83.
 
 `shelfbtemp` has the mirror-image fault.  It comes from `Tsurf`, the temperature
 of level 1, and under a cavity level 1 is inside the ice: Tsurf is missing at
-all 7288 cavity nodes.  PISM therefore gets extrapolated open-ocean surface
+all 7509 cavity nodes.  PISM therefore gets extrapolated open-ocean surface
 temperature, -1.07 degC, where the freezing point at the ice draft is -2.11.
 
 The masking this restores is not new: coupling_fesom2ice.functions already
@@ -61,7 +61,7 @@ factor must be recomputed every coupling step and never carried over.
 
 usage:
   cavity_consistency.py mask --node-file F --submesh-root DIR --total-file T
-                             [--submesh DIR] [--var V]
+                             [--submesh DIR] [--var V] [--temp-var V]
   cavity_consistency.py fix  --ice-file F --pism-file P --total-file T
                              [--melt-var V] [--temp-var V] [--salinity S]
 """
@@ -99,15 +99,26 @@ def node_areas(submesh):
 def cavity_nodes(submesh):
     """Nodes that carry a cavity, as FESOM's own submesh records them.
 
-    cavity_depth@node.out holds the ice-base depth and is NEGATIVE under a
-    cavity, zero elsewhere.  It agrees node for node with cavity_nlvls.out,
-    which names the first wet level; both are written by the mesh build, so
-    this is FESOM's mask rather than a reconstruction of it.
+    cavity_nlvls.out names the first wet level: 1 where the sea surface is free,
+    greater where the top levels are buried in the shelf above.  That is the
+    file to trust.  cavity_depth@node.out, which the first version of this
+    helper read, is NOT equivalent to it -- it leaves the ice-base depth at
+    exactly 0.0 on some nodes that cavity_nlvls puts 4 to 13 levels under ice,
+    and reading it would mask those nodes away as open ocean and throw their
+    melt out:
+
+        submesh                       nlvls>1   depth<0   thrown away
+        ism41_v5g submesh_1916           7509      7288           221
+        orog6     submesh_1901           5619      5444           175
+
+    The nlvls>1 set is also, node for node on both meshes, exactly the set where
+    the forcing file itself carries missing Tsurf/Ssurf -- FESOM has no sea
+    surface under an ice shelf.  check_against_field() holds it to that.
     """
-    depth = np.loadtxt(os.path.join(submesh, "cavity_depth@node.out"))
-    if depth.ndim > 1:
-        depth = depth[:, -1]
-    return depth < 0.0
+    nlvls = np.loadtxt(os.path.join(submesh, "cavity_nlvls.out"), dtype=int)
+    if nlvls.ndim > 1:
+        nlvls = nlvls[:, -1]
+    return nlvls > 1
 
 
 def submesh_node_count(submesh):
@@ -152,6 +163,48 @@ def pick_submesh(root, nodes, explicit=None):
     sys.exit(f"cavity_consistency: no submesh under {root} has {nodes} nodes")
 
 
+def check_against_field(ds, cav, temp_var):
+    """Hold the submesh's cavity against the forcing file's own witness of it.
+
+    Tsurf and Ssurf (here already renamed to shelfbtemp) are level-1 values, and
+    under an ice shelf level 1 is inside the ice, so FESOM writes them missing on
+    exactly the cavity nodes.  The file being masked therefore carries an
+    independent copy of the answer, and it agreed with cavity_nlvls.out node for
+    node on both meshes this was measured on (7509 and 5619 nodes, zero
+    disagreement).
+
+    A matching node count is necessary but NOT sufficient to identify the right
+    submesh: the cavity is recarved every chunk and the count wanders back over
+    values it has held before, so two different meshes can both match.  Masking
+    with the wrong nodes leaves no trace afterwards, hence this stops the step
+    rather than warning.
+
+    If the file carries no missing values at all the attribute was lost on the
+    way (cdo drops _FillValue in some conversions) and there is nothing to check
+    against -- that is reported, not treated as a disagreement.
+    """
+    if temp_var not in ds.variables:
+        print(f"     - {temp_var} not in the file: cavity cross-check skipped")
+        return
+    missing = np.ma.getmaskarray(ds.variables[temp_var][:])
+    missing = missing.reshape(-1, missing.shape[-1])[0]
+    if missing.shape != cav.shape:
+        sys.exit(f"cavity_consistency: {temp_var} has {missing.shape[0]} nodes, "
+                 f"the submesh has {cav.shape[0]}")
+    if not missing.any():
+        print(f"     - {temp_var} carries no missing values: cavity "
+              f"cross-check skipped")
+        return
+    disagree = int((missing != cav).sum())
+    if disagree:
+        sys.exit(f"cavity_consistency: the submesh says {int(cav.sum())} cavity "
+                 f"nodes, the missing {temp_var} in the field says "
+                 f"{int(missing.sum())}, and they disagree on {disagree} of them "
+                 f"-- this submesh does not belong to this field")
+    print(f"     - cavity agrees with the missing {temp_var} on all "
+          f"{int(cav.sum())} nodes")
+
+
 def stage_mask(args):
     ds = netCDF4.Dataset(args.node_file, "a")
     if args.var not in ds.variables:
@@ -164,14 +217,20 @@ def stage_mask(args):
     print(f"     - submesh {os.path.basename(os.path.realpath(submesh))} "
           f"({values.shape[-1]} nodes)")
     cav = cavity_nodes(submesh)
+    check_against_field(ds, cav, args.temp_var)
     area = node_areas(submesh)
     args.submesh = submesh
 
-    # fw is negative where freshwater enters the ocean, i.e. where the ice melts.
-    # Reported as a positive melt so the number reads like every other melt on
-    # the diagnostics; the field itself keeps FESOM's sign.
+    # FESOM's fw is negative where freshwater enters the ocean, i.e. where the ice
+    # melts -- but this stage runs on the file AFTER cdo setpartabn, whose partable
+    # carries `factor = -1` on fw -> shelfbmassflux (esm_tools 33f71c607).  So the
+    # field is already positive-for-melting here and must not be negated again.
     flat = values.reshape(-1, values.shape[-1])
-    cavity_total = -(flat[0][cav] * area[cav]).sum() * SECONDS_PER_YEAR / 1e12
+    cavity_total = (flat[0][cav] * area[cav]).sum() * SECONDS_PER_YEAR / 1e12
+    if cavity_total < 0.0:
+        print(f"     ! WARNING: the cavity integrates to {cavity_total:+.0f} Gt/yr, "
+              f"i.e. net refreezing over the whole cavity.  Expect melt here: "
+              f"check that the cdo partable still applies factor = -1 to fw.")
 
     fill = var.getncattr("_FillValue") if "_FillValue" in var.ncattrs() else -9.0e33
     values[..., ~cav] = fill
@@ -268,6 +327,9 @@ def main():
     m.add_argument("--submesh", default=None)
     m.add_argument("--total-file", required=True)
     m.add_argument("--var", default="shelfbmassflux")
+    # the variable whose missing values witness the cavity independently of the
+    # submesh (Tsurf, by this point renamed); see check_against_field
+    m.add_argument("--temp-var", default="shelfbtemp")
     m.set_defaults(func=stage_mask)
 
     f = sub.add_parser("fix", help="conserve the melt and set the basal temperature")

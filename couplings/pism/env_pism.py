@@ -75,6 +75,18 @@ def prepare_environment(config):
             # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
+            # Interpreter for the python helpers in couple_in (the ocean->PISM
+            # cavity mask).  That subjob runs under module purge + cdo/nco/netcdf,
+            # where `python` is off PATH and /usr/bin/python3 has no netCDF4, so
+            # the helper has to be told which one to use; it needs numpy and
+            # netCDF4.  computer/add_export_vars does NOT reach couple_in -- only
+            # what this dict carries does.  Empty means "look for python3 on
+            # PATH", and the helper exits 42 if that one cannot import them.
+            "PYTHON_BINARY": config[config["general"]["setup_name"]].get(
+                "python_binary",
+                config["general"].get("python_binary", os.environ.get("PYTHON_BINARY", "")),
+            ),
+
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),

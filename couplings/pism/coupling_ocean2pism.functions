@@ -391,6 +391,14 @@ function iterative_coupling_ocean_pism_cavity_mask {
     if ! ls -d ${COUPLE_DIR}/submesh_* >/dev/null 2>&1 ; then
 	echo " *   ERROR: the cavity mask is enabled but no submesh_* exists under"
 	echo "            ${COUPLE_DIR}"
+	if [ "${CHUNK_NUMBER:-1}" -le 1 ] && [ -n "${PISM_BOOTSTRAP_DIR}" ] ; then
+	    echo "            This is chunk 1, whose forcing comes from the harvest"
+	    echo "            ${PISM_BOOTSTRAP_DIR}"
+	    echo "            and that harvest carries no submesh_* of its own, so there"
+	    echo "            is no mesh to mask against: the fesom chain has not carved"
+	    echo "            one yet.  Point pism.bootstrap_forcing_dir at a harvest that"
+	    echo "            includes the submesh the forcing was written on."
+	fi
 	exit 43
     fi
 

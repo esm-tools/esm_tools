@@ -357,6 +357,31 @@ function iterative_coupling_ocean_pism_cavity_mask {
 	return 0
     fi
 
+    # FAILING HERE IS FATAL, deliberately.  The mask changes the melt PISM is
+    # given, so a run configured with it on must not quietly proceed with it off:
+    # that produces a forcing file indistinguishable afterwards from the
+    # unpatched one, and the whole experiment silently tests something else.
+    #
+    # This is not hypothetical.  The first version of this function warned and
+    # carried on, and under the coupling's own module environment -- module purge
+    # plus cdo, nco, netcdf -- `python` is not on PATH at all ("command not
+    # found"), so it would have warned and carried on for every chunk of every
+    # run.  Hence both the explicit interpreter check and the exit.
+    #
+    # PYTHON_BINARY should name an interpreter that can import numpy and netCDF4.
+    # esm_runscripts itself runs under one (its shebang names it), so that is the
+    # natural value to set in the runscript.
+    _py=${PYTHON_BINARY:-$(command -v python3 2>/dev/null || command -v python 2>/dev/null)}
+    if [ -z "${_py}" ] || ! ${_py} -c "import numpy, netCDF4" >/dev/null 2>&1 ; then
+	echo " *   ERROR: the cavity mask is enabled but there is no usable python."
+	echo "            tried >>${_py:-none found on PATH}<<"
+	echo "            it must be able to: import numpy, netCDF4"
+	echo "            set PYTHON_BINARY in the runscript, or set"
+	echo "            iterative_coupling_ocean_pism_cavity_mask=0 to disable the"
+	echo "            mask on purpose."
+	exit 42
+    fi
+
     # The cavity is recarved every chunk and the node count moves with it, so
     # the submesh is chosen by MATCHING that count against the field being
     # masked, not by name: latest_submesh is the mesh carved for the next leg
@@ -364,22 +389,21 @@ function iterative_coupling_ocean_pism_cavity_mask {
     # this field was written on.  A field with no matching submesh stops the
     # helper rather than being masked with the wrong nodes.
     if ! ls -d ${COUPLE_DIR}/submesh_* >/dev/null 2>&1 ; then
-	echo " *   WARNING: no submesh under ${COUPLE_DIR}"
-	echo "              shelfbmassflux left unmasked, as before this change"
-	unset _do_mask
-	return 0
+	echo " *   ERROR: the cavity mask is enabled but no submesh_* exists under"
+	echo "            ${COUPLE_DIR}"
+	exit 43
     fi
 
     echo " *   Masking shelfbmassflux to the cavity ..."
-    ${PYTHON_BINARY:-python} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
+    ${_py} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
 	mask \
 	--node-file    ${_file} \
 	--submesh-root ${COUPLE_DIR} \
 	--total-file   ${CAVITY_TOTAL_FILE} \
-	|| { echo " *   WARNING: cavity mask FAILED, continuing unmasked" ; \
-	     rm -f ${CAVITY_TOTAL_FILE} ; }
+	|| { echo " *   ERROR: the cavity mask failed" ; \
+	     rm -f ${CAVITY_TOTAL_FILE} ; exit 44 ; }
 
-    unset _do_mask
+    unset _do_mask _py
 }
 
 function iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing {
@@ -851,26 +875,44 @@ function iterative_coupling_ocean_pism_cavity_conserve {
     CAVITY_TOTAL_FILE=${CAVITY_TOTAL_FILE:-$(pwd)/cavity_melt_total.txt}
     _cavity_salinity=${iterative_coupling_ocean_pism_cavity_salinity:-34.4}
 
+    # No total recorded means the mask stage did not run, which is the one
+    # legitimate way to get here without doing anything: the switch was set to 0.
+    # The two stages are then both skipped and the forcing is exactly what it was
+    # before this was added, which is the point of the switch.
     if [ ! -f "${CAVITY_TOTAL_FILE}" ] ; then
 	echo " *   No cavity total recorded : melt left unscaled and shelfbtemp untouched"
-	return 0
-    fi
-    if [ ! -f "${INPUT_FILE_pism}" ] ; then
-	echo " *   WARNING: INPUT_FILE_pism >>${INPUT_FILE_pism}<< not found"
-	echo "              melt left unscaled and shelfbtemp untouched"
+	unset _cavity_salinity
 	return 0
     fi
 
+    # Past that point the mask HAS run, so the melt on disk is cavity-only and
+    # not yet conserved.  Stopping here would leave PISM a forcing that is
+    # neither the old one nor the intended one, so from here every failure is
+    # fatal for the same reason as in the mask stage.
+    if [ ! -f "${INPUT_FILE_pism}" ] ; then
+	echo " *   ERROR: the melt has been masked to the cavity but INPUT_FILE_pism"
+	echo "            >>${INPUT_FILE_pism}<< is missing, so it cannot be conserved"
+	echo "            against PISM's own floating mask."
+	exit 45
+    fi
+
+    _py=${PYTHON_BINARY:-$(command -v python3 2>/dev/null || command -v python 2>/dev/null)}
+    if [ -z "${_py}" ] || ! ${_py} -c "import numpy, netCDF4" >/dev/null 2>&1 ; then
+	echo " *   ERROR: no usable python for the conservation stage"
+	echo "            tried >>${_py:-none found on PATH}<<"
+	exit 46
+    fi
+
     echo " *   Conserving cavity melt and setting shelfbtemp to the freezing point ..."
-    ${PYTHON_BINARY:-python} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
+    ${_py} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
 	fix \
 	--ice-file   ${_file} \
 	--pism-file  ${INPUT_FILE_pism} \
 	--total-file ${CAVITY_TOTAL_FILE} \
 	--salinity   ${_cavity_salinity} \
-	|| echo " *   WARNING: cavity conservation FAILED, forcing file left as remapped"
+	|| { echo " *   ERROR: cavity conservation failed" ; exit 47 ; }
 
-    unset _cavity_salinity
+    unset _cavity_salinity _py
 }
 
 function iterative_coupling_ocean_pism_compute_ocean_mixed_forcing {

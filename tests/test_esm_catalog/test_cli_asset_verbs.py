@@ -1,12 +1,15 @@
-"""esm-catalog add/validate/rm asset -- single-file catalog edits without a
-full scan (esm_catalog.cli).
+"""esm-catalog add/validate/rm/set-main asset -- single-file catalog edits
+without a full scan (esm_catalog.cli).
 
 Each writes exactly one local shard under <exp-root>/catalog/items/, never
-auto-pushes. add reuses the schema cache scan/validate establish (proven via
-genuinely unreadable "garbage" file content, same style as
+auto-pushes. add asset reuses the schema cache scan/validate establish
+(proven via genuinely unreadable "garbage" file content, same style as
 test_scan_schema_freeze.py, so a wrongly-triggered real read surfaces as an
 error instead of silently passing); validate always forces a real read; rm
-writes a removed_assets tombstone.
+asset writes a removed_assets tombstone; add alternate/set-main asset write
+added_alternates/promote_alternate instructions (see test_push.py for their
+merge_item resolution -- these tests only check the CLI writes the right
+instruction, not the merge itself).
 """
 
 from __future__ import annotations
@@ -69,6 +72,12 @@ def _only_shard(exp_root: UPath, name_contains: str):
     shards = list((exp_root / "catalog" / "items").glob(f"*{name_contains}*"))
     assert len(shards) == 1, shards
     return read_shard(shards[0])
+
+
+def _newest_shard(exp_root: UPath, name_contains: str):
+    shards = list((exp_root / "catalog" / "items").glob(f"*{name_contains}*"))
+    assert shards, "no shard found"
+    return read_shard(max(shards, key=lambda p: p.stat().st_mtime))
 
 
 def test_add_asset_shortcuts_via_cached_schema(runner, tmp_path):
@@ -250,6 +259,159 @@ def test_rm_asset_rejects_a_malformed_item_id(runner, tmp_path):
 
     result = runner.invoke(
         main, ["rm", "asset", "nodash", "somekey", "--exp-root", str(exp_root)]
+    )
+
+    assert result.exit_code != 0
+    assert "not a valid item id" in result.output
+
+
+def test_add_alternate_writes_added_alternates_instruction(runner, tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    _scan(runner, exp_root)
+
+    result = runner.invoke(
+        main,
+        [
+            "add",
+            "alternate",
+            "echam-echam",
+            "200001",
+            "hsm",
+            "scoutfs://hsm.dmawi.de/hs/some/path.nc",
+            "--exp-root",
+            str(exp_root),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "registered alternate" in result.output
+    row = _newest_shard(exp_root, "manual_echam-echam").to_pylist()[0]
+    assert row.get("added_alternates") == {
+        "200001": {"hsm": {"href": "scoutfs://hsm.dmawi.de/hs/some/path.nc"}}
+    }
+    # The placeholder must not carry the real href -- see push.py's own
+    # regression test for why (merge_item's assets.update runs before
+    # added_alternates is applied).
+    assert row["assets"]["200001"]["href"] != "scoutfs://hsm.dmawi.de/hs/some/path.nc"
+
+
+def test_add_alternate_resolves_a_local_path_to_a_file_uri(runner, tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    _scan(runner, exp_root)
+    local_copy = tmp_path / "a_local_copy.nc"
+    local_copy.write_bytes(b"x")
+
+    result = runner.invoke(
+        main,
+        [
+            "add",
+            "alternate",
+            "echam-echam",
+            "200001",
+            "backup",
+            str(local_copy),
+            "--exp-root",
+            str(exp_root),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    row = _newest_shard(exp_root, "manual_echam-echam").to_pylist()[0]
+    href = row["added_alternates"]["200001"]["backup"]["href"]
+    assert href.startswith("file://")
+    assert "a_local_copy.nc" in href
+
+
+def test_add_alternate_rejects_a_malformed_item_id(runner, tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    _scan(runner, exp_root)
+
+    result = runner.invoke(
+        main,
+        [
+            "add",
+            "alternate",
+            "nodash",
+            "200001",
+            "hsm",
+            "scoutfs://x",
+            "--exp-root",
+            str(exp_root),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "not a valid item id" in result.output
+
+
+def test_set_main_asset_writes_promote_alternate_instruction(runner, tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    _scan(runner, exp_root)
+
+    result = runner.invoke(
+        main,
+        [
+            "set-main",
+            "asset",
+            "echam-echam",
+            "200001",
+            "--to",
+            "hsm",
+            "--demote-as",
+            "disk",
+            "--exp-root",
+            str(exp_root),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "queued promoting" in result.output
+    row = _newest_shard(exp_root, "manual_echam-echam").to_pylist()[0]
+    assert row.get("promote_alternate") == {
+        "200001": {"from": "hsm", "demote_as": "disk"}
+    }
+
+
+def test_set_main_asset_demote_as_is_optional(runner, tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    _scan(runner, exp_root)
+
+    result = runner.invoke(
+        main,
+        [
+            "set-main",
+            "asset",
+            "echam-echam",
+            "200001",
+            "--to",
+            "hsm",
+            "--exp-root",
+            str(exp_root),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    row = _newest_shard(exp_root, "manual_echam-echam").to_pylist()[0]
+    assert row["promote_alternate"]["200001"]["from"] == "hsm"
+    assert row["promote_alternate"]["200001"]["demote_as"] is None
+
+
+def test_set_main_asset_rejects_a_malformed_item_id(runner, tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    _scan(runner, exp_root)
+
+    result = runner.invoke(
+        main,
+        [
+            "set-main",
+            "asset",
+            "nodash",
+            "200001",
+            "--to",
+            "hsm",
+            "--exp-root",
+            str(exp_root),
+        ],
     )
 
     assert result.exit_code != 0

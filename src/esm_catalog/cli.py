@@ -17,9 +17,11 @@ One-off manual edits outside a full scan -- e.g. registering a file scan
 never saw, or dropping a bad asset -- each write exactly one local shard
 (same 'push' afterwards to ship it), never touch the network themselves::
 
-    esm-catalog add asset <component>-<stream> FILE...   # cache-shortcut when possible
-    esm-catalog validate <component>-<stream> FILE       # always a real, authoritative read
-    esm-catalog rm asset <component>-<stream> ASSET_KEY  # tombstone; push then drops it
+    esm-catalog add asset <component>-<stream> FILE...        # cache-shortcut when possible
+    esm-catalog validate <component>-<stream> FILE            # always a real, authoritative read
+    esm-catalog rm asset <component>-<stream> ASSET_KEY       # tombstone; push then drops it
+    esm-catalog add alternate <component>-<stream> ASSET_KEY NAME LOCATION  # e.g. a tape copy
+    esm-catalog set-main asset <component>-<stream> ASSET_KEY --to NAME    # promote an alternate
 
 On disk, ``<exp_root>/catalog/`` holds the catalog PFS-friendly: one
 ``collection.json`` plus sharded stac-geoparquet (a handful of files, never one
@@ -619,6 +621,97 @@ def add_asset(
     click.echo(f"added {len(items)} asset(s) to {item_id} -> {shard_path}")
 
 
+def _resolve_href(location: str) -> str:
+    """*location* as a STAC href: passed through unchanged if it already
+    looks like a URI (has ``://`` -- covers a plain remote href and a
+    chained fsspec string like ``tar://member::scoutfs://host/archive.tar``
+    alike, neither of which this command should try to reparse), otherwise
+    treated as a local path and built into a proper ``file://`` URI the
+    same way a real scanned asset's href is (see item.py's ``_to_href``)."""
+    if "://" in location:
+        return location
+    from upath import UPath
+
+    from esm_catalog.item import _to_href
+
+    return _to_href(UPath(location))
+
+
+@add.command("alternate")
+@click.argument("item_id")
+@click.argument("asset_key")
+@click.argument("name")
+@click.argument("location")
+@click.option(
+    "--exp-root", default=".", help="Experiment root (for its finished_config)."
+)
+@click.option("--catalog-dir", default=None, help="Defaults to <exp-root>/catalog.")
+def add_alternate(
+    item_id: str,
+    asset_key: str,
+    name: str,
+    location: str,
+    exp_root: str,
+    catalog_dir: Optional[str],
+) -> None:
+    """Register LOCATION as the NAME alternate for ASSET_KEY on ITEM_ID.
+
+    LOCATION is a URI (passed through as-is -- e.g. an HSM/tape address, or
+    a chained fsspec string addressing a member inside an archived
+    tarball) or a local path (turned into a proper file:// href). Per the
+    'alternate-assets' STAC extension: this must be the exact same bytes as
+    ASSET_KEY's primary location, just reachable a different way.
+
+    Writes one local shard row -- run 'esm-catalog push' afterwards to
+    actually apply it (merge_item merges it into ASSET_KEY's own
+    'alternate' dict without touching its other fields; this command alone
+    changes nothing on the server, and needs no live fetch to work).
+    """
+    from datetime import datetime, timezone
+
+    import pystac
+
+    from esm_catalog.scan.sourcing import source_experiment
+    from esm_catalog.storage.geoparquet import write_shard
+
+    _parse_item_id(item_id)  # validated for a clear error message
+    root, catalog = _resolve_catalog(exp_root, catalog_dir)
+    exp_metadata = source_experiment(root)
+    href = _resolve_href(location)
+
+    row = pystac.Item(
+        id=item_id,
+        # No meaningful geometry/properties of its own -- same reasoning as
+        # rm_asset's tombstone; existing is the real template at merge
+        # time. The one asset entry is a harmless placeholder (pyarrow
+        # cannot serialize an empty assets struct) -- its href must NOT be
+        # the real alternate href: merge_item's assets.update(_real_assets)
+        # runs unconditionally, before added_alternates is applied, and
+        # would blindly overwrite ASSET_KEY's real primary href with
+        # whatever this placeholder carries (confirmed live -- the exact
+        # bug rm_asset's tombstone was already built to avoid). "about:blank"
+        # keeps this row inert; the real href only ever appears inside
+        # added_alternates, which merges into the asset's alternate dict
+        # without touching href/roles/etc.
+        geometry={"type": "Point", "coordinates": [0.0, 0.0]},
+        bbox=[0.0, 0.0, 0.0, 0.0],
+        datetime=datetime.now(timezone.utc),
+        properties={},
+        assets={
+            asset_key: pystac.Asset(href="about:blank", roles=["alternate-placeholder"])
+        },
+        collection=exp_metadata.collection_id,
+    )
+    row.extra_fields["added_alternates"] = {asset_key: {name: {"href": href}}}
+
+    shard_path = _ad_hoc_shard_path(catalog, item_id)
+    write_shard([row], shard_path)
+    click.echo(
+        f"registered alternate {name!r} ({href}) for {asset_key!r} on {item_id} "
+        f"-> {shard_path}"
+    )
+
+
 @main.group("rm")
 def rm_group() -> None:
     """Remove something from the catalog directly, without a full scan."""
@@ -677,6 +770,77 @@ def rm_asset(
     shard_path = _ad_hoc_shard_path(catalog, item_id)
     write_shard([tombstone], shard_path)
     click.echo(f"marked {asset_key!r} on {item_id} for removal -> {shard_path}")
+
+
+@main.group("set-main")
+def set_main_group() -> None:
+    """Change which location is an asset's primary href."""
+
+
+@set_main_group.command("asset")
+@click.argument("item_id")
+@click.argument("asset_key")
+@click.option(
+    "--to", "alternate_name", required=True, help="The alternate to promote to primary."
+)
+@click.option(
+    "--demote-as",
+    default=None,
+    help="Alternate name to file the old primary href under. Omit to just drop it.",
+)
+@click.option(
+    "--exp-root", default=".", help="Experiment root (for its finished_config)."
+)
+@click.option("--catalog-dir", default=None, help="Defaults to <exp-root>/catalog.")
+def set_main_asset(
+    item_id: str,
+    asset_key: str,
+    alternate_name: str,
+    demote_as: Optional[str],
+    exp_root: str,
+    catalog_dir: Optional[str],
+) -> None:
+    """Promote ASSET_KEY's --to alternate to become its primary href.
+
+    Needs no live fetch: writes a promote_alternate instruction as one local
+    shard row -- merge_item resolves it at push time against whatever real
+    asset state --exp-root/'esm-catalog push' already has in hand (the
+    same pattern 'rm asset'/'add alternate' already use). A no-op at merge
+    time if ASSET_KEY or the named alternate does not actually exist -- run
+    'esm-catalog push' to find out, this command itself cannot check.
+    """
+    from datetime import datetime, timezone
+
+    import pystac
+
+    from esm_catalog.scan.sourcing import source_experiment
+    from esm_catalog.storage.geoparquet import write_shard
+
+    _parse_item_id(item_id)  # validated for a clear error message
+    root, catalog = _resolve_catalog(exp_root, catalog_dir)
+    exp_metadata = source_experiment(root)
+
+    row = pystac.Item(
+        id=item_id,
+        geometry={"type": "Point", "coordinates": [0.0, 0.0]},
+        bbox=[0.0, 0.0, 0.0, 0.0],
+        datetime=datetime.now(timezone.utc),
+        properties={},
+        assets={
+            asset_key: pystac.Asset(href="about:blank", roles=["set-main-placeholder"])
+        },
+        collection=exp_metadata.collection_id,
+    )
+    row.extra_fields["promote_alternate"] = {
+        asset_key: {"from": alternate_name, "demote_as": demote_as}
+    }
+
+    shard_path = _ad_hoc_shard_path(catalog, item_id)
+    write_shard([row], shard_path)
+    click.echo(
+        f"queued promoting {alternate_name!r} to primary for {asset_key!r} on "
+        f"{item_id} -> {shard_path}"
+    )
 
 
 @main.command()

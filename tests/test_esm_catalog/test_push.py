@@ -485,3 +485,112 @@ def test_merge_item_preserves_existing_geometry_on_a_tombstone_only_push():
     assert merged["geometry"] == existing["geometry"]
     assert merged["properties"]["frequency"] == "mon"
     assert merged["assets"] == {}
+
+
+def test_merge_item_added_alternates_merges_without_touching_other_fields():
+    existing = _asset_item("echam-ts", "c", "200001")
+    row = _asset_item("echam-ts", "c", "200001")
+    row["assets"] = {}
+    row["added_alternates"] = {"200001": {"hsm": {"href": "scoutfs://hsm/200001.nc"}}}
+
+    merged = pushmod.merge_item(existing, [row])
+
+    asset = merged["assets"]["200001"]
+    assert asset["href"] == existing["assets"]["200001"]["href"]  # untouched
+    assert asset["alternate"] == {"hsm": {"href": "scoutfs://hsm/200001.nc"}}
+    assert "added_alternates" not in merged
+
+
+def test_merge_item_added_alternates_accumulates_across_calls():
+    existing = _asset_item("echam-ts", "c", "200001")
+    existing["assets"]["200001"]["alternate"] = {"hsm": {"href": "scoutfs://old"}}
+    row = _asset_item("echam-ts", "c", "200001")
+    row["assets"] = {}
+    row["added_alternates"] = {"200001": {"s3": {"href": "s3://bucket/200001.nc"}}}
+
+    merged = pushmod.merge_item(existing, [row])
+
+    assert merged["assets"]["200001"]["alternate"] == {
+        "hsm": {"href": "scoutfs://old"},
+        "s3": {"href": "s3://bucket/200001.nc"},
+    }
+
+
+def test_merge_item_added_alternates_is_a_noop_for_a_key_not_present():
+    existing = _asset_item("echam-ts", "c", "200001")
+    row = _asset_item("echam-ts", "c", "200001")
+    row["assets"] = {}
+    row["added_alternates"] = {"never-added": {"hsm": {"href": "scoutfs://x"}}}
+
+    merged = pushmod.merge_item(existing, [row])
+
+    assert "never-added" not in merged["assets"]
+
+
+def test_merge_item_added_alternates_own_placeholder_asset_never_becomes_real():
+    """A real bug: `add alternate`'s bookkeeping row carries a placeholder
+    asset entry under the SAME key its instruction targets (pyarrow cannot
+    serialize an empty assets struct). Pushed before the real asset ever
+    existed (existing=None here), that placeholder must not be folded into
+    assets as if it were real data -- it would otherwise satisfy
+    added_alternates' own "does this key exist" guard, silently attaching a
+    real alternate href onto a phantom, placeholder-only entry."""
+    row = {
+        "type": "Feature",
+        "id": "echam-ts",
+        "collection": "c",
+        "properties": {},
+        "assets": {
+            "200001": {"href": "about:blank", "roles": ["alternate-placeholder"]}
+        },
+        "added_alternates": {"200001": {"hsm": {"href": "scoutfs://hsm/200001.nc"}}},
+    }
+
+    merged = pushmod.merge_item(None, [row])
+
+    assert merged["assets"] == {}
+
+
+def test_merge_item_promote_alternate_swaps_primary_and_demotes_old_one():
+    existing = _asset_item("echam-ts", "c", "200001")
+    existing["assets"]["200001"]["alternate"] = {
+        "hsm": {"href": "scoutfs://hsm/200001.nc"}
+    }
+    row = _asset_item("echam-ts", "c", "200001")
+    row["assets"] = {}
+    row["promote_alternate"] = {"200001": {"from": "hsm", "demote_as": "disk"}}
+
+    merged = pushmod.merge_item(existing, [row])
+
+    asset = merged["assets"]["200001"]
+    assert asset["href"] == "scoutfs://hsm/200001.nc"  # promoted
+    assert asset["alternate"]["disk"]["href"] == existing["assets"]["200001"]["href"]
+    assert "hsm" not in asset["alternate"]  # consumed by the promotion
+    assert "promote_alternate" not in merged
+
+
+def test_merge_item_promote_alternate_without_demote_as_just_drops_the_old_primary():
+    existing = _asset_item("echam-ts", "c", "200001")
+    existing["assets"]["200001"]["alternate"] = {
+        "hsm": {"href": "scoutfs://hsm/200001.nc"}
+    }
+    row = _asset_item("echam-ts", "c", "200001")
+    row["assets"] = {}
+    row["promote_alternate"] = {"200001": {"from": "hsm"}}
+
+    merged = pushmod.merge_item(existing, [row])
+
+    asset = merged["assets"]["200001"]
+    assert asset["href"] == "scoutfs://hsm/200001.nc"
+    assert asset.get("alternate", {}) == {}
+
+
+def test_merge_item_promote_alternate_is_a_noop_when_the_named_alternate_is_missing():
+    existing = _asset_item("echam-ts", "c", "200001")
+    row = _asset_item("echam-ts", "c", "200001")
+    row["assets"] = {}
+    row["promote_alternate"] = {"200001": {"from": "does-not-exist"}}
+
+    merged = pushmod.merge_item(existing, [row])
+
+    assert merged["assets"]["200001"]["href"] == existing["assets"]["200001"]["href"]

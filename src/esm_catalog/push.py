@@ -284,6 +284,24 @@ def merge_item(
     deliberate instruction, never ambiguous with it. start_datetime/
     end_datetime widen to cover every asset now on the item, existing and
     incoming alike.
+
+    Two more explicit, deliberate instructions (same shape as
+    ``removed_assets`` -- a small operation, not a full asset replacement,
+    resolved here against whatever real state *existing*/earlier *incoming*
+    rows already established, so the CLI command that wrote them never had
+    to know or fetch current state itself):
+
+    - ``added_alternates``: ``{asset_key: {alt_name: alt_object}}`` (see the
+      ``alternate-assets`` STAC extension) -- merged into that asset's own
+      ``alternate`` dict without touching its other fields (``href``,
+      ``roles``, ...). A blind ``assets.update()`` of an incoming row
+      carrying only ``{"alternate": {...}}`` for an existing key would
+      destroy that asset's real fields entirely; this keeps them.
+    - ``promote_alternate``: ``{asset_key: {"from": alt_name, "demote_as":
+      optional_name}}`` -- makes ``alternate[from]`` the asset's new
+      top-level fields, optionally filing what was previously the top-level
+      href/fields under ``alternate[demote_as]``. A no-op if the named asset
+      or alternate does not exist in the merged result (nothing to promote).
     """
     # Prefer existing (the server's current, presumably complete state) as
     # the template for everything OTHER than assets/dates -- geometry, bbox,
@@ -304,9 +322,16 @@ def merge_item(
         if existing is not None and existing.get("collection")
         else dict(incoming[0])
     )
-    base.pop("removed_assets", None)  # bookkeeping, not a real STAC field
+    for bookkeeping_field in (
+        "removed_assets",
+        "added_alternates",
+        "promote_alternate",
+    ):
+        base.pop(bookkeeping_field, None)  # bookkeeping, never a real STAC field
     assets = _real_assets(existing) if existing is not None else {}
     removed: set = set()
+    added_alternates: dict = {}
+    promote_ops: dict = {}
     starts, ends = [], []
     if existing is not None:
         s, e = _item_span(existing)
@@ -315,8 +340,30 @@ def merge_item(
         if e:
             ends.append(e)
     for item in incoming:
-        assets.update(_real_assets(item))
+        item_added_alternates = item.get("added_alternates") or {}
+        item_promote_ops = item.get("promote_alternate") or {}
+        # A bookkeeping-only row (add alternate/set-main asset) carries a
+        # placeholder asset entry under the SAME key its instruction
+        # targets, only because pyarrow cannot serialize an empty assets
+        # struct -- that placeholder must never be folded in as if it were
+        # real data. Confirmed live: pushing such a row before the real
+        # asset ever existed otherwise creates a phantom entry that then
+        # satisfies added_alternates'/promote_alternate's own "does this key
+        # exist" guard, silently attaching a real alternate href onto
+        # nothing real.
+        bookkeeping_keys = set(item_added_alternates) | set(item_promote_ops)
+        for key, value in _real_assets(item).items():
+            if key in bookkeeping_keys:
+                continue
+            assets[key] = value
         removed.update(item.get("removed_assets") or [])
+        for key, alts in item_added_alternates.items():
+            added_alternates.setdefault(key, {}).update(alts)
+        # Last incoming row wins for a given key -- a real conflict (two
+        # promotions of the same asset in one push) is not a case this
+        # needs to resolve cleverly; it is rare enough to just pick one
+        # deterministically rather than error.
+        promote_ops.update(item.get("promote_alternate") or {})
         s, e = _item_span(item)
         if s:
             starts.append(s)
@@ -324,6 +371,31 @@ def merge_item(
             ends.append(e)
     for key in removed:
         assets.pop(key, None)
+
+    for key, alts in added_alternates.items():
+        if key not in assets:
+            continue  # nothing to attach an alternate to
+        asset = dict(assets[key])
+        asset_alternates = dict(asset.get("alternate") or {})
+        asset_alternates.update(alts)
+        asset["alternate"] = asset_alternates
+        assets[key] = asset
+
+    for key, op in promote_ops.items():
+        if key not in assets:
+            continue
+        asset = dict(assets[key])
+        alternates = dict(asset.get("alternate") or {})
+        from_name = op.get("from")
+        if from_name not in alternates:
+            continue  # nothing to promote -- leave the asset as-is
+        promoted = dict(alternates.pop(from_name))
+        demote_as = op.get("demote_as")
+        if demote_as:
+            old_primary = {k: v for k, v in asset.items() if k != "alternate"}
+            alternates[demote_as] = old_primary
+        promoted["alternate"] = alternates
+        assets[key] = promoted
 
     base["assets"] = assets
     if starts and ends:

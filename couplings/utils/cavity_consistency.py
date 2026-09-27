@@ -54,10 +54,18 @@ fix   (on the PISM grid, after remapping and hole-filling)
          degC, sits 0.39 degC above that -- correct for water that is melting
          ice, wrong for the temperature OF the ice base.
 
-The renormalisation factor is computed against the floating mask of the restart
-PISM is about to start from.  That mask moves while the chunk runs -- measured
-at 0.68 % of shelf area per ten-year chunk, about 5 Gt/yr on 774 -- so the
-factor must be recomputed every coupling step and never carried over.
+The renormalisation factor is computed against PISM's mask 3 at the start of the
+leg (see pism_floating_mask for where that comes from and why it is not a
+flotation test).  That mask MOVES while the leg runs, and by more than an earlier
+estimate here claimed: over ism43 chunk 2 it went 1176 -> 1208 x10^3 km2, +2.7 %,
+and the melt reaching it went from 0.985 to 1.027 of the conserved total, so the
+same forcing over-delivers by about 4 % by the end of a ten-year leg.  (The figure
+previously given here, 0.68 % of shelf area and ~5 Gt/yr on 774, was too small.)
+
+So the factor must be recomputed every coupling step and never carried over -- and
+note that this within-leg drift is now the LARGER of the two conservation errors,
+bigger than the mask mismatch that pism_floating_mask exists to remove.  Closing
+it needs a shorter coupling step, not a better mask.
 
 usage:
   cavity_consistency.py mask --node-file F --submesh-root DIR --total-file T

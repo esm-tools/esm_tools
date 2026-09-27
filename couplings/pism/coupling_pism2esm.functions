@@ -102,22 +102,48 @@ pism2esm() {
     # sentinel and exits the way the no-PISM-output branch above does.
     if [[ "x${ISM_OROG_COUPLED:-0}" == "x1" ]]; then
         couple_timer "pism2esm: usurf_oifs"
+        # A failure here used to be a SILENT DEADLOCK, which is why it now says so
+        # much.  pism2esm runs in the background with its stdout in the couple_out
+        # log; if it exits before writing pism_chunk_<N>.done, the sibling chain
+        # parks on that marker forever and the only symptom is an empty queue.
+        # ism43 lost eight hours to exactly that, and the post-mortem could not
+        # even tell where the sentinel had gone -- so the sentinel is written to
+        # the log as well as to disk, and to the run dir if the couple dir will
+        # not take it.
         _orog_fail() {
-            echo "pism2esm: $1" > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
             echo " *** pism2esm FAILED: $1 ***"
+            echo " ***   COUPLE_DIR   = >>${COUPLE_DIR}<<"
+            echo " ***   experiment   = >>${_exp_dir}<<"
+            echo " ***   cwd          = >>$(pwd)<<"
+            echo " ***   chunk        = ${CHUNK_NUMBER:-?}  suffix = >>${COUPLING_FAIL_SUFFIX:-}<<"
+            echo " ***   NOTE: the sibling chain will park on pism_chunk_${CHUNK_NUMBER:-?}.done"
+            echo " ***         and that marker is NOT going to be written."
+            for _d in "${COUPLE_DIR}" "$(pwd)" ; do
+                [ -n "${_d}" ] && [ -d "${_d}" ] && [ -w "${_d}" ] || continue
+                echo "pism2esm: $1" > "${_d}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}" \
+                    && echo " ***   sentinel -> ${_d}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+            done
             exit 1
         }
         _usurf_py=${FUNCTION_PATH}/make_usurf_oifs.py
-        _icmgg=$(ls "$(cd "${COUPLE_DIR}/.." && pwd)"/input/oifs/ICMGG*INIT 2>/dev/null | head -1)
+        # The experiment dir, resolved once so the failure message can name it.
+        # It holds input/oifs, which the AWI chain populates -- this is the one
+        # thing in pism2esm that depends on a directory the sibling owns.
+        _exp_dir=$(cd "${COUPLE_DIR}/.." 2>/dev/null && pwd)
+        _icmgg=$(ls "${_exp_dir}"/input/oifs/ICMGG*INIT 2>/dev/null | head -1)
         [ -f "${_usurf_py}" ]   || _orog_fail "${_usurf_py} not found"
-        [ -n "${_icmgg}" ]      || _orog_fail "no ICMGG*INIT to read the OIFS grid from"
+        if [ -z "${_icmgg}" ] ; then
+            echo " *   no ICMGG*INIT matched; listing what IS in the search dir:"
+            ls -la "${_exp_dir}"/input/oifs/ 2>&1 | head -20 | sed 's/^/ *     /'
+            _orog_fail "no ICMGG*INIT to read the OIFS grid from, searched ${_exp_dir}/input/oifs/"
+        fi
         [ -f "${_geom_out}" ]   || _orog_fail "${_geom_out} missing, cannot build usurf_oifs"
         command -v "${ISM_OROG_PY:-python3}" >/dev/null 2>&1 \
             || _orog_fail "no usable python (ISM_OROG_PY=${ISM_OROG_PY:-python3}); set general.ism_orog_python"
         "${ISM_OROG_PY:-python3}" "${_usurf_py}" \
             "${_geom_out}" "${_icmgg}" "${COUPLE_DIR}/antar_pism2ece.nc" \
             || _orog_fail "make_usurf_oifs"
-        unset _usurf_py _icmgg
+        unset _usurf_py _icmgg _exp_dir _d
     fi
 
     couple_timer "pism2esm: pism2ocean"

@@ -954,6 +954,12 @@ function iterative_coupling_ocean_pism_cavity_conserve {
 	    break
 	done
     elif [ -n "${PISM_INITIAL_MASK_FILE}" ] && [ -f "${PISM_INITIAL_MASK_FILE}" ] ; then
+	# --pism-mask-step first, NOT the default last.  This file covers a whole
+	# earlier run, so its FIRST step is the initial geometry and its last step is
+	# whatever that run ended at -- a different ice sheet.  Taking the last step
+	# by mistake conserved 783 Gt/yr over 17350 cells instead of 19810 and
+	# delivered 1.153 of target where the flotation test gives 0.866: as wrong,
+	# in the other direction.  ism44/ism45 chunk 1 ran with that mistake.
 	# Chunk 1 has no previous leg, but PISM's classification of the INITIAL state
 	# can still be had from any earlier PISM output started from the same input
 	# file -- it is the same question asked of the same geometry.  Worth wiring:
@@ -964,8 +970,9 @@ function iterative_coupling_ocean_pism_cavity_conserve {
 	# It must be output from a run bootstrapped from THIS spinup_file, or its
 	# mask belongs to a different geometry.  The grid is checked; the geometry
 	# is not, and cannot be.
-	_mask_arg="--pism-mask-file ${PISM_INITIAL_MASK_FILE}"
+	_mask_arg="--pism-mask-file ${PISM_INITIAL_MASK_FILE} --pism-mask-step first"
 	echo " *   chunk 1: taking the floating mask from pism.initial_mask_file"
+	echo " *            (its FIRST step -- the initial geometry)"
     fi
     if [ -z "${_mask_arg}" ] ; then
 	echo " *   NOTE: no PISM mask available for this leg, so the melt will be"

@@ -281,8 +281,28 @@ def stage_mask(args):
 PISM_MASK_FLOATING = 3
 
 
-def pism_floating_mask(path, shape):
-    """PISM's own mask 3, from the last step of the previous leg's ex-file.
+def pism_floating_mask(path, shape, step="last"):
+    """PISM's own mask 3, from one time step of a PISM ex-file.
+
+    ``step`` picks WHICH step, and getting it wrong is silent and costly, so it is
+    explicit rather than defaulted per caller:
+
+      "last"   the previous leg's ex-file, whose final step is the state PISM is
+               about to restart from.  This is the chunk 2+ case.
+      "first"  a file whose FIRST step is the geometry in question -- an ex-file
+               from some earlier run bootstrapped from the same input, used on
+               chunk 1.  Such a file covers a whole run, so its last step is the
+               geometry that run ENDED at, which is a different ice sheet.
+
+    Measured cost of confusing the two, on ism43 chunk 1 against a target of
+    783 Gt/yr and PISM's true mask 3 of 19932 cells:
+
+        flotation test                21639 cells -> 678 Gt/yr   0.866
+        ex_decade1 LAST step          17350       -> 903         1.153
+        ex_decade1 FIRST step         19810       -> 792         1.012
+
+    i.e. the wrong step is as wrong as no mask at all, in the other direction:
+    renormalising over a set smaller than PISM's scales the field up too far.
 
     Returns None only when NOTHING WAS ASKED FOR -- no path, or a path that does
     not exist, which is the normal case on chunk 1 of a fresh tree and makes the
@@ -306,16 +326,21 @@ def pism_floating_mask(path, shape):
             sys.exit(f"cavity_consistency: {path} was given as the PISM mask file "
                      f"but carries no `mask` variable -- wrong kind of file. A PISM "
                      f"ex-file has one; a restart and a FESOM node file do not.")
+        if step not in ("first", "last"):
+            sys.exit(f"cavity_consistency: step must be 'first' or 'last', got "
+                     f"{step!r}")
+        nt = ds.variables["mask"].shape[0] if ds.variables["mask"].ndim == 3 else 1
         mask = np.ma.filled(ds.variables["mask"][:], 0)
         mask = np.squeeze(mask)
-        if mask.ndim == 3:                     # (time, y, x) -> last step
-            mask = mask[-1]
+        if mask.ndim == 3:
+            mask = mask[0] if step == "first" else mask[-1]
         if mask.shape != shape:
             sys.exit(f"cavity_consistency: {path} has mask{mask.shape}, the ice "
                      f"geometry is {shape} -- wrong grid, refusing to guess")
         floating = mask == PISM_MASK_FLOATING
         print(f"     - floating set: PISM's own mask 3 from "
-              f"{os.path.basename(path)} ({int(floating.sum())} cells)")
+              f"{os.path.basename(path)}, {step} of {nt} step(s) "
+              f"({int(floating.sum())} cells)")
         return floating
     finally:
         ds.close()
@@ -355,7 +380,8 @@ def stage_fix(args):
     # so.  That is the one chunk where the gap is large, and it is also the chunk
     # whose forcing comes from a foreign harvest, so it is not a chunk to draw
     # conclusions from either way.
-    floating = pism_floating_mask(args.pism_mask_file, thk.shape)
+    floating = pism_floating_mask(args.pism_mask_file, thk.shape,
+                                  args.pism_mask_step)
     if floating is None:
         floating = (thk > 0.0) & (thk * RHO_ICE / RHO_SEAWATER <= -topg)
         print("     - floating set: flotation test on thk/topg "
@@ -437,6 +463,12 @@ def main():
     # the previous leg's ex-file, read ONLY for its `mask`: PISM's own answer to
     # which cells it will apply the melt on.  Omitted or absent -> flotation test.
     f.add_argument("--pism-mask-file", default=None)
+    # WHICH step of that file.  "last" for a previous-leg ex-file, whose final step
+    # is the state PISM restarts from; "first" for an ex-file from an earlier run
+    # whose opening step is the geometry in question (the chunk-1 case).  Reading
+    # the wrong end is as wrong as having no mask, in the opposite direction --
+    # measured 1.153 against 0.866 on ism43 chunk 1, target 1.000.
+    f.add_argument("--pism-mask-step", choices=("first", "last"), default="last")
     # the cavity-top salinity varies little enough that remapping it changes the
     # freezing point by 0.005 degC, so a constant keeps the field out of the
     # coupling for no measurable cost

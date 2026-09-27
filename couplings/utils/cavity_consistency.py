@@ -140,7 +140,20 @@ def pick_submesh(root, nodes, explicit=None):
     the mesh carved for the NEXT leg, `previous_submesh` the one before it, and
     the newest directory is whichever was carved last.  Masking with the wrong
     mesh would silently mask the wrong nodes, so a mismatch stops the step
-    instead of falling back to something plausible.
+    instead of falling back to something plausible.  check_against_field() then
+    confirms the winner against the field's own witness of the cavity, because a
+    matching count alone does not identify the mesh.
+
+    ``root`` may name SEVERAL directories, os.pathsep-separated, because the mesh
+    a given forcing was written on does not always live in the couple dir:
+
+        chunk 1   the forcing comes from a harvest, and the mesh with it
+        chunk 2   the forcing was written during fesom's FIRST leg, which ran on
+                  the INITIAL mesh -- that one is in the fesom mesh dir, and the
+                  couple dir holds no submesh_* of that vintage at all
+        chunk 3+  couple/submesh_* , carved by the interactive-mesh step
+
+    Roots are searched in the order given and the first match wins.
     """
     if explicit:
         got = submesh_node_count(explicit)
@@ -149,18 +162,28 @@ def pick_submesh(root, nodes, explicit=None):
         sys.exit(f"cavity_consistency: {explicit} has {got} nodes, the field has "
                  f"{nodes} -- wrong submesh for this chunk")
 
-    candidates = [os.path.join(root, n)
-                  for n in ("previous_submesh", "latest_submesh")
-                  if os.path.isdir(os.path.join(root, n))]
-    candidates += sorted(
-        (os.path.join(root, d) for d in os.listdir(root)
-         if d.startswith("submesh_") and os.path.isdir(os.path.join(root, d))),
-        reverse=True)
+    roots = [r for r in root.split(os.pathsep) if r and os.path.isdir(r)]
+    if not roots:
+        sys.exit(f"cavity_consistency: none of the submesh roots exist: {root}")
+
+    candidates = []
+    for one in roots:
+        # a root may BE a mesh (the fesom mesh dir is not a directory of them)
+        if submesh_node_count(one) > 0:
+            candidates.append(one)
+        candidates += [os.path.join(one, n)
+                       for n in ("previous_submesh", "latest_submesh")
+                       if os.path.isdir(os.path.join(one, n))]
+        candidates += sorted(
+            (os.path.join(one, d) for d in os.listdir(one)
+             if d.startswith("submesh_") and os.path.isdir(os.path.join(one, d))),
+            reverse=True)
 
     for path in candidates:
         if submesh_node_count(path) == nodes:
             return path
-    sys.exit(f"cavity_consistency: no submesh under {root} has {nodes} nodes")
+    sys.exit(f"cavity_consistency: no submesh with {nodes} nodes under any of "
+             f"{', '.join(roots)} (looked at {len(candidates)} candidates)")
 
 
 def check_against_field(ds, cav, temp_var):

@@ -75,6 +75,16 @@ def prepare_environment(config):
             # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
+            # The fesom mesh dir, as a second place the cavity mask looks for the
+            # mesh a forcing was written on.  Chunk 2's forcing was written during
+            # fesom's first leg, which ran on the INITIAL mesh, and the couple dir
+            # holds no carve of that vintage -- so without this the mask cannot
+            # find it and chunk 2 stops.  The pism chain does not read the ocean
+            # runscript, so name it under pism.fesom_mesh_dir; empty just means
+            # the couple dir alone is searched.
+            "MESH_DIR_fesom": config[config["general"]["setup_name"]].get(
+                "fesom_mesh_dir", config["general"].get("mesh_dir", "")),
+
             # Interpreter for the python helpers in couple_in (the ocean->PISM
             # cavity mask).  That subjob runs under module purge + cdo/nco/netcdf,
             # where `python` is off PATH and /usr/bin/python3 has no netCDF4, so

@@ -382,36 +382,59 @@ function iterative_coupling_ocean_pism_cavity_mask {
 	exit 42
     fi
 
-    # The cavity is recarved every chunk and the node count moves with it, so
-    # the submesh is chosen by MATCHING that count against the field being
-    # masked, not by name: latest_submesh is the mesh carved for the next leg
-    # and previous_submesh the one before it, so neither is reliably the mesh
-    # this field was written on.  A field with no matching submesh stops the
-    # helper rather than being masked with the wrong nodes.
-    if ! ls -d ${COUPLE_DIR}/submesh_* >/dev/null 2>&1 ; then
-	echo " *   ERROR: the cavity mask is enabled but no submesh_* exists under"
-	echo "            ${COUPLE_DIR}"
-	if [ "${CHUNK_NUMBER:-1}" -le 1 ] && [ -n "${PISM_BOOTSTRAP_DIR}" ] ; then
-	    echo "            This is chunk 1, whose forcing comes from the harvest"
+    # The cavity is recarved every chunk and the node count moves with it, so the
+    # submesh is chosen by MATCHING that count against the field being masked, not
+    # by name: latest_submesh is the mesh carved for the NEXT leg and
+    # previous_submesh the one before it, so neither is reliably the mesh this
+    # field was written on.  The helper then cross-checks the winner against the
+    # field's own missing Tsurf, because a matching count alone does not identify
+    # the mesh -- two different carves can share a count.
+    #
+    # The mesh is not always in the couple dir, and this cost two failed chunks
+    # before it was understood:
+    #
+    #   chunk 1  the forcing comes from the harvest, so its mesh does too.  Passed
+    #            explicitly with --submesh; see real_esm2pism.functions for why it
+    #            is not linked into the couple dir.
+    #   chunk 2  the forcing was written during fesom's FIRST leg, which ran on the
+    #            INITIAL mesh.  The couple dir holds no submesh_* of that vintage
+    #            at all -- the first carve there is for the leg AFTER it -- so the
+    #            fesom mesh dir has to be searched as well.
+    #   chunk 3+ couple/submesh_*, as carved by the interactive-mesh step.
+    _submesh_arg=""
+    _submesh_roots="${COUPLE_DIR}"
+    [ -n "${MESH_DIR_fesom}" ] && _submesh_roots="${_submesh_roots}:${MESH_DIR_fesom}"
+
+    if [ "${CHUNK_NUMBER:-1}" -le 1 ] && [ -n "${PISM_BOOTSTRAP_DIR}" ] ; then
+	for _f in "${PISM_BOOTSTRAP_DIR}"/submesh_* ; do
+	    [ -d "${_f}" ] || continue
+	    _submesh_arg="--submesh ${_f}"
+	    echo " *   chunk 1: masking against the harvest's own mesh, $(basename "${_f}")"
+	    break
+	done
+	if [ -z "${_submesh_arg}" ] ; then
+	    echo " *   ERROR: the cavity mask is enabled and this is chunk 1, whose"
+	    echo "            forcing comes from the harvest"
 	    echo "            ${PISM_BOOTSTRAP_DIR}"
-	    echo "            and that harvest carries no submesh_* of its own, so there"
-	    echo "            is no mesh to mask against: the fesom chain has not carved"
-	    echo "            one yet.  Point pism.bootstrap_forcing_dir at a harvest that"
-	    echo "            includes the submesh the forcing was written on."
+	    echo "            but that harvest carries no submesh_* of its own, so there"
+	    echo "            is no mesh to mask against -- the fesom chain has not"
+	    echo "            carved one yet.  Point pism.bootstrap_forcing_dir at a"
+	    echo "            harvest that includes the mesh its forcing was written on."
+	    exit 43
 	fi
-	exit 43
     fi
 
     echo " *   Masking shelfbmassflux to the cavity ..."
     ${_py} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
 	mask \
 	--node-file    ${_file} \
-	--submesh-root ${COUPLE_DIR} \
+	--submesh-root ${_submesh_roots} \
+	${_submesh_arg} \
 	--total-file   ${CAVITY_TOTAL_FILE} \
 	|| { echo " *   ERROR: the cavity mask failed" ; \
 	     rm -f ${CAVITY_TOTAL_FILE} ; exit 44 ; }
 
-    unset _do_mask _py
+    unset _do_mask _py _submesh_arg _submesh_roots _f
 }
 
 function iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing {

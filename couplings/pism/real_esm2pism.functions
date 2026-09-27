@@ -33,18 +33,14 @@ function esm2pism() {
                     { echo "esm2pism: bootstrap ${_f} missing in ${PISM_BOOTSTRAP_DIR}" \
                         > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"; exit 1; }
             done
-            # The cavity mask needs the submesh the forcing was written on, and on
-            # chunk 1 the forcing comes from the harvest rather than from this run's
-            # fesom chain, which has not produced a submesh yet.  A harvest that
-            # carries its own mesh is linked in here (a link, so the ~330 MB stays
-            # in the pool); cavity_consistency.py then finds it by node count and
-            # cross-checks it against the forcing's own missing Tsurf.  A harvest
-            # without one is not an error here -- the mask reports it, with exit 43.
-            for _f in "${PISM_BOOTSTRAP_DIR}"/submesh_* ; do
-                [ -d "${_f}" ] || continue
-                ln -sfn "${_f}" "${COUPLE_DIR}/$(basename "${_f}")" && \
-                    echo " *   esm2pism chunk 1: linked $(basename "${_f}") for the cavity mask"
-            done
+            # The cavity mask needs the submesh THIS forcing was written on, which
+            # on chunk 1 is the one the harvest carries.  It is deliberately NOT
+            # linked into the couple dir: the interactive-mesh step names its own
+            # carves submesh_<chunk end date> as well, so a harvest taken from a run
+            # on the same calendar collides with that name -- and when it did, fesom
+            # wrote its new carve straight through the link and overwrote the
+            # harvest's mesh inside the pool.  ocean2pism reads it from
+            # PISM_BOOTSTRAP_DIR and hands it to the helper explicitly instead.
         fi
         unset _e2p_set _e2p_tag _f
     fi

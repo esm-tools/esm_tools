@@ -948,7 +948,7 @@ PYEOF
         local sb=${out_dir}/run_weightgen.sbatch
         cat > "${sb}" <<SBEOF
 #!/bin/bash -l
-#SBATCH --job-name=ocpw_regen
+#SBATCH --job-name=ocpw_regen_${EXP_ID}
 #SBATCH --nodes=${nlinks}
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=${OCP_WEIGHTGEN_THREADS:-8}

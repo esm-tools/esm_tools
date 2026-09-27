@@ -20,6 +20,7 @@ from .compile_info import setup_and_model_infos
 
 from .task import Task
 
+import esm_parser
 from esm_parser import yaml_dump
 
 def main_flow(parsed_args, target):
@@ -36,6 +37,13 @@ def main_flow(parsed_args, target):
 
     user_config["computer"] = user_config.get("computer", {})
     user_config["general"]["execution_mode"] = "compile"
+
+    # Apply Spack-style ``key=value`` CLI overrides (see ``cli.py``) before
+    # SimulationSetup resolves the ``choose_`` blocks, so that e.g.
+    # ``computer.mpi_implementation=openmpi_2026`` is visible to
+    # ``choose_mpi_implementation`` in the machine config.
+    if parsed_args.get("overrides"):
+        esm_parser.dict_merge(user_config, parsed_args["overrides"])
 
     # deniz: verbose is supposed to be a boolean right? It is initialized as
     # 0 in cli.py. Is it then a debug_level?

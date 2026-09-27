@@ -156,3 +156,16 @@ $ bumpversion patch # possible: major / minor / patch
 $ git push
 $ git push --tags
 
+Removed Erroneous Tags
+-----------------------
+
+The following tags were created by mistake (CI experiments, typos) and have
+been deleted from the remote. They are listed here for provenance, in case
+anyone finds a dangling reference to them::
+
+    v666      -> 3e22c34 (annotated, points to f42c411, 2021-10-28, "added a line to test file")
+    v6667     -> 69ba7f1 (2021-10-29, "ci: install dependencies and build package")
+    v6668     -> 79a0e80 (2021-10-29, "ci: forgot to checkout the repository for publishing")
+    v6669     -> 5508f86 (2021-10-29, "fix(setup.py): invalid classifier was used")
+    vv4.1.0   -> f2318db (annotated, points to 5ae131a, 2020-06-15, "removes debugger"; duplicate of v4.1.0)
+

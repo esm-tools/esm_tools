@@ -19,25 +19,31 @@ requirements = [
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.50",  # Maximum version for Python 3.6 support
+    "gitpython==3.1.54",  # Maximum version for Python 3.6 support
     "jinja2==3.1.6",
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging>=24.0",
     "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
-    "pytest==7.1.2",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
     "ruamel.yaml==0.17.32",
-    "ruamel.yaml.clib==0.2.7",
+    # 0.2.15 renamed its dist-info dir from the dotted "ruamel.yaml.clib-*" to
+    # underscored "ruamel_yaml_clib-*" (PEP 503 normalization). Legacy pkg_resources
+    # (still in play here via `setup.py develop`'s old-style console scripts) can't
+    # resolve a multi-dot project name against an underscored dist-info dir, so a
+    # console script's pkg_resources.require() dies with DistributionNotFound even
+    # though the package is installed and importable. Cap below it until the whole
+    # install path is off legacy pkg_resources.
+    "ruamel.yaml.clib>=0.2.7,<0.2.15",
     "semver==2.13.0",
     "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",
     "tqdm==4.66.3",
     "typing_extensions>=4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
-    "pydantic>=1.10.13",
+    "pydantic>=2",
     "h5netcdf>=0.8.1",
 ]
 
@@ -93,6 +99,20 @@ setup(
             "pystac>=1.8",
             "shapely>=2.0",
             "universal-pathlib>=0.2",
+            "f90nml>=1.4",
+            "jsonschema>=4.0",
+            "pydantic>=2",
+        ],
+        # Only needed to run tests/test_esm_catalog.
+        # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
+        # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5
+        # needed) and the memory:// (fsspec) scan path reopens them through the
+        # h5netcdf engine, which needs h5py.
+        "catalog-test": [
+            "pytest>=7.4",
+            "scipy>=1.10",
+            "h5py>=3.8",
+            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
     },
     install_requires=requirements,
@@ -126,6 +146,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.64.0",
+    version="6.67.0",
     zip_safe=False,
 )

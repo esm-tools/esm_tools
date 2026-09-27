@@ -10,6 +10,15 @@ on:
       computer:
         required: true
         type: string
+      ref:
+        type: string
+        default: ""
+      model:
+        type: string
+        default: ""
+      runscript:
+        type: string
+        default: ""
       update_esm_tests_info:
         type: boolean
         default: false
@@ -22,7 +31,7 @@ on:
 
 jobs:
   computer:
-    name: ${{ inputs.computer }}
+    name: ${{ inputs.model != '' && format('{0} / {1} / {2}', inputs.computer, inputs.model, inputs.runscript) || inputs.computer }}
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
@@ -42,13 +51,22 @@ jobs:
         submodules: true
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-        ref: ${{ github.event.pull_request.head.ref }}
+        ref: ${{ inputs.ref }}
     - name: install esm-tools
       run: |
         source /opt/conda/etc/profile.d/conda.sh;
         conda activate esm_tools;
         ./install.sh;
         echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
+      shell: bash
+
+    - name: scope test_config.yaml to this runscript
+      if: ${{ inputs.model != '' && inputs.runscript != '' }}
+      run: |
+        cat > src/esm_tests/test_config.yaml <<EOF
+        ${{ inputs.model }}:
+          - ${{ inputs.runscript }}
+        EOF
       shell: bash
 
     - name: run esm_tests

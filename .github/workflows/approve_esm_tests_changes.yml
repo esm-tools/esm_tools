@@ -22,6 +22,7 @@ jobs:
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: ollie1
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:
@@ -32,6 +33,7 @@ jobs:
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: levante1
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:
@@ -42,6 +44,7 @@ jobs:
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: jwlogin01.juwels
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:
@@ -52,6 +55,7 @@ jobs:
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: elogin1
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:
@@ -62,6 +66,7 @@ jobs:
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: blogin1
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:
@@ -72,6 +77,7 @@ jobs:
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: albedo1
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || '' }}
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:

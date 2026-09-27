@@ -792,6 +792,103 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             dct[k] = merge_dct[k]
 
 
+def cli_overrides_to_dict(overrides, separator="."):
+    """
+    Converts a list of Spack-style ``key=value`` command line overrides into a
+    nested dictionary suitable for merging into a configuration with
+    ``dict_merge``.
+
+    Keys are split on ``separator`` to address nested sections, e.g. with the
+    default separator ``computer.mpi_implementation`` becomes
+    ``config["computer"]["mpi_implementation"]``. Some config keys are
+    themselves named with a literal dot (e.g. ``namelist.echam``, used inside
+    ``add_namelist_changes``/``remove_namelist_changes`` chapters); for those,
+    the caller should pick a different ``separator`` (e.g. ``"/"``) so that the
+    dot in the key name is not split on. Values are parsed with
+    ``yaml.safe_load`` so that booleans, numbers and lists are typed correctly
+    instead of remaining plain strings.
+
+    Every value is tagged with ``category: "command_line"`` provenance (the
+    same category used elsewhere in ``esm_master`` for values coming from the
+    command line, see ``esm_master.compile_info.split_raw_target``), so that
+    the existing hierarchy and conflict-resolution logic in
+    ``DictWithProvenance.__setitem__`` applies: a CLI override outranks values
+    from ``runscript``, ``couplings``, ``setups``, ``components``,
+    ``machines`` and ``defaults``, but not ``backend``-set values. Without
+    this tagging, a plain (provenance-less) value would silently overwrite
+    whatever it is merged into with no conflict checks, and would itself be
+    silently overwritable later on.
+
+    Parameters
+    ----------
+    overrides : list of str
+        Strings of the form ``key=value``, e.g.
+        ``"computer.mpi_implementation=openmpi_2026"``.
+    separator : str
+        The character used to separate nested keys (default ``"."``).
+
+    Returns
+    -------
+    esm_parser.DictWithProvenance
+        Nested dictionary representing the requested overrides, with
+        ``command_line`` provenance attached to every value.
+
+    Note
+    ----
+    Invalid override : esm_parser.user_error
+        If one of the ``overrides`` does not contain a ``=`` sign, this exits
+        the code with a ``esm_parser.user_error``.
+    """
+    result = {}
+    for override in overrides:
+        if "=" not in override:
+            user_error(
+                "Invalid override",
+                f"Invalid override ``{override}``, expected the form "
+                "``key=value`` (e.g. "
+                "``computer.mpi_implementation=openmpi_2026``).",
+            )
+        key, value = override.split("=", 1)
+        try:
+            parsed_value = yaml.safe_load(value)
+        except yaml.YAMLError as e:
+            user_error(
+                "Invalid override value",
+                f"Could not parse value ``{value}`` in override "
+                f"``{override}``: {e}",
+            )
+        target = result
+        path = key.split(separator)
+        for indx, part in enumerate(path):
+            existing = target.get(part)
+            if existing is not None and not isinstance(existing, dict):
+                current_path = separator.join(path[: indx + 1])
+                user_error(
+                    "Invalid override",
+                    f"Conflicting overrides: ``{override}`` and "
+                    f"``{current_path}={existing}`` both set values for the same key. "
+                    "Please, remove one of them.",
+                )
+            if indx == len(path) - 1:
+                target[part] = parsed_value
+            else:
+                target = target.setdefault(part, {})
+
+    result = DictWithProvenance(result, {})
+    result.set_provenance(
+        Provenance(
+            {
+                "category": "command_line",
+                "subcategory": None,
+                "line": None,
+                "col": None,
+                "yaml_file": "command_line",
+            }
+        )
+    )
+    return result
+
+
 def deep_update(chapter, entries, config, blackdict={}):
     if "choose_" in chapter:
         chapter_with_no_add = chapter.replace("add_", "")

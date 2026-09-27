@@ -75,6 +75,16 @@ def prepare_environment(config):
             # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
+            # PISM output whose `mask` is PISM's own classification of the INITIAL
+            # state, used by the melt conservation on chunk 1 only -- from chunk 2
+            # on it reads the previous leg's ex-file instead.  It has to come from a
+            # run bootstrapped from the same spinup_file.  Empty means chunk 1 falls
+            # back to a flotation test, which over-counts the floating domain on a
+            # geometry PISM did not produce (0.87 of the cavity total arriving,
+            # against 1.01 with this set).
+            "PISM_INITIAL_MASK_FILE": config[config["general"]["setup_name"]].get(
+                "initial_mask_file", ""),
+
             # The fesom mesh dir, as a second place the cavity mask looks for the
             # mesh a forcing was written on.  Chunk 2's forcing was written during
             # fesom's first leg, which ran on the INITIAL mesh, and the couple dir

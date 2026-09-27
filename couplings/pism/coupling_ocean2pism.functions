@@ -934,6 +934,50 @@ function iterative_coupling_ocean_pism_cavity_conserve {
 	exit 46
     fi
 
+    # The melt has to be renormalised over the cells PISM will actually apply it
+    # to, which is mask 3 and nothing else.  PISM restarts do not carry `mask`, so
+    # it is read from the PREVIOUS leg's ex-file -- PISM's own classification of
+    # the state it is about to restart from.  The tagged copy is preferred because
+    # its chunk number is unambiguous; latest_ex_file_pism.nc is the same file at
+    # this point in the cycle but is overwritten every leg.
+    #
+    # Chunk 1 has no previous leg and falls back to a flotation test, which on a
+    # raw BEDMAP2 bootstrap over-counts by 1797 cells and 112 of 783 Gt/yr.  That
+    # is left as is: it is also the chunk whose forcing comes from a foreign
+    # harvest, so it is not a chunk to draw conclusions from.
+    _mask_arg=""
+    if [ "${CHUNK_NUMBER:-1}" -gt 1 ] ; then
+	for _cand in "${OUTPUT_DIR_pism}/latest_ex_file_pism.chunk_$(( CHUNK_NUMBER - 1 )).nc" \
+	             "${OUTPUT_DIR_pism}/latest_ex_file_pism.nc" ; do
+	    [ -f "${_cand}" ] || continue
+	    _mask_arg="--pism-mask-file ${_cand}"
+	    break
+	done
+    elif [ -n "${PISM_INITIAL_MASK_FILE}" ] && [ -f "${PISM_INITIAL_MASK_FILE}" ] ; then
+	# Chunk 1 has no previous leg, but PISM's classification of the INITIAL state
+	# can still be had from any earlier PISM output started from the same input
+	# file -- it is the same question asked of the same geometry.  Worth wiring:
+	# on ism43 chunk 1, conserving over a flotation test delivered 0.866 of the
+	# cavity total onto PISM's mask 3, while conserving over such a mask
+	# delivered 1.012 (the ceiling, the true mask itself, is 1.000).
+	#
+	# It must be output from a run bootstrapped from THIS spinup_file, or its
+	# mask belongs to a different geometry.  The grid is checked; the geometry
+	# is not, and cannot be.
+	_mask_arg="--pism-mask-file ${PISM_INITIAL_MASK_FILE}"
+	echo " *   chunk 1: taking the floating mask from pism.initial_mask_file"
+    fi
+    if [ -z "${_mask_arg}" ] ; then
+	echo " *   NOTE: no PISM mask available for this leg, so the melt will be"
+	echo "           conserved over a flotation test rather than PISM's own"
+	echo "           mask 3.  On a geometry that did not come out of PISM that"
+	echo "           over-counts: measured 0.87 of the cavity total arriving."
+	if [ "${CHUNK_NUMBER:-1}" -le 1 ] ; then
+	    echo "           Set pism.initial_mask_file to a PISM ex-file from a run"
+	    echo "           bootstrapped from the same spinup_file to close this."
+	fi
+    fi
+
     echo " *   Conserving cavity melt and setting shelfbtemp to the freezing point ..."
     ${_py} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
 	fix \
@@ -941,9 +985,10 @@ function iterative_coupling_ocean_pism_cavity_conserve {
 	--pism-file  ${INPUT_FILE_pism} \
 	--total-file ${CAVITY_TOTAL_FILE} \
 	--salinity   ${_cavity_salinity} \
+	${_mask_arg} \
 	|| { echo " *   ERROR: cavity conservation failed" ; exit 47 ; }
 
-    unset _cavity_salinity _py
+    unset _cavity_salinity _py _mask_arg _cand
 }
 
 function iterative_coupling_ocean_pism_compute_ocean_mixed_forcing {

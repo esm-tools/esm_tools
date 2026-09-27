@@ -64,6 +64,7 @@ usage:
                              [--submesh DIR] [--var V] [--temp-var V]
   cavity_consistency.py fix  --ice-file F --pism-file P --total-file T
                              [--melt-var V] [--temp-var V] [--salinity S]
+                             [--pism-mask-file EX]
 """
 import argparse
 import os
@@ -269,6 +270,49 @@ def stage_mask(args):
     print(f"     - FESOM cavity melt {cavity_total:+.0f} Gt/yr -> {args.total_file}")
 
 
+PISM_MASK_FLOATING = 3
+
+
+def pism_floating_mask(path, shape):
+    """PISM's own mask 3, from the last step of the previous leg's ex-file.
+
+    Returns None only when NOTHING WAS ASKED FOR -- no path, or a path that does
+    not exist, which is the normal case on chunk 1 of a fresh tree and makes the
+    caller fall back to a flotation test.
+
+    A file that IS there and cannot supply a usable mask is a CONFIGURATION ERROR
+    and stops the step, rather than falling back: the caller has already announced
+    in the log that it is using this file, so a quiet fallback would leave the log
+    claiming one thing and the arithmetic doing another.  That applies both to a
+    file with no `mask` in it (wrong kind of file -- a FESOM node file, say) and to
+    one whose mask is on a different grid.
+
+    PISM restarts do not carry `mask` (it is diagnostic), which is why this reads
+    an ex-file rather than the file thk and topg come from.
+    """
+    if not path or not os.path.isfile(path):
+        return None
+    ds = netCDF4.Dataset(path)
+    try:
+        if "mask" not in ds.variables:
+            sys.exit(f"cavity_consistency: {path} was given as the PISM mask file "
+                     f"but carries no `mask` variable -- wrong kind of file. A PISM "
+                     f"ex-file has one; a restart and a FESOM node file do not.")
+        mask = np.ma.filled(ds.variables["mask"][:], 0)
+        mask = np.squeeze(mask)
+        if mask.ndim == 3:                     # (time, y, x) -> last step
+            mask = mask[-1]
+        if mask.shape != shape:
+            sys.exit(f"cavity_consistency: {path} has mask{mask.shape}, the ice "
+                     f"geometry is {shape} -- wrong grid, refusing to guess")
+        floating = mask == PISM_MASK_FLOATING
+        print(f"     - floating set: PISM's own mask 3 from "
+              f"{os.path.basename(path)} ({int(floating.sum())} cells)")
+        return floating
+    finally:
+        ds.close()
+
+
 def stage_fix(args):
     with open(args.total_file) as handle:
         cavity_total = float(handle.read().strip())
@@ -283,10 +327,31 @@ def stage_fix(args):
         thk, topg = thk[-1], topg[-1]
     cell_area = dx * dy
 
-    # Floating by flotation on the bed PISM is about to start from.  This is the
-    # domain PISM will apply shelfbmassflux over, so it is the domain the
-    # renormalisation has to conserve over.
-    floating = (thk > 0.0) & (thk * RHO_ICE / RHO_SEAWATER <= -topg)
+    # The set the renormalisation conserves over MUST be the set PISM will apply
+    # shelfbmassflux to, which is mask 3 and nothing else.  A flotation test is
+    # not that set, and the difference is not small when the geometry did not come
+    # out of PISM: measured on ism43 chunk 1, whose input is the raw BEDMAP2
+    # bootstrap, the test held 1797 cells more than mask 3, carrying 112 of
+    # 783 Gt/yr, so PISM received 0.79 of the conserved total.  85 % of that was
+    # 1600 cells PISM calls mask 4 -- sub-grid calving front, sitting 261 m clear
+    # of flotation, so no threshold tweak reaches them -- and the rest 197 cells
+    # PISM calls grounded, within 10 m of flotation.
+    #
+    # So PISM is asked instead of guessed: mask 3 is read from the last step of the
+    # previous leg's ex-file, which is PISM's own classification of the state it is
+    # about to restart from.  Reproducing PISM's part_grid bookkeeping here was
+    # tried on paper and abandoned -- ice_area_specific_volume, the obvious
+    # discriminant, is identically zero in the bootstrap file.
+    #
+    # Chunk 1 has no previous leg, so it falls back to the flotation test and says
+    # so.  That is the one chunk where the gap is large, and it is also the chunk
+    # whose forcing comes from a foreign harvest, so it is not a chunk to draw
+    # conclusions from either way.
+    floating = pism_floating_mask(args.pism_mask_file, thk.shape)
+    if floating is None:
+        floating = (thk > 0.0) & (thk * RHO_ICE / RHO_SEAWATER <= -topg)
+        print("     - floating set: flotation test on thk/topg "
+              "(no previous-leg mask available)")
     draft = -thk * RHO_ICE / RHO_SEAWATER          # negative downward
 
     ds = netCDF4.Dataset(args.ice_file, "a")
@@ -361,6 +426,9 @@ def main():
     f.add_argument("--total-file", required=True)
     f.add_argument("--melt-var", default="shelfbmassflux")
     f.add_argument("--temp-var", default="shelfbtemp")
+    # the previous leg's ex-file, read ONLY for its `mask`: PISM's own answer to
+    # which cells it will apply the melt on.  Omitted or absent -> flotation test.
+    f.add_argument("--pism-mask-file", default=None)
     # the cavity-top salinity varies little enough that remapping it changes the
     # freezing point by 0.005 degC, so a constant keeps the field out of the
     # coupling for no measurable cost

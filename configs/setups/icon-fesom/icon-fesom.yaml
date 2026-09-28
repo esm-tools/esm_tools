@@ -38,11 +38,7 @@ general:
             - fesom-2.6.x-yac-sl+icon-2025.04-public-sl
         v2.0:
             couplings:
-            # seb-wahls dirty workaroud: we use 2.7.7 but as we rely on the fesom-2.6.yaml we 
-            # need to keep 2.6 in th coupling name until I have a correct fesom-2.7.yaml
-            # see esm_parster around line 158 (def look_for_file)
-            # and fesom-2.6.yaml
-            - fesom-2.6.2-yac+icon-2025.10-public
+            - fesom-2.7.7-yac+icon-2025.10-public
 
     prepcompute_recipe:
         - "compile_model"

@@ -42,7 +42,7 @@ general:
    nmonth: 12
    
    base_dir: ${homedir}/esm/bm1514-experiments/ 
-   model_dir: ${homedir}/esm/models/icon-fesom-v1.0
+   model_dir: ${homedir}/esm/models/icon-fesom-${general.version}
    version: "v2.0"
 
 yac:
@@ -108,7 +108,7 @@ icon:
             # file_interval must be > output_interval
             file_interval: "P50Y"
 fesom:
-   version: "2.6.2-yac"
+   version: "2.7.7-yac"
    time_step: 1800
    resolution: "CORE2"
    nproc: 72 # use for daily restarts 

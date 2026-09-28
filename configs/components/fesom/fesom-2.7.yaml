@@ -47,6 +47,23 @@ fesom:
         branch: "main"
         namelist_dir: "${model_dir}/config/"
 
+      # FESOM coupled to ICON via YAC (setup icon-fesom v2.0). YAC is taken
+      # from the ICON build tree, so ICON has to be compiled first.
+      # LIBFYAMLROOT and NETLIBLAPACKROOT are exported per machine in
+      # configs/setups/icon-fesom/icon-fesom.yaml
+      "2.7.7-yac":
+        branch: "2.7.7"
+        namelist_dir: "${esm_namelist_dir}/fesom2/2.7.7-yac/"
+        # TODO: test on levante
+        comp_command: 'FESOM_ROOT=$(pwd) ;
+            mkdir -p build; cd build;
+            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
+            cmake .. -DCMAKE_INSTALL_PREFIX=../
+                  -DCMAKE_BUILD_TYPE=RelWithDebInfo
+                  -DUSE_YAC=ON
+                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,$LIBFYAMLROOT/lib -Wl,-rpath,$NETLIBLAPACKROOT/lib64";
+            make install -j `nproc --all`'
+
     destination: "fesom-2.7"
     install_bins: bin/fesom.x
     git-repository:
@@ -82,6 +99,11 @@ fesom:
         albedo:
             climate_data_dir: "${pool_dir}/FESOM/hydrography/"
             mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+        nesh:
+            pool_dir: "${computer.pool_directories.pool}/ICON-FESOM/"
+            climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+            forcing_data_dir: "${pool_dir}/FESOM2/FORCING/" # not available on nesh yet
+            mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
@@ -171,6 +193,7 @@ fesom:
                     beta_evp: 500           # constant that control numerical stability of mEVP.
             DARS:
                     nx: 3160340
+                    mesh_dir: "${fesom.mesh_base_dir}/dars/"
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.
@@ -577,7 +600,7 @@ fesom:
             config:  config
             cvmix:   cvmix
             dyn:     dyn
-            forcing: forcing
+            forcing_nml: forcing_nml
             ice:     ice
             icepack: icepack
             io:      io
@@ -589,7 +612,7 @@ fesom:
             config:  "${namelist_dir}/namelist.config"
             cvmix:   "${namelist_dir}/namelist.cvmix"
             dyn:     "${namelist_dir}/namelist.dyn"
-            forcing: "${namelist_dir}/namelist.forcing"
+            forcing_nml: "${namelist_dir}/namelist.forcing"
             ice:     "${namelist_dir}/namelist.ice"
             icepack: "${namelist_dir}/namelist.icepack"
             io:      "${namelist_dir}/namelist.io"
@@ -601,7 +624,7 @@ fesom:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
             dyn:     "namelist.dyn"
-            forcing: "namelist.forcing"
+            forcing_nml: "namelist.forcing"
             ice:     "namelist.ice"
             icepack: "namelist.icepack"
             io:      "namelist.io"
@@ -696,6 +719,7 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

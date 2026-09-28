@@ -59,7 +59,7 @@ general:
    final_date: "1990-01-01T00:00:00"         # Final date of the experiment
    # set length and unit, both are used to set ICON and FESOM time intervals correctly
    # multiyear
-   nmonth: 420
+   nyear: 35
    
    lresume: False
    #ini_parent_exp_id: "IF-SW003"
@@ -168,7 +168,7 @@ fesom:
    #mesh_dir: /work/ab0246/a270092/input/fesom2/core2/ # trailing slash is important
    #mesh_dir: /home/b/b350071/svetas_experiment/exp011/fesom/FESOM2_one_year_input/mesh/core2/ 
    # mesh_dir: /work/bb0519/foci_input2/ICON-FESOM/FESOM2/MESHES_FESOM2.1/core2/ 
-   version: "2.6.2-yac"
+   version: "2.7.7-yac"
    resolution: "CORE2"
    time_step: 1800
    #nproc: 144 # use for daily restarts 
@@ -186,9 +186,15 @@ fesom:
    add_namelist_changes:
       namelist.config:
          timestep:
-            run_length: 35
+            run_length: ${general.nyear}
             run_length_unit: 'y'
-   
+         restart_log:
+            restart_length: "${restart_rate}"
+            restart_length_unit: "${restart_unit}"
+            raw_restart_length: "${restart_rate}"
+            raw_restart_length_unit: "${restart_unit}"
+            bin_restart_length: "${restart_rate}"
+            bin_restart_length_unit: "${restart_unit}"
       namelist.ice:
          ice_therm:
             h0: 1.0 # default is 0.5

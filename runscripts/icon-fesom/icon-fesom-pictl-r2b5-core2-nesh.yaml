@@ -163,7 +163,7 @@ fesom:
    #mesh_dir: /work/ab0246/a270092/input/fesom2/core2/ # trailing slash is important
    #mesh_dir: /home/b/b350071/svetas_experiment/exp011/fesom/FESOM2_one_year_input/mesh/core2/ 
    # mesh_dir: /work/bb0519/foci_input2/ICON-FESOM/FESOM2/MESHES_FESOM2.1/core2/ 
-   version: "2.6.2-yac"
+   version: "2.7.7-yac"
    resolution: "CORE2"
    time_step: 1800
    nproc: 72 # use for daily restarts 

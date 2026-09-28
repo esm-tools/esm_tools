@@ -27,7 +27,7 @@ To do an "operational" with yearly restarts, please see comments in `icon-fesom-
 To change namelists settings, you can
 1. Directly edit the namelists in the ESM-Tools source code tree.
     * ICON namelists can be found at `namelists/icon/2024.10-public/`
-    * FESOM namelists can be found at `namelists/fesom2/2.6.2-yac/`
+    * FESOM namelists can be found at `namelists/fesom2/2.7.7-yac/`
 2. Use the yaml runscript `icon-fesom-pictl.yaml` to change settings. Example: modify `tune_entrorg`:
 ```yaml
 add_namelist_changes:

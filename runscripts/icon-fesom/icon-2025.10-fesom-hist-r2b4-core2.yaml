@@ -48,8 +48,8 @@ general:
    ini_parent_dir: "/work/bm1514/b350071/esm-experiments/${ini_parent_exp_id}/restart"
    
    base_dir: ${homedir}/esm/esm-experiments/ 
-   model_dir: ${homedir}/esm/models/icon-fesom-v1.0
-   version: "v1.0"
+   model_dir: ${homedir}/esm/models/icon-fesom-${general.version}
+   version: "v2.0"
 
 yac:
    lresume: ${general.lresume}
@@ -139,7 +139,7 @@ fesom:
                   par_oce_restart: ${ini_parent_dir}/fesom.${ini_parent_date!syear}.oce.restart/*.nc
                   par_ice_restart: ${ini_parent_dir}/fesom.${ini_parent_date!syear}.ice.restart/*.nc
 
-   version: "2.6.2-yac"
+   version: "2.7.7-yac"
    resolution: "CORE2"
    time_step: 1800
    nproc: 72 # use for daily restarts 

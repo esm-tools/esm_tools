@@ -17,11 +17,11 @@ ice_ave_steps=1        ! ice step=ice_ave_steps*oce_step
 /
 &ice_therm
 Sice=4.0               ! Ice salinity 3.2--5.0 ppt.
-h0=0.85                  ! Lead closing parameter [m] 
+h0=0.5                 ! Lead closing parameter [m] 
 emiss_ice=0.97         ! Emissivity of Snow/Ice,
 emiss_wat=0.97         ! Emissivity of open water
-albsn=0.83             ! Albedo: frozen snow  0.81 0.83 0.83
-albsnm=0.77            !         melting snow 0.77 0.79 0.77
+albsn=0.84             ! Albedo: frozen snow  0.81 0.83 0.83
+albsnm=0.79            !         melting snow 0.77 0.79 0.77
 albi=0.70              !         frozen ice 0.7    0.75 0.73
 albim=0.68             !         melting ice 0.68  0.72 0.68
 albw=0.066             !         open water        0.07? 0.1

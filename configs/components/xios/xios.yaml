@@ -6,6 +6,16 @@ xios:
     model: xios
     version: 2.5_r1910
     executable: xios.x
+    # albedo, 2026-09-28: four AWI-ESM3 legs died in an XIOS server rank with
+    # "Bus error: nonexistent physical address" and no other trace (jobs 47459229,
+    # 47459748, 47463924, 47463927). Until the cause is known the servers run under
+    # xios_dbg.sh, which preloads libSegFault so the next one leaves fault address,
+    # backtrace and memory map in work/segfault_xios_*.txt. No overhead until a signal.
+    choose_computer.name:
+        albedo:
+            executable: xios_dbg.sh
+            add_bin_sources:
+                dbg: "${general.esm_configs_dir}/components/xios/xios_dbg.sh"
     xml_dir: ""
 
     metadata:

@@ -33,6 +33,16 @@ Placement rules
   comes first in rank order and moves on to the next when that one ends.
   A host node that carries guests gets fewer host ranks, which node-aware
   partitions (e.g. FESOM's ``n_part``) have to match.
+- A component that is not interleaved can cap its ranks per node::
+
+      fesom:
+          ranks_per_node: 96
+
+  It then starts on a fresh node and spreads ``ranks_per_node`` ranks evenly
+  over each node's cores (96 on 128 cores: three of every four), each start
+  aligned to its thread count. The cores in between stay idle, which leaves
+  memory bandwidth, cache and clock headroom to the busy ones. The next
+  component starts on the next node.
 """
 
 from collections import defaultdict
@@ -152,6 +162,32 @@ def compute_placement(config, cores_per_node):
         if name in guests:
             continue
         is_host = any(name in hosts for hosts, rpn in guests.values())
+        spread = config[name].get("ranks_per_node")
+        if spread:
+            spread = int(spread)
+            if is_host:
+                user_error(
+                    "taskset placement",
+                    f"``{name}`` hosts interleaved components and cannot also set "
+                    "``ranks_per_node``.",
+                )
+            if spread * omp > cores_per_node:
+                user_error(
+                    "taskset placement",
+                    f"``{name}.ranks_per_node: {spread}`` with {omp} threads needs "
+                    f"{spread * omp} cores, more than the {cores_per_node} of a node.",
+                )
+            node = -(-cursor // cores_per_node)  # next empty node
+            for r in range(tasks):
+                j = r % spread
+                if r and not j:
+                    node += 1
+                # even spacing of at least omp cores, so aligned starts never collide
+                core = j * cores_per_node // spread // omp * omp
+                take(node, core, omp)
+                table[first_rank[name] + r] = (node, core)
+            cursor = (node + 1) * cores_per_node
+            continue
         opened = set()
         for r in range(tasks):
             while True:

@@ -78,7 +78,7 @@ export target_dir
 echo "$(date):: Configuration Values:"
 echo "$(date):: ---------------------"
 echo "$(date):: outdata_path=$outdata_path"
-echo "$(date):: start_year=$start_year"
+echo "$(date):: start_date=$start_date"
 echo "$(date):: next_date=$next_date"
 echo "$(date):: initial_date=$initial_date"
 echo "$(date):: final_date=$final_date"
@@ -107,7 +107,9 @@ function activate_env() {
 }
 
 function check_conda_availability() {
-    module load $conda_module
+    if ! command -v conda &> /dev/null; then
+        module load $conda_module
+    fi
     if ! command -v conda &> /dev/null; then
         echo "$(date):: Conda is not installed. Please install conda or miniconda"
         exit 1
@@ -130,6 +132,7 @@ function activate_or_install_tripyview_environment() {
         mkdir -p "${base_dir}/${expid}/src"
         cd "${base_dir}/${expid}/src" || exit 1
         git clone -b workbench https://github.com/fesom/tripyview
+        conda install -c conda-forge libstdcxx-ng
         cd tripyview
         pip install -e .
     fi

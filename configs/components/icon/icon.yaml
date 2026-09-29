@@ -263,7 +263,8 @@ icon:
       # workaround build with pre_run_commands
       #icon_nc: ${expid}_*_${start_rsttime}.nc
       #icon_nc: icon_*_${start_rsttime}.nc
-      icon_nc: "*_${start_rsttime}.nc"
+      #icon_nc: "*_${start_rsttime}.nc"
+      icon_nc: "${expid}_*_*Z.nc"
    #
    # restart settings, ICON uses multifile restarts
    #
@@ -579,7 +580,6 @@ computer:
             "*":
                extpar_file: ""
                input_dir: "" 
-               aerosol_dir: "" 
                ozone_dir: ""
                jsbach_ic_dir: "" 
                jsbach_forcing_dir: ${jsbach_ic_dir}
@@ -596,9 +596,11 @@ computer:
 
                choose_icon.resolution:
                   R02B04:
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
+                     #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb_cdnc.nc
                   R02B05:
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
+                     #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20250306_tiles_jsb_cdnc.nc
 
                iolibraries: None 
                compiler_mpi: None
@@ -628,9 +630,11 @@ computer:
 
                choose_icon.resolution:
                   R02B04:
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
+                     #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb_cdnc.nc
                   R02B05:
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
+                     #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20250306_tiles_jsb_cdnc.nc
 
                #iolibraries: None 
                #compiler_mpi: None

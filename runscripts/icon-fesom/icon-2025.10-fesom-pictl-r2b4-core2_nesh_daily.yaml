@@ -3,7 +3,8 @@ computer:
     use_hyperthreading: False
     additional_flags: 
         - "--tasks-per-node=32"
-        - "--constraint=sapphire"
+        #- "--constraint=sapphire"
+        - "--exclude=nesh-clk[346,348,363-364,366,370-371,377,380,385,394,398-399,408,410,414-418,422,428,430,434,437,440,442,444,447,450,463,469-470,475,478,480,483,493,501-502,506,511,513-514,518,536,538,541,546,557-558,560,564,566,572-574,584,586,608],nesh-srp[100-343]"
         #- "--threads-per-core=2"
         #- "--nnodes=52"
     # launcher_flags: -l --kill-on-bad-exit=1 --nodes=${SLURM_JOB_NUM_NODES:-1} --distribution=plane --hint=nomultithread --ntasks=$((no_of_nodes * mpi_procs_pernode)) --ntasks-per-node=${mpi_procs_pernode} --cpus-per-task=${OMP_NUM_THREADS}
@@ -37,7 +38,7 @@ general:
    use_venv: false
    homedir: !ENV ${HOME}
    setup_name: icon-fesom
-   compute_time: "00:20:00"
+   compute_time: "00:10:00"
    account: None 
    # --- PLEASE READ CAREFULLY ------------------------------#
    # if the restart date does not match ini_parent_date you have to modify the ICON restart
@@ -48,17 +49,18 @@ general:
    # --------------------------------------------------------#
    # daily restart
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-02-28T00:00:00"         # Final date of the experiment
-   nday: 15
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   nday: 1
    # monthly restart
    #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    #final_date: "1850-04-01T00:00:00"         # Final date of the experiment
    #nmonth: 1
    # yearly restart
    #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   #final_date: "1852-01-01T00:00:00"         # Final date of the experiment
+   #final_date: "1910-01-01T00:00:00"         # Final date of the experiment
    # set length and unit, both are used to set ICON and FESOM time intervals correctly
-   #nmonth: 12
+   # multiyear
+   #nmonth: 240
    
    lresume: False
    #ini_parent_exp_id: "IF-SW003"
@@ -75,7 +77,7 @@ general:
 yac:
    lresume: ${general.lresume}
    input_sources:
-      coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/YAC/coupling_core2_r2b5.yaml
+      coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/YAC/coupling_spread_distance_10.yaml
 
 icon:
    lresume: ${general.lresume}
@@ -84,7 +86,7 @@ icon:
    #ini_parent_dir: ${general.ini_parent_dir} 
    #scenario: 'cmip7hist'
    monitoring: True 
-   monitoringscript: "run_qp_driver_r2b5_icon-esm-tools.sh"
+   monitoringscript: "run_qp_driver_r2b4_icon-esm-tools.sh"
    # As icon insist on having the restart files in link that points to a directory
    # we have to run this pre_run_command, this can hopefully change in the future
    pre_run_commands: 
@@ -104,9 +106,9 @@ icon:
       v2.0:
          version: "2025.10-public"
 
-   resolution: "R02B05"
-   grid_id: "0030"
-   nproc: 768
+   resolution: "R02B04"
+   grid_id: "0012"
+   nproc: 128
    #omp_num_threads: 8
    #nproc: 2560
    #nproc: 1488
@@ -115,23 +117,23 @@ icon:
    
    dtime: 450 # 900 is the current default in icon.yaml
    # daily restart and output interval
-   checkpoint_interval: P15D
-   restart_interval: P15D
-   output_interval: P15D
+   checkpoint_interval: P01D
+   restart_interval: P01D
+   output_interval: P01D
    # monthly restart and output interval
    #checkpoint_interval: P01M
    #restart_interval: P01M
    #output_interval: P01M
    # yearly restart and monthly output interval
-   #checkpoint_interval: P01Y
-   #restart_interval: P01Y
+   #checkpoint_interval: P05Y
+   #restart_interval: P20Y
    #output_interval: P01M
 
    # awi is the tuning from AWI (Svetlana Loza) based on slo1826 ICON-XPP experiment
    # https://gitlab.dkrz.de/icon/icon-nwp/-/wikis/ICON-Seamless/CMIP7-Experiments#tuning-experiments-with-icon-xpp-release-configuration-of-112024
    # geomar is Sebastian's tuning based on kcmPi019 (latest DWD as of 03/2026) ICON-XPP run
    # https://gitlab.dkrz.de/icon/icon-nwp/-/wikis/ICON-Seamless/CMIP7-Experiments#branch-iconbackports-release-202510-2
-   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/${icon.resolution}/geomar/"
+   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/${icon.resolution}/"
    # example, change a namelist parameter
    # be aware of typos, use the exact name as in the namelist 
    # otherwise a new namelist parameter will be created which will 
@@ -142,12 +144,16 @@ icon:
    #         tune_entrorg: 2.2e-3
    add_namelist_changes:
       NAMELIST_atm:
+         nwp_tuning_nml: # also updated in templates, kept here for reference
+            tune_entrorg: 0.0021
+            tune_box_liq_asy: 3.35
          run_nml:
-            msg_level: 7 
+            msg_level: 10
+         # TODO: fix the templates instead
          output_nml:
             # output_interval: "${output_interval}"
             # file_interval must be > output_interval
-            file_interval: "P50Y"
+            file_interval: "P01YT1S"
 fesom:
    lresume: ${general.lresume}
    ini_parent_date: $((${general.ini_parent_date} - ${fesom.time_step}seconds)) 
@@ -166,8 +172,8 @@ fesom:
    version: "2.6.2-yac"
    resolution: "CORE2"
    time_step: 1800
-   nproc: 72 # use for daily restarts 
    #nproc: 144 # use for daily restarts 
+   nproc: 72 # use for daily restarts 
    #nproc: 512  # use for monthly or yearly restarts with CORE2
    #nproc: 4096
    #nproc: 1280
@@ -175,11 +181,21 @@ fesom:
    #restart_unit: "y" # yearly restarts
    #restart_unit: "m" # monthly restarts 
    restart_unit: "d" # daily restarts
-   restart_rate: "15"
+   restart_rate: "1"
+   # differences between exp009 (R02B04) 
+   # and exp011 (R02B05) from Svetlana Loza
    add_namelist_changes:
+      #namelist.config:
+      #   timestep:
+      #      run_length: 20
+      #      run_length_unit: 'y'
+   
       namelist.ice:
-         ice_therm: # use Sveta's setting here, only diff to IF-SW022
-            h0: 1.0 
+         ice_therm:
+            h0: 1.0 # default is 0.5
+            albsn: 0.83 # default 0.83
+            albsm: 0.77 # default 0.79
+   
    #add_input_files:
        #fesom_griddes: fesom_griddes
    #add_input_sources:

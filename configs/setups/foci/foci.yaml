@@ -1795,7 +1795,7 @@ computer:
                   compiler_mpi: intel2021_impi2021
                   #compiler_mpi: intel2025_impi2021
                nesh:
-                  compiler_mpi: intel2019_impi2019
+                  compiler_mpi: intel2023_impi2021
 
         run:
             add_choose_computer.name:
@@ -1826,7 +1826,7 @@ computer:
                      - "source $I_MPI_ROOT/../../setvars.sh"
                           #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
                nesh:
-                  compiler_mpi: intel2019_impi2019
+                  compiler_mpi: intel2023_impi2021
                   add_module_actions:
                      - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
 

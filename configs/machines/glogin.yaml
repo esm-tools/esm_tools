@@ -164,6 +164,8 @@ computer:
        LC_ALL: en_US.UTF-8
        # Taken from the GWDG examples and recipes page
        SLURM_CPU_BIND: none
+       # workaround for the missing perl-uri module on p4
+       PERL5LIB: "/sw/rev/25.04/sapphirerapids_opx_rocky8/linux-rocky8-sapphirerapids/gcc-8.5.0/perl-uri-5.08-jj74rzoso4hfweca2yudljhzlgckr2jp/lib/perl5:$PERL5LIB"
 
     # We need to use mpirun rather than srun
     launcher: mpirun
@@ -175,11 +177,36 @@ computer:
         - "purge"
         - "load git-lfs"
         - "load perl"
-        - "load perl-uri"
+          #- "load perl-uri"
           # cmake is used by OpenIFS and some versions of ECHAM and OASIS
         - "load cmake"
 
     choose_compiler_mpi:
+       # the oldest possible compiler suite on the glogin 
+       # same as intel2021_impi2021 but for thew new P4 / AlmaLinux 10 nodes
+       intel2021_impi2021_p4:
+
+          # Use system modules
+          iolibraries: system_libs
+
+          # Here we load compiler and MPI
+          # netCDF etc is done later
+          add_module_actions:
+             - "load intel-oneapi-compilers-classic/2021.10.0"
+             -  "load intel-oneapi-mpi/2021.17.2-external-libfabric" # 2021.14.2 is also available 
+             # MKL needed for OpenIFS
+             # - "load intel-oneapi-mkl/2024.2.2"
+
+          add_export_vars:
+             # For now (Intel 2023) we can stick to mpiifort etc
+             FC: mpiifort
+             F77: mpiifort
+             MPIFC: mpiifort
+             FCFLAGS: -free
+             CC: mpiicc
+             CXX: mpiicpc
+             MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
        # build locally for myself using spack
        # Anyone else can do this too using the following commands:
@@ -494,6 +521,54 @@ computer:
 
         system_libs:
             choose_compiler_mpi:
+                intel2021_impi2021_p4:
+                    add_module_actions:
+                        # Parallel HDF5
+                        - "load hdf5/1.14.5"
+
+                        # netcdf built with older HDF5
+                        - "load netcdf-c/4.9.2"
+
+                        # bug in netcdf-fortran 4.6.1. avoid it
+                        - "load netcdf-fortran/4.5.3-hdf5-1.10"
+
+                    add_export_vars:
+                        # Run module show on the modules to see how
+                        # each module changes or sets env variables
+                        # Module load usually sets <libname>_INSTALL_PREFIX
+                        # so we just use that to find the libraries and includes.
+                        HDF5_ROOT: $HDF5_MODULE_INSTALL_PREFIX
+                        HDF5ROOT: $HDF5_ROOT
+                        NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
+                        NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
+                        NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
+
+                        # Path to ecCodes module
+                        ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
+                        # Path to CDO
+                        CDOROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/cdo-2.2.2-hmzmwdifoec6niyoau7mobur43v7q52p/
+
+                        PATH: $ECCODESROOT/bin:$CDOROOT/bin:$PATH
+                        # This should be done when correct module is installed
+                        #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX
+
+                        # Add everything to LD_LIBRARY_PATH
+                        # Gottingen support recommended to also add LD_RUN_PATH
+                        # Add both lib and lib64 for ecCodes since it varies
+                        LD_LIBRARY_PATH: $ECCODESROOT/lib/:$ECCODESROOT/lib64/:$NETCDFROOT/lib/:$NETCDFFROOT/lib/:$HDF5ROOT/lib/:$LD_LIBRARY_PATH
+
+                        # For OASIS
+                        NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+                        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+                        # For OASIS3-MCT5 from CERFACS
+                        OASIS_NETCDF: $NETCDFROOT
+                        OASIS_NETCDFF: $NETCDFFROOT
+
                 intel2025_impi2021:
                     add_module_actions:
                         # This took a long time to work out how to do

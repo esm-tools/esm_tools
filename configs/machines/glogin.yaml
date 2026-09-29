@@ -97,7 +97,13 @@ computer:
                     partition_name: 'standard96s'
                     partition_cpn: 96
             'standard96s:test':
-                    partition_name: 'standard96s'
+                    partition_name: 'standard96s:test'
+                    partition_cpn: 96
+            'medium96s':
+                    partition_name: 'medium96s'
+                    partition_cpn: 96
+            'medium96s:test':
+                    partition_name: 'medium96s:test'
                     partition_cpn: 96
 
     # Choose partition for different kinds of jobs

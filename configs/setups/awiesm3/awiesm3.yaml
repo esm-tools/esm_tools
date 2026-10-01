@@ -816,6 +816,19 @@ fesom:
     choose_computer.name:
         levante:
             ocp_tool_dir: "/work/ab0246/a270092/software/ocp-tool"
+        albedo:
+            ocp_tool_dir: "/albedo/work/user/xihao001/tools/ocp-tool"
+            # The srun worker interpreter needs mpi4py built against the SAME
+            # OpenMPI the run uses (4.1.6), so it cannot be a copy of levante's
+            # 'ece4'; it is built locally and named ocp-worker, which the
+            # default in env_fesom.py does not know about.
+            ocp_weightgen_worker_env: "ocp-worker"
+            # Set explicitly rather than letting it derive as configs/<resolution>
+            # .yaml: that would pick TCO95_CORE3.yaml, whose mesh_file is a
+            # levante path (/work/ab0246/...) that does not exist here. The
+            # _albedo variant carries /albedo/pool/fesom2/core3/mesh.nc and the
+            # 220509-node devJigFinal mesh this machine's pool actually holds.
+            ocp_template_config: "/albedo/work/user/xihao001/tools/ocp-tool/configs/TCO95_CORE3_albedo.yaml"
         "*":
             ocp_tool_dir: ""
     choose_general.with_co2_oce_coupling:

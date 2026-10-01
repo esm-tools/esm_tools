@@ -166,7 +166,7 @@ general:
         develop:
             major_version: v3.5
             couplings:
-                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+                - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
                 - xios
             oasis_with_yac: false
@@ -178,7 +178,7 @@ general:
         develop-cc:
             major_version: v3.5
             couplings:
-                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+                - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
                 - xios
             oasis_with_yac: false
@@ -194,7 +194,7 @@ general:
         develop-is:
             major_version: v3.5
             couplings:
-                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
+                - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             # NB: pism + debm + ismm are built via the coupling above, but must NOT
             # be added as awiesm3 runtime models. add_include_models launches them in
             # the awiesm3 OASIS/MPMD job, where pismr would join MPI_COMM_WORLD
@@ -727,7 +727,7 @@ fesom:
     choose_general.with_co2_oce_coupling:
         true:
             # The REcoM CO2 coupling (fesom2.6_recom_awiesm3_co2_coupling) is in
-            # fesom2 main since #806, so the branch comes from the version ("2.7-main").
+            # fesom2 main since #806, so it builds the v3.5 default branch.
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
             # Derive the REcoM &parecomsetup gates from recom_setting so the BGC
@@ -876,9 +876,14 @@ fesom:
                 namelist.ice:
                     ice_therm:
                         use_meltponds: true
-        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
-        # differences live in the oasis3mct block. v3.4.x is untouched.
+        # v3.5: the develop* variants and the v3.5 releases. They run with
+        # fesom-2.8.yaml, which declares tsk_ico, and build its default branch
+        # (main, which has #1060, #1061, #1064 and #1087). v3.4.x stays on
+        # fesom-2.7.yaml. A branch for v3.5 has to be set here, next to the
+        # version: the version pinned here also wins in esm_master, so a
+        # choose_version arm of fesom-2.8.yaml would never be reached.
         "v3.5":
+            version: "2.8"
             with_xios: true
             add_namelist_changes:
                 namelist.config:
@@ -1033,7 +1038,7 @@ fesom:
             # record written during it (fesom.1359.oce.restart). From 2.8 there
             # is one directory per restart *instant*, stamped with the date of
             # that instant (fesom.1360-01-01.oce.restart) -- see nc_restart_path()
-            # in fesom-2.7/src/io_restart.F90 and calendar_stamp() in
+            # in src/io_restart.F90 and calendar_stamp() in
             # fortran_utils.F90.
             #
             # The reader still falls back to the old name, so a leg branched off a
@@ -1051,11 +1056,9 @@ fesom:
             # experiment still finds its parent; whichever of the two is absent is
             # a permitted absence, not an error.
             #
-            # This lives here rather than under fesom-2.7.yaml's "2.7-main"
-            # choose_version arm because that key is only reached by esm_master
-            # when building; at runtime the setup pins fesom version "2.7" (which
-            # also picks the namelist directory), so a choose_version arm would
-            # never fire for a run.
+            # fesom-2.8.yaml carries the date-stamped names too. They stay here
+            # because of the legacy pair, which lets a v3.5 leg branch off a
+            # pre-2.8 parent.
             restart_in_in_work:
                 par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
                 par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc

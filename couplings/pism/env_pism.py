@@ -71,6 +71,7 @@ def prepare_environment(config):
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             "MULTI_YEAR_MEAN_SMB": config[config["general"]["setup_name"]].get("multi_year_mean_smb", 1),
+            "ICE_SURFACE_TEMP_ANNUAL_MEAN": int(config[config["general"]["setup_name"]].get("ice_surface_temp_annual_mean", 0)),
             "CHANGE_OCEAN":config[config["general"]["setup_name"]].get("change_ocean", 1),  
             # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",

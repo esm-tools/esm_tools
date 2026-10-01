@@ -404,6 +404,11 @@ ic_atm2pism_ablation_debm() {
 ## is nothing for a melt model to add. Requires the forcing to name
 ## precipitation_liquid, precipitation_solid, evaporation, runoff and
 ## temperature_below_firn.
+##
+## With ICE_SURFACE_TEMP_ANNUAL_MEAN=1 the temperature is the mean over the
+## forcing, the same in every month. PISM's top ice layer is tens of metres
+## thick, so a monthly cycle tells it nothing, and summer months at the melting
+## point only push the ice towards it.
 ic_atm2pism_ablation_direct() {
     echo; echo -e "\t\tSetting up SMB scheme DIRECT..."
     ic_atm2pism_ablation_direct_make_surface_forcing
@@ -437,6 +442,16 @@ ic_atm2pism_ablation_direct_make_surface_forcing() {
         -chname,${atmosphere_name_temperature_below_firn},ice_surface_temp \
         -selvar,${atmosphere_name_temperature_below_firn} \
         ${_dir_in} ${COUPLE_DIR}/tsurf_direct.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+    if [ "x${ICE_SURFACE_TEMP_ANNUAL_MEAN}" == "x1" ]; then
+        echo -e "\t\t- ice_surface_temp: mean over the forcing in every month"
+        # Months weighted by their length, then years averaged. Adding the one-step
+        # mean to zero times the field keeps the monthly time axis the SMB has.
+        cdo -s -O -add -mulc,0 ${COUPLE_DIR}/tsurf_direct.nc \
+            -timmean -yearmonmean ${COUPLE_DIR}/tsurf_direct.nc \
+            ${COUPLE_DIR}/tsurf_direct_mean.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        mv ${COUPLE_DIR}/tsurf_direct_mean.nc ${COUPLE_DIR}/tsurf_direct.nc
+    fi
 
     ic_atm2pism_ablation_direct_apply_mask
 

@@ -148,7 +148,7 @@ ifdroughtlimitedestab 0		! Whether establishment is limited by growing season dr
 ifrainonwetdaysonly 1		! Whether to rain on wet days only (1), or to rain a bit every day (0)
 ifbvoc 0                     	! Whether to include BVOC calculations (1) or not (0)
 
-iftreefracca 0			! Whether high vegetation fraction to be calculated from crown area (1) or FPC (0)
+iftreefracca 1			! Whether high vegetation fraction to be calculated from crown area (1) or FPC (0)
 
 !///////////////////////////////////////////////////////////////////////////////////////
 ! PROCESS SETTINGS SPECIFIC TO NITROGEN
@@ -264,6 +264,7 @@ group "common" (
 	has_aerenchyma 0		! PFTs do not have aerenchyma for gas transport by default
 	stem_frac 1
 	twig_frac 0
+	ltos 0.1
 )
 
 group "tree" (
@@ -371,6 +372,7 @@ group "grass" (
 	turnover_harv_prod 1 	! Turnover rate for long-lived harvested products (wood): 
 				! 1-year turnover time for GRASS
 	harvest_slow_frac 0
+	ltos 0.05
 )
 
 group "broadleaved" (

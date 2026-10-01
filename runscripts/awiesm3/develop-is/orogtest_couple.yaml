@@ -15,14 +15,12 @@ general:
         use_venv: False
         user: !ENV ${USER}
         base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
-        account: ab0246
+        # bb1469 has the best fairshare of our CPU projects (sqcp, 2026-10-01).
+        account: bb1469
         with_recom: False
         # Icebergs carry PISM's discharge to the ocean.
         with_icb: True
-        # Turns on the usurf_oifs writer in pism2esm. The matching half is
-        # ECE_ISM_OROG in orogtest_ocean.yaml, and a chunk-1 pism2ece file that
-        # already carries usurf_oifs: suorog ABOR1s on a missing varid.
-        ism_orog_coupled: True
+        # ism_orog_coupled: on by default for develop-is, on both chains.
         # The PISM couple_out environment has no bare python. This one carries
         # numpy, netCDF4, pyproj and eccodes, and is the same interpreter the
         # fesom side uses for the weight generation.

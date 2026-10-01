@@ -620,10 +620,14 @@ fesom:
     regrid_3d_output: true
     choose_with_xios:
             true:
-                    # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work
-                    # dir. Collect those alongside the legacy pattern so tidy
-                    # copies them into outdata/fesom, then a post-tidy subjob
-                    # renames them to the old "<var>.fesom.<year>.nc" scheme.
+                    # file_def names every file with %start_date% and
+                    # split_freq_format="%y", so XIOS writes the legacy
+                    # "<var>.fesom.<year>.nc" (and "<var>.fesom.gr.<year>.nc"
+                    # for the regridded set) directly, which the outdata
+                    # pattern above already collects. The split-suffix entries
+                    # and the rename subjobs below are kept only to fix up
+                    # experiments whose earlier legs ran without the token;
+                    # on a fresh run they match nothing.
                     add_outdata_sources:
                             fesom_xios: "*.fesom_*.nc"
                     add_outdata_targets:

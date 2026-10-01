@@ -1,3 +1,8 @@
 param "file_gridlist" (str "{{lpj_guess.gridlist_dir}}/gridlist_{{lpj_guess.gridlist}}.txt")
 import "{{lpj_guess.model_dir}}/data/ins/{{lpj_guess.setup_name}}.ins"
 import "{{general.work_dir}}/paths_forcing.ins"
+! run_peatland / run_landcover exposed here (after the imports, so these win) so
+! they are settable from the runscript like guess.ins.j2 does; defaults preserve
+! prior behaviour (peatland on, landcover off in the base global.ins).
+run_peatland {{lpj_guess.run_peatland | default(1)}}
+{% if lpj_guess.run_landcover is defined %}run_landcover {{lpj_guess.run_landcover}}{% endif %}

@@ -18,6 +18,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 FESOM_DIR="${FESOM_DIR:-}"
 if [ -z "${FESOM_DIR}" ]; then
     for candidate in \
+        /work/ab0246/a270092/model_codes/awiesm3-develop/fesom-2.8 \
+        /work/ab0246/a270092/model_codes/awiesm3-develop-is/fesom-2.8 \
         /work/ab0246/a270092/model_codes/awiesm3-develop/fesom-2.7 \
         /work/ab0246/a270092/model_codes/awiesm3-develop/fesom-2.6 \
         /work/ab0246/a270092/model_codes/awiesm3-develop/fesom-2.5

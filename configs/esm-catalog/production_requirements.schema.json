@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://esm-tools.github.io/esm-catalog/production_requirements/v1.0.0/schema.json",
+  "title": "ESM-Catalog Production Requirements",
+  "description": "DRAFT. Production-only requirements for a valid ESM-Tools STAC catalog, recovered from the deleted src/esm_catalog/context.py production checkers. This profile expresses ONLY the requirements that pystac.validate() and the pydantic models do not already enforce: PI/author contacts on the experiment and the fields each contact must carry. context.py enforced these at the CollectionContext (whole-experiment) level, so this profile targets the Collection. Contacts are experiment-wide and are not stamped on individual Items, so there is no Item requirement here. STAC-core required fields (Collection description/license/extent) are not restated because pystac.validate() already enforces them. Apply this in addition to pystac.validate(), and only in 'production' mode (the dev path leaves contacts optional).",
+  "type": "object",
+  "required": [
+    "type",
+    "contacts"
+  ],
+  "properties": {
+    "type": {
+      "const": "Collection"
+    },
+    "contacts": {
+      "$ref": "#/definitions/contacts"
+    }
+  },
+  "definitions": {
+    "contacts": {
+      "title": "Contacts",
+      "description": "PI/author contacts for the experiment. context.py required at least one contact in production ('Production context requires at least one contact').",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/contact"
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "A single PI or author contact, in STAC contacts-extension serialized form (Contact.to_stac(): name, roles, identifier=orcid, organization=institution). context.py's Contact.PRODUCTION_REQUIRED was ['name', 'institution']; 'institution' serializes to 'organization'.",
+      "type": "object",
+      "required": [
+        "name",
+        "organization"
+      ],
+      "properties": {
+        "name": {
+          "title": "Name",
+          "description": "Full name of the contact. Required in production (context.py Contact.PRODUCTION_REQUIRED).",
+          "type": "string",
+          "minLength": 1
+        },
+        "organization": {
+          "title": "Organization",
+          "description": "Affiliated institution (Contact.institution). Required in production (context.py Contact.PRODUCTION_REQUIRED, ['name', 'institution']).",
+          "type": "string",
+          "minLength": 1
+        },
+        "identifier": {
+          "title": "Identifier",
+          "description": "ORCID identifier (Contact.orcid), serialized as the full https://orcid.org/ URL. Optional.",
+          "type": "string"
+        },
+        "roles": {
+          "title": "Roles",
+          "description": "STAC contact roles; defaults to ['principal_investigator']. Optional.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

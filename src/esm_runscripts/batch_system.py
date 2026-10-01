@@ -10,7 +10,7 @@ import esm_environment
 from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
-from . import dataprocess, helpers, prepare
+from . import dataprocess, helpers, placement, prepare
 from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
@@ -268,6 +268,17 @@ class batch_system:
                 # Reset the start_proc/core variables for the next component
                 start_proc = end_proc + 1
                 start_core = end_core + 1
+
+            # With taskset the placement table decides the nodes: components share
+            # nodes where they meet, and interleaved components add none of their own
+            if (
+                cluster == "compute"
+                and config["computer"].get("taskset", False)
+                and config["computer"].get("heterogeneous_parallelization", False)
+            ):
+                _, nodes = placement.compute_placement(
+                    config, config["computer"]["partitions"]["compute"]["cores_per_node"]
+                )
 
         else:
             # dataprocessing job with user definded name

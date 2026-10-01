@@ -12,6 +12,8 @@ from loguru import logger
 import esm_parser
 from esm_tools import user_note
 
+from . import placement
+
 
 class Slurm:
     """
@@ -259,6 +261,10 @@ class Slurm:
 
         scriptfolder = config["general"]["thisrun_scripts_dir"] + "../work/"
         if config["computer"].get("heterogeneous_parallelization", False):
+            # One ``node_index first_core`` line per global rank. The hostlist and the
+            # taskset calls below both read it, so node and cores always agree.
+            table, _ = placement.compute_placement(config, cores_per_node)
+            placement.write_placement(table, scriptfolder + "rank_placement")
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
                     continue
@@ -294,22 +300,16 @@ class Slurm:
 
                 progname = "prog_" + model + ".sh"
 
-                start_core = config[model]["start_core"]
-                end_core = config[model]["end_core"]
-
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
                     f.write(
                         "if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n"
                     )
-                    f.write("(( init = $PMI_RANK ))" + "\n")
+                    # first core of this rank on its node, from the placement table
                     f.write(
-                        "(( index = init * "
-                        + str(config[model].get("omp_num_threads", 1))
-                        + " ))"
-                        + "\n"
+                        "slot=$(awk -v r=$((PMI_RANK + 1)) 'NR == r {print $2; exit}' "
+                        "rank_placement)" + "\n"
                     )
-                    f.write("(( slot = index % " + str(cores_per_node) + " ))" + "\n")
                     f.write(
                         "echo "
                         + model
@@ -335,71 +335,24 @@ class Slurm:
     # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def add_hostlist_file_gen_lines(config, runfile):
-        cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
+        work_dir = config["general"]["thisrun_work_dir"]
         runfile.write(
             "\n"
             + "#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job"
             + "\n"
         )
         runfile.write("rm -f ./hostlist" + "\n")
-        runfile.write(
-            f"export SLURM_HOSTFILE={config['general']['thisrun_work_dir']}/hostlist\n"
-        )
+        runfile.write(f"export SLURM_HOSTFILE={work_dir}/hostlist\n")
         runfile.write("IFS=$'\\n'; set -f" + "\n")
         runfile.write(
             "listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))" + "\n"
         )
         runfile.write("unset IFS; set +f" + "\n")
-        runfile.write("rank=0" + "\n")
-        runfile.write("current_core=0" + "\n")
-        runfile.write("current_core_mpi=0" + "\n")
-        for model in config["general"]["valid_model_names"]:
-            if "oasis3mct" != model and (
-                config[model].get("execution_command")
-                or config[model].get("executable")
-            ):
-                if "nproca" in config[model]:
-                    mpi_tasks = config[model]["nproca"] * config[model]["nprocb"]
-                else:
-                    mpi_tasks = config[model]["nproc"]
-                runfile.write("mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n")
-                runfile.write(
-                    "omp_threads_"
-                    + model
-                    + "="
-                    + str(config[model].get("omp_num_threads", 1))
-                    + "\n"
-                )
-        import pdb
-
-        # pdb.set_trace()
-        runfile.write(
-            "for model in "
-            + str(config["general"]["valid_model_names"])[1:-1]
-            .replace(",", "")
-            .replace("'", "")
-            + " ;do"
-            + "\n"
-        )
-        runfile.write("    eval nb_of_cores=\${mpi_tasks_${model}}" + "\n")
-        runfile.write("    eval nb_of_cores=$((${nb_of_cores}-1))" + "\n")
-        runfile.write("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do" + "\n")
-        runfile.write(
-            "        (( index_host = current_core / "
-            + str(cores_per_node)
-            + " ))"
-            + "\n"
-        )
-        runfile.write("        host_value=${listnodes[${index_host}]}" + "\n")
-        runfile.write(
-            "        (( slot =  current_core % " + str(cores_per_node) + " ))" + "\n"
-        )
-        runfile.write("        echo $host_value >> hostlist" + "\n")
-        runfile.write(
-            "        (( current_core = current_core + omp_threads_${model} ))" + "\n"
-        )
-        runfile.write("    done" + "\n")
-        runfile.write("done" + "\n\n")
+        # node of every global rank, from the placement table written with the
+        # prog_<model>.sh wrappers (placement.py)
+        runfile.write("while read node_index first_core; do" + "\n")
+        runfile.write("    echo ${listnodes[${node_index}]} >> hostlist" + "\n")
+        runfile.write(f"done < {work_dir}/rank_placement" + "\n\n")
 
     ############# MULTI SRUN STUFF ##############
 

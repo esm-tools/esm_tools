@@ -1,6 +1,9 @@
 components:
 - xios-2.5-ece
-- oifs-48r1
+# 48r1v5 is oifs48r1.1.git on branch awiesm3-develop, the same source the coupled
+# setup builds, so the AMIP and coupled trees stay identical. The older 48r1 points
+# at a different remote.
+- oifs-48r1v5
 - amip-v1
 - oasis3mct-5.0-smhi
 coupling_changes:

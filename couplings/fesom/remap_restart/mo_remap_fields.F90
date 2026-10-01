@@ -549,22 +549,30 @@ contains
     ! Element e_new corresponds to old element via the three nodes.
     subroutine remap_elem_field_3d(field_old, field_new, &
                                     mesh_old, mesh_new, node_flag)
-        real(WP),           intent(in)  :: field_old(:,:)  ! (nl-1, elem2D_old)
+        real(WP),           intent(in)  :: field_old(:,:)  ! (nl-1 or nl, elem2D_old)
         real(WP),           allocatable,intent(out) :: field_new(:,:)
         type(t_mesh_remap), intent(in)  :: mesh_old, mesh_new
         integer,            intent(in)  :: node_flag(:)    ! on nodes of new mesh
 
-        integer :: e_new, e_old, k
+        integer :: e_new, e_old, k, nz_old, k_bot
         integer :: nodes_new(3), nodes_old(3)
         integer :: ul_new, nl_new, ul_old, nl_old
         integer :: n_base, i_old, j
         logical :: all_unchanged
 
-        allocate(field_new(mesh_new%nl-1, mesh_new%elem2D))
+        ! Size the output from the source field, as remap_node_field_3d does.
+        ! u and v are mid-level (nl-1), but IDEMIX's iwe is on the nl full levels.
+        ! A fixed nl-1 made write_nc_3d read one level past the array, which
+        ! segfaulted on the first mesh change with TKE+IDEMIX (orog9, 2026-10-01).
+        nz_old = size(field_old, 1)
+        allocate(field_new(nz_old, mesh_new%elem2D))
         field_new = 0.0_WP
+        ! Full-level fields also carry the bottom interface nl_old.
+        k_bot = 1
+        if (nz_old < mesh_old%nl) k_bot = 0
 
         !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
-        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, elem_donor) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, elem_donor, nz_old, k_bot) &
         !$OMP   PRIVATE(e_new, e_old, k, nodes_new, nodes_old, ul_new, nl_new, ul_old, nl_old, n_base, i_old, j, all_unchanged)
         do e_new = 1, mesh_new%elem2D
             nodes_new = mesh_new%elem2D_nodes(1:3, e_new)
@@ -590,7 +598,7 @@ contains
                     nl_new = maxval(mesh_new%nlevels_nod2D(nodes_new))
                     ul_old = minval(mesh_old%ulevels_nod2D(nodes_old))
                     nl_old = maxval(mesh_old%nlevels_nod2D(nodes_old))
-                    do k = ul_old, nl_old-1
+                    do k = ul_old, min(nl_old-1+k_bot, nz_old)
                         field_new(k, e_new) = field_old(k, e_old)
                     end do
                 end if

@@ -18,7 +18,8 @@ general:
         use_venv: False
         user: !ENV ${USER}
         base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
-        account: ab0246
+        # bb1469 has the best fairshare of our CPU projects (sqcp, 2026-10-01).
+        account: bb1469
         with_recom: False
         with_icb: True
         ism_orog_coupled: True

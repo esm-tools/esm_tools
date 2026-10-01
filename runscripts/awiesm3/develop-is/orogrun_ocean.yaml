@@ -3,7 +3,7 @@ general:
     use_venv: False    # answer the venv bootstrap question non-interactively (nohup launches have no tty)
     setup_name: "awiesm3"
     version: "develop-is"
-    account: "ab0246"
+    account: "bb1469"
     # A 1-yr awiesm3 leg runs 26-33 min on 45 nodes (measured: 25:49 and 32:54;
     # model ~19-26 min + ~7 min post/tidy). 2:30:00 was a 6x over-request and
     # backfilled badly.

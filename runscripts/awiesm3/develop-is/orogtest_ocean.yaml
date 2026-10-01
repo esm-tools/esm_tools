@@ -412,6 +412,9 @@ oifs:
                         # we stage has only plit_oifs.
                         ECE_CPL_ISMM: ".true."
                         ECE_ISM_OROG: ".true."
+                        # 2 m temperature to PISM instead of soil layer 4, which
+                        # warms under the snow wherever the surface melts.
+                        ECE_ISM_T2M: ".true."
         "*":
             add_input_files:
                 pism2ece_antar: pism2ece_antar
@@ -447,6 +450,9 @@ oifs:
                         # See the chunk-1 branch: SMB on, orography off.
                         ECE_CPL_ISMM: ".true."
                         ECE_ISM_OROG: ".true."
+                        # 2 m temperature to PISM instead of soil layer 4, which
+                        # warms under the snow wherever the surface melts.
+                        ECE_ISM_T2M: ".true."
 
     # General (all-chunk) OIFS namelist defaults. Must be `namelist_changes`
     # (not add_): esm_tools forbids a general add_<var> alongside the same add_<var>

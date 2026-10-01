@@ -75,8 +75,7 @@ pism:
         # PISM grid, so there is nothing to regrid and no melt model to run.
         ablation_method: "DIRECT"
         regrid_method: "NONE"
-        # The 2 m temperature (ECE_ISM_T2M in orogtest_ocean) as its yearly mean.
-        ice_surface_temp_annual_mean: 1
+        # ice_surface_temp_annual_mean defaults to 1 with awiesm3 (env_pism.py).
         # PISM's discharge leaves as icebergs, so pism2ocean writes
         # latest_discharge.nc for the berg generator on the atmosphere side.
         iceberg_coupling: 1

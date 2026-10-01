@@ -13,12 +13,17 @@ def prepare_environment(config):
             "CHUNK_END_YEAR_pism": config["general"]["chunk_end_date"].syear,
             "NYEAR": config["general"]["nyear"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
-            # Orography feedback to OIFS. Off by default: with it on, pism2esm
-            # writes usurf_oifs into {prefix}_pism2ece.nc and suorog patches the
-            # atmosphere's orography at the next leg's init, which only works if
-            # the runscript also sets ECE_ISM_OROG and the chunk-1 file already
-            # carries usurf_oifs (suorog ABOR1s on a missing varid).
-            "ISM_OROG_COUPLED": int(bool(config["general"].get("ism_orog_coupled", False))),
+            # Orography feedback to OIFS. With it on, pism2esm writes usurf_oifs
+            # into {prefix}_pism2ece.nc and suorog patches the atmosphere's
+            # orography at the next leg's init. On by default when the partner is
+            # awiesm3, whose -is setup sets ECE_ISM_OROG and stages a chunk-1 file
+            # that already carries usurf_oifs (suorog ABOR1s on a missing varid).
+            # The awiesm3 side takes the same default from its setup, which this
+            # chain does not see; general.ism_orog_coupled overrides both.
+            "ISM_OROG_COUPLED": int(bool(config["general"].get(
+                "ism_orog_coupled",
+                "awiesm3" in config["general"].get("model_named_queue", []),
+            ))),
             # The writer needs numpy, netCDF4, pyproj and eccodes. The PISM
             # couple_out environment has no bare `python` at all, and unlike the
             # fesom side it never sees OCP_WEIGHTGEN_DRIVER_PY, so the

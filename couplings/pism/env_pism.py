@@ -71,7 +71,13 @@ def prepare_environment(config):
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             "MULTI_YEAR_MEAN_SMB": config[config["general"]["setup_name"]].get("multi_year_mean_smb", 1),
-            "ICE_SURFACE_TEMP_ANNUAL_MEAN": int(config[config["general"]["setup_name"]].get("ice_surface_temp_annual_mean", 0)),
+            # DIRECT scheme only: hand PISM the yearly mean of the surface
+            # temperature, without a seasonal cycle. On by default with awiesm3,
+            # whose OIFS sends the 2 m temperature (ECE_ISM_T2M).
+            "ICE_SURFACE_TEMP_ANNUAL_MEAN": int(config[config["general"]["setup_name"]].get(
+                "ice_surface_temp_annual_mean",
+                int("awiesm3" in config["general"].get("model_named_queue", [])),
+            )),
             "CHANGE_OCEAN":config[config["general"]["setup_name"]].get("change_ocean", 1),  
             # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",

@@ -54,9 +54,16 @@ general:
     # OIFS->PISM surface mass balance via the ISM-mapper, and the PISM->OIFS
     # orography/plit return. ismm is always built (it is in the develop-is
     # coupling); this gates whether it is launched and its OASIS fields exist.
-    # ECE_CPL_ISMM belongs in the runscript next to ECE_LANDICE/ISMRGNPFX:
-    # NAMECECFG is add_'d per chunk there and a second add_ here collides.
+    # Its fort.4 names (ECE_CPL_ISMM, ECE_ISM_T2M) are set in the oifs section
+    # under interactive_mesh, next to the land-ice block they depend on.
     smb_coupled: false
+
+    # PISM's surface height as the OIFS orography (ECE_ISM_OROG, and pism2esm
+    # writing usurf_oifs every leg). Only acts with interactive_mesh and the
+    # PISM chain; develop-is and v3.5-is turn it on. The PISM chain does not
+    # see this setup, so env_pism2awiesm.py defaults it on by itself when the
+    # partner is awiesm3. Set it in the couple runscript to override both.
+    ism_orog_coupled: false
 
     # The ice sheet's discharge reaching the ocean as icebergs, replacing the
     # atmosphere's snow-cap calving over the ice sheet. Both halves have to move
@@ -195,6 +202,8 @@ general:
             major_version: v3.5
             couplings:
                 - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
+            # PISM's surface height feeds back as the OIFS orography by default.
+            ism_orog_coupled: true
             # NB: pism + debm + ismm are built via the coupling above, but must NOT
             # be added as awiesm3 runtime models. add_include_models launches them in
             # the awiesm3 OASIS/MPMD job, where pismr would join MPI_COMM_WORLD
@@ -262,6 +271,7 @@ general:
             major_version: v3.5
             couplings:
                 - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
+            ism_orog_coupled: true
             add_include_models:
                 - xios
             add_other_components:
@@ -299,7 +309,10 @@ general:
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
     # Chunk-1 bootstrap set for the dynamic-mesh coupling; override per runscript.
-    pism_cavity_ini_dir: "${general.pool_dir}/fesom2/pism_cavity_ini"
+    # The 220509-node CORE3 bundle whose antar_pism2ece.nc carries usurf_oifs,
+    # seeded from the chunk-1 PISM state: without that variable suorog ABOR1s
+    # on the first leg once ECE_ISM_OROG is on.
+    pism_cavity_ini_dir: "${general.pool_dir}/fesom2/pism_cavity_ini_220509_orog"
 
         # Load compute recipe from oifs.yaml
     prepcompute_recipe: ${oifs.prepcompute_recipe}
@@ -541,7 +554,7 @@ oifs:
                 ECE_CPL_LPJG: .true.
 
     # PISM<->FESOM dynamic-mesh coupling: copy the OIFS output the ice-sheet coupler
-    # consumes. (The -is land-ice / ICMGG namelist changes stay in the runscript.)
+    # consumes, and follow the moving coastline and ice sheet on every leg.
     choose_general.interactive_mesh:
         true:
             workflow:
@@ -555,6 +568,87 @@ oifs:
                         script: smb2ice.functions
                         call_function: smb2ice
                         env_preparation: env_oifs2ice.py
+            # Land-ice wiring per leg. Chunk 1 takes the ICMGG and the ice-sheet
+            # file from the chunk-1 bundle, which matches PISM's initial geometry;
+            # from chunk 2 on both come from what ice2fesom regenerated in the
+            # couple dir. suorog reads {ISMRGNPFX}_pism2ece.nc from the work dir
+            # (plit_oifs, and usurf_oifs with ECE_ISM_OROG).
+            #
+            # On the chunk-1 bundle the native ICMGG is REQUIRED: the clean CORE3
+            # ICMGG has 62 cells that are ocean in its lsm but get no FESOM data,
+            # so they start at 0 K and radaca.F90:810 dies at step 0.
+            #
+            # The WAM tables are the maximal-ocean set (every cell a moving
+            # coastline can open is a sea point, so the Stokes/Charnock storage is
+            # always defined). They have to be add_input_sources here: a plain
+            # oifs.input_sources loses the merge to the component's
+            # ${prepifs_dir}/wam_grid_tables default.
+            #
+            # The fort.4 names use their own add_ depth (3) so that a runscript
+            # still carrying the old per-chunk block merges instead of colliding.
+            choose_general.chunk_number:
+                1:
+                    add_input_files:
+                        pism2ece_antar: pism2ece_antar
+                    add_input_sources:
+                        ICMGG_INIT: "${general.pism_cavity_ini_dir}/oasis/ICMGGab45INIT_feomdyn"
+                        pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece.nc"
+                        wam_grid_tables: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_grid_tables"
+                        wam_subgrid_0: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_subgrid_0"
+                        wam_subgrid_1: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_subgrid_1"
+                        wam_subgrid_2: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_subgrid_2"
+                    add_input_in_work:
+                        pism2ece_antar: antar_pism2ece.nc
+                    add_add_add_namelist_changes:
+                        fort.4:
+                            NAMECECFG:
+                                ECE_LANDICE: ".true."
+                                ECE_LANDICE_THRESH: 0.5
+                                NISMRGNS: 1
+                                # bare string: f90nml adds the Fortran quotes itself
+                                "ISMRGNPFX(1)": "antar"
+                                "ISMRGNCIS(1)": ".false."
+                "*":
+                    add_input_files:
+                        pism2ece_antar: pism2ece_antar
+                    add_input_sources:
+                        ICMGG_INIT: "${general.experiment_couple_dir}/oasis_regen/ICMGGab45INIT_feomdyn"
+                        pism2ece_antar: "${general.experiment_couple_dir}/antar_pism2ece.nc"
+                        wam_grid_tables: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_grid_tables"
+                        wam_subgrid_0: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_subgrid_0"
+                        wam_subgrid_1: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_subgrid_1"
+                        wam_subgrid_2: "${input_dir}/${res_level}/wam_tables_maxocean_s85/wam_subgrid_2"
+                    add_input_in_work:
+                        pism2ece_antar: antar_pism2ece.nc
+                    add_add_add_namelist_changes:
+                        fort.4:
+                            NAMECECFG:
+                                ECE_LANDICE: ".true."
+                                ECE_LANDICE_THRESH: 0.5
+                                NISMRGNS: 1
+                                "ISMRGNPFX(1)": "antar"
+                                "ISMRGNCIS(1)": ".false."
+            # SMB exchange with the ISM-mapper, with the 2 m temperature as PISM's
+            # surface temperature: soil layer 4 warms under the snow wherever the
+            # surface melts, 15-20 K too warm on the Ross and Filchner-Ronne
+            # shelves. ECE_ISM_T2M needs an OpenIFS with d5da841 (awiesm3-develop)
+            # or 3353d35 (MR !10); an older binary stops at the NAMECECFG read.
+            choose_general.smb_coupled:
+                true:
+                    add_add_add_add_namelist_changes:
+                        fort.4:
+                            NAMECECFG:
+                                ECE_CPL_ISMM: ".true."
+                                ECE_ISM_T2M: ".true."
+            # PISM's surface height as the OIFS orography (suorog reads usurf_oifs).
+            # pism2esm writes it every leg when general.ism_orog_coupled is on, and
+            # the chunk-1 bundle carries one seeded from the chunk-1 PISM state.
+            choose_general.ism_orog_coupled:
+                true:
+                    add_add_add_add_add_add_add_add_namelist_changes:
+                        fort.4:
+                            NAMECECFG:
+                                ECE_ISM_OROG: ".true."
 
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,

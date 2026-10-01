@@ -21,7 +21,7 @@ general:
     # production path on all 15036 zero-bathymetry nodes).
     # NOTE cycle 1 first died at the END of the year on an OASIS
     # "av gsize nx ny mismatch" -- see the fesom.nx note below.
-    final_date: "1920-01-01"   # 20 cycles, 1900-1919; extend by editing this and orogrun_pism final_date together
+    final_date: "1919-12-31"   # 20 cycles, 1900-1919 (inclusive); extend by editing this and orogrun_pism final_date together
     # (ism40 note, kept for context) Extended 2026-08-26 from
     # 1928-01-01 (28 cycles), which had halted the chain after 1927. The run had
     # already died at 1923 on the FESOM blowup; this extension does not by itself
@@ -37,17 +37,7 @@ general:
     # passing the atmosphere's Antarctic snow-cap calving that it replaces.
     ism_freshwater_return: true
     smb_coupled: true
-    # Chunk-1 bundle for the 220509-node CORE3 mother mesh, rebuilt 2026-09-09
-    # (awiesm3.yaml:232 otherwise resolves this to ${pool_dir}/fesom2/pism_cavity_ini,
-    # which is the 211567-mesh bundle). Setting it here also redirects the chunk-1
-    # MeshPath at awiesm3.yaml:740. See the bundle's README.md for provenance:
-    # its submesh is carved from ism39's OWN initial ice state (spinup16 at t=0),
-    # not the movcav8 year-1000010 geometry the old bundle used -- the two differ
-    # by 13077 cells in floating status.
-    pism_cavity_ini_dir: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini_220509_orog"
-    # ^ a270234's bundle with every entry symlinked, except antar_pism2ece.nc,
-    #   which is a real copy carrying usurf_oifs seeded from the chunk-1 PISM
-    #   state. Without that variable suorog ABOR1s on the first leg.
+    # pism_cavity_ini_dir: the setup default, the 220509 bundle with usurf_oifs.
     nday: 0
     nmonth: 0
     nyear: 1
@@ -366,110 +356,14 @@ oifs:
     scenario: piControl #solar radiation is going to be taken always from 1850
     cmip7_cmor_output: false   # CMIP7 output off for now (plev39 axis missing); validate coupling first
 
-    # WAM option A: maximal-ocean wave tables (built 2026-07-15 from ETOPO1 via
-    # create_wam_bathymetry_ETOPO1 + preproc, extended to -85S, max-ocean edited
-    # from the FESOM CORE3 max-mesh). NIBLO 29530 -> 30832: every cell a moving
-    # coastline can open -- open ocean or sub-shelf cavity -- is a WAM sea point,
-    # so its Stokes/Charnock storage is always DEFINED (0 when ice-masked via
-    # LMASKICE, real when open) and the voskin step-0 crash is impossible.
-    # Spectral grid (24x36) is bit-identical to the pool tables, so the running
-    # WAM binary is unchanged. Experiment-specific override (NOT the shared pool);
-    # the WAM binary restarts (BLS/LAW) from the old 29530-pt tables are invalid
-    # under this indexing -> WAM cold-starts on the first leg that uses them.
-    # The override lives in the choose_general.chunk_number add_input_sources
-    # blocks below (alongside ICMGG_INIT): a general oifs.input_sources loses
-    # the merge to the component's ${prepifs_dir}/wam_grid_tables default.
-
-    # On a mesh-change leg the OIFS land-sea mask must follow the moving ocean
-    # coastline. ice2fesom regenerates a consistent ICMGG (lsm/slt) for the new
-    # submesh into ${couple_dir}/oasis_regen via ocp-tool. Override the ICMGG_INIT
-    # source from chunk 2 on; chunk 1 keeps the static ICMGGab45INIT_CORE3.
-    choose_general.chunk_number:
-        1:              # chunk-1: ICMGG + plit pre-staged from the pool (fixed PISM-initial geometry).
-            # NOTE (attempts 5/6, 2026-07-14): this native pair is REQUIRED on the
-            # pool submesh. Swapping in the clean CORE3 ICMGG (with or without the
-            # plit/landice flip) dies deterministically at step 0 in radaca.F90:810:
-            # 62 difference-zone cells are ocean per the clean lsm but receive no
-            # FESOM data -> 0 K skin temperature -> zero-T column in the first
-            # radiation call. The atmosphere surface set (lsm+plit+masks+weights)
-            # only exists in the native, mutually-consistent variant here.
-            add_input_files:
-                pism2ece_antar: pism2ece_antar
-            add_input_sources:
-                ICMGG_INIT: "${general.pism_cavity_ini_dir}/oasis/ICMGGab45INIT_feomdyn"
-                pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece.nc"
-                wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
-                wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
-                wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
-                wam_subgrid_2:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
-            add_input_in_work:
-                pism2ece_antar: antar_pism2ece.nc
-            add_namelist_changes:
-                fort.4:
-                    NAMECECFG:
-                        ECE_LANDICE: ".true."
-                        ECE_LANDICE_THRESH: 0.5
-                        NISMRGNS: 1
-                        "ISMRGNPFX(1)": "antar"
-                        "ISMRGNCIS(1)": ".false."
-                        # SMB exchange with the ISM-mapper. Orography stays off:
-                        # ECE_ISM_OROG makes suorog read usurf_oifs, and the file
-                        # we stage has only plit_oifs.
-                        ECE_CPL_ISMM: ".true."
-                        ECE_ISM_OROG: ".true."
-                        # 2 m temperature to PISM instead of soil layer 4, which
-                        # warms under the snow wherever the surface melts.
-                        ECE_ISM_T2M: ".true."
-        "*":
-            add_input_files:
-                pism2ece_antar: pism2ece_antar
-            add_input_sources:
-                ICMGG_INIT: "${general.experiment_couple_dir}/oasis_regen/ICMGGab45INIT_feomdyn"
-                # OIFS land-ice plit mask for the moving PISM coastline. suorog
-                # reads {ISMRGNPFX}_pism2ece.nc = antar_pism2ece.nc from cwd at
-                # leg init; prepcompute stages it into work/ via input_in_work
-                # (so it no longer depends on a file surviving in work/ by luck).
-                pism2ece_antar: "${general.experiment_couple_dir}/antar_pism2ece.nc"
-                # WAM option A maximal-ocean tables (see the oifs block). MUST be
-                # here, not a general oifs.input_sources -- the latter loses the
-                # merge to the component's ${prepifs_dir}/wam_grid_tables default.
-                wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
-                wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
-                wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
-                wam_subgrid_2:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
-            add_input_in_work:
-                pism2ece_antar: antar_pism2ece.nc
-            # Land-ice namelist gated to chunk>1: on a fresh chunk-1 (full mesh)
-            # there is no plit file yet and suorog ABORTS if ECE_LANDICE/ISMRGNPFX
-            # ask it to read antar_pism2ece.nc. Enable the ISM land-ice path only
-            # from the first mesh-change leg on, when the plit file is staged above.
-            add_namelist_changes:
-                fort.4:
-                    NAMECECFG:
-                        ECE_LANDICE: ".true."
-                        ECE_LANDICE_THRESH: 0.5
-                        NISMRGNS: 1
-                        # bare string 'antar' -- f90nml adds the Fortran quotes itself
-                        "ISMRGNPFX(1)": "antar"
-                        "ISMRGNCIS(1)": ".false."
-                        # See the chunk-1 branch: SMB on, orography off.
-                        ECE_CPL_ISMM: ".true."
-                        ECE_ISM_OROG: ".true."
-                        # 2 m temperature to PISM instead of soil layer 4, which
-                        # warms under the snow wherever the surface melts.
-                        ECE_ISM_T2M: ".true."
+    # The land-ice wiring per leg (ICMGG, antar_pism2ece.nc, WAM tables and the
+    # NAMECECFG land-ice, ISMM, T2M and orography names) is the -is default in
+    # awiesm3.yaml, under the oifs section's choose_general.interactive_mesh.
 
     # General (all-chunk) OIFS namelist defaults. Must be `namelist_changes`
-    # (not add_): esm_tools forbids a general add_<var> alongside the same add_<var>
-    # inside a choose_ block, and NAMECECFG is add_'d per-chunk in the "*" branch.
+    # (not add_): the setup adds NAMECECFG per chunk.
     namelist_changes:
         fort.4:
-            # NAMECECFG land-ice settings (ECE_LANDICE / ISMRGNPFX / NISMRGNS) are
-            # gated to chunk>1 in the choose_general.chunk_number "*" branch above:
-            # a fresh chunk-1 (full mesh) has no plit file and suorog would abort
-            # trying to open antar_pism2ece.nc. The CMIP/physics/DDH namelists
-            # below apply to all chunks.
-            #
             # WEIGHTED_ICE REINSTATED (2026-07-16 evening, on top of the implicit
             # FESIM solve): OIFS send-side diagnostics showed the prescribed
             # ice-tile skin arriving unrepresentatively cold at marginal-ice

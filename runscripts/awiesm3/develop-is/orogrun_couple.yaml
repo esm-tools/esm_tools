@@ -22,7 +22,6 @@ general:
         account: bb1469
         with_recom: False
         with_icb: True
-        ism_orog_coupled: True
         ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
 
 model1:

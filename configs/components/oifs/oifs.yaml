@@ -55,6 +55,12 @@ oifs:
     forcing_dir: ${input_dir}/../${version}/ifsdata/
     ifsdata_dir: ${input_dir}/../${version}/ifsdata/
     namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
+    # Which NAMCOMPO_EMIS land-CO2 sector-name convention to append. The
+    # ece_lpjg_get_fluxes.F90 SECTOR string match differs between oifs branches:
+    # most branches (incl. plain 48r1/main) still use the older co2nbf/co2apf
+    # convention; 48r1v5 (JS's movcav-landice+co2-concdriven) renamed the SECTOR
+    # strings it matches to fco2nat/fco2ant. Overridden per-version below where needed.
+    co2_veg_emis_nml: namcompo_emis_co2_veg.nml
     cmip5_data_dir: ${input_dir}/../cmip5_data
     cmip6_data_dir: ${input_dir}/../cmip6_data
     cmip5_data_dir_nml: ${cmip5_data_dir}
@@ -402,6 +408,7 @@ oifs:
         destination: oifs-48r1
         with_xios: false
         major_version: 48r1
+        co2_veg_emis_nml: namcompo_emis_co2_veg_fco2.nml
 
     clean_command: rm -rf make/esm
     comp_command: cd make; ../fcm/bin/fcm make -v -j8 -f oifs.cfg
@@ -1641,7 +1648,7 @@ oifs:
                                                 ${namelist_dir}/namcompo_emis_co2_oce.nml
                                                 ${thisrun_config_dir}/fort.4;
                                               ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                                ${namelist_dir}/namcompo_emis_co2_veg.nml
+                                                ${namelist_dir}/${co2_veg_emis_nml}
                                                 ${thisrun_config_dir}/fort.4;
                                               ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
                                                 ${namelist_dir}/namcompo_emis_co2_terminator.nml
@@ -1659,7 +1666,7 @@ oifs:
                             true:
                                     append_to_namelist_method: "
                                             ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                              ${namelist_dir}/namcompo_emis_co2_veg.nml
+                                              ${namelist_dir}/${co2_veg_emis_nml}
                                               ${thisrun_config_dir}/fort.4;
                                             ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
                                               ${namelist_dir}/namcompo_emis_co2_terminator.nml

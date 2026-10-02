@@ -126,7 +126,7 @@ fesom:
                     # CORE3 with use_cavity=.false.: same nodes and elements, the
                     # ice-shelf cavities are open ocean. Partitions under
                     # core3_nocav/dist_*; ocp-tool products in the pool as CORE3_nocav.
-                    nx: 220509
+                    nx: 211726
                     mesh_dir: "${fesom.mesh_base_dir}/core3_nocav/"
                     nproc: 128
                     whichEVP: 1

@@ -824,6 +824,20 @@ fesom:
             # fesom2 main since #806, so it builds the v3.5 default branch.
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
+            # REcoM's parallel restart (fesom.<date>.bio.restart/), stamped like
+            # oce/ice in the v3.5 arm of choose_general.major_version below.
+            add_restart_in_files:
+                par_bio_restart: par_bio_restart
+            add_restart_in_in_work:
+                par_bio_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.bio.restart/*.nc
+            add_restart_in_sources:
+                par_bio_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.bio.restart/*.nc
+            add_restart_out_files:
+                par_bio_restart: par_bio_restart
+            add_restart_out_in_work:
+                par_bio_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.bio.restart/*.nc
+            add_restart_out_sources:
+                par_bio_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.bio.restart/*.nc
             # Derive the REcoM &parecomsetup gates from recom_setting so the BGC
             # XIOS file_def only enables the tracers/diagnostics that exist for
             # this configuration (see namelists/fesom2/xios_xml/file_def_fesom.xml.j2).
@@ -873,16 +887,17 @@ fesom:
             recom_comp_flag: ""
 
     build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
+    verbose: OFF # ON OFF
     with_xios: true
     choose_with_xios:
         true:
             comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
-                         -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                         -DENABLE_OPENMP=ON -DVERBOSE=${verbose} -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
                         ${yac_flag} ${meshpart_flag} ${sp_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
         false:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
-                         -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                         -DENABLE_OPENMP=ON -DVERBOSE=${verbose} -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
                         ${yac_flag} ${meshpart_flag} ${sp_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
     choose_general.oasis_with_yac:
@@ -1175,7 +1190,7 @@ fesom:
                 par_oce_restart_legacy: par_oce_restart_legacy
                 par_ice_restart_legacy: par_ice_restart_legacy
             allowed_missing_files:
-                - "fesom\\..*\\.(oce|ice)\\.restart.*"
+                - "fesom\\..*\\.(oce|ice|bio)\\.restart.*"
             restart_out_in_work:
                 par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
                 par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
@@ -1212,7 +1227,7 @@ fesom:
             # (src/recom/recom_modules.F90), so with FESOM's WP = real32 every
             # REcoM array handed to a FESOM reader is a type mismatch and
             # gen_surface_forcing.F90 does not compile.
-            fesom_sp_flag: ""
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF" # ON OFF; recom not SP ready
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         # -is (ice-sheet coupled) variant additionally builds the native FESOM
@@ -1411,7 +1426,9 @@ lpj_guess:
     comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=${build_type}; make -j8; cd .."
     execution_command: ${executable} -parallel ${runscript_name}
 
+    monthly_output: true
     daily_output: true
+    yearly_output: true
 
     # Automatically set mygrid to match OIFS resolution
     mygrid: ${oifs.resolution}

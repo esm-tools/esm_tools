@@ -136,6 +136,11 @@ computer:
                 OMPI_MCA_osc: "pt2pt"
                 OMPI_MCA_pml: "ucx"
 
+                # enable ucx logs for num_fesom_groups>1 + use_lucia=true finalize MPI_Barrier bug
+                #UCX_LOG_LEVEL: warn
+                #UCX_LOG_FILE: ucx_debug.log.%p
+                #OMPI_MCA_orte_base_help_aggregate: "0"
+
     load_python: False
     choose_computer.load_python:
         True:

@@ -56,6 +56,9 @@ general:
     # coupling); this gates whether it is launched and its OASIS fields exist.
     # Its fort.4 names (ECE_CPL_ISMM, ECE_ISM_T2M) are set in the oifs section
     # under interactive_mesh, next to the land-ice block they depend on.
+    # Set it in the ocean runscript, not in a choose_ block here: it adds ismm to
+    # the launch, and a choose_ resolves after the model list is built. Without
+    # it smb2ice falls back to a fixed paleo SMB file.
     smb_coupled: false
 
     # PISM's surface height as the OIFS orography (ECE_ISM_OROG, and pism2esm
@@ -203,6 +206,10 @@ general:
             couplings:
                 - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             # PISM's surface height feeds back as the OIFS orography by default.
+            # smb_coupled cannot be defaulted here: it adds ismm to the launch,
+            # and the model list is built before this block applies, so ismm's
+            # config never loads and the OASIS coupler stops on a model without
+            # an executable. It has to come from the runscript.
             ism_orog_coupled: true
             # NB: pism + debm + ismm are built via the coupling above, but must NOT
             # be added as awiesm3 runtime models. add_include_models launches them in

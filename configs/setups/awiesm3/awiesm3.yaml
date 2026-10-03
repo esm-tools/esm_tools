@@ -820,11 +820,26 @@ fesom:
     # from the pip venv; OCP_TOOL_DIR must be a real checkout that carries the code
     # + configs/ + ICMGG input data, driven by ocp-tool's own conda env. Kept in a
     # machine block instead of hardcoded; "*" falls back to package auto-discovery.
+    # recom_input_path / recom_climate_data_dir are only read when the ocean carbon cycle
+    # is coupled (choose_general.with_co2_oce_coupling below). recom_input_path holds the
+    # per-mesh REcoM forcing (<resolution>/DustClimMonthlyAlbani.nc ...). The 3D initial
+    # fields of namelist.tra's tracer_init3d (GLODAP DIC/alkalinity, WOA nutrients and
+    # oxygen, PISCES iron) are read from ClimateDataPath next to PHC3: on levante the
+    # standard directory is used unchanged, on albedo the pool has only PHC3, so a
+    # directory that holds both is used instead.
     choose_computer.name:
         levante:
             ocp_tool_dir: "/work/ab0246/a270092/software/ocp-tool"
+            recom_input_path: "/work/ab0246/a270092/input/fesom2/recom/"
+            recom_climate_data_dir: "${fesom.climate_data_dir}"
+        albedo:
+            ocp_tool_dir: ""
+            recom_input_path: "/albedo/work/projects/p_awiesm3_cmip7/jstreffi/input/fesom2/recom/"
+            recom_climate_data_dir: "/albedo/work/projects/p_awiesm3_cmip7/jstreffi/input/fesom2/hydrography_recom/"
         "*":
             ocp_tool_dir: ""
+            recom_input_path: "/work/ab0246/a270092/input/fesom2/recom/"
+            recom_climate_data_dir: "${fesom.climate_data_dir}"
     choose_general.with_co2_oce_coupling:
         true:
             # The REcoM CO2 coupling (fesom2.6_recom_awiesm3_co2_coupling) is in
@@ -873,14 +888,23 @@ fesom:
             # add_namelist_changes supplies, and FESOM dies on every rank with
             # "end-of-file during read ... namelist.recom" at &parecomsetup.
             # namelist.tra and namelist.io are gutted the same way.
+            # namelist.io is NOT taken from bin_<setting>: that file is a different output
+            # list (it drops 37 streams of the physics-only run, among them the sea-ice budget
+            # tendencies and the heat/salt tendencies, changes output frequencies and switches
+            # the CMOR diagnostics off). namelist.io.recom is esm_tools' own namelist.io plus
+            # the REcoM streams, so a carbon-cycle run writes everything a physics run writes.
             add_config_sources:
                 recom:     "${model_dir}/config/bin_${recom_setting}/namelist.recom"
                 tra:       "${model_dir}/config/bin_${recom_setting}/namelist.tra"
-                io:        "${model_dir}/config/bin_${recom_setting}/namelist.io"
+                io:        "${esm_namelist_dir}/fesom2/${fesom.version}/namelist.io.recom"
             add_config_in_work:
                 recom:     "namelist.recom"
-            recom_input_path: '/work/ab0246/a270092/input/fesom2/recom/'
+            # REcoM <file_group> in the CMIP7 FESOM XIOS templates (cmip7_cmor_output).
+            recom_xios_output: true
             add_add_namelist_changes:
+                namelist.config:
+                    paths:
+                        ClimateDataPath: "${fesom.recom_climate_data_dir}"
                 namelist.recom:
                     nam_rsbc:
                         nm_fe_data_file: '${recom_input_path}/${resolution}/DustClimMonthlyAlbani.nc'

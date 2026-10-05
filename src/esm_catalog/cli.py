@@ -1083,13 +1083,17 @@ def put(
         delta = pushmod.queryable_delta(directory, api_url, settings.verify_tls)
         if delta is None:
             continue
+        properties = json.loads(delta.read_text()).get("properties", {})
         if json_output:
-            count = len(json.loads(delta.read_text()).get("properties", {}))
             unregistered_queryables.append(
-                {"directory": str(directory), "count": count, "delta_path": str(delta)}
+                {
+                    "directory": str(directory),
+                    "count": len(properties),
+                    "delta_path": str(delta),
+                }
             )
         else:
-            _report_new_queryables(delta, settings.server_url)
+            _report_new_queryables(properties, delta, settings.server_url)
 
     if json_output:
         result = summary.model_dump()
@@ -1281,6 +1285,86 @@ def _format_options(fn):
 
 
 @server.group()
+def queryables() -> None:
+    """Inspect queryable fields registered on a STAC server."""
+
+
+@queryables.command("get")
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@_format_options
+def queryables_get(
+    server: Optional[str], insecure: bool, json_fmt: bool, pretty_fmt: bool
+) -> None:
+    """Show the queryable fields currently registered on the server.
+
+    Compose with a local catalog's queryables.json and jq/diff to find
+    what's missing -- e.g.:
+
+        jq '.properties|keys' catalog/queryables.json > local.txt
+        esm-catalog server queryables get --json | jq '.|keys' > remote.txt
+        diff local.txt remote.txt
+    """
+    from esm_catalog.push import get_queryables
+
+    fmt = _resolve_output_format(json_fmt, pretty_fmt)
+    settings = _settings_for(server, insecure)
+    try:
+        api_url = settings.api_url
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    properties = get_queryables(api_url, settings.verify_tls)
+    if fmt == "json":
+        click.echo(json.dumps(properties))
+        return
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table()
+    table.add_column("Property")
+    table.add_column("Type")
+    for name, schema in sorted(properties.items()):
+        table.add_row(name, str(schema.get("type", "")))
+    Console().print(table)
+
+
+@queryables.command("print-recipe")
+@click.argument(
+    "delta_file",
+    required=False,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path, allow_dash=True),
+)
+@_SERVER_OPTION
+def queryables_print_recipe(delta_file: Optional[Path], server: Optional[str]) -> None:
+    """Print the ssh/sudo recipe to register a queryables delta on the pgstac host.
+
+    DELTA_FILE is a {"properties": {...}} JSON document -- e.g. produced by
+    diffing 'server queryables get --json' against a local queryables.json
+    (see that command's help for a jq recipe) -- or '-'/omitted to read it
+    from stdin.
+    """
+    if delta_file is None or str(delta_file) == "-":
+        import tempfile
+
+        raw = sys.stdin.read()
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as handle:
+            handle.write(raw)
+            delta_path = Path(handle.name)
+    else:
+        raw = delta_file.read_text()
+        delta_path = delta_file
+
+    properties = json.loads(raw).get("properties", {})
+    if not properties:
+        click.echo("nothing to register")
+        return
+    settings = _settings_for(server, insecure=False)
+    _report_new_queryables(properties, delta_path, settings.server_url)
+
+
+@server.group()
 def get() -> None:
     """Fetch a collection or item from the server."""
 
@@ -1416,9 +1500,11 @@ def delete_items(
     click.secho(f"deleted item {item_id!r} from {collection_id!r}", fg="green")
 
 
-def _report_new_queryables(delta_path: Path, server_url: Optional[str]) -> None:
+def _report_new_queryables(
+    properties: dict, delta_path: Path, server_url: Optional[str]
+) -> None:
     """Print the operator recipe for registering new queryables."""
-    count = len(json.loads(delta_path.read_text()).get("properties", {}))
+    count = len(properties)
     host = (server_url or "<pgstac-host>").split("://", 1)[-1].rstrip("/")
     click.secho(
         f"\n{count} new queryable field(s) are not yet registered.", fg="yellow"

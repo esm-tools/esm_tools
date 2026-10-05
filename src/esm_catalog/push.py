@@ -486,13 +486,18 @@ def _push_shard(path: Path, client: StacClient, progress: ProgressHook) -> int:
     return pushed
 
 
-def registered_queryables(api_url: str, verify_tls: bool) -> set[str]:
-    """The property names the server currently advertises as queryables."""
+def get_queryables(api_url: str, verify_tls: bool) -> dict:
+    """The server's current queryables schema (property name -> JSON Schema)."""
     import httpx
 
     resp = httpx.get(f"{api_url}/queryables", verify=verify_tls, timeout=30)
     resp.raise_for_status()
-    return set(resp.json().get("properties", {}))
+    return resp.json().get("properties", {})
+
+
+def registered_queryables(api_url: str, verify_tls: bool) -> set[str]:
+    """The property names the server currently advertises as queryables."""
+    return set(get_queryables(api_url, verify_tls))
 
 
 def queryable_delta(

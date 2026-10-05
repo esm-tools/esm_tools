@@ -196,6 +196,58 @@ def test_delete_items_yes_flag_skips_confirmation(runner, fake_connect):
     assert ("delete_item", "c1", "i1") in fake_connect
 
 
+# --------------------------------------------------------------------------- #
+# server queryables
+# --------------------------------------------------------------------------- #
+
+
+def test_queryables_get_emits_json(runner, monkeypatch):
+    import esm_catalog.push as pushmod
+
+    monkeypatch.setenv("ESM_CATALOG_SERVER_URL", "https://stac.example.org")
+    monkeypatch.setattr(
+        pushmod,
+        "get_queryables",
+        lambda api_url, verify_tls: {"a": {"type": "string"}},
+    )
+    result = runner.invoke(main, ["server", "queryables", "get", "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == {"a": {"type": "string"}}
+
+
+def test_queryables_print_recipe_reads_file(runner, tmp_path):
+    delta = tmp_path / "delta.json"
+    delta.write_text(json.dumps({"properties": {"a": {}, "b": {}}}))
+    result = runner.invoke(
+        main,
+        ["server", "queryables", "print-recipe", str(delta), "--server", "https://stac.example.org"],
+    )
+    assert result.exit_code == 0, result.output
+    assert "2 new queryable field(s)" in result.output
+    assert "ssh stac.example.org" in result.output
+    assert str(delta) in result.output
+
+
+def test_queryables_print_recipe_reads_stdin(runner):
+    result = runner.invoke(
+        main,
+        ["server", "queryables", "print-recipe", "--server", "https://stac.example.org"],
+        input=json.dumps({"properties": {"a": {}}}),
+    )
+    assert result.exit_code == 0, result.output
+    assert "1 new queryable field(s)" in result.output
+
+
+def test_queryables_print_recipe_empty_delta_says_nothing_to_register(runner):
+    result = runner.invoke(
+        main,
+        ["server", "queryables", "print-recipe"],
+        input=json.dumps({"properties": {}}),
+    )
+    assert result.exit_code == 0, result.output
+    assert "nothing to register" in result.output.lower()
+
+
 class _FakeAsk:
     """Mimics questionary's Question.ask() API without a real prompt_toolkit loop."""
 

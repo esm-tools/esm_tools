@@ -317,6 +317,29 @@ def test_registered_queryables_parses_properties():
         _httpx.get = real_get
 
 
+def test_get_queryables_returns_full_schema():
+    import esm_catalog.push as p
+    import httpx as _httpx
+
+    real_get = _httpx.get
+
+    def fake_get(url, **kw):
+        return httpx.Response(
+            200,
+            json={"properties": {"a": {"type": "string"}, "b": {"type": "number"}}},
+            request=httpx.Request("GET", url),
+        )
+
+    _httpx.get = fake_get
+    try:
+        assert p.get_queryables("https://host/api", True) == {
+            "a": {"type": "string"},
+            "b": {"type": "number"},
+        }
+    finally:
+        _httpx.get = real_get
+
+
 def test_expand_paths_skips_queryables_sidecar(tmp_path):
     catalog = tmp_path / "catalog"
     catalog.mkdir()

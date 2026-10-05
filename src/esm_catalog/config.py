@@ -14,7 +14,7 @@ registered public client. A minimal ``config.yaml`` looks like::
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic_settings import (
     BaseSettings,
@@ -80,6 +80,10 @@ class Settings(BaseSettings):
 
     #: Verify the server's TLS certificate. Disable only for dev self-signed.
     verify_tls: bool = True
+
+    #: Default rendering for 'esm-catalog get' when neither --json nor
+    #: --pretty is passed on the command line.
+    output_format: Literal["json", "pretty"] = "pretty"
 
     @property
     def api_url(self) -> Url:

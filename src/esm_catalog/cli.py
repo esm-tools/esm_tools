@@ -5,7 +5,7 @@ Workflow for one experiment::
     esm-catalog auth login https://stac.awi.de   # once; token cached locally
     esm-catalog scan                             # write stac-geoparquet shards
     esm-catalog validate-cmip6                   # check any declared cmip6:* facets, if present
-    esm-catalog push                             # ship new shards -> pgstac
+    esm-catalog put                              # ship new shards -> pgstac
     esm-catalog status                           # what's local, what's configured
 
 A large scan is distributed across SLURM instead::
@@ -44,6 +44,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator, NoReturn, Optional
 
+import questionary
 import rich_click as click
 
 from esm_catalog import __version__
@@ -54,6 +55,24 @@ _CONFIG_EPILOG = (
     "ESM_CATALOG_SERVER_URL) or a config file — run 'esm-catalog status' to "
     "see what is currently resolved and where the config file would live."
 )
+
+click.rich_click.COMMAND_GROUPS["esm-catalog"] = [
+    {
+        "name": "Local",
+        "commands": ["scan", "status", "add", "rm", "set-main", "validate", "validate-cmip6"],
+        "panel_styles": {"border_style": "cyan"},
+    },
+    {
+        "name": "Auth",
+        "commands": ["auth"],
+        "panel_styles": {"border_style": "magenta"},
+    },
+    {
+        "name": "Server",
+        "commands": ["get", "put", "delete"],
+        "panel_styles": {"border_style": "green"},
+    },
+]  # fmt: skip
 
 click.rich_click.OPTION_GROUPS["esm-catalog distributed render-scripts"] = [
     {
@@ -241,7 +260,7 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
     is_flag=True,
     is_eager=True,
     help="Emit machine-readable JSON instead of formatted text, where the "
-    "command supports it (currently: push, auth login). Unsupported commands "
+    "command supports it (currently: put, auth login). Unsupported commands "
     "ignore this flag.",
 )
 @click.pass_context
@@ -266,7 +285,7 @@ def auth() -> None:
     "--insecure",
     is_flag=True,
     help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
-    "on every 'push' against this server.",
+    "on every 'put' against this server.",
 )
 @click.pass_context
 def auth_login(
@@ -915,7 +934,7 @@ def validate(
     "paths",
     nargs=-1,
     required=True,
-    type=click.Path(exists=True, path_type=Path),
+    type=click.Path(exists=True, path_type=Path, allow_dash=True),
 )
 @click.option("--server", default=None, help="Target STAC server (overrides config).")
 @click.option(
@@ -923,7 +942,7 @@ def validate(
     "--insecure",
     is_flag=True,
     help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
-    "on 'auth login' and on every 'push' against this server.",
+    "on 'auth login' and on every 'put' against this server.",
 )
 @click.option(
     "-v",
@@ -942,7 +961,7 @@ def validate(
     "broken but the server is reachable by IP. Repeatable.",
 )
 @click.pass_context
-def push(
+def put(
     ctx: click.Context,
     paths: tuple[Path, ...],
     server: Optional[str],
@@ -950,11 +969,12 @@ def push(
     verbose: bool,
     resolve_specs: tuple[str, ...],
 ) -> None:
-    """Push STAC objects to the catalog.
+    """Bulk-upsert STAC objects to the catalog.
 
-    Each PATH is a Collection/Item JSON, a stac-geoparquet shard, or a directory
-    of them. Writes are authenticated (run 'auth login' first) and idempotent
-    (upsert) — re-pushing is safe, nothing is deleted.
+    Each PATH is a Collection/Item JSON, a stac-geoparquet shard, a directory
+    of them, or '-' to read one STAC JSON object from stdin. Writes are
+    authenticated (run 'auth login' first) and idempotent (upsert) —
+    re-running is safe, nothing is deleted.
     """
     json_output: bool = (ctx.obj or {}).get("json", False)
 
@@ -1001,6 +1021,26 @@ def push(
         if resolve_map
         else None
     )
+
+    # '-' means "read one STAC JSON object from stdin" -- a fast path, since
+    # mixing it with the file-based classify/expand/push pipeline below would
+    # need a throwaway temp file for no real benefit (one object, one upsert).
+    if list(paths) == [Path("-")]:
+        obj = json.loads(sys.stdin.read())
+        with StacClient(
+            api_url, token, verify_tls=settings.verify_tls, transport=transport
+        ) as client:
+            if str(obj.get("type", "")).lower() == "collection":
+                client.upsert_collection(obj)
+            else:
+                client.upsert_item(obj)
+        if json_output:
+            click.echo(json.dumps({"id": obj.get("id"), "status": "ok"}))
+        else:
+            click.echo(f"put {obj.get('id')!r}")
+        return
+    if any(str(p) == "-" for p in paths):
+        _die("'-' (stdin) must be the only PATH given, not mixed with others")
 
     files = pushmod.expand_paths(list(paths))
     total = sum(
@@ -1074,6 +1114,313 @@ def push(
         raise click.ClickException(f"{len(summary.errors)} path(s) failed.")
 
 
+@main.command(hidden=True)
+@click.argument(
+    "paths",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True, path_type=Path, allow_dash=True),
+)
+@click.option("--server", default=None)
+@click.option("-k", "--insecure", is_flag=True)
+@click.option("-v", "--verbose", is_flag=True)
+@click.option("--resolve", "resolve_specs", multiple=True, metavar="HOST:PORT:IP")
+@click.pass_context
+def push(
+    ctx: click.Context,
+    paths: tuple[Path, ...],
+    server: Optional[str],
+    insecure: bool,
+    verbose: bool,
+    resolve_specs: tuple[str, ...],
+) -> None:
+    """Deprecated alias for 'put' — will be removed in a future release."""
+    click.secho("warning: 'push' is deprecated, use 'put' instead", fg="yellow", err=True)
+    ctx.invoke(
+        put,
+        paths=paths,
+        server=server,
+        insecure=insecure,
+        verbose=verbose,
+        resolve_specs=resolve_specs,
+    )
+
+
+def _resolve_output_format(json_fmt: bool, pretty_fmt: bool) -> str:
+    """Resolve 'json' vs 'pretty' from the command's own flags, or config."""
+    if json_fmt and pretty_fmt:
+        raise click.UsageError("--json and --pretty are mutually exclusive.")
+    if json_fmt:
+        return "json"
+    if pretty_fmt:
+        return "pretty"
+    from esm_catalog.config import Settings
+
+    return Settings().output_format
+
+
+def _settings_for(server: Optional[str], insecure: bool):
+    from esm_catalog.config import Settings
+
+    settings = Settings()
+    if server:
+        settings.server_url = server
+    if insecure:
+        settings.verify_tls = False
+    return settings
+
+
+@contextmanager
+def _stac_client(settings):
+    """An authenticated StacClient for *settings*, or a clean ClickException."""
+    from esm_catalog import auth
+    from esm_catalog.client import StacClient
+
+    try:
+        api_url = settings.api_url
+        token = auth.get_bearer_token(settings)
+    except (ValueError, auth.AuthError) as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    with StacClient(api_url, token, verify_tls=settings.verify_tls) as client:
+        yield client
+
+
+def _emit_single(obj: dict, fmt: str, render_pretty) -> None:
+    if fmt == "json":
+        click.echo(json.dumps(obj))
+    else:
+        render_pretty(obj)
+
+
+def _emit_list(objs: list[dict], fmt: str, render_pretty) -> None:
+    if fmt == "json":
+        for obj in objs:
+            click.echo(json.dumps(obj))
+    else:
+        render_pretty(objs)
+
+
+def _render_collections_table(collections: list[dict]) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table()
+    table.add_column("ID")
+    table.add_column("Title")
+    table.add_column("Description")
+    for c in collections:
+        table.add_row(
+            c.get("id", ""), c.get("title", "") or "", (c.get("description") or "")[:60]
+        )
+    Console().print(table)
+
+
+def _render_collection_pretty(c: dict) -> None:
+    click.echo(f"id: {c.get('id')}")
+    click.echo(f"title: {c.get('title', '')}")
+    click.echo(f"description: {c.get('description', '')}")
+    assets = c.get("assets") or {}
+    if assets:
+        click.echo("assets:")
+        for key, asset in assets.items():
+            click.echo(f"  {key}: {asset.get('href', '')}")
+
+
+def _render_items_table(items: list[dict]) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table()
+    table.add_column("ID")
+    table.add_column("Collection")
+    table.add_column("Datetime")
+    for it in items:
+        props = it.get("properties", {})
+        table.add_row(it.get("id", ""), it.get("collection", ""), str(props.get("datetime", "")))
+    Console().print(table)
+
+
+def _render_item_pretty(it: dict) -> None:
+    click.echo(f"id: {it.get('id')}")
+    click.echo(f"collection: {it.get('collection')}")
+    click.echo(json.dumps(it.get("properties", {}), indent=2))
+    assets = it.get("assets") or {}
+    if assets:
+        click.echo("assets:")
+        for key, asset in assets.items():
+            click.echo(f"  {key}: {asset.get('href', '')}")
+            alternates = (asset.get("alternate") or {})
+            for alt_name, alt in alternates.items():
+                click.echo(f"    alternate:{alt_name}: {alt.get('href', '')}")
+
+
+_SERVER_OPTION = click.option(
+    "--server", default=None, help="Target STAC server (overrides config)."
+)
+_INSECURE_OPTION = click.option(
+    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+)
+_FORMAT_OPTIONS = [
+    click.option(
+        "--json",
+        "json_fmt",
+        is_flag=True,
+        help="Emit JSON (newline-delimited for a list, one object for a single "
+        "resource).",
+    ),
+    click.option(
+        "--pretty",
+        "pretty_fmt",
+        is_flag=True,
+        help="Emit a human-readable table/summary (default unless configured "
+        "otherwise; see output_format in the config file).",
+    ),
+]
+
+
+def _format_options(fn):
+    for option in _FORMAT_OPTIONS:
+        fn = option(fn)
+    return fn
+
+
+@main.group()
+def get() -> None:
+    """Fetch a collection or item from the server."""
+
+
+@get.command("collections")
+@click.argument("collection_id", required=False)
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@click.option(
+    "--limit", type=int, default=None,
+    help="Max results (list form only); passed through to the API's own 'limit'.",
+)  # fmt: skip
+@_format_options
+def get_collections(
+    collection_id: Optional[str],
+    server: Optional[str],
+    insecure: bool,
+    limit: Optional[int],
+    json_fmt: bool,
+    pretty_fmt: bool,
+) -> None:
+    """List all collections, or fetch COLLECTION_ID."""
+    fmt = _resolve_output_format(json_fmt, pretty_fmt)
+    settings = _settings_for(server, insecure)
+    with _stac_client(settings) as client:
+        if collection_id:
+            obj = client.get_collection(collection_id)
+            if obj is None:
+                raise click.ClickException(f"collection {collection_id!r} not found")
+            _emit_single(obj, fmt, _render_collection_pretty)
+        else:
+            resp = client.list_collections(limit)
+            _emit_list(resp.get("collections", []), fmt, _render_collections_table)
+
+
+@get.command("items")
+@click.argument("collection_id")
+@click.argument("item_id", required=False)
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@click.option(
+    "--limit", type=int, default=None,
+    help="Max results (list form only); passed through to the API's own 'limit'.",
+)  # fmt: skip
+@_format_options
+def get_items(
+    collection_id: str,
+    item_id: Optional[str],
+    server: Optional[str],
+    insecure: bool,
+    limit: Optional[int],
+    json_fmt: bool,
+    pretty_fmt: bool,
+) -> None:
+    """List all items in COLLECTION_ID, or fetch ITEM_ID."""
+    fmt = _resolve_output_format(json_fmt, pretty_fmt)
+    settings = _settings_for(server, insecure)
+    with _stac_client(settings) as client:
+        if item_id:
+            obj = client.get_item(collection_id, item_id)
+            if obj is None:
+                raise click.ClickException(
+                    f"item {item_id!r} not found in {collection_id!r}"
+                )
+            _emit_single(obj, fmt, _render_item_pretty)
+        else:
+            resp = client.list_items(collection_id, limit)
+            _emit_list(resp.get("features", []), fmt, _render_items_table)
+
+
+@main.group()
+def delete() -> None:
+    """Remove a collection or item from the server."""
+
+
+@delete.command("collections")
+@click.argument("collection_id")
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@click.option("-y", "--yes", is_flag=True, help="Skip the confirmation prompt.")
+def delete_collections(
+    collection_id: str, server: Optional[str], insecure: bool, yes: bool
+) -> None:
+    """Delete COLLECTION_ID (cascades its items server-side)."""
+    from esm_catalog.client import StacClientError
+
+    settings = _settings_for(server, insecure)
+    with _stac_client(settings) as client:
+        if not yes:
+            try:
+                listing = client.list_items(collection_id, limit=1)
+            except StacClientError as exc:
+                raise click.ClickException(str(exc)) from exc
+            count = listing.get("numberMatched", len(listing.get("features", [])))
+            confirmed = questionary.confirm(
+                f"delete collection {collection_id!r} ({count} items)?", default=False
+            ).ask()
+            if not confirmed:
+                click.echo("aborted")
+                return
+        try:
+            client.delete_collection(collection_id)
+        except StacClientError as exc:
+            raise click.ClickException(str(exc)) from exc
+    click.secho(f"deleted collection {collection_id!r}", fg="green")
+
+
+@delete.command("items")
+@click.argument("collection_id")
+@click.argument("item_id")
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@click.option("-y", "--yes", is_flag=True, help="Skip the confirmation prompt.")
+def delete_items(
+    collection_id: str, item_id: str, server: Optional[str], insecure: bool, yes: bool
+) -> None:
+    """Delete a single ITEM_ID from COLLECTION_ID."""
+    from esm_catalog.client import StacClientError
+
+    settings = _settings_for(server, insecure)
+    with _stac_client(settings) as client:
+        if not yes:
+            confirmed = questionary.confirm(
+                f"delete item {item_id!r} in {collection_id!r}?", default=False
+            ).ask()
+            if not confirmed:
+                click.echo("aborted")
+                return
+        try:
+            client.delete_item(collection_id, item_id)
+        except StacClientError as exc:
+            raise click.ClickException(str(exc)) from exc
+    click.secho(f"deleted item {item_id!r} from {collection_id!r}", fg="green")
+
+
 def _report_new_queryables(delta_path: Path, server_url: Optional[str]) -> None:
     """Print the operator recipe for registering new queryables."""
     count = len(json.loads(delta_path.read_text()).get("properties", {}))
@@ -1136,12 +1483,12 @@ def _push_progress(enabled: bool, total: int) -> Generator[object, None, None]:
     help="Experiment root; may be remote (e.g. sftp://host/path). Defaults to '.'.",
 )
 def status(exp_root: str) -> None:
-    """Show the local catalog's state and the configured push target.
+    """Show the local catalog's state and the configured put target.
 
     Reports what a scan has produced on disk (shards, item counts, incremental
-    bookkeeping) and where 'push' would send it. Does not contact the server —
-    'push' itself is the only thing that knows what has actually been shipped,
-    since nothing local tracks push history.
+    bookkeeping) and where 'put' would send it. Does not contact the server —
+    'put' itself is the only thing that knows what has actually been shipped,
+    since nothing local tracks put history.
     """
     from upath import UPath
 
@@ -1186,7 +1533,7 @@ def status(exp_root: str) -> None:
     except Exception:  # noqa: BLE001 — a broken config must not crash status
         server_url = None
     if server_url:
-        click.echo(f"push target: {server_url}")
+        click.echo(f"put target: {server_url}")
         from esm_catalog.auth import load_token
 
         click.echo(
@@ -1194,7 +1541,7 @@ def status(exp_root: str) -> None:
         )
     else:
         click.secho(
-            "push target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
+            "put target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
             fg="yellow",
         )
 
@@ -1307,13 +1654,17 @@ def list_plugins(ctx: click.Context) -> None:
     Console().print(table)
 
 
-@main.group()
+@main.group(hidden=True)
 def distributed() -> None:
     """Render the SLURM + Dask + Singularity pipeline for a large scan.
 
     'esm-catalog scan --distributed --scheduler tcp://...' attaches to an
     already-running Dask scheduler; it does not create one. This group
     renders the SLURM scripts that do -- see 'render-scripts --help'.
+
+    Hidden: SLURM/Dask cluster orchestration isn't this CLI's job (STAC
+    cataloging) -- flagged as a candidate for extraction into its own tool.
+    Still fully functional for existing callers.
     """
 
 

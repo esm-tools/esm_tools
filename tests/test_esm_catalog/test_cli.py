@@ -25,8 +25,26 @@ def runner():
 def test_help_lists_all_commands(runner):
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    for command in ("auth", "scan", "push", "status", "distributed"):
+    for command in ("auth", "scan", "status", "get", "put", "delete"):
         assert command in result.output
+
+
+def test_help_hides_push_and_distributed(runner):
+    # 'push' is a deprecated alias for 'put'; 'distributed' is flagged as
+    # out-of-scope for this CLI (SLURM/Dask orchestration). Both still work
+    # (hidden=True), just not advertised.
+    result = runner.invoke(main, ["--help"])
+    assert result.exit_code == 0
+    assert "push" not in result.output
+    assert "distributed" not in result.output
+
+
+def test_push_still_invocable_as_hidden_alias(runner, tmp_path):
+    coll = tmp_path / "coll.json"
+    coll.write_text(json.dumps({"type": "Collection", "id": "c"}))
+    result = runner.invoke(main, ["push", "--help"])
+    assert result.exit_code == 0
+    assert "deprecated" in result.output.lower()
 
 
 def test_auth_subcommands_registered(runner):
@@ -46,6 +64,146 @@ def test_scan_missing_run_reports_clean_error(runner):
     assert not isinstance(result.exception, Exception) or isinstance(
         result.exception, SystemExit
     )
+
+
+# --------------------------------------------------------------------------- #
+# get / delete (CRUD against the server)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def fake_connect(monkeypatch):
+    """Stub out auth + StacClient construction; return the stub client class.
+
+    Tests configure the stub's methods per-case and read back calls made.
+    """
+    import esm_catalog.auth as auth_mod
+    import esm_catalog.cli as cli_mod
+
+    monkeypatch.setattr(auth_mod, "get_bearer_token", lambda settings: "tok")
+    monkeypatch.setenv("ESM_CATALOG_SERVER_URL", "https://stac.example.org")
+
+    calls: list[tuple] = []
+
+    class FakeClient:
+        def __init__(self, *a, **kw):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def list_collections(self, limit=None):
+            calls.append(("list_collections", limit))
+            return {"collections": [{"id": "c1"}, {"id": "c2"}]}
+
+        def get_collection(self, cid):
+            calls.append(("get_collection", cid))
+            return {"id": cid, "type": "Collection"}
+
+        def delete_collection(self, cid):
+            calls.append(("delete_collection", cid))
+
+        def list_items(self, cid, limit=None):
+            calls.append(("list_items", cid, limit))
+            return {"features": [{"id": "i1", "collection": cid}], "numberMatched": 1}
+
+        def get_item(self, cid, iid):
+            calls.append(("get_item", cid, iid))
+            return {"id": iid, "collection": cid, "type": "Feature"}
+
+        def delete_item(self, cid, iid):
+            calls.append(("delete_item", cid, iid))
+
+    monkeypatch.setattr(cli_mod, "StacClient", FakeClient, raising=False)
+    import esm_catalog.client as client_mod
+
+    monkeypatch.setattr(client_mod, "StacClient", FakeClient)
+    return calls
+
+
+def test_get_collections_no_id_emits_jsonl(runner, fake_connect):
+    result = runner.invoke(main, ["get", "collections", "--json"])
+    assert result.exit_code == 0, result.output
+    lines = [json.loads(line) for line in result.output.strip().splitlines()]
+    assert lines == [{"id": "c1"}, {"id": "c2"}]
+
+
+def test_get_collections_with_id_emits_single_json(runner, fake_connect):
+    result = runner.invoke(main, ["get", "collections", "c1", "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == {"id": "c1", "type": "Collection"}
+
+
+def test_get_collections_passes_limit_through(runner, fake_connect):
+    result = runner.invoke(main, ["get", "collections", "--json", "--limit", "5"])
+    assert result.exit_code == 0, result.output
+    assert ("list_collections", 5) in fake_connect
+
+
+def test_get_items_requires_collection_id(runner, fake_connect):
+    result = runner.invoke(main, ["get", "items", "c1", "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output.strip()) == {"id": "i1", "collection": "c1"}
+
+
+def test_get_items_with_item_id_emits_single(runner, fake_connect):
+    result = runner.invoke(main, ["get", "items", "c1", "i1", "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output) == {
+        "id": "i1", "collection": "c1", "type": "Feature",
+    }  # fmt: skip
+
+
+def test_delete_collections_aborts_without_confirmation(runner, fake_connect, monkeypatch):
+    import questionary
+
+    monkeypatch.setattr(questionary, "confirm", lambda *a, **kw: _FakeAsk(False))
+    result = runner.invoke(main, ["delete", "collections", "c1"])
+    assert result.exit_code == 0, result.output
+    assert not any(c[0] == "delete_collection" for c in fake_connect)
+    assert "aborted" in result.output.lower()
+
+
+def test_delete_collections_yes_flag_skips_confirmation(runner, fake_connect):
+    result = runner.invoke(main, ["delete", "collections", "c1", "--yes"])
+    assert result.exit_code == 0, result.output
+    assert ("delete_collection", "c1") in fake_connect
+
+
+def test_delete_collections_confirm_prompt_shows_item_count(runner, fake_connect, monkeypatch):
+    import questionary
+
+    seen = {}
+
+    def fake_confirm(message, **kw):
+        seen["message"] = message
+        return _FakeAsk(True)
+
+    monkeypatch.setattr(questionary, "confirm", fake_confirm)
+    result = runner.invoke(main, ["delete", "collections", "c1"])
+    assert result.exit_code == 0, result.output
+    assert "1" in seen["message"]
+    assert "c1" in seen["message"]
+    assert ("delete_collection", "c1") in fake_connect
+
+
+def test_delete_items_yes_flag_skips_confirmation(runner, fake_connect):
+    result = runner.invoke(main, ["delete", "items", "c1", "i1", "--yes"])
+    assert result.exit_code == 0, result.output
+    assert ("delete_item", "c1", "i1") in fake_connect
+
+
+class _FakeAsk:
+    """Mimics questionary's Question.ask() API without a real prompt_toolkit loop."""
+
+    def __init__(self, value):
+        self._value = value
+
+    def ask(self):
+        return self._value
 
 
 # --------------------------------------------------------------------------- #

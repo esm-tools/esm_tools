@@ -135,15 +135,45 @@ class StacClient:
             f"/collections/{cid}/items/{iid}",
         )
 
+    def list_collections(self, limit: Optional[int] = None) -> StacObject:
+        """Return the server's ``GET /collections`` response (all collections)."""
+        params = {"limit": limit} if limit is not None else None
+        resp = self._client.get(self._base + "/collections", params=params)
+        self._check(resp, "list collections")
+        return resp.json()
+
+    def delete_collection(self, collection_id: CollectionId) -> None:
+        """Delete a Collection (cascades its items server-side)."""
+        resp = self._client.delete(self._base + f"/collections/{collection_id}")
+        self._check(resp, f"delete collection {collection_id!r}")
+
+    def list_items(
+        self, collection_id: CollectionId, limit: Optional[int] = None
+    ) -> StacObject:
+        """Return the server's ``GET /collections/{id}/items`` response."""
+        params = {"limit": limit} if limit is not None else None
+        resp = self._client.get(
+            self._base + f"/collections/{collection_id}/items", params=params
+        )
+        self._check(resp, f"list items in {collection_id!r}")
+        return resp.json()
+
+    def delete_item(self, collection_id: CollectionId, item_id: str) -> None:
+        """Delete a single Item."""
+        resp = self._client.delete(
+            self._base + f"/collections/{collection_id}/items/{item_id}"
+        )
+        self._check(resp, f"delete item {item_id!r} in {collection_id!r}")
+
     def _check(self, resp: httpx.Response, action: str) -> None:
-        """Raise :class:`StacClientError` unless *resp* is a 200/201 success.
+        """Raise :class:`StacClientError` unless *resp* is a 200/201/204 success.
 
         A redirect (e.g. Caddy's http→https 308) is reported with the target and
         the likely cause, rather than a bare status — the client does not follow
         it, because the slash redirect on these endpoints drops the ``/api``
         prefix and would send the request somewhere wrong.
         """
-        if resp.status_code in (200, 201):
+        if resp.status_code in (200, 201, 204):
             return
         if resp.is_redirect:
             location = resp.headers.get("location", "<none>")

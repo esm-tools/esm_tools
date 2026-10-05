@@ -54,6 +54,8 @@ general:
                         pool_dir: "/proj/awi/input"
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
+                albedo:
+                        pool_dir: "/albedo/pool"
 
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}
@@ -199,6 +201,13 @@ oifs:
 
 amip:
         pool_dir: ${general.pool_dir}
+        # albedo has no amip-forcing at the pool root (it is root-owned); the
+        # PCMDI-AMIP files sit in the OpenIFS pool.
+        choose_computer.name:
+                albedo:
+                        input_dir: "/albedo/pool/oifs-48r1/amip-forcing/"
+                "*":
+                        foo: bar
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -346,6 +355,21 @@ oasis3mct:
 
 
 computer:
+    # albedo: the same toolchain as the coupled awiesm3 build (openmpi 4.1.6 with its
+    # hdf5 / netcdf / eccodes) and a python that has yaml, which the OpenIFS
+    # field-generation step (fypp) needs at build time.
+    choose_name:
+        albedo:
+            mpi_implementation: openmpi_2026
+            load_python: true
+            # Intel 2022 with OpenMPI, as on levante: selects the Intel compile and
+            # link flags (-r8, -qopenmp) for OpenIFS here and for the AMIP forcing
+            # reader in amip.yaml. Without -qopenmp the reader does not link against
+            # the OpenMP-enabled OASIS.
+            compiler_mpi: intel2022_openmpi
+        "*":
+            foo: bar
+
     choose_general.execution_mode:
         run:
             add_export_vars:
@@ -366,3 +390,7 @@ computer:
                         OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
                         OIFS_CFLAG: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
                         OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'
+                # Machines without computer.compiler_mpi (albedo): keep the flags of
+                # oifs48.env.yaml. The "*" arm is what lets the parser skip the block.
+                "*":
+                    foo: bar

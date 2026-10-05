@@ -129,6 +129,9 @@ general:
         - 'v3.5'
         - 'v3.5-cc'
         - 'v3.5-is'
+        - 'v3.5.0'
+        - 'v3.5.0-cc'
+        - 'v3.5.0-is'
         - 'develop'
         - 'develop-cc'
         - 'develop-is'
@@ -278,6 +281,51 @@ general:
             major_version: v3.5
             couplings:
                 - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
+            ism_orog_coupled: true
+            add_include_models:
+                - xios
+            add_other_components:
+                - debm
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            honor_final_date: true
+
+        # ------------------------------------------------------------------
+        # v3.5.0: the release. Same settings as v3.5 / v3.5-cc / v3.5-is, but the
+        # couplings pin every component to a release tag (FESOM 2.8.1, OpenIFS
+        # 48r1v5, LPJ-GUESS 4.1.13, OASIS 5.3, XIOS 2.5.4, runoff mapper 1.4; the
+        # ice-sheet variant adds PISM 1.2.0-awi.1, dEBM 1.0-awi.1, ismm 4.1.8-awi.1).
+        # Frozen: a later fix is v3.5.1 with its own coupling.
+        # ------------------------------------------------------------------
+        v3.5.0:
+            major_version: v3.5
+            couplings:
+                - awiesm3_v3.5.0
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        v3.5.0-cc:
+            major_version: v3.5
+            couplings:
+                - awiesm3_v3.5.0
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: true
+            with_co2_oce_coupling: true
+            with_co2_veg_coupling: true
+        v3.5.0-is:
+            major_version: v3.5
+            couplings:
+                - awiesm3_v3.5.0-is
             ism_orog_coupled: true
             add_include_models:
                 - xios
@@ -522,6 +570,27 @@ oifs:
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
         v3.5-is:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5.0:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5.0-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5.0-is:
             add_add_namelist_changes:
                 fort.4:
                     NAMMCC:
@@ -1278,10 +1347,30 @@ fesom:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5-cc:
-            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            # Double precision, as develop-cc: REcoM hardcodes its own WP = 8 and does
+            # not compile against a single-precision FESOM. Was ON until 2026-10-05.
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5-is:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
+        # v3.5.0: as v3.5*, and FESOM is taken from the release tag. The tag has to
+        # be named here: the setup pins fesom version "2.8", and that pin wins over
+        # the fesom-2.8.1 of the coupling in esm_master.
+        v3.5.0:
+            branch: "2.8.1"
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5.0-cc:
+            branch: "2.8.1"
+            # Double precision, as develop-cc: REcoM hardcodes its own WP = 8.
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5.0-is:
+            branch: "2.8.1"
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
@@ -1699,6 +1788,16 @@ rnfmap:
     choose_general.smb_coupled:
         true:
             version: v1.4-ismm
+
+    # The release builds and runs the tagged ice-sheet-aware mapper in all three
+    # variants (one tag set). With NumCoupledRegions 0 it maps as v1.1 / v1.3 do.
+    choose_general.version:
+        v3.5.0:
+            version: v1.4
+        v3.5.0-cc:
+            version: v1.4
+        v3.5.0-is:
+            version: v1.4
 
     # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
     # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean

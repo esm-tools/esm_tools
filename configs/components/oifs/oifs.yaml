@@ -127,6 +127,7 @@ oifs:
     - 48r1v2
     - 48r1v4
     - 48r1v5
+    - 48r1-develop
     - 48r1-foci5
 
     choose_version:
@@ -396,6 +397,20 @@ oifs:
         with_xios: false
         major_version: 48r1
       48r1v5:
+        # Release tag in oifs48r1.1 (awiesm3-develop at f6d1860), used by awiesm3 v3.5.0.
+        branch: '48r1v5'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository:  https://git.smhi.se/jan.streffing/oifs48r1.1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+        co2_veg_emis_nml: namcompo_emis_co2_veg_fco2.nml
+      48r1-develop:
+        # The moving development line of the awiesm3 develop* variants. Was called 48r1v5
+        # until that name became the release tag (2026-10-05).
         # awiesm3 develop*: EC-Earth OpenIFS 48r1.1 (ecearth) + the open MRs !10-!16
         # + pr8 (A_Ice_tskin, A_Q_ice column heat) + the AWI-ESM3 bundle layout.
         # Interim until these are merged to ecearth.

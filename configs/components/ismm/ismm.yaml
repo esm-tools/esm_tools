@@ -21,10 +21,20 @@ ismm:
 
     available_versions:
     - "ece4"
+    - "4.1.8-awi.1"
 
     version: "ece4"
     git-repository: https://git.smhi.se/jan.streffing/ecearth4.git
     branch: cissembel-levante-intel
+    # 4.1.8-awi.1 is the release tag of that branch (94511fb): EC-Earth 4.1.8 plus
+    # our ISM-mapper changes. Used by awiesm3 v3.5.0-is; it keeps the build
+    # directory ismm-ece4.
+    choose_version:
+        "ece4":
+            branch: cissembel-levante-intel
+        "4.1.8-awi.1":
+            branch: "4.1.8-awi.1"
+            destination: ismm-ece4
 
     # The committed Makefile carries ECMWF HPC2020 paths and mpifort. Every setting
     # it needs is a plain make variable, and command-line macros override file

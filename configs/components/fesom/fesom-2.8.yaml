@@ -36,6 +36,12 @@ fesom:
         # TODO: -> "2.8.0" once the tag is cut.
         branch: "main"
         repo_options: "--recurse-submodules"
+      # Release tag, used by awiesm3 v3.5.0. For awiesm3 the tag is selected in
+      # the fesom section of awiesm3.yaml (choose_general.version), because the
+      # setup pins version "2.8" there and that pin wins over the coupling.
+      "2.8.1":
+        branch: "2.8.1"
+        repo_options: "--recurse-submodules"
 
     destination: "fesom-2.8"
     install_bins: bin/fesom.x

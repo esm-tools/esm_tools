@@ -115,6 +115,13 @@ lpj_guess:
             branch: 4.1.6
             install_bins: build/guess
             executable: guess
+        # Release tag in lpjg-4.1 (lpj_guess_awiesm3 at 179fb0d), used by awiesm3 v3.5.0.
+        4.1.13:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.13
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating

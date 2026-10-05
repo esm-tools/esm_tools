@@ -7,6 +7,7 @@ debm:
     - "fortran"
     - "update"
     - "esm_tools"
+    - "1.0-awi.1"
 
     version: "esm_tools"
     choose_version:
@@ -20,6 +21,16 @@ debm:
             branch: "esm_tools"
             # The esm_tools branch holds the Fortran sources under Fortran-v1.0/
             # (the other branches use Fortran/), so override the build paths here.
+            clean_command: cd Fortran-v1.0; rm -rf build CMakeCache.txt
+            comp_command: cd Fortran-v1.0; mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+            install_bins: Fortran-v1.0/bin/debm
+        # Release tag of the esm_tools branch (1889719e), in a fork that will not merge
+        # back: upstream v1.0 plus 25 commits. Used by awiesm3 v3.5.0-is. It keeps the
+        # build directory debm-esm_tools.
+        "1.0-awi.1":
+            branch: "1.0-awi.1"
+            git-repository: https://github.com/JanStreffing/dEBM
+            destination: debm-esm_tools
             clean_command: cd Fortran-v1.0; rm -rf build CMakeCache.txt
             comp_command: cd Fortran-v1.0; mkdir -p build; cd build; cmake ..; make -j `nproc --all`
             install_bins: Fortran-v1.0/bin/debm

@@ -1,0 +1,20 @@
+# AWI-ESM3 v3.5.0-is: the v3.5.0 components plus PISM, dEBM and the ISM-mapper,
+# every one pinned to a release tag. The moving line is
+# fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm (v3.5-is, develop-is).
+components:
+- xios-2.5.4
+- rnfmap-v1.4
+- oifs-48r1v5
+- fesom-2.8.1
+- oasis3mct-5.3
+- lpj_guess-4.1.13
+- pism-1.2.0-awi.1
+- debm-1.0-awi.1
+- ismm-4.1.8-awi.1
+coupling_changes:
+- sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml
+- sed -i 's/xios\/build_ecearth/xios/g' oifs-48r1/bundle.yml
+- sed -i -E 's#xios-[0-9.+]+/build_ecearth#xios#g' oifs-48r1/bundle.yml
+- sed -i 's/oasis3-mct-5.2/oasis/g' oifs-48r1/bundle.yml
+- sed -i '/^ *ENABLE_CUDA=OFF$/d' oifs-48r1/bundle.yml
+- sed -i 's/^\( *\)ATLAS_ENABLE_CUDA=OFF/\1ATLAS_ENABLE_CUDA=OFF\n\1ENABLE_CUDA=OFF/' oifs-48r1/bundle.yml

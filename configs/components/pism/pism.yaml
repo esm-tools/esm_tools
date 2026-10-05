@@ -30,6 +30,7 @@ pism:
     - github1.1.4
     - github1.2
     - github1.2.1
+    - 1.2.0-awi.1
     - index1.1
     required_plugins:
         - "git+https://github.com/esm-tools-plugins/esm_pism"
@@ -50,6 +51,14 @@ pism:
       github1.2.1:
         branch: crodehacke/detect_holes-awiesm3-is
         git-repository: https://github.com/xihao001/pism.git
+      # Release tag of that same tree, in a fork that will not merge back: upstream
+      # v1.2.0 plus the 40 commits of the branch above (1edf404c). Used by awiesm3
+      # v3.5.0-is. It keeps the build directory pism-github1.2.1, which the coupled
+      # setup and the runscripts point at.
+      1.2.0-awi.1:
+        branch: 1.2.0-awi.1
+        git-repository: https://github.com/JanStreffing/pism.git
+        destination: pism-github1.2.1
       index1.1:
         branch: Index_dev
         git-repository: https://github.com/sebhinck/pism-pub

@@ -59,7 +59,7 @@ _CONFIG_EPILOG = (
 click.rich_click.COMMAND_GROUPS["esm-catalog"] = [
     {
         "name": "Local",
-        "commands": ["scan", "status", "asset", "validate", "validate-cmip6"],
+        "commands": ["scan", "status", "asset"],
         "panel_styles": {"border_style": "cyan"},
     },
     {
@@ -852,7 +852,7 @@ def set_main_asset(
     )
 
 
-@main.command()
+@main.command(hidden=True)
 @click.argument("item_id")
 @click.argument("file", type=click.Path(exists=True, path_type=Path))
 @click.option(
@@ -1541,7 +1541,7 @@ def status(exp_root: str) -> None:
         )
 
 
-@main.command("validate-cmip6")
+@main.command("validate-cmip6", hidden=True)
 @click.option(
     "--exp-root",
     default=".",

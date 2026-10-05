@@ -89,7 +89,7 @@ def test_add_asset_shortcuts_via_cached_schema(runner, tmp_path):
 
     result = runner.invoke(
         main,
-        ["add", "asset", "echam-echam", str(garbage), "--exp-root", str(exp_root)],
+        ["asset", "add", "echam-echam", str(garbage), "--exp-root", str(exp_root)],
     )
 
     assert result.exit_code == 0, result.output
@@ -114,7 +114,7 @@ def test_add_asset_falls_back_to_real_read_for_an_unconventional_filename(
 
     result = runner.invoke(
         main,
-        ["add", "asset", "echam-echam", str(real_file), "--exp-root", str(exp_root)],
+        ["asset", "add", "echam-echam", str(real_file), "--exp-root", str(exp_root)],
     )
 
     assert result.exit_code == 0, result.output
@@ -135,8 +135,8 @@ def test_add_asset_reports_and_skips_unsupported_files(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "add",
             "asset",
+            "add",
             "echam-echam",
             str(good),
             str(bad),
@@ -158,7 +158,7 @@ def test_add_asset_fails_clearly_when_every_file_fails(runner, tmp_path):
     bad.write_text("nope")
 
     result = runner.invoke(
-        main, ["add", "asset", "echam-echam", str(bad), "--exp-root", str(exp_root)]
+        main, ["asset", "add", "echam-echam", str(bad), "--exp-root", str(exp_root)]
     )
 
     assert result.exit_code != 0
@@ -173,7 +173,7 @@ def test_add_asset_rejects_a_malformed_item_id(runner, tmp_path):
 
     # No "-" at all -- item ids are always "<component>-<stream>".
     result = runner.invoke(
-        main, ["add", "asset", "nodash", str(some_file), "--exp-root", str(exp_root)]
+        main, ["asset", "add", "nodash", str(some_file), "--exp-root", str(exp_root)]
     )
 
     assert result.exit_code != 0
@@ -241,7 +241,7 @@ def test_rm_asset_writes_a_tombstone_shard(runner, tmp_path):
     _scan(runner, exp_root)
 
     result = runner.invoke(
-        main, ["rm", "asset", "echam-echam", "200001", "--exp-root", str(exp_root)]
+        main, ["asset", "rm", "echam-echam", "200001", "--exp-root", str(exp_root)]
     )
 
     assert result.exit_code == 0, result.output
@@ -258,7 +258,7 @@ def test_rm_asset_rejects_a_malformed_item_id(runner, tmp_path):
     _scan(runner, exp_root)
 
     result = runner.invoke(
-        main, ["rm", "asset", "nodash", "somekey", "--exp-root", str(exp_root)]
+        main, ["asset", "rm", "nodash", "somekey", "--exp-root", str(exp_root)]
     )
 
     assert result.exit_code != 0
@@ -272,8 +272,8 @@ def test_add_alternate_writes_added_alternates_instruction(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "add",
-            "alternate",
+            "asset",
+            "add-alternate",
             "echam-echam",
             "200001",
             "hsm",
@@ -304,8 +304,8 @@ def test_add_alternate_resolves_a_local_path_to_a_file_uri(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "add",
-            "alternate",
+            "asset",
+            "add-alternate",
             "echam-echam",
             "200001",
             "backup",
@@ -329,8 +329,8 @@ def test_add_alternate_rejects_a_malformed_item_id(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "add",
-            "alternate",
+            "asset",
+            "add-alternate",
             "nodash",
             "200001",
             "hsm",
@@ -351,8 +351,8 @@ def test_set_main_asset_writes_promote_alternate_instruction(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "set-main",
             "asset",
+            "set-main",
             "echam-echam",
             "200001",
             "--to",
@@ -379,8 +379,8 @@ def test_set_main_asset_demote_as_is_optional(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "set-main",
             "asset",
+            "set-main",
             "echam-echam",
             "200001",
             "--to",
@@ -403,8 +403,8 @@ def test_set_main_asset_rejects_a_malformed_item_id(runner, tmp_path):
     result = runner.invoke(
         main,
         [
-            "set-main",
             "asset",
+            "set-main",
             "nodash",
             "200001",
             "--to",

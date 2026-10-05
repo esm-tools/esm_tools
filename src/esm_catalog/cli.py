@@ -5,7 +5,7 @@ Workflow for one experiment::
     esm-catalog auth login https://stac.awi.de   # once; token cached locally
     esm-catalog scan                             # write stac-geoparquet shards
     esm-catalog validate-cmip6                   # check any declared cmip6:* facets, if present
-    esm-catalog put                              # ship new shards -> pgstac
+    esm-catalog server put                       # ship new shards -> pgstac
     esm-catalog status                           # what's local, what's configured
 
 A large scan is distributed across SLURM instead::
@@ -15,13 +15,13 @@ A large scan is distributed across SLURM instead::
 
 One-off manual edits outside a full scan -- e.g. registering a file scan
 never saw, or dropping a bad asset -- each write exactly one local shard
-(same 'push' afterwards to ship it), never touch the network themselves::
+(same 'server put' afterwards to ship it), never touch the network themselves::
 
-    esm-catalog add asset <component>-<stream> FILE...        # cache-shortcut when possible
+    esm-catalog asset add <component>-<stream> FILE...        # cache-shortcut when possible
     esm-catalog validate <component>-<stream> FILE            # always a real, authoritative read
-    esm-catalog rm asset <component>-<stream> ASSET_KEY       # tombstone; push then drops it
-    esm-catalog add alternate <component>-<stream> ASSET_KEY NAME LOCATION  # e.g. a tape copy
-    esm-catalog set-main asset <component>-<stream> ASSET_KEY --to NAME    # promote an alternate
+    esm-catalog asset rm <component>-<stream> ASSET_KEY       # tombstone; push then drops it
+    esm-catalog asset add-alternate <component>-<stream> ASSET_KEY NAME LOCATION  # e.g. a tape copy
+    esm-catalog asset set-main <component>-<stream> ASSET_KEY --to NAME    # promote an alternate
 
 On disk, ``<exp_root>/catalog/`` holds the catalog PFS-friendly: one
 ``collection.json`` plus sharded stac-geoparquet (a handful of files, never one
@@ -59,7 +59,7 @@ _CONFIG_EPILOG = (
 click.rich_click.COMMAND_GROUPS["esm-catalog"] = [
     {
         "name": "Local",
-        "commands": ["scan", "status", "add", "rm", "set-main", "validate", "validate-cmip6"],
+        "commands": ["scan", "status", "asset", "validate", "validate-cmip6"],
         "panel_styles": {"border_style": "cyan"},
     },
     {
@@ -69,7 +69,7 @@ click.rich_click.COMMAND_GROUPS["esm-catalog"] = [
     },
     {
         "name": "Server",
-        "commands": ["get", "put", "delete"],
+        "commands": ["server"],
         "panel_styles": {"border_style": "green"},
     },
 ]  # fmt: skip
@@ -260,7 +260,7 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
     is_flag=True,
     is_eager=True,
     help="Emit machine-readable JSON instead of formatted text, where the "
-    "command supports it (currently: put, auth login). Unsupported commands "
+    "command supports it (currently: server put, auth login). Unsupported commands "
     "ignore this flag.",
 )
 @click.pass_context
@@ -285,7 +285,7 @@ def auth() -> None:
     "--insecure",
     is_flag=True,
     help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
-    "on every 'put' against this server.",
+    "on every 'server put' against this server.",
 )
 @click.pass_context
 def auth_login(
@@ -558,11 +558,11 @@ def _resolve_catalog(exp_root: str, catalog_dir_opt: Optional[str]):
 
 
 @main.group()
-def add() -> None:
-    """Add something to the catalog directly, without a full scan."""
+def asset() -> None:
+    """Add, remove, or repoint an asset directly, without a full scan."""
 
 
-@add.command("asset")
+@asset.command("add")
 @click.argument("item_id")
 @click.argument(
     "files", nargs=-1, required=True, type=click.Path(exists=True, path_type=Path)
@@ -590,7 +590,7 @@ def add_asset(
     """Add one or more FILES as assets of ITEM_ID (``<component>-<stream>``).
 
     Writes one local shard under the catalog's items/ directory -- run
-    'esm-catalog push' afterwards to ship it. Reuses ITEM_ID's cached schema
+    'esm-catalog server put' afterwards to ship it. Reuses ITEM_ID's cached schema
     (see 'esm-catalog scan') when available, falling back to a real read
     only for this stream's genuine first-ever asset. A single deliberate
     operation touching N files always writes exactly one shard, however
@@ -656,7 +656,7 @@ def _resolve_href(location: str) -> str:
     return _to_href(UPath(location))
 
 
-@add.command("alternate")
+@asset.command("add-alternate")
 @click.argument("item_id")
 @click.argument("asset_key")
 @click.argument("name")
@@ -681,7 +681,7 @@ def add_alternate(
     'alternate-assets' STAC extension: this must be the exact same bytes as
     ASSET_KEY's primary location, just reachable a different way.
 
-    Writes one local shard row -- run 'esm-catalog push' afterwards to
+    Writes one local shard row -- run 'esm-catalog server put' afterwards to
     actually apply it (merge_item merges it into ASSET_KEY's own
     'alternate' dict without touching its other fields; this command alone
     changes nothing on the server, and needs no live fetch to work).
@@ -731,12 +731,7 @@ def add_alternate(
     )
 
 
-@main.group("rm")
-def rm_group() -> None:
-    """Remove something from the catalog directly, without a full scan."""
-
-
-@rm_group.command("asset")
+@asset.command("rm")
 @click.argument("item_id")
 @click.argument("asset_key")
 @click.option(
@@ -748,7 +743,7 @@ def rm_asset(
 ) -> None:
     """Mark ASSET_KEY on ITEM_ID for removal.
 
-    Writes a tombstone as one local shard row -- run 'esm-catalog push'
+    Writes a tombstone as one local shard row -- run 'esm-catalog server put'
     afterwards to actually apply it (merge_item drops the key on push; this
     command alone changes nothing on the server). A whole Item/Collection is
     never deleted this way, only one asset key.
@@ -791,12 +786,7 @@ def rm_asset(
     click.echo(f"marked {asset_key!r} on {item_id} for removal -> {shard_path}")
 
 
-@main.group("set-main")
-def set_main_group() -> None:
-    """Change which location is an asset's primary href."""
-
-
-@set_main_group.command("asset")
+@asset.command("set-main")
 @click.argument("item_id")
 @click.argument("asset_key")
 @click.option(
@@ -823,10 +813,10 @@ def set_main_asset(
 
     Needs no live fetch: writes a promote_alternate instruction as one local
     shard row -- merge_item resolves it at push time against whatever real
-    asset state --exp-root/'esm-catalog push' already has in hand (the
+    asset state --exp-root/'esm-catalog server put' already has in hand (the
     same pattern 'rm asset'/'add alternate' already use). A no-op at merge
     time if ASSET_KEY or the named alternate does not actually exist -- run
-    'esm-catalog push' to find out, this command itself cannot check.
+    'esm-catalog server put' to find out, this command itself cannot check.
     """
     from datetime import datetime, timezone
 
@@ -889,7 +879,7 @@ def validate(
 
     Unlike 'esm-catalog add asset', never trusts a cached schema shortcut --
     always opens FILE. Writes one local shard row (same as 'add'); run
-    'esm-catalog push' afterwards to ship it. Does not participate in
+    'esm-catalog server put' afterwards to ship it. Does not participate in
     'esm-catalog scan --revalidate-every''s periodic checkpoint cadence --
     a one-off manual check has no "occurrence count" to advance.
     """
@@ -929,7 +919,12 @@ def validate(
     click.echo(f"validated {file} for {item_id} -> {shard_path}")
 
 
-@main.command()
+@main.group()
+def server() -> None:
+    """Read, write, or delete catalog objects on a STAC server."""
+
+
+@server.command()
 @click.argument(
     "paths",
     nargs=-1,
@@ -942,7 +937,7 @@ def validate(
     "--insecure",
     is_flag=True,
     help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
-    "on 'auth login' and on every 'put' against this server.",
+    "on 'auth login' and on every 'server put' against this server.",
 )
 @click.option(
     "-v",
@@ -1134,8 +1129,8 @@ def push(
     verbose: bool,
     resolve_specs: tuple[str, ...],
 ) -> None:
-    """Deprecated alias for 'put' — will be removed in a future release."""
-    click.secho("warning: 'push' is deprecated, use 'put' instead", fg="yellow", err=True)
+    """Deprecated alias for 'server put' — will be removed in a future release."""
+    click.secho("warning: 'push' is deprecated, use 'server put' instead", fg="yellow", err=True)
     ctx.invoke(
         put,
         paths=paths,
@@ -1285,7 +1280,7 @@ def _format_options(fn):
     return fn
 
 
-@main.group()
+@server.group()
 def get() -> None:
     """Fetch a collection or item from the server."""
 
@@ -1356,7 +1351,7 @@ def get_items(
             _emit_list(resp.get("features", []), fmt, _render_items_table)
 
 
-@main.group()
+@server.group()
 def delete() -> None:
     """Remove a collection or item from the server."""
 
@@ -1483,11 +1478,11 @@ def _push_progress(enabled: bool, total: int) -> Generator[object, None, None]:
     help="Experiment root; may be remote (e.g. sftp://host/path). Defaults to '.'.",
 )
 def status(exp_root: str) -> None:
-    """Show the local catalog's state and the configured put target.
+    """Show the local catalog's state and the configured server put target.
 
     Reports what a scan has produced on disk (shards, item counts, incremental
-    bookkeeping) and where 'put' would send it. Does not contact the server —
-    'put' itself is the only thing that knows what has actually been shipped,
+    bookkeeping) and where 'server put' would send it. Does not contact the server —
+    'server put' itself is the only thing that knows what has actually been shipped,
     since nothing local tracks put history.
     """
     from upath import UPath
@@ -1533,7 +1528,7 @@ def status(exp_root: str) -> None:
     except Exception:  # noqa: BLE001 — a broken config must not crash status
         server_url = None
     if server_url:
-        click.echo(f"put target: {server_url}")
+        click.echo(f"server put target: {server_url}")
         from esm_catalog.auth import load_token
 
         click.echo(
@@ -1541,7 +1536,7 @@ def status(exp_root: str) -> None:
         )
     else:
         click.secho(
-            "put target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
+            "server put target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
             fg="yellow",
         )
 

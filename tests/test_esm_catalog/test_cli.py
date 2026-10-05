@@ -25,7 +25,7 @@ def runner():
 def test_help_lists_all_commands(runner):
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    for command in ("auth", "scan", "status", "get", "put", "delete"):
+    for command in ("auth", "scan", "status", "server"):
         assert command in result.output
 
 
@@ -125,32 +125,32 @@ def fake_connect(monkeypatch):
 
 
 def test_get_collections_no_id_emits_jsonl(runner, fake_connect):
-    result = runner.invoke(main, ["get", "collections", "--json"])
+    result = runner.invoke(main, ["server", "get", "collections", "--json"])
     assert result.exit_code == 0, result.output
     lines = [json.loads(line) for line in result.output.strip().splitlines()]
     assert lines == [{"id": "c1"}, {"id": "c2"}]
 
 
 def test_get_collections_with_id_emits_single_json(runner, fake_connect):
-    result = runner.invoke(main, ["get", "collections", "c1", "--json"])
+    result = runner.invoke(main, ["server", "get", "collections", "c1", "--json"])
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == {"id": "c1", "type": "Collection"}
 
 
 def test_get_collections_passes_limit_through(runner, fake_connect):
-    result = runner.invoke(main, ["get", "collections", "--json", "--limit", "5"])
+    result = runner.invoke(main, ["server", "get", "collections", "--json", "--limit", "5"])
     assert result.exit_code == 0, result.output
     assert ("list_collections", 5) in fake_connect
 
 
 def test_get_items_requires_collection_id(runner, fake_connect):
-    result = runner.invoke(main, ["get", "items", "c1", "--json"])
+    result = runner.invoke(main, ["server", "get", "items", "c1", "--json"])
     assert result.exit_code == 0, result.output
     assert json.loads(result.output.strip()) == {"id": "i1", "collection": "c1"}
 
 
 def test_get_items_with_item_id_emits_single(runner, fake_connect):
-    result = runner.invoke(main, ["get", "items", "c1", "i1", "--json"])
+    result = runner.invoke(main, ["server", "get", "items", "c1", "i1", "--json"])
     assert result.exit_code == 0, result.output
     assert json.loads(result.output) == {
         "id": "i1", "collection": "c1", "type": "Feature",
@@ -161,14 +161,14 @@ def test_delete_collections_aborts_without_confirmation(runner, fake_connect, mo
     import questionary
 
     monkeypatch.setattr(questionary, "confirm", lambda *a, **kw: _FakeAsk(False))
-    result = runner.invoke(main, ["delete", "collections", "c1"])
+    result = runner.invoke(main, ["server", "delete", "collections", "c1"])
     assert result.exit_code == 0, result.output
     assert not any(c[0] == "delete_collection" for c in fake_connect)
     assert "aborted" in result.output.lower()
 
 
 def test_delete_collections_yes_flag_skips_confirmation(runner, fake_connect):
-    result = runner.invoke(main, ["delete", "collections", "c1", "--yes"])
+    result = runner.invoke(main, ["server", "delete", "collections", "c1", "--yes"])
     assert result.exit_code == 0, result.output
     assert ("delete_collection", "c1") in fake_connect
 
@@ -183,7 +183,7 @@ def test_delete_collections_confirm_prompt_shows_item_count(runner, fake_connect
         return _FakeAsk(True)
 
     monkeypatch.setattr(questionary, "confirm", fake_confirm)
-    result = runner.invoke(main, ["delete", "collections", "c1"])
+    result = runner.invoke(main, ["server", "delete", "collections", "c1"])
     assert result.exit_code == 0, result.output
     assert "1" in seen["message"]
     assert "c1" in seen["message"]
@@ -191,7 +191,7 @@ def test_delete_collections_confirm_prompt_shows_item_count(runner, fake_connect
 
 
 def test_delete_items_yes_flag_skips_confirmation(runner, fake_connect):
-    result = runner.invoke(main, ["delete", "items", "c1", "i1", "--yes"])
+    result = runner.invoke(main, ["server", "delete", "items", "c1", "i1", "--yes"])
     assert result.exit_code == 0, result.output
     assert ("delete_item", "c1", "i1") in fake_connect
 

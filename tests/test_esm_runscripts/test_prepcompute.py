@@ -5,6 +5,7 @@ from esm_runscripts import prepcompute
 
 
 def _config(experiment_src_dir, model="echam", shared_dir=None, **general_extra):
+    """Build a minimal config dict for one model/component under test."""
     config = {
         "general": {"experiment_src_dir": str(experiment_src_dir), **general_extra}
     }
@@ -13,6 +14,7 @@ def _config(experiment_src_dir, model="echam", shared_dir=None, **general_extra)
 
 
 def test_first_run_creates_snapshot(tmp_path, git_repo):
+    """First call with no existing snapshot copies the shared source tree."""
     shared_dir = git_repo("shared_model_checkout")
     config = _config(tmp_path / "exp" / "src", shared_dir=shared_dir)
 
@@ -26,11 +28,13 @@ def test_first_run_creates_snapshot(tmp_path, git_repo):
 
 
 def test_no_shared_source_returns_none(tmp_path):
+    """No shared model_dir to snapshot from -> None, not an error."""
     config = _config(tmp_path / "exp" / "src", model="xios")
     assert prepcompute.snapshot_model_source(config, "xios", "1.0") is None
 
 
 def test_reuse_on_subsequent_segments_no_recopy(tmp_path, git_repo):
+    """An existing snapshot is reused as-is, immune to drift in the shared dir."""
     shared_dir = git_repo("shared_model_checkout")
     config = _config(tmp_path / "exp" / "src", shared_dir=shared_dir)
 
@@ -56,6 +60,7 @@ def test_reuse_on_subsequent_segments_no_recopy(tmp_path, git_repo):
 
 
 def test_race_pre_existing_snapshot_is_not_overwritten(tmp_path, git_repo):
+    """A snapshot another process already created wins; we never overwrite it."""
     shared_dir = git_repo("shared_model_checkout")
     config = _config(tmp_path / "exp" / "src", shared_dir=shared_dir)
 
@@ -74,6 +79,7 @@ def test_race_pre_existing_snapshot_is_not_overwritten(tmp_path, git_repo):
 
 
 def test_repoints_model_dir_at_snapshot(tmp_path, git_repo):
+    """snapshot_model_sources() redirects config[model]['model_dir'] at the snapshot."""
     shared_dir = git_repo("shared_model_checkout")
     experiment_src_dir = tmp_path / "exp" / "src"
     config = _config(
@@ -89,6 +95,7 @@ def test_repoints_model_dir_at_snapshot(tmp_path, git_repo):
 
 
 def test_models_without_version_are_skipped(tmp_path):
+    """A model with no version string is left untouched, no snapshot attempted."""
     config = _config(tmp_path / "exp" / "src", model="xios", models=["xios"])
     result = prepcompute.snapshot_model_sources(config)
     assert "model_dir" not in result["xios"]

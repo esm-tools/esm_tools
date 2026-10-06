@@ -8,6 +8,8 @@ from esm_runscripts import prepare
 
 
 class VcsFixture(NamedTuple):
+    """The pieces a VCS-capture test needs: config plus the paths it points at."""
+
     config: dict
     snapshot_dir: object
     log_dir: object
@@ -17,6 +19,7 @@ class VcsFixture(NamedTuple):
 
 @pytest.fixture
 def vcs_fixture(tmp_path, git_repo):
+    """A one-component (echam) experiment: frozen snapshot, log dirs, run-1 config."""
     snapshot_dir = git_repo("exp/src/echam-6.3")
     git_repo("esm_tools_repo")
 
@@ -44,6 +47,7 @@ def vcs_fixture(tmp_path, git_repo):
 
 
 def _next_segment(config, run_number, log_dir):
+    """Copy config for a later run segment: same experiment, new run_number/log dir."""
     config = dict(config)
     config["general"] = dict(config["general"])
     config["general"]["run_number"] = run_number
@@ -52,11 +56,13 @@ def _next_segment(config, run_number, log_dir):
 
 
 def _run_segment(config, run_number, log_dir):
+    """Run one segment through the real add_vcs_info -> check_vcs_info pipeline."""
     config = prepare.add_vcs_info(_next_segment(config, run_number, log_dir))
     return prepare.check_vcs_info_against_last_run(config)
 
 
 def test_clean_snapshot_is_recorded(vcs_fixture):
+    """A clean (undirtied) snapshot's VCS info is written with an empty diff."""
     config = prepare.add_vcs_info(dict(vcs_fixture.config))
 
     exp_vcs_info_file = vcs_fixture.run1_log_dir / "test_vcs_info.yaml"
@@ -73,6 +79,7 @@ def test_clean_snapshot_is_recorded(vcs_fixture):
 
 
 def test_dirty_snapshot_is_recorded_not_failed(vcs_fixture):
+    """A dirty snapshot is recorded with a non-empty diff, not treated as an error."""
     # Legitimate local modification at compile time: should be recorded,
     # not treated as an error.
     with (vcs_fixture.snapshot_dir / "source.f90").open("a") as f:
@@ -83,6 +90,7 @@ def test_dirty_snapshot_is_recorded_not_failed(vcs_fixture):
 
 
 def test_initial_file_not_overwritten_on_later_runs(vcs_fixture):
+    """The write-once initial-reference file survives a second segment untouched."""
     prepare.add_vcs_info(dict(vcs_fixture.config))
     initial_vcs_info_file = vcs_fixture.log_dir / "test_vcs_info_initial.yaml"
     initial_info_first_write = initial_vcs_info_file.read_text()
@@ -99,12 +107,14 @@ def test_initial_file_not_overwritten_on_later_runs(vcs_fixture):
 
 
 def test_first_run_skips_check(vcs_fixture):
+    """Segment 1 has no prior run to compare against, so the check is a no-op."""
     # Should not raise even though no initial file existed before this call.
     result = _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
     assert "vcs_info" in result["general"]
 
 
 def test_no_false_positive_when_shared_dir_drifts(vcs_fixture, git_repo):
+    """Activity on the old shared checkout doesn't affect the frozen snapshot."""
     _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
 
     # Unrelated activity on what *used to* be the shared model_dir. The
@@ -122,6 +132,7 @@ def test_no_false_positive_when_shared_dir_drifts(vcs_fixture, git_repo):
 
 
 def test_fails_loudly_when_snapshot_itself_changed(vcs_fixture):
+    """Tampering with the frozen snapshot itself is a real error, hard-fails."""
     _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
 
     # Something genuinely wrong: the frozen snapshot itself was touched
@@ -140,6 +151,7 @@ def test_fails_loudly_when_snapshot_itself_changed(vcs_fixture):
 
 
 def test_allow_vcs_differences_bypasses_check(vcs_fixture):
+    """allow_vcs_differences lets a tampered snapshot through without raising."""
     _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
 
     snapshot_dir = vcs_fixture.snapshot_dir

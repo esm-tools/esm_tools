@@ -5,6 +5,7 @@ import pytest
 
 
 def _init_git_repo(path: Path) -> None:
+    """Init a git repo at path with one committed source.f90, for VCS-capture tests."""
     subprocess.run(["git", "init", "-q", str(path)], check=True)
     subprocess.run(
         ["git", "-C", str(path), "config", "user.email", "test@example.com"],

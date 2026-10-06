@@ -995,38 +995,39 @@ def check_for_unknown_files(config):
                 known_files += list(config[model][filetype + "_sources"].values())
                 known_files += list(config[model][filetype + "_targets"].values())
 
-    known_files = [os.path.realpath(known_file) for known_file in known_files]
-    known_files = list(dict.fromkeys(known_files))
+    # Sets, and one realpath per file below: with lists the membership test is
+    # linear, which makes the scan quadratic in the number of files in work.
+    known_files = {os.path.realpath(known_file) for known_file in known_files}
 
     if not "unknown_sources" in config["general"]:
         config["general"]["unknown_sources"] = {}
         config["general"]["unknown_targets"] = {}
         config["general"]["unknown_intermediate"] = {}
 
-    unknown_files = []
+    unknown_files = set()
     index = 0
+    real_work_dir = os.path.realpath(config["general"]["thisrun_work_dir"])
+    real_exp_unknown_dir = os.path.realpath(
+        config["general"]["experiment_unknown_dir"]
+    )
+    real_run_unknown_dir = os.path.realpath(config["general"]["thisrun_unknown_dir"])
 
     for thisfile in all_files:
-        if os.path.realpath(thisfile) in known_files + unknown_files:
+        real_file = os.path.realpath(thisfile)
+        if real_file in known_files or real_file in unknown_files:
             continue
-        config["general"]["unknown_sources"][index] = os.path.realpath(thisfile)
-        config["general"]["unknown_targets"][index] = os.path.realpath(
-            thisfile
-        ).replace(
-            os.path.realpath(config["general"]["thisrun_work_dir"]),
-            os.path.realpath(config["general"]["experiment_unknown_dir"]),
+        config["general"]["unknown_sources"][index] = real_file
+        config["general"]["unknown_targets"][index] = real_file.replace(
+            real_work_dir, real_exp_unknown_dir
         )
-        config["general"]["unknown_intermediate"][index] = os.path.realpath(
-            thisfile
-        ).replace(
-            os.path.realpath(config["general"]["thisrun_work_dir"]),
-            os.path.realpath(config["general"]["thisrun_unknown_dir"]),
+        config["general"]["unknown_intermediate"][index] = real_file.replace(
+            real_work_dir, real_run_unknown_dir
         )
 
-        unknown_files.append(os.path.realpath(thisfile))
+        unknown_files.add(real_file)
 
         index += 1
-        logger.warning("Unknown file in work: " + os.path.realpath(thisfile))
+        logger.warning("Unknown file in work: " + real_file)
         helpers.print_datetime(config)
 
     return config

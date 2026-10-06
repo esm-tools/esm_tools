@@ -799,6 +799,8 @@ fesom:
                     grid: feom
             tsk_ico:
                     grid: feom
+            mslp_oce:
+                    grid: feom
             heat_swo:
                     grid: feom
             hydr_oce:

@@ -45,6 +45,13 @@ general:
     # Default off; set true in a runscript to enable the concentration-driven
     # CO2 spinup mode (see choose_general.with_co2_concdriven in the oifs section).
     with_co2_concdriven: false
+    # OpenIFS sends mean sea-level pressure to FESOM (A_MSLP -> mslp_oce), which
+    # REcoM uses for the air-sea gas exchange instead of a constant atmosphere.
+    # Needs with_co2_oce_coupling, an OpenIFS that declares A_MSLP for FESOM, a
+    # FESOM with use_atm_mslp, and A_MSLP in the coupler restart rst_co2_ao.nc.
+    # On for the moving carbon-cycle versions (develop-cc, v3.5-cc). Off for
+    # v3.5.0-cc: its tags (OpenIFS 48r1v5, FESOM 2.8.1) do not have the field.
+    with_mslp_oce_coupling: false
 
     # PISM<->FESOM dynamic-mesh (ice2fesom) coupling. Feature switch (not version-
     # tied): any awiesm3 version enables it with interactive_mesh: true. Gates the
@@ -198,6 +205,7 @@ general:
             xios_interp_order: 1
             with_co2_tracer: true
             with_co2_oce_coupling: true
+            with_mslp_oce_coupling: true
             with_co2_veg_coupling: true
 
         # Ice-sheet coupled variant: same as develop, but additionally builds
@@ -273,6 +281,7 @@ general:
             xios_interp_order: 1
             with_co2_tracer: true
             with_co2_oce_coupling: true
+            with_mslp_oce_coupling: true
             with_co2_veg_coupling: true
 
         # Ice-sheet coupled variant of v3.5: see develop-is above for why PISM,
@@ -730,7 +739,7 @@ oifs:
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
         A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_Ice_tskin, A_CurX, A_CurY, A_WindX, A_WindY,
-        A_FCO2_oce, A_XCO2_oce]
+        A_FCO2_oce, A_XCO2_oce, A_MSLP]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
         SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
@@ -788,6 +797,13 @@ oifs:
                 fort.4:
                     NAMECECFG:
                         ECE_CPL_LPJG_CO2: true
+
+    choose_general.with_mslp_oce_coupling:
+        true:
+            add_add_add_add_add_add_add_add_add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_CPL_MSLP: true
 
     # Concentration-driven CO2 spinup mode. Feeds the ocean BGC the spatially-
     # homogeneous CMIP CO2 (RCARDI from ECE_CMIP_GHG) instead of the prognostic
@@ -909,6 +925,15 @@ fesom:
             ocp_tool_dir: ""
             recom_input_path: "/work/ab0246/a270092/input/fesom2/recom/"
             recom_climate_data_dir: "${fesom.climate_data_dir}"
+    # FESOM receives mean sea-level pressure from OpenIFS into press_air; see
+    # general.with_mslp_oce_coupling.
+    choose_general.with_mslp_oce_coupling:
+        true:
+            add_add_add_namelist_changes:
+                namelist.config:
+                    run_config:
+                        use_atm_mslp: true
+
     choose_general.with_co2_oce_coupling:
         true:
             # The REcoM CO2 coupling (fesom2.6_recom_awiesm3_co2_coupling) is in
@@ -1975,6 +2000,15 @@ oasis3mct:
                         rst_co2_ao.nc:
                             - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+            # Restates the rst_co2_ao.nc list (add_coupling_target_fields replaces a
+            # file's list) with the pressure field appended last.
+            choose_general.with_mslp_oce_coupling:
+                true:
+                    add_add_coupling_target_fields:
+                        rst_co2_ao.nc:
+                            - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
+                            - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+                            - 'mslp_oce <--gauswgt_i-- A_MSLP'
 
             # Specify which restart files need bidirectional merging
             # Use this for restart files with LOCTRANS+EXPOUT in both directions
@@ -2044,6 +2078,15 @@ oasis3mct:
                         rst_co2_ao.nc:
                             - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+            # Restates the rst_co2_ao.nc list (add_coupling_target_fields replaces a
+            # file's list) with the pressure field appended last.
+            choose_general.with_mslp_oce_coupling:
+                true:
+                    add_add_coupling_target_fields:
+                        rst_co2_ao.nc:
+                            - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
+                            - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+                            - 'mslp_oce <--gauswgt_i-- A_MSLP'
 
             # Specify which restart files need bidirectional merging
             # Use this for restart files with LOCTRANS+EXPOUT in both directions

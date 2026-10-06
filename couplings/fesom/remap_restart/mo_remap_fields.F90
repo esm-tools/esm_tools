@@ -51,6 +51,80 @@ module mo_remap_fields
 contains
 
     !===========================================================================
+    ! Which surface-open nodes belong to the REAL ocean?
+    !
+    ! ulevels == 1 means no ice above the node, but that alone does not make it part of the
+    ! ocean: PISM also opens holes INSIDE the shelves (a cell thinned past the calving
+    ! threshold), enclosed by cavity on every side.  Measured on ism44, a mesh change opened
+    ! 317-414 nodes, of which 0-29 sat in such a hole -- and those were the farthest from any
+    ! open water (median 61 km, up to 87 km), because by construction there is none nearby.
+    !
+    ! Seeding a hole from open ocean imports heat that cannot physically get there: the hole
+    ! has no surface connection to the ocean, and the water actually in it is the cavity water
+    ! that was under the ice a moment ago.  The imported heat then sits against the base and
+    ! the front of the shelf surrounding the hole.
+    !
+    ! This is the FESOM-side counterpart of PISM's -label_floating_holes, which this setup
+    ! already runs so that the calving laws do not act on the rim of such a hole.
+    !
+    ! Connected components of the surface-open nodes, joined through shared elements: the
+    ! largest is the ocean, every other one is enclosed.
+    subroutine label_main_ocean(mesh, in_main, n_enclosed)
+        type(t_mesh_remap),   intent(in)  :: mesh
+        logical, allocatable, intent(out) :: in_main(:)
+        integer,              intent(out) :: n_enclosed
+
+        integer, allocatable :: comp(:), stack(:), csize(:)
+        integer :: i, i2, j, e, k, n, top, ncomp, best
+
+        allocate(in_main(mesh%nod2D), comp(mesh%nod2D), stack(mesh%nod2D))
+        in_main    = .false.
+        comp       = 0
+        ncomp      = 0
+        n_enclosed = 0
+        do i = 1, mesh%nod2D
+            if (mesh%ulevels_nod2D(i) /= 1) cycle
+            if (comp(i) /= 0) cycle
+            ncomp    = ncomp + 1
+            comp(i)  = ncomp
+            top      = 1
+            stack(1) = i
+            do while (top > 0)
+                n   = stack(top)
+                top = top - 1
+                do j = mesh%nod_in_elem2D_num(n), mesh%nod_in_elem2D_num(n+1) - 1
+                    e = mesh%nod_in_elem2D(j)
+                    if (e <= 0) cycle
+                    do k = 1, 3
+                        i2 = mesh%elem2D_nodes(k, e)
+                        if (i2 <= 0) cycle
+                        if (mesh%ulevels_nod2D(i2) /= 1) cycle
+                        if (comp(i2) /= 0) cycle
+                        comp(i2)   = ncomp
+                        top        = top + 1
+                        stack(top) = i2
+                    end do
+                end do
+            end do
+        end do
+        if (ncomp == 0) then
+            deallocate(comp, stack)
+            return
+        end if
+        allocate(csize(ncomp))
+        csize = 0
+        do i = 1, mesh%nod2D
+            if (comp(i) > 0) csize(comp(i)) = csize(comp(i)) + 1
+        end do
+        best       = maxloc(csize, 1)
+        in_main    = (comp == best)
+        n_enclosed = count(comp > 0) - csize(best)
+        write(*,'(A,I0,A,I0,A,I0)') '  --> surface-open nodes ', count(comp > 0), &
+            ' in ', ncomp, ' component(s); enclosed inside a shelf: ', n_enclosed
+        deallocate(comp, stack, csize)
+    end subroutine label_main_ocean
+
+    !===========================================================================
     subroutine classify_nodes(mesh_old, mesh_new, node_flag)
         type(t_mesh_remap), intent(in)  :: mesh_old, mesh_new
         integer, allocatable,intent(out):: node_flag(:)
@@ -121,18 +195,22 @@ contains
         type(t_mesh_remap),   intent(in)  :: mesh_old, mesh_new
         integer, allocatable, intent(out) :: ocean_donor(:)
 
-        integer  :: i_new, i_old, i_ref, n_base, cnt
+        integer  :: i_new, i_old, i_ref, n_base, cnt, n_enclosed, n_skipped
         real(WP) :: lon_new, lat_new, dist, dist_min, alpha
         real(WP), parameter :: r_earth = 6371000.0_WP
         logical  :: was_open
+        logical, allocatable :: in_main(:)
 
         allocate(ocean_donor(mesh_new%nod2D))
         ocean_donor = 0
-        cnt = 0
+        cnt       = 0
+        n_skipped = 0
+        ! Holes inside a shelf get no open-ocean donor (see label_main_ocean).
+        call label_main_ocean(mesh_new, in_main, n_enclosed)
         !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(DYNAMIC,64) &
-        !$OMP   SHARED(mesh_old, mesh_new, ocean_donor) &
+        !$OMP   SHARED(mesh_old, mesh_new, ocean_donor, in_main) &
         !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, lon_new, lat_new, dist, dist_min, alpha, was_open) &
-        !$OMP   REDUCTION(+:cnt)
+        !$OMP   REDUCTION(+:cnt, n_skipped)
         do i_new = 1, mesh_new%nod2D
             ! only nodes that are surface-open ocean in the NEW mesh
             if (mesh_new%ulevels_nod2D(i_new) /= 1) cycle
@@ -144,6 +222,12 @@ contains
                 if (mesh_old%ulevels_nod2D(i_old) == 1) was_open = .true.
             end if
             if (was_open) cycle
+            ! Enclosed hole: no surface path to the ocean, so no open-ocean donor. The column
+            ! keeps its own (cavity) water through the structure-preserving vertical stretch.
+            if (.not. in_main(i_new)) then
+                n_skipped = n_skipped + 1
+                cycle
+            end if
             ! newly-surface-open: nearest OLD node that was open ocean (ulevels==1)
             lon_new  = mesh_new%coord(1, i_new)
             lat_new  = mesh_new%coord(2, i_new)
@@ -168,6 +252,8 @@ contains
         end do
         !$OMP END PARALLEL DO
         write(*,*) ' --> open-ocean surface donor: newly-surface-open nodes seeded =', cnt
+        write(*,'(A,I0)') '      of those, left unseeded because they are in an enclosed hole: ', n_skipped
+        if (allocated(in_main)) deallocate(in_main)
     end subroutine build_ocean_donor
 
     !===========================================================================

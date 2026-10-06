@@ -536,6 +536,26 @@ def add_vcs_info(config):
     Adds version control system information in a plain text yaml file under the
     experiment log directory for both the models and the esm-tools.
 
+    ``config[model]["model_dir"]`` is expected to already point at the
+    experiment's own frozen source snapshot (see
+    ``esm_runscripts.prepcompute.snapshot_model_sources``), rather than at the
+    shared, mutable central model checkout. That snapshot is created once per
+    experiment and reused for every subsequent segment, so the VCS info
+    recorded here is stable for the lifetime of the experiment, even if the
+    shared checkout keeps moving on underneath it.
+
+    This writes the VCS info to two places:
+
+    1. A per-run file under ``thisrun_log_dir``, so every segment has a
+       record of what it saw.
+    2. A single, stable "initial" file under ``experiment_log_dir`` (written
+       only the first time it does not yet exist), which
+       ``check_vcs_info_against_last_run`` treats as the experiment's
+       canonical reference.
+
+    It is also stored on ``config["general"]["vcs_info"]``, so that it ends
+    up in ``finished_config.yaml`` as well.
+
     Parameters
     ----------
     config : dict
@@ -547,6 +567,7 @@ def add_vcs_info(config):
         The experiment configuration
     """
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    initial_vcs_info_file = f"{config['general']['experiment_log_dir']}/{config['general']['expid']}_vcs_info_initial.yaml"
     logger.debug("Experiment information is being stored for usage under:")
     logger.debug(f">>> {exp_vcs_info_file}")
     vcs_versions = {}
@@ -576,18 +597,40 @@ def add_vcs_info(config):
         )
     with open(exp_vcs_info_file, "w") as f:
         yaml.dump(vcs_versions, f)
+
+    if not os.path.isfile(initial_vcs_info_file):
+        os.makedirs(os.path.dirname(initial_vcs_info_file), exist_ok=True)
+        with open(initial_vcs_info_file, "w") as f:
+            yaml.dump(vcs_versions, f)
+
+    config["general"]["vcs_info"] = vcs_versions
     return config
 
 
 def check_vcs_info_against_last_run(config):
     """
-    Ensures that the version control info for two runs is identical between the
-    current run and the previous run.
+    Ensures that the version control info of the current run matches the
+    info recorded when the experiment's source snapshot was first created.
 
+    Previously, this compared the current run's VCS info against the
+    *previous* run's recorded VCS info, both re-derived from
+    ``config[model]["model_dir"]``. Since that directory used to be the
+    shared, mutable central model checkout, any unrelated activity on it
+    between segments (another user's commit, a rebuild, ...) produced a
+    false-positive difference and killed an otherwise-correct run.
 
-    This is checked by ensuring that the dictionary representation of the VCS
-    files is identical. Differences will result in a ``user_error``, thus
-    terminating the run. The check can be circumvented by setting::
+    Now that ``config[model]["model_dir"]`` points at a per-experiment
+    snapshot that is created once and reused for every segment (see
+    ``esm_runscripts.prepcompute.snapshot_model_sources``), the VCS info
+    should be identical across all segments of the same experiment. So
+    instead we compare against the experiment's own first-run ("initial")
+    snapshot info: if that ever differs, something has gone genuinely wrong
+    (e.g. someone manually modified the snapshot), which is worth failing
+    loudly on.
+
+    This is checked by ensuring that the dictionary representation of the
+    VCS files is identical. Differences will result in a ``user_error``,
+    thus terminating the run. The check can be circumvented by setting::
 
         general:
             allow_vcs_differences: True
@@ -608,8 +651,7 @@ def check_vcs_info_against_last_run(config):
     if config["general"]["run_number"] == 1 or config["general"]["run_number"] is None:
         return config  # No check needed on the very first run
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
-    # FIXME(PG): This file might not exist if people erase every run folder...
-    last_exp_vcs_info_file = f"{config['prev_run']['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    initial_vcs_info_file = f"{config['general']['experiment_log_dir']}/{config['general']['expid']}_vcs_info_initial.yaml"
 
     try:
         with open(exp_vcs_info_file, "r") as f:
@@ -618,14 +660,14 @@ def check_vcs_info_against_last_run(config):
         logger.warning(f"Unable to open {exp_vcs_info_file}, skipping check...")
         return config
     try:
-        with open(last_exp_vcs_info_file, "r") as f:
-            last_vcs_info = yaml.safe_load(f)
+        with open(initial_vcs_info_file, "r") as f:
+            initial_vcs_info = yaml.safe_load(f)
     except IOError:
-        logger.warning(f"Unable to open {last_exp_vcs_info_file}, skipping_check...")
+        logger.warning(f"Unable to open {initial_vcs_info_file}, skipping check...")
         return config
     if (
         not config["general"].get("allow_vcs_differences", False)
-        and current_vcs_info != last_vcs_info
+        and current_vcs_info != initial_vcs_info
     ):
         user_error(
             "VCS Differences",

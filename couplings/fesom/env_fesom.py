@@ -3,6 +3,15 @@ import subprocess
 import importlib.util
 
 
+def _proj_share(python_exe):
+    """<env>/share/proj for a conda-env python, or "" if it cannot be located."""
+    if not python_exe:
+        return ""
+    env_root = os.path.dirname(os.path.dirname(python_exe))
+    share = os.path.join(env_root, "share", "proj")
+    return share if os.path.isdir(share) else ""
+
+
 def _find_ocp_tool_dir():
     """Locate the ocp-tool install without hardcoding a path.
 
@@ -293,6 +302,15 @@ def prepare_environment(config):
             # environment.yaml; worker = 'ece4'); see helpers above.
             "OCP_WEIGHTGEN_DRIVER_PY": driver_py,
             "OCP_WEIGHTGEN_WORKER_PY": worker_py,
+            # PROJ database for the driver env's pyproj. The cdo/nco modules the coupling
+            # loads put PROJ_LIB on the system PROJ, which that pyproj cannot read:
+            # "Invalid projection: EPSG:4326 (no database context specified)". ocp-tool then
+            # SKIPS the PISM ice grid with a warning only, and the ismp weight generation
+            # fails later with "grid 'ismp' not found" (albedo, 2026-10-06). Point both PROJ
+            # variables at the driver env's own share/proj; empty when the driver python is
+            # not in a conda env, which leaves the environment untouched.
+            "PROJ_LIB": _proj_share(driver_py),
+            "PROJ_DATA": _proj_share(driver_py),
             "OCP_WEIGHTGEN_THREADS": config["fesom"].get("ocp_weightgen_threads", 64),
             # Account/partition for the weight-gen srun when ice2fesom runs on the
             # login node (no allocation to inherit).

@@ -1,0 +1,48 @@
+# AWI-ESM3 <-> PISM on albedo: core3_ant_fill mother mesh, PISM run-7 tillphi, new parameters.
+#
+# 20 cycles of AWIESM 1 yr + PISM 10 yr, i.e. 20 climate years and 200 ice years.
+# Derived from ism44 (levante) -- same coupling design, different machine, mesh, initial
+# condition and ice physics. What changed is listed in antfill_pism.yaml and antfill_ocean.yaml.
+#
+# FIRST albedo run of this coupling. The chunk-1 bundle was built here
+# (input/fesom2/pism_cavity_ini_antfill_newpar, see its README.md); couple_in repeats steps
+# 06-09 of that build every leg, so the albedo fixes recorded in the bundle README are wired
+# into this configuration.
+#
+# Launch one chain per model:
+#   esm_runscripts antfill_couple.yaml -e <expid> --coupling-chain awiesm3
+#   esm_runscripts antfill_couple.yaml -e <expid> --coupling-chain pism
+general:
+        coupling_mode: concurrent
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        ism_orog_coupled: True
+        ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
+        use_venv: False
+        user: !ENV ${USER}
+        base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
+        account: paleodyn.paleodyn
+        with_recom: False
+        with_icb: True
+
+model1:
+        setup_name: awiesm3
+        runscript: antfill_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: antfill_pism.yaml
+        # 10-yr PISM legs: the ice sheet advances 10 years per ocean year.
+        # Must be a multiple of general.nyear in antfill_pism.yaml.
+        #
+        # Why 10 and not ism44's 25: the ocean only ever sees ONE year per leg, so the sea-ice
+        # and iceberg fluxes it receives are a single year's worth however long the ice leg is,
+        # and the ice front moves further per mesh change the longer the leg. On ism44's 25-yr
+        # legs the restart remap had to carry newly-opened nodes a median 17 km but up to 78 km
+        # from the nearest open water; at 10 yr that tail is shorter.
+        chunk_size: 10
+        chunk_unit: "years"

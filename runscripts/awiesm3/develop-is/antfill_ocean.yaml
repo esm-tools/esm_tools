@@ -1,0 +1,251 @@
+# AWI-ESM3 chain of the antfill coupling (albedo). Paired with antfill_pism.yaml through
+# antfill_couple.yaml. Derived from ism44's fast_ocean.yaml (levante).
+general:
+    user: !ENV ${USER}
+    use_venv: False
+    setup_name: "awiesm3"
+    version: "develop-is"
+    account: "paleodyn.paleodyn"
+    # ism44 ran 1-yr awiesm3 legs in ~26-33 min on levante. Not measured on albedo; 02:00:00
+    # is ism44's value and leaves room for the first-run overhead.
+    compute_time: "02:00:00"
+    initial_date: "1900-01-01"
+    # STAGE 1: ONE cycle (1900) as a smoke test of the first albedo run of this coupling.
+    # Cycle 1 exercises the chunk-1 bundle; the first mesh change only happens in cycle 2, so a
+    # second cycle is the next step once this one completes.
+    # TO GO TO THE FULL RUN: restore "1920-01-01" here AND "62569-12-31" in antfill_pism.yaml.
+    # 20 cycles, 1900-1919 inclusive (10 ice years per cycle: PISM 62370-62569).
+    final_date: "1901-01-01"
+    base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
+    interactive_mesh: true
+    ism_freshwater_return: true
+    smb_coupled: true
+    # The chunk-1 bundle built on albedo for this mesh + initial condition; see its README.md.
+    pism_cavity_ini_dir: "/albedo/work/user/${user}/input/fesom2/pism_cavity_ini_antfill_newpar"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    force_overwrite_in_file_movements: True
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is/"
+
+fesom:
+    ini_iceberg_dir: "${general.pism_cavity_ini_dir}/icebergs"
+    ini_disch_file: "${general.pism_cavity_ini_dir}/icebergs/ini_discharge.nc"
+    basin_file: "/albedo/work/user/${general.user}/levante_shared/a270092/input/pism/basins/antarct_cr.08km.nc"
+    chunk1_mesh: "${general.pism_cavity_ini_dir}/submesh"
+    oce2ice_method: "DIRECT"
+    resolution: "CORE3"
+    with_cavity: true
+    # The node griddes lives INSIDE the mother mesh dir: build_submesh resolves it as
+    # ${MAX_MESH}/${MESH_GRIDDES_fesom}.
+    griddes_nodes: "core3_ant_fill_griddes_nodes.nc"
+    ice2fesom_remap: "masked"
+    gl_rule: "element_majority"
+    cavity_dig: true
+    cavity_icemean: true
+    # MOTHER MESH: CORE3 with all of Antarctica meshed, bed dug to FESOM's minimum water column.
+    # NOTE its node numbering is NOT CORE3's (Hilbert order over the whole mesh), so "the first
+    # 220509 nodes are CORE3's" does not hold; node_map_to_core3.txt is the map. See its
+    # PROVENANCE.md.
+    mesh_dir: "/albedo/work/user/${general.user}/mesh/core3_ant_fill_bedmap2/"
+    # MUST equal the mother mesh node count. fix_namcouple_feom_dim seds this value to the
+    # submesh count in the namcouple and PRINTS SUCCESS UNCONDITIONALLY, so a stale nx fails
+    # silently and only surfaces as an OASIS "av gsize nx ny mismatch" at the LAST exchange of
+    # the year -- a whole leg lost. (That is what killed ism40 cycle 1 on 2026-09-09.)
+    nx: 292256
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    # Chunk-1 COLD START: no FESOM restart exists for this submesh, and remapping a full-mesh
+    # CORE3 restart onto a PISM cavity is the observed->PISM swap the old pism_cavity_ini README
+    # records as "always crashes FESOM around day 4". A cold start on such a submesh is stable
+    # at the full 1200 s timestep. awiesm3.yaml sets lresume true inside chunk_number 1, which
+    # the choose-block at the end of this section overrides.
+    lresume: false
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 2
+    tar_binary_restarts: true
+    cmip7_cmor_output: false
+    change_ocean: 1
+
+    # ocp-tool: ocp_tool_dir and the conda envs come from awiesm3.yaml's albedo machine block.
+    # The TEMPLATE does not: the albedo default TCO95_CORE3_albedo.yaml has no `ice:` section,
+    # so ocp-tool writes no PISM grid and the weight generation stops with
+    #   KeyError: grid 'ismp' not found in .../grids.nc
+    # (seen building this bundle, 2026-10-06). This variant is that file plus the ice section of
+    # levante's TCO95_CORE3_ICE.yaml, pointing at the albedo copy of antarct_cr.initial_08km.nc.
+    ocp_template_config: "/albedo/work/user/${general.user}/tools/ocp-tool/configs/TCO95_CORE3_ICE_albedo.yaml"
+    ocp_weightgen_partition: "compute"
+    # Only the mesh-independent rmp_R096_to_RnfA is taken from here.
+    oasis_rmp_template_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oasis/cy48r1/TCO95-CORE3/1792"
+
+    # Ocean settings pinned to what ism44 ran: the v3.5 CORE3 defaults were tuned on develop,
+    # which has no ice sheet and no moving cavity, and three of them act exactly where the
+    # mesh-change legs blew up (orog3). Keep the two-model comparison about the ice, not about
+    # ocean retuning.
+    add_namelist_changes:
+        namelist.config:
+            run_config:
+                # 1.0 is the FESOM default and what ism44 ran. ism45 ran 0.6 and the pair was
+                # never conclusive; start from the default here.
+                cavity_gamma_scale: 1.0
+        namelist.oce:
+            oce_dyn:
+                redi_kmax: 0.0
+                k_gm_max: 1000.0
+        namelist.cvmix:
+            param_kpp:
+                kpp_av0: 0.005
+                kpp_kv0: 0.005
+                kpp_avbckg: 0.0001
+                kpp_kvbckg: 1e-05
+
+    choose_general.chunk_number:
+        1:
+            lresume: false
+
+lpj_guess:
+    slt_dir: "/albedo/work/user/${general.user}/input/lpj-guess/slt/"
+    nproc: 64
+    omp_num_threads: 4
+    mip: "cmip7"
+    lresume: false
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mpi: cmip7
+    scenario: piControl
+    cmip7_cmor_output: false
+    choose_general.chunk_number:
+        1:
+            add_input_files:
+                pism2ece_antar: pism2ece_antar
+            add_input_sources:
+                ICMGG_INIT: "${general.pism_cavity_ini_dir}/oasis/ICMGGab45INIT_feomdyn"
+                # The _orog file, not antar_pism2ece.nc: ECE_ISM_OROG below makes suorog read
+                # usurf_oifs from it at leg initialisation, and only this one carries that field.
+                pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece_orog.nc"
+                wam_grid_tables: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+            add_input_in_work:
+                pism2ece_antar: antar_pism2ece.nc
+            add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_LANDICE: ".true."
+                        ECE_LANDICE_THRESH: 0.5
+                        NISMRGNS: 1
+                        "ISMRGNPFX(1)": "antar"
+                        "ISMRGNCIS(1)": ".false."
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".true."
+        "*":
+            add_input_files:
+                pism2ece_antar: pism2ece_antar
+            add_input_sources:
+                ICMGG_INIT: "${general.experiment_couple_dir}/oasis_regen/ICMGGab45INIT_feomdyn"
+                pism2ece_antar: "${general.experiment_couple_dir}/antar_pism2ece.nc"
+                wam_grid_tables: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+            add_input_in_work:
+                pism2ece_antar: antar_pism2ece.nc
+            add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_LANDICE: ".true."
+                        ECE_LANDICE_THRESH: 0.5
+                        NISMRGNS: 1
+                        "ISMRGNPFX(1)": "antar"
+                        "ISMRGNCIS(1)": ".false."
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".true."
+    namelist_changes:
+        fort.4:
+            NAMECECFG:
+                ECE_CPL_NEMO_WEIGHTED_ICE: ".true."
+            NAMMCC:
+                LNEMOLIMTEMP: ".false."
+                LNEMOLIMTHK: ".true."
+                LNEMOSICOUP: ".false."
+            NAMECECMIP:
+                LCMIP6: False
+                LCMIP7: True
+                CMIP7DATADIR: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/cmip7-data/"
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+            NAMDDH:
+                LHDGLB: ".false."
+                LHDPRG: ".false."
+                LHDHKS: ".false."
+
+rnfmap:
+    runoff_file: "/albedo/pool/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600
+    norestart: T
+    debug_level: 1
+    input_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oasis/cy48r1/TCO95-CORE3/"
+    ini_restart_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oasis/cy48r1/TCO95-CORE3/"
+    choose_general.chunk_number:
+        1:
+            input_sources:
+                grids: "${general.pism_cavity_ini_dir}/oasis/grids.nc"
+                masks: "${general.pism_cavity_ini_dir}/oasis/masks.nc"
+                areas: "${general.pism_cavity_ini_dir}/oasis/areas.nc"
+                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+            restart_in_sources:
+                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+                rstas.nc: "${general.pism_cavity_ini_dir}/rstas.nc"
+                rstos.nc: "${general.pism_cavity_ini_dir}/rstos.nc"
+                vegin.nc: vegin.nc
+                rstism.nc: "${general.pism_cavity_ini_dir}/oasis/rstism.nc"
+        "*":
+            input_sources:
+                grids: "${general.experiment_couple_dir}/oasis_regen/grids.nc"
+                masks: "${general.experiment_couple_dir}/oasis_regen/masks.nc"
+                areas: "${general.experiment_couple_dir}/oasis_regen/areas.nc"
+                rmp: "${general.experiment_couple_dir}/oasis_regen/rmp_*.nc"
+            restart_in_sources:
+                rmp: "${general.experiment_couple_dir}/oasis_regen/rmp_*.nc"
+                rstas.nc: "${general.experiment_couple_dir}/restart_remapped/rstas.nc"
+                rstos.nc: "${general.experiment_couple_dir}/restart_remapped/rstos.nc"
+                vegin.nc: vegin.nc
+                rstism.nc: "${experiment_restart_in_dir}/rstism.nc"
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 32
+    omp_num_threads: 8

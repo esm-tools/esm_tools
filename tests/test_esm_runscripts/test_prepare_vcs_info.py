@@ -1,187 +1,159 @@
 import subprocess
-import tempfile
-import unittest
-from pathlib import Path
+from typing import NamedTuple
 
+import pytest
 import yaml
 
 from esm_runscripts import prepare
 
 
-def _init_git_repo(path: Path) -> None:
-    subprocess.run(["git", "init", "-q", str(path)], check=True)
+class VcsFixture(NamedTuple):
+    config: dict
+    snapshot_dir: object
+    log_dir: object
+    run1_log_dir: object
+    run2_log_dir: object
+
+
+@pytest.fixture
+def vcs_fixture(tmp_path, git_repo):
+    snapshot_dir = git_repo("exp/src/echam-6.3")
+    git_repo("esm_tools_repo")
+
+    log_dir = tmp_path / "exp" / "log"
+    run1_log_dir = log_dir / "run_1"
+    run2_log_dir = log_dir / "run_2"
+    run1_log_dir.mkdir(parents=True)
+    run2_log_dir.mkdir(parents=True)
+
+    esm_configs_dir = tmp_path / "esm_tools_repo" / "configs"
+    esm_configs_dir.mkdir(parents=True)
+
+    config = {
+        "general": {
+            "expid": "test",
+            "models": ["echam"],
+            "thisrun_log_dir": str(run1_log_dir),
+            "experiment_log_dir": str(log_dir),
+            "esm_configs_dir": str(esm_configs_dir),
+            "run_number": 1,
+        },
+        "echam": {"model_dir": str(snapshot_dir)},
+    }
+    return VcsFixture(config, snapshot_dir, log_dir, run1_log_dir, run2_log_dir)
+
+
+def _next_segment(config, run_number, log_dir):
+    config = dict(config)
+    config["general"] = dict(config["general"])
+    config["general"]["run_number"] = run_number
+    config["general"]["thisrun_log_dir"] = str(log_dir)
+    return config
+
+
+def _run_segment(config, run_number, log_dir):
+    config = prepare.add_vcs_info(_next_segment(config, run_number, log_dir))
+    return prepare.check_vcs_info_against_last_run(config)
+
+
+def test_clean_snapshot_is_recorded(vcs_fixture):
+    config = prepare.add_vcs_info(dict(vcs_fixture.config))
+
+    exp_vcs_info_file = vcs_fixture.run1_log_dir / "test_vcs_info.yaml"
+    initial_vcs_info_file = vcs_fixture.log_dir / "test_vcs_info_initial.yaml"
+
+    assert exp_vcs_info_file.is_file()
+    assert initial_vcs_info_file.is_file()
+
+    info = yaml.safe_load(exp_vcs_info_file.read_text())
+    assert "echam" in info
+    assert info["echam"]["diffs"] == ""
+
+    assert config["general"]["vcs_info"] == info
+
+
+def test_dirty_snapshot_is_recorded_not_failed(vcs_fixture):
+    # Legitimate local modification at compile time: should be recorded,
+    # not treated as an error.
+    with (vcs_fixture.snapshot_dir / "source.f90").open("a") as f:
+        f.write("! local tweak\n")
+
+    config = prepare.add_vcs_info(dict(vcs_fixture.config))
+    assert config["general"]["vcs_info"]["echam"]["diffs"] != ""
+
+
+def test_initial_file_not_overwritten_on_later_runs(vcs_fixture):
+    prepare.add_vcs_info(dict(vcs_fixture.config))
+    initial_vcs_info_file = vcs_fixture.log_dir / "test_vcs_info_initial.yaml"
+    initial_info_first_write = initial_vcs_info_file.read_text()
+
+    # New segment, new commit lands in the snapshot (should not happen in
+    # practice since the snapshot is frozen, but verifies we don't clobber
+    # the initial reference file).
+    with (vcs_fixture.snapshot_dir / "source.f90").open("a") as f:
+        f.write("! drift\n")
+
+    prepare.add_vcs_info(_next_segment(vcs_fixture.config, 2, vcs_fixture.run2_log_dir))
+
+    assert initial_vcs_info_file.read_text() == initial_info_first_write
+
+
+def test_first_run_skips_check(vcs_fixture):
+    # Should not raise even though no initial file existed before this call.
+    result = _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
+    assert "vcs_info" in result["general"]
+
+
+def test_no_false_positive_when_shared_dir_drifts(vcs_fixture, git_repo):
+    _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
+
+    # Unrelated activity on what *used to* be the shared model_dir. The
+    # snapshot used by segment 2 is untouched, so this must not matter.
+    unrelated_dir = git_repo("unrelated_shared_checkout")
+    (unrelated_dir / "extra.f90").write_text("! someone else's commit\n")
+    subprocess.run(["git", "-C", str(unrelated_dir), "add", "extra.f90"], check=True)
     subprocess.run(
-        ["git", "-C", str(path), "config", "user.email", "test@example.com"],
+        ["git", "-C", str(unrelated_dir), "commit", "-q", "-m", "unrelated"],
         check=True,
     )
-    subprocess.run(["git", "-C", str(path), "config", "user.name", "Test"], check=True)
+
+    # Should not raise SystemExit.
+    _run_segment(vcs_fixture.config, 2, vcs_fixture.run2_log_dir)
+
+
+def test_fails_loudly_when_snapshot_itself_changed(vcs_fixture):
+    _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
+
+    # Something genuinely wrong: the frozen snapshot itself was touched
+    # between segments.
+    snapshot_dir = vcs_fixture.snapshot_dir
+    with (snapshot_dir / "source.f90").open("a") as f:
+        f.write("! should not happen\n")
+    subprocess.run(["git", "-C", str(snapshot_dir), "add", "source.f90"], check=True)
     subprocess.run(
-        ["git", "-C", str(path), "config", "commit.gpgsign", "false"], check=True
+        ["git", "-C", str(snapshot_dir), "commit", "-q", "-m", "tampered"],
+        check=True,
     )
-    (path / "source.f90").write_text("program test\nend program test\n")
-    subprocess.run(["git", "-C", str(path), "add", "source.f90"], check=True)
+
+    with pytest.raises(SystemExit):
+        _run_segment(vcs_fixture.config, 2, vcs_fixture.run2_log_dir)
+
+
+def test_allow_vcs_differences_bypasses_check(vcs_fixture):
+    _run_segment(vcs_fixture.config, 1, vcs_fixture.run1_log_dir)
+
+    snapshot_dir = vcs_fixture.snapshot_dir
+    with (snapshot_dir / "source.f90").open("a") as f:
+        f.write("! should not happen\n")
+    subprocess.run(["git", "-C", str(snapshot_dir), "add", "source.f90"], check=True)
     subprocess.run(
-        ["git", "-C", str(path), "commit", "-q", "-m", "initial commit"], check=True
+        ["git", "-C", str(snapshot_dir), "commit", "-q", "-m", "tampered"],
+        check=True,
     )
 
+    next_config = _next_segment(vcs_fixture.config, 2, vcs_fixture.run2_log_dir)
+    next_config["general"]["allow_vcs_differences"] = True
+    next_config = prepare.add_vcs_info(next_config)
 
-class VcsInfoTestBase(unittest.TestCase):
-    def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmpdir.cleanup)
-        self.tmpdir_path = Path(self.tmpdir.name)
-
-        self.snapshot_dir = self.tmpdir_path / "exp" / "src" / "echam-6.3"
-        self.snapshot_dir.mkdir(parents=True)
-        _init_git_repo(self.snapshot_dir)
-
-        self.log_dir = self.tmpdir_path / "exp" / "log"
-        self.run1_log_dir = self.log_dir / "run_1"
-        self.run2_log_dir = self.log_dir / "run_2"
-        self.run1_log_dir.mkdir(parents=True)
-        self.run2_log_dir.mkdir(parents=True)
-
-        self.esm_configs_dir = self.tmpdir_path / "esm_tools_repo" / "configs"
-        self.esm_configs_dir.mkdir(parents=True)
-        _init_git_repo(self.tmpdir_path / "esm_tools_repo")
-
-        self.base_config = {
-            "general": {
-                "expid": "test",
-                "models": ["echam"],
-                "thisrun_log_dir": str(self.run1_log_dir),
-                "experiment_log_dir": str(self.log_dir),
-                "esm_configs_dir": str(self.esm_configs_dir),
-                "run_number": 1,
-            },
-            "echam": {"model_dir": str(self.snapshot_dir)},
-        }
-
-
-class TestAddVcsInfo(VcsInfoTestBase):
-    def test_clean_snapshot_is_recorded(self):
-        config = prepare.add_vcs_info(dict(self.base_config))
-
-        exp_vcs_info_file = self.run1_log_dir / "test_vcs_info.yaml"
-        initial_vcs_info_file = self.log_dir / "test_vcs_info_initial.yaml"
-
-        self.assertTrue(exp_vcs_info_file.is_file())
-        self.assertTrue(initial_vcs_info_file.is_file())
-
-        info = yaml.safe_load(exp_vcs_info_file.read_text())
-        self.assertIn("echam", info)
-        self.assertEqual(info["echam"]["diffs"], "")
-
-        self.assertIn("vcs_info", config["general"])
-        self.assertEqual(config["general"]["vcs_info"], info)
-
-    def test_dirty_snapshot_is_recorded_not_failed(self):
-        # Legitimate local modification at compile time: should be recorded,
-        # not treated as an error.
-        with (self.snapshot_dir / "source.f90").open("a") as f:
-            f.write("! local tweak\n")
-
-        config = prepare.add_vcs_info(dict(self.base_config))
-        info = config["general"]["vcs_info"]
-        self.assertNotEqual(info["echam"]["diffs"], "")
-
-    def test_initial_file_not_overwritten_on_later_runs(self):
-        config1 = dict(self.base_config)
-        prepare.add_vcs_info(config1)
-        initial_vcs_info_file = self.log_dir / "test_vcs_info_initial.yaml"
-        initial_info_first_write = initial_vcs_info_file.read_text()
-
-        # New segment, new commit lands in the snapshot (should not happen in
-        # practice since the snapshot is frozen, but verifies we don't clobber
-        # the initial reference file).
-        with (self.snapshot_dir / "source.f90").open("a") as f:
-            f.write("! drift\n")
-
-        config2 = dict(self.base_config)
-        config2["general"] = dict(config2["general"])
-        config2["general"]["thisrun_log_dir"] = str(self.run2_log_dir)
-        config2["general"]["run_number"] = 2
-        prepare.add_vcs_info(config2)
-
-        initial_info_second_write = initial_vcs_info_file.read_text()
-
-        self.assertEqual(initial_info_first_write, initial_info_second_write)
-
-
-class TestCheckVcsInfoAgainstLastRun(VcsInfoTestBase):
-    def _run_segment(self, run_number, log_dir):
-        config = dict(self.base_config)
-        config["general"] = dict(config["general"])
-        config["general"]["run_number"] = run_number
-        config["general"]["thisrun_log_dir"] = str(log_dir)
-        config = prepare.add_vcs_info(config)
-        return prepare.check_vcs_info_against_last_run(config)
-
-    def test_first_run_skips_check(self):
-        # Should not raise even though no initial file existed before this call.
-        config = self._run_segment(1, self.run1_log_dir)
-        self.assertIn("vcs_info", config["general"])
-
-    def test_no_false_positive_when_shared_dir_drifts(self):
-        self._run_segment(1, self.run1_log_dir)
-
-        # Unrelated activity on what *used to* be the shared model_dir. The
-        # snapshot used by segment 2 is untouched, so this must not matter.
-        unrelated_dir = self.tmpdir_path / "unrelated_shared_checkout"
-        unrelated_dir.mkdir()
-        _init_git_repo(unrelated_dir)
-        (unrelated_dir / "extra.f90").write_text("! someone else's commit\n")
-        subprocess.run(
-            ["git", "-C", str(unrelated_dir), "add", "extra.f90"], check=True
-        )
-        subprocess.run(
-            ["git", "-C", str(unrelated_dir), "commit", "-q", "-m", "unrelated"],
-            check=True,
-        )
-
-        # Should not raise SystemExit.
-        self._run_segment(2, self.run2_log_dir)
-
-    def test_fails_loudly_when_snapshot_itself_changed(self):
-        self._run_segment(1, self.run1_log_dir)
-
-        # Something genuinely wrong: the frozen snapshot itself was touched
-        # between segments.
-        with (self.snapshot_dir / "source.f90").open("a") as f:
-            f.write("! should not happen\n")
-        subprocess.run(
-            ["git", "-C", str(self.snapshot_dir), "add", "source.f90"], check=True
-        )
-        subprocess.run(
-            ["git", "-C", str(self.snapshot_dir), "commit", "-q", "-m", "tampered"],
-            check=True,
-        )
-
-        with self.assertRaises(SystemExit):
-            self._run_segment(2, self.run2_log_dir)
-
-    def test_allow_vcs_differences_bypasses_check(self):
-        self._run_segment(1, self.run1_log_dir)
-
-        with (self.snapshot_dir / "source.f90").open("a") as f:
-            f.write("! should not happen\n")
-        subprocess.run(
-            ["git", "-C", str(self.snapshot_dir), "add", "source.f90"], check=True
-        )
-        subprocess.run(
-            ["git", "-C", str(self.snapshot_dir), "commit", "-q", "-m", "tampered"],
-            check=True,
-        )
-
-        config = dict(self.base_config)
-        config["general"] = dict(config["general"])
-        config["general"]["run_number"] = 2
-        config["general"]["thisrun_log_dir"] = str(self.run2_log_dir)
-        config["general"]["allow_vcs_differences"] = True
-        config = prepare.add_vcs_info(config)
-        # Should not raise.
-        prepare.check_vcs_info_against_last_run(config)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    # Should not raise.
+    prepare.check_vcs_info_against_last_run(next_config)

@@ -1,131 +1,94 @@
 import subprocess
-import tempfile
-import unittest
 from pathlib import Path
 
 from esm_runscripts import prepcompute
 
 
-def _init_git_repo(path: Path) -> None:
-    subprocess.run(["git", "init", "-q", str(path)], check=True)
+def _config(experiment_src_dir, model="echam", shared_dir=None, **general_extra):
+    config = {
+        "general": {"experiment_src_dir": str(experiment_src_dir), **general_extra}
+    }
+    config[model] = {"model_dir": str(shared_dir)} if shared_dir is not None else {}
+    return config
+
+
+def test_first_run_creates_snapshot(tmp_path, git_repo):
+    shared_dir = git_repo("shared_model_checkout")
+    config = _config(tmp_path / "exp" / "src", shared_dir=shared_dir)
+
+    result = prepcompute.snapshot_model_source(config, "echam", "6.3")
+    assert result is not None
+    snapshot_dir = Path(result)
+
+    assert snapshot_dir.is_dir()
+    assert (snapshot_dir / "source.f90").is_file()
+    assert (snapshot_dir / ".git").is_dir()
+
+
+def test_no_shared_source_returns_none(tmp_path):
+    config = _config(tmp_path / "exp" / "src", model="xios")
+    assert prepcompute.snapshot_model_source(config, "xios", "1.0") is None
+
+
+def test_reuse_on_subsequent_segments_no_recopy(tmp_path, git_repo):
+    shared_dir = git_repo("shared_model_checkout")
+    config = _config(tmp_path / "exp" / "src", shared_dir=shared_dir)
+
+    result = prepcompute.snapshot_model_source(config, "echam", "6.3")
+    assert result is not None
+    snapshot_dir = Path(result)
+
+    # Simulate "version drift" in the shared/central checkout between
+    # segments: a new commit lands there after the snapshot was made.
+    (shared_dir / "new_file.f90").write_text("! added after snapshot\n")
+    subprocess.run(["git", "-C", str(shared_dir), "add", "new_file.f90"], check=True)
     subprocess.run(
-        ["git", "-C", str(path), "config", "user.email", "test@example.com"],
-        check=True,
-    )
-    subprocess.run(["git", "-C", str(path), "config", "user.name", "Test"], check=True)
-    subprocess.run(
-        ["git", "-C", str(path), "config", "commit.gpgsign", "false"], check=True
-    )
-    (path / "source.f90").write_text("program test\nend program test\n")
-    subprocess.run(["git", "-C", str(path), "add", "source.f90"], check=True)
-    subprocess.run(
-        ["git", "-C", str(path), "commit", "-q", "-m", "initial commit"], check=True
+        ["git", "-C", str(shared_dir), "commit", "-q", "-m", "drift"], check=True
     )
 
-
-class TestSnapshotModelSource(unittest.TestCase):
-    def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmpdir.cleanup)
-        self.tmpdir_path = Path(self.tmpdir.name)
-        self.shared_dir = self.tmpdir_path / "shared_model_checkout"
-        self.shared_dir.mkdir()
-        _init_git_repo(self.shared_dir)
-        self.experiment_src_dir = self.tmpdir_path / "exp" / "src"
-        self.config = {
-            "general": {"experiment_src_dir": str(self.experiment_src_dir)},
-            "echam": {"model_dir": str(self.shared_dir)},
-        }
-
-    def test_first_run_creates_snapshot(self):
-        result = prepcompute.snapshot_model_source(self.config, "echam", "6.3")
-        assert result is not None
-        snapshot_dir = Path(result)
-        self.assertTrue(snapshot_dir.is_dir())
-        self.assertTrue((snapshot_dir / "source.f90").is_file())
-        self.assertTrue((snapshot_dir / ".git").is_dir())
-
-    def test_no_shared_source_returns_none(self):
-        config = {
-            "general": {"experiment_src_dir": str(self.experiment_src_dir)},
-            "xios": {},
-        }
-        self.assertIsNone(prepcompute.snapshot_model_source(config, "xios", "1.0"))
-
-    def test_reuse_on_subsequent_segments_no_recopy(self):
-        result = prepcompute.snapshot_model_source(self.config, "echam", "6.3")
-        assert result is not None
-        snapshot_dir = Path(result)
-
-        # Simulate "version drift" in the shared/central checkout between
-        # segments: a new commit lands there after the snapshot was made.
-        (self.shared_dir / "new_file.f90").write_text("! added after snapshot\n")
-        subprocess.run(
-            ["git", "-C", str(self.shared_dir), "add", "new_file.f90"], check=True
-        )
-        subprocess.run(
-            ["git", "-C", str(self.shared_dir), "commit", "-q", "-m", "drift"],
-            check=True,
-        )
-
-        # Second segment: snapshot already exists, must not be touched.
-        result_2 = prepcompute.snapshot_model_source(self.config, "echam", "6.3")
-        assert result_2 is not None
-        snapshot_dir_2 = Path(result_2)
-        self.assertEqual(snapshot_dir, snapshot_dir_2)
-        self.assertFalse(
-            (snapshot_dir / "new_file.f90").is_file(),
-            "Snapshot was re-copied even though it already existed",
-        )
-
-    def test_race_pre_existing_snapshot_is_not_overwritten(self):
-        # Simulate another process having already won the race.
-        snapshot_dir = self.experiment_src_dir / "echam-6.3"
-        snapshot_dir.mkdir(parents=True)
-        (snapshot_dir / "marker.txt").write_text("already here")
-
-        raw_result = prepcompute.snapshot_model_source(self.config, "echam", "6.3")
-        assert raw_result is not None
-        result = Path(raw_result)
-        self.assertEqual(result, snapshot_dir)
-        self.assertTrue((snapshot_dir / "marker.txt").is_file())
-        self.assertFalse((snapshot_dir / "source.f90").is_file())
+    # Second segment: snapshot already exists, must not be touched.
+    result_2 = prepcompute.snapshot_model_source(config, "echam", "6.3")
+    assert result_2 is not None
+    assert Path(result_2) == snapshot_dir
+    assert not (
+        snapshot_dir / "new_file.f90"
+    ).is_file(), "Snapshot was re-copied even though it already existed"
 
 
-class TestSnapshotModelSources(unittest.TestCase):
-    def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmpdir.cleanup)
-        self.tmpdir_path = Path(self.tmpdir.name)
-        self.shared_dir = self.tmpdir_path / "shared_model_checkout"
-        self.shared_dir.mkdir()
-        _init_git_repo(self.shared_dir)
-        self.experiment_src_dir = self.tmpdir_path / "exp" / "src"
-        self.config = {
-            "general": {
-                "experiment_src_dir": str(self.experiment_src_dir),
-                "models": ["echam"],
-            },
-            "echam": {"model_dir": str(self.shared_dir), "version": "6.3"},
-        }
+def test_race_pre_existing_snapshot_is_not_overwritten(tmp_path, git_repo):
+    shared_dir = git_repo("shared_model_checkout")
+    config = _config(tmp_path / "exp" / "src", shared_dir=shared_dir)
 
-    def test_repoints_model_dir_at_snapshot(self):
-        config = prepcompute.snapshot_model_sources(self.config)
-        expected_snapshot = self.experiment_src_dir / "echam-6.3"
-        self.assertEqual(Path(config["echam"]["model_dir"]), expected_snapshot)
-        self.assertTrue(expected_snapshot.is_dir())
+    # Simulate another process having already won the race.
+    snapshot_dir = tmp_path / "exp" / "src" / "echam-6.3"
+    snapshot_dir.mkdir(parents=True)
+    (snapshot_dir / "marker.txt").write_text("already here")
 
-    def test_models_without_version_are_skipped(self):
-        config = {
-            "general": {
-                "experiment_src_dir": str(self.experiment_src_dir),
-                "models": ["xios"],
-            },
-            "xios": {},
-        }
-        result = prepcompute.snapshot_model_sources(config)
-        self.assertNotIn("model_dir", result["xios"])
+    raw_result = prepcompute.snapshot_model_source(config, "echam", "6.3")
+    assert raw_result is not None
+    result = Path(raw_result)
+
+    assert result == snapshot_dir
+    assert (snapshot_dir / "marker.txt").is_file()
+    assert not (snapshot_dir / "source.f90").is_file()
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_repoints_model_dir_at_snapshot(tmp_path, git_repo):
+    shared_dir = git_repo("shared_model_checkout")
+    experiment_src_dir = tmp_path / "exp" / "src"
+    config = _config(
+        experiment_src_dir, shared_dir=shared_dir, models=["echam"]
+    )
+    config["echam"]["version"] = "6.3"
+
+    config = prepcompute.snapshot_model_sources(config)
+    expected_snapshot = experiment_src_dir / "echam-6.3"
+
+    assert Path(config["echam"]["model_dir"]) == expected_snapshot
+    assert expected_snapshot.is_dir()
+
+
+def test_models_without_version_are_skipped(tmp_path):
+    config = _config(tmp_path / "exp" / "src", model="xios", models=["xios"])
+    result = prepcompute.snapshot_model_sources(config)
+    assert "model_dir" not in result["xios"]

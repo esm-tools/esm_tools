@@ -18,6 +18,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 FESOM_DIR="${FESOM_DIR:-}"
 if [ -z "${FESOM_DIR}" ]; then
     for candidate in \
+        /albedo/work/user/${USER}/model_code/awiesm3-develop-is/fesom-2.7 \
+        /albedo/work/user/${USER}/model_code/awiesm3-develop-is/fesom-2.8 \
         /work/ab0246/a270092/model_codes/awiesm3-develop/fesom-2.8 \
         /work/ab0246/a270092/model_codes/awiesm3-develop-is/fesom-2.8 \
         /work/ab0246/a270092/model_codes/awiesm3-develop/fesom-2.7 \
@@ -31,6 +33,7 @@ fi
 # Map the host to a FESOM env subdir.
 case "$(hostname -f 2>/dev/null || hostname)" in
     *levante*|*lvt*) FESOM_HOST=levante.dkrz.de ;;
+    *albedo*|prod-*|fat-*|gpu-*) FESOM_HOST=albedo ;;
     *)               FESOM_HOST="" ;;
 esac
 

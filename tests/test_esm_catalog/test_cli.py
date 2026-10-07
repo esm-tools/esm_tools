@@ -295,7 +295,7 @@ def test_status_after_scan_reports_catalog_contents(runner, tmp_path, monkeypatc
     item.add_asset("data", pystac.Asset(href="file:///tas.2000.nc"))
     write_shard([item], items_dir / "exp-alpha_stac_1.parquet")
     (catalog / "queryables.json").write_text(
-        json.dumps({"properties": {"nml__a__b__c__d": {"type": "number"}}})
+        json.dumps({"properties": {"namelist__a__b__c__d": {"type": "number"}}})
     )
 
 

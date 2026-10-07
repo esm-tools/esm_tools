@@ -676,15 +676,19 @@ def _write_catalog(
 def _write_queryables(catalog, exp_metadata: ExperimentMetadata) -> None:
     """Write (or clear) the queryables sidecar for this experiment's namelists.
 
-    Its ``properties`` are the item-level ``nml__`` keys and their JSON types --
-    the exact file ``pypgstac load-queryables`` consumes. ``push`` diffs it
-    against the server's registered queryables to tell an operator which (if
-    any) are new.
+    Its ``properties`` are the item-level ``namelist__`` keys plus the
+    collection-level dotted-path ``namelist:parameters.*`` keys, each mapped
+    to its JSON type -- the exact file ``pypgstac load-queryables`` consumes.
+    ``push`` diffs it against the server's registered queryables to tell an
+    operator which (if any) are new.
     """
-    from esm_catalog.namelist import namelist_queryables
+    from esm_catalog.namelist import namelist_collection_queryables, namelist_queryables
 
     path = catalog / QUERYABLES_FILENAME
-    properties = namelist_queryables(exp_metadata.namelists_by_component)
+    properties = {
+        **namelist_queryables(exp_metadata.namelists_by_component),
+        **namelist_collection_queryables(exp_metadata.namelists_by_component),
+    }
     if not properties:
         if path.exists():
             path.unlink()

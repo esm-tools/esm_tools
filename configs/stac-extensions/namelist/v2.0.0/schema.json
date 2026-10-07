@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://esm-tools.github.io/stac-extensions/namelist/v2.0.0/schema.json",
+  "title": "Namelist Extension",
+  "description": "STAC Namelist Extension for STAC Items and Collections, exposing Fortran namelist parameters as CQL2 queryables.",
+  "type": "object",
+  "required": [
+    "stac_extensions",
+    "type"
+  ],
+  "properties": {
+    "stac_extensions": {
+      "type": "array",
+      "contains": {
+        "const": "https://esm-tools.github.io/stac-extensions/namelist/v2.0.0/schema.json"
+      }
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Collection",
+        "Feature"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$comment": "Item: namelist__{component}__{file}__{group}__{key} live in properties.",
+      "type": "object",
+      "required": [
+        "type",
+        "properties"
+      ],
+      "properties": {
+        "type": {
+          "const": "Feature"
+        },
+        "properties": {
+          "$ref": "#/definitions/item_fields"
+        }
+      }
+    },
+    {
+      "$comment": "Collection: namelist:parameters, nested component -> file -> group -> key.",
+      "type": "object",
+      "required": [
+        "type",
+        "namelist:parameters"
+      ],
+      "properties": {
+        "type": {
+          "const": "Collection"
+        },
+        "namelist:parameters": {
+          "$ref": "#/definitions/nested_parameters"
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "scalar": {
+      "title": "Scalar",
+      "description": "A single namelist value: string, number, boolean, or null.",
+      "type": [
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    },
+    "queryable_value": {
+      "title": "Queryable value",
+      "description": "A namelist parameter exposed for CQL2 filtering: a scalar, or a list of scalars (possibly empty, heterogeneous, or containing nulls). Nested groups are dropped before emission.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/scalar"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scalar"
+          }
+        }
+      ]
+    },
+    "item_fields": {
+      "title": "Namelist item fields",
+      "description": "STAC Item properties: every 'namelist__{component}__{file}__{group}__{key}' key maps to a queryable value; foreign (non-namelist__) core properties are unconstrained.",
+      "type": "object",
+      "propertyNames": {
+        "$comment": "Foreign props pass; namelist__ keys are JSON-path-safe (word characters and the '__' separator only).",
+        "pattern": "^(?!namelist__)|^namelist__[A-Za-z0-9_]+$"
+      },
+      "patternProperties": {
+        "^namelist__[A-Za-z0-9_]+$": {
+          "$ref": "#/definitions/queryable_value"
+        }
+      }
+    },
+    "nested_parameters": {
+      "title": "Nested namelist parameters",
+      "description": "component -> file -> group -> key -> value. Every level's keys are JSON-path-safe (only [A-Za-z0-9_], a repeated group indexed as 'group_N') and registered as a dotted-path queryable 'namelist:parameters.<component>.<file>.<group>.<key>', for CQL2 collection-search filtering.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9_]+$"
+      },
+      "additionalProperties": {
+        "title": "One component's namelist files",
+        "type": "object",
+        "propertyNames": {
+          "pattern": "^[A-Za-z0-9_]+$"
+        },
+        "additionalProperties": {
+          "title": "One file's namelist groups",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9_]+$"
+          },
+          "additionalProperties": {
+            "title": "One group's parameters",
+            "type": "object",
+            "propertyNames": {
+              "pattern": "^[A-Za-z0-9_]+$"
+            },
+            "additionalProperties": {
+              "$ref": "#/definitions/queryable_value"
+            }
+          }
+        }
+      }
+    }
+  }
+}

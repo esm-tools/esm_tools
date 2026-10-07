@@ -33,5 +33,5 @@ EXTENSION_URLS: dict[Extension, str] = {
     Extension.cmip6: "https://stac-extensions.github.io/cmip6/v1.0.0/schema.json",
     # Custom ESM-Tools extensions — https://esm-tools.github.io/stac-extensions/
     Extension.paleo: "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json",
-    Extension.namelist: "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json",
+    Extension.namelist: "https://esm-tools.github.io/stac-extensions/namelist/v2.0.0/schema.json",
 }

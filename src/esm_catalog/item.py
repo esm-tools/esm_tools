@@ -81,7 +81,7 @@ def make_item(
     item_id = _build_id(file_metadata.component or "unknown", stream)
     asset_key = _build_asset_key(id_stamp, file_metadata.category)
 
-    properties = _build_properties(file_metadata, exp_metadata)
+    properties = _build_properties(file_metadata)
     if is_fx:
         properties["frequency"] = FX_FREQUENCY
 
@@ -136,42 +136,46 @@ def _build_asset_key(timestamp: str, category: Optional[str]) -> str:
     return f"{category}_{timestamp}" if category else timestamp
 
 
-def _build_properties(
-    file_metadata: FileMetadata, exp_metadata: ExperimentMetadata
-) -> dict:
-    """Assemble the STAC item properties from file metadata and experiment.
+def _build_properties(file_metadata: FileMetadata) -> dict:
+    """Assemble the STAC item properties from file metadata.
+
+    ``experiment`` and ``format`` are deliberately absent: the Item's own
+    ``collection`` field already carries the experiment id, and the asset's
+    ``type`` (media type) already carries the format -- repeating either as a
+    bare property would just be an unprefixed duplicate landing in a STAC
+    browser's untitled "General" card, on every item.
 
     Parameters
     ----------
     file_metadata : FileMetadata
         The file's scanned metadata.
-    exp_metadata : ExperimentMetadata
-        The owning experiment, source of the ``experiment`` property.
 
     Returns
     -------
     dict
-        The STAC item properties. A ``variables`` list is added only when the
-        file holds more than one named data variable.
+        The STAC item properties. ``variable``/``variables`` are included
+        only when ``file_metadata.dimensions`` is empty -- when it is set,
+        the datacube extension's ``cube:variables`` (see
+        :mod:`esm_catalog.datacube`) already carries variable identity, more
+        richly, under its proper STAC name.
     """
 
     properties: dict = {
-        "variable": file_metadata.variable or "unknown",
-        "experiment": exp_metadata.experiment_id,
         "component": file_metadata.component or "unknown",
         "stream": file_metadata.stream or "unknown",
-        "format": file_metadata.format or "unknown",
     }
     if file_metadata.frequency:
         properties["frequency"] = file_metadata.frequency
 
-    variable_names = [
-        variable.name
-        for variable in file_metadata.variables
-        if variable.name and variable.name != "unknown"
-    ]
-    if len(variable_names) > 1:
-        properties["variables"] = variable_names
+    if not file_metadata.dimensions:
+        properties["variable"] = file_metadata.variable or "unknown"
+        variable_names = [
+            variable.name
+            for variable in file_metadata.variables
+            if variable.name and variable.name != "unknown"
+        ]
+        if len(variable_names) > 1:
+            properties["variables"] = variable_names
 
     return properties
 

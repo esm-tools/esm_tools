@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
+from pystac import (
+    Collection,
+    Extent,
+    Item,
+    Provider,
+    ProviderRole,
+    SpatialExtent,
+    TemporalExtent,
+)
 
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.plugins import get_plugin_manager
@@ -43,7 +51,10 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
         ),
         title=exp_metadata.experiment_id,
         license=exp_metadata.data_license or "proprietary",
-        extra_fields={"components": sorted(exp_metadata.components)},
+        keywords=sorted(exp_metadata.components),
+        providers=[
+            Provider(name="AWI", roles=[ProviderRole.PRODUCER, ProviderRole.HOST])
+        ],
     )
     get_plugin_manager().hook.apply_to_collection(
         collection=collection, exp_metadata=exp_metadata, hints={}

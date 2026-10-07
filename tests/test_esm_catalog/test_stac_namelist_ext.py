@@ -87,24 +87,19 @@ def test_is_queryable(value, queryable):
 
 def test_collection_noop_without_namelists(collection):
     add_namelist_collection_extension(collection, {})
-    assert "nml:files" not in collection.extra_fields
+    assert "namelist:parameters" not in collection.extra_fields
     assert collection.stac_extensions == []
 
 
-def test_collection_flattens_parameters(collection):
+def test_collection_nests_parameters(collection):
     add_namelist_collection_extension(collection, by_component("echam"))
-    params = collection.extra_fields["nml:parameters"]
-    assert params["echam__namelist_echam__runctl__delta_time"] == 450
-    assert params["echam__namelist_echam__runctl__lcouple"] is True
+    params = collection.extra_fields["namelist:parameters"]
+    assert params["echam"]["namelist_echam"]["runctl"]["delta_time"] == 450
+    assert params["echam"]["namelist_echam"]["runctl"]["lcouple"] is True
 
 
-def test_collection_lists_files_and_groups(collection):
+def test_collection_url_registered(collection):
     add_namelist_collection_extension(collection, by_component("echam", "jsbach"))
-    assert collection.extra_fields["nml:files"] == [
-        "echam__namelist_echam",
-        "jsbach__namelist_jsbach",
-    ]
-    assert collection.extra_fields["nml:groups"] == ["jsbach_ctl", "runctl"]
     assert NAMELIST_URL in collection.stac_extensions
 
 
@@ -115,8 +110,8 @@ def test_collection_url_appended_once(collection):
 
 
 def test_collection_component_qualified_keys_avoid_filename_collision(collection):
-    # Two components ship a same-named namelist file; the component-qualified
-    # keys must keep both values instead of one silently overwriting the other.
+    # Two components ship a same-named namelist file; component is the
+    # outermost nesting level, so the two branches cannot collide.
     add_namelist_collection_extension(
         collection,
         {
@@ -124,25 +119,22 @@ def test_collection_component_qualified_keys_avoid_filename_collision(collection
             "jsbach": {"namelist.io": read_nml("jsbach")},
         },
     )
-    params = collection.extra_fields["nml:parameters"]
-    assert params["echam__namelist_io__runctl__delta_time"] == 450
-    assert params["jsbach__namelist_io__jsbach_ctl__use_dynveg"] is True
-    assert collection.extra_fields["nml:files"] == [
-        "echam__namelist_io",
-        "jsbach__namelist_io",
-    ]
+    params = collection.extra_fields["namelist:parameters"]
+    assert params["echam"]["namelist_io"]["runctl"]["delta_time"] == 450
+    assert params["jsbach"]["namelist_io"]["jsbach_ctl"]["use_dynveg"] is True
 
 
 def test_collection_indexes_repeated_group(collection):
     # A group repeated in a file (an f90nml Cogroup) must not collapse onto one
-    # key; each occurrence gets a '_index' suffix, so both values survive.
+    # key; each occurrence gets a '_index' suffix, so both values survive as
+    # distinct nested keys.
     add_namelist_collection_extension(
         collection, {"bgc": {"namelist.bgc": read_nml("repeated_group")}}
     )
-    params = collection.extra_fields["nml:parameters"]
-    assert params["bgc__namelist_bgc__rep_0__x"] == 1
-    assert params["bgc__namelist_bgc__rep_1__x"] == 2
-    assert params["bgc__namelist_bgc__solo__y"] == 9
+    params = collection.extra_fields["namelist:parameters"]
+    assert params["bgc"]["namelist_bgc"]["rep_0"]["x"] == 1
+    assert params["bgc"]["namelist_bgc"]["rep_1"]["x"] == 2
+    assert params["bgc"]["namelist_bgc"]["solo"]["y"] == 9
 
 
 def test_collection_drops_non_json_scalar(collection):
@@ -151,18 +143,18 @@ def test_collection_drops_non_json_scalar(collection):
     add_namelist_collection_extension(
         collection, {"echam": {"namelist.echam": read_nml("with_complex")}}
     )
-    params = collection.extra_fields["nml:parameters"]
-    assert params["echam__namelist_echam__runctl__delta_time"] == 450
-    assert "echam__namelist_echam__runctl__phase" not in params
+    params = collection.extra_fields["namelist:parameters"]
+    assert params["echam"]["namelist_echam"]["runctl"]["delta_time"] == 450
+    assert "phase" not in params["echam"]["namelist_echam"]["runctl"]
 
 
-def test_collection_flattens_shipped_namelist(collection):
+def test_collection_nests_shipped_namelist(collection):
     # A real namelist shipped in esm_tools, read the way the scan layer would.
     amip = f90nml.read(esm_tools.get_namelist_filepath("amip/namelist.amip"))
     add_namelist_collection_extension(collection, {"amip": {"namelist.amip": amip}})
-    params = collection.extra_fields["nml:parameters"]
-    assert params["amip__namelist_amip__namamip__runlengthsec"] == 86400
-    assert params["amip__namelist_amip__namamip__startyear"] == 1850
+    params = collection.extra_fields["namelist:parameters"]
+    assert params["amip"]["namelist_amip"]["namamip"]["runlengthsec"] == 86400
+    assert params["amip"]["namelist_amip"]["namamip"]["startyear"] == 1850
 
 
 # --- add_namelist_item_extension (item-level, all components) ---
@@ -176,15 +168,20 @@ def test_item_noop_without_namelists(item):
 
 def test_item_flattens_one_component(item):
     add_namelist_item_extension(item, by_component("echam"))
-    assert item.properties["nml__echam__namelist_echam__runctl__co2vmr"] == 0.000284
+    assert (
+        item.properties["namelist__echam__namelist_echam__runctl__co2vmr"] == 0.000284
+    )
     assert NAMELIST_URL in item.stac_extensions
 
 
 def test_item_covers_all_components(item):
     add_namelist_item_extension(item, by_component("echam", "jsbach"))
-    assert item.properties["nml__echam__namelist_echam__runctl__delta_time"] == 450
     assert (
-        item.properties["nml__jsbach__namelist_jsbach__jsbach_ctl__use_dynveg"] is True
+        item.properties["namelist__echam__namelist_echam__runctl__delta_time"] == 450
+    )
+    assert (
+        item.properties["namelist__jsbach__namelist_jsbach__jsbach_ctl__use_dynveg"]
+        is True
     )
 
 
@@ -197,26 +194,27 @@ def test_collection_validates_against_namelist_schema(nml_schema):
 
 
 def test_collection_rejects_malformed_parameter_key(nml_schema):
-    # Flattened keys are JSON-path-safe: only [A-Za-z0-9_]. A key carrying a
-    # forbidden character (here a ':') must be rejected by propertyNames. (The
-    # '__' format cannot regex-enforce a segment count, since segments contain
-    # underscores; the guarantee it does enforce is character-safety.)
+    # Every nesting level's keys are JSON-path-safe: only [A-Za-z0-9_]. A key
+    # carrying a forbidden character (here a ':') must be rejected by
+    # propertyNames, at whichever level it appears.
     exp_metadata = make_exp_metadata(namelists_by_component=by_component("echam"))
     col_dict = make_collection(exp_metadata).to_dict()
-    col_dict["nml:parameters"]["has:a:colon"] = 1  # forbidden character
+    col_dict["namelist:parameters"]["echam"]["namelist_echam"]["runctl"][
+        "has:a:colon"
+    ] = 1  # forbidden character
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=col_dict, schema=nml_schema)
 
 
-def test_item_rejects_malformed_nml_key_but_keeps_foreign_props(item, nml_schema):
-    # nml__ keys must be JSON-path-safe; one carrying a ':' is rejected, while
-    # foreign core props (datetime, etc.) pass untouched.
+def test_item_rejects_malformed_namelist_key_but_keeps_foreign_props(item, nml_schema):
+    # namelist__ keys must be JSON-path-safe; one carrying a ':' is rejected,
+    # while foreign core props (datetime, etc.) pass untouched.
     add_namelist_item_extension(item, by_component("echam"))
     # well-formed item (carrying a core datetime prop) validates
     jsonschema.validate(instance=item.to_dict(), schema=nml_schema)
-    # an nml__ key with a forbidden character must be rejected
+    # a namelist__ key with a forbidden character must be rejected
     bad = item.to_dict()
-    bad["properties"]["nml__echam__bad:key"] = 1  # colon not allowed
+    bad["properties"]["namelist__echam__bad:key"] = 1  # colon not allowed
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=nml_schema)
 

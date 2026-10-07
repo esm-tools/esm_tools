@@ -239,8 +239,8 @@ def test_queryable_delta_only_new_keys(tmp_path, monkeypatch):
     _write_queryables(
         catalog,
         {
-            "nml__echam__namelist_echam__radctl__co2vmr": {"type": "number"},
-            "nml__echam__namelist_echam__radctl__yr_perp": {"type": "integer"},
+            "namelist__echam__namelist_echam__radctl__co2vmr": {"type": "number"},
+            "namelist__echam__namelist_echam__radctl__yr_perp": {"type": "integer"},
         },
     )
     # server already has co2vmr registered -> only yr_perp is new
@@ -249,21 +249,21 @@ def test_queryable_delta_only_new_keys(tmp_path, monkeypatch):
     monkeypatch.setattr(
         p,
         "registered_queryables",
-        lambda url, verify: {"nml__echam__namelist_echam__radctl__co2vmr", "datetime"},
+        lambda url, verify: {"namelist__echam__namelist_echam__radctl__co2vmr", "datetime"},
     )
     delta = p.queryable_delta(catalog, "https://host/api", True)
     assert delta is not None and delta.name == "queryables-delta.json"
     written = json.loads(delta.read_text())["properties"]
-    assert set(written) == {"nml__echam__namelist_echam__radctl__yr_perp"}
+    assert set(written) == {"namelist__echam__namelist_echam__radctl__yr_perp"}
 
 
 def test_queryable_delta_none_when_all_registered(tmp_path, monkeypatch):
     catalog = tmp_path / "catalog"
-    _write_queryables(catalog, {"nml__a__b__c__d": {"type": "number"}})
+    _write_queryables(catalog, {"namelist__a__b__c__d": {"type": "number"}})
     import esm_catalog.push as p
 
     monkeypatch.setattr(
-        p, "registered_queryables", lambda url, verify: {"nml__a__b__c__d"}
+        p, "registered_queryables", lambda url, verify: {"namelist__a__b__c__d"}
     )
     assert p.queryable_delta(catalog, "https://host/api", True) is None
     assert not (catalog / "queryables-delta.json").exists()
@@ -271,7 +271,7 @@ def test_queryable_delta_none_when_all_registered(tmp_path, monkeypatch):
 
 def test_queryable_delta_full_set_when_server_unreachable(tmp_path, monkeypatch):
     catalog = tmp_path / "catalog"
-    _write_queryables(catalog, {"nml__a__b__c__d": {"type": "number"}})
+    _write_queryables(catalog, {"namelist__a__b__c__d": {"type": "number"}})
     import esm_catalog.push as p
 
     def _boom(url, verify):
@@ -280,7 +280,7 @@ def test_queryable_delta_full_set_when_server_unreachable(tmp_path, monkeypatch)
     monkeypatch.setattr(p, "registered_queryables", _boom)
     delta = p.queryable_delta(catalog, "https://host/api", True)
     assert delta is not None  # emits the full set rather than skipping silently
-    assert set(json.loads(delta.read_text())["properties"]) == {"nml__a__b__c__d"}
+    assert set(json.loads(delta.read_text())["properties"]) == {"namelist__a__b__c__d"}
 
 
 def test_queryable_delta_absent_when_no_sidecar(tmp_path, monkeypatch):

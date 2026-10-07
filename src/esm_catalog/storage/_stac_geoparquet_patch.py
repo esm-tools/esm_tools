@@ -4,7 +4,7 @@
 *whole* item dict per item -- every property, asset, and link -- purely to
 swap ``geometry``/``proj:geometry`` to WKB bytes without mutating the
 caller's original. For an experiment with a large flattened namelist
-(thousands of ``nml__`` properties per item, identical across the run),
+(thousands of ``namelist__`` properties per item, identical across the run),
 that full deepcopy dominates the whole writing phase: measured 105s of a
 ~108s ``write_shard`` call scanning 32,200 items on a real AWI-CM2 run
 (``ncalls`` showed 62 million recursive `copy.deepcopy` calls -- ~1,925 per
@@ -51,7 +51,7 @@ def _patched_from_dicts(
         # Shallow copy: only the keys we're about to mutate get their own
         # copy. `properties`/`assets` are reused by reference when they
         # carry no `proj:geometry` to swap -- that's the whole fix, since
-        # `properties` is what's huge (thousands of nml__ entries).
+        # `properties` is what's huge (thousands of namelist__ entries).
         wkb_item = dict(item)
         wkb_item["geometry"] = shapely.to_wkb(
             shapely.geometry.shape(wkb_item["geometry"]), flavor="iso"

@@ -2,25 +2,31 @@
 
 Collection level (``collection.extra_fields``)::
 
-    nml:files       - "component__file" namelist filenames
-    nml:groups      - namelist groups across all files
-    nml:parameters  - flattened "component__file__group__key" -> value, for CQL2
-                      filtering (component-qualified so two components sharing a
-                      filename cannot collide)
+    namelist:parameters - nested component -> file -> group -> key -> value
 
 Item level (``item.properties``), one entry per parameter across all
 components::
 
-    nml__{component}__{file}__{group}__{key} -> value
+    namelist__{component}__{file}__{group}__{key} -> value
 
-The flattened keys use ``__`` as the separator and sanitise every other
-character to ``_``. This is deliberate: pgstac builds an (unquoted) JSON-path
-from an unregistered property name, so a name containing ``:`` (the STAC
-namespace idiom), ``.`` (from a filename like ``namelist.echam``) or ``[]``
-(a repeated-group index) yields a broken path and the CQL2 filter silently
-matches nothing. A ``[A-Za-z0-9_]``-only key resolves like any plain property
-(``component``, ``variable``), so namelist params are filterable with no
-queryables registration at all.
+The item-level keys are flat, joined with ``__``, and every segment sanitises
+every character outside ``[A-Za-z0-9_]`` to ``_``. This is deliberate: pgstac
+builds an (unquoted) JSON-path from an *unregistered* property name, so a name
+containing ``:`` (the STAC namespace idiom), ``.`` (from a filename like
+``namelist.echam``) or ``[]`` (a repeated-group index) yields a broken path and
+the CQL2 filter silently matches nothing. A ``[A-Za-z0-9_]``-only key resolves
+like any plain property (``component``, ``variable``), so item-level namelist
+params are filterable with no queryables registration at all.
+
+The collection-level structure is real nesting instead of a flattened key:
+each segment is sanitised the same way, but *registered* as a dotted-path
+queryable (``namelist:parameters.<component>.<file>.<group>.<key>``, see
+:func:`namelist_collection_queryables`) rather than joined into one string.
+pgstac's registered-queryable resolution splits a dotted name into a nested
+JSON path correctly; it is only the *unregistered* fallback that breaks on a
+nested/dotted name (confirmed against pgstac's own source and
+https://github.com/stac-utils/pgstac/issues/483 — see
+docs/superpowers/specs/2026-10-07-namelist-stac-extension-redesign-design.md).
 """
 
 from __future__ import annotations
@@ -37,21 +43,31 @@ from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 from esm_catalog.types import ComponentName
 
-#: Separator between the segments of a flattened namelist key.
+#: Separator between the segments of a flattened item-level namelist key.
 _KEY_SEP = "__"
 
-#: The item-property prefix marking a flattened namelist parameter.
-_ITEM_PREFIX = "nml"
+#: The item-property prefix marking a flattened namelist parameter, and the
+#: collection-property prefix marking the nested parameters dict.
+_ITEM_PREFIX = "namelist"
+
+#: The collection-level extra_fields key holding the nested parameters.
+_COLLECTION_KEY = "namelist:parameters"
+
+
+def _sanitize_segment(part: str) -> str:
+    """Make *part* JSON-path-safe: every character outside ``[A-Za-z0-9_]``
+    becomes ``_`` (so a filename's ``.`` or a repeated-group ``[N]`` can never
+    reach a flattened key or a registered dotted-path queryable)."""
+    return re.sub(r"[^0-9A-Za-z_]", "_", part)
 
 
 def _flatten(*parts: str) -> str:
-    """Join *parts* into a JSON-path-safe flat key.
+    """Join *parts* into a JSON-path-safe flat key (item-level only).
 
-    Every character outside ``[A-Za-z0-9_]`` is replaced with ``_`` (so a
-    filename's ``.`` or a repeated-group ``[N]`` can never reach the key), and
-    the sanitised parts are joined with :data:`_KEY_SEP`.
+    Every segment is sanitised by :func:`_sanitize_segment`, then joined with
+    :data:`_KEY_SEP`.
     """
-    return _KEY_SEP.join(re.sub(r"[^0-9A-Za-z_]", "_", part) for part in parts)
+    return _KEY_SEP.join(_sanitize_segment(part) for part in parts)
 
 NamelistFilename = str
 """A namelist filename, e.g. 'namelist.echam'."""
@@ -61,10 +77,6 @@ GroupName = str
 
 ParameterName = str
 """A namelist parameter key, e.g. 'delta_time'."""
-
-FlatKey = str
-"""A flattened 'component__file__group__key' identifier, e.g.
-'echam__namelist_echam__runctl__delta_time'."""
 
 Namelist = f90nml.Namelist
 """A parsed Fortran namelist (group -> parameters; nested groups are Namelists)."""
@@ -79,49 +91,75 @@ NamelistsByComponent = dict[ComponentName, ComponentNamelists]
 """All components' namelists: component -> that component's namelists."""
 
 
+def _nested_parameters(
+    namelists_by_component: NamelistsByComponent,
+) -> dict:
+    """Build namelist:parameters as real nesting: component -> file -> group -> key -> value.
+
+    A Collection is the whole experiment, so the outermost level is the
+    component — two components shipping a same-named namelist file land in
+    separate branches and cannot collide. Every segment is sanitised exactly
+    as an item-level flattened key's segments are (see
+    :func:`_sanitize_segment`); only the joining differs, real dict nesting
+    instead of string concatenation.
+    """
+    nested: dict = {}
+    for component, namelists in namelists_by_component.items():
+        component_level = nested.setdefault(_sanitize_segment(component), {})
+        for filename, group, key, value in _iter_queryable_params(namelists):
+            file_level = component_level.setdefault(_sanitize_segment(filename), {})
+            group_level = file_level.setdefault(_sanitize_segment(group), {})
+            group_level[_sanitize_segment(key)] = value
+    return nested
+
+
 def add_namelist_collection_extension(
     collection: pystac.Collection, namelists_by_component: NamelistsByComponent
 ) -> None:
-    """Set collection-level nml:files/groups/parameters from every component.
+    """Set collection-level namelist:parameters (nested) from every component.
 
-    A Collection is the whole experiment, so parameters are keyed
-    ``component__file__group__key`` — component-qualified, so two components
-    that ship a same-named namelist file cannot overwrite each other. No-op
-    when *namelists_by_component* is empty.
+    No-op when *namelists_by_component* is empty.
 
     Parameters
     ----------
     collection : pystac.Collection
         The collection to annotate in place.
     namelists_by_component : NamelistsByComponent
-        Every component's namelists, whose files, groups, and queryable
-        parameters are summarised at collection level.
+        Every component's namelists, nested into the collection-level
+        queryable parameters.
     """
     if not namelists_by_component:
         return
-    groups: set[GroupName] = set()
-    for namelists in namelists_by_component.values():
-        for file_groups in namelists.values():
-            groups.update(file_groups)
-    parameters: dict[FlatKey, NamelistValue] = {
-        _flatten(component, filename, group, key): value
+    collection.extra_fields[_COLLECTION_KEY] = _nested_parameters(
+        namelists_by_component
+    )
+    apply_extension(collection, Extension.namelist)
+
+
+def namelist_collection_queryables(
+    namelists_by_component: NamelistsByComponent,
+) -> dict[str, dict[str, str]]:
+    """Map each namelist:parameters leaf to a dotted-path queryable definition.
+
+    Registered as ``"namelist:parameters.<component>.<file>.<group>.<key>"`` --
+    pgstac's registered-queryable resolution splits a dotted name into a
+    nested jsonb path, so the collection-level nested structure stays
+    filterable via CQL2 collection search. Empty when there are no namelists.
+    """
+    return {
+        f"{_COLLECTION_KEY}."
+        + ".".join(
+            _sanitize_segment(part) for part in (component, filename, group, key)
+        ): {"type": _json_type(value)}
         for component, namelists in namelists_by_component.items()
         for filename, group, key, value in _iter_queryable_params(namelists)
     }
-    collection.extra_fields["nml:files"] = sorted(
-        _flatten(component, filename)
-        for component, namelists in namelists_by_component.items()
-        for filename in namelists
-    )
-    collection.extra_fields["nml:groups"] = sorted(groups)
-    collection.extra_fields["nml:parameters"] = parameters
-    apply_extension(collection, Extension.namelist)
 
 
 def namelist_item_props(
     namelists_by_component: NamelistsByComponent,
 ) -> dict[str, NamelistValue]:
-    """Flatten every component's namelists into item-level nml__ properties.
+    """Flatten every component's namelists into item-level namelist__ properties.
 
     The same for every item in an experiment -- the caller should compute this
     once per scan and reuse it, rather than call it per item (namelist trees
@@ -141,7 +179,7 @@ def add_namelist_item_extension(
     props: Optional[dict[str, NamelistValue]] = None,
     validate: bool = True,
 ) -> None:
-    """Set item-level nml__{component}__{file}__{group}__{key} from the namelists.
+    """Set item-level namelist__{component}__{file}__{group}__{key} from the namelists.
 
     No-op when no queryable parameters are found.
 
@@ -159,7 +197,7 @@ def add_namelist_item_extension(
     validate : bool, optional
         Whether to jsonschema-validate the item after applying the extension.
         Measured dominant cost of a bulk scan's per-item work (patternProperties
-        matching against every nml__ property, with recursive oneOf/$ref
+        matching against every namelist__ property, with recursive oneOf/$ref
         resolution) -- a bulk caller that already trusts these code paths (e.g.
         covered by the test suite's schema-conformance tests) should pass False.
     """
@@ -240,7 +278,7 @@ def _json_type(value: NamelistValue) -> str:
 def namelist_queryables(
     namelists_by_component: NamelistsByComponent,
 ) -> dict[str, dict[str, str]]:
-    """Map each item-level ``nml__`` key to a JSON-Schema queryable definition.
+    """Map each item-level ``namelist__`` key to a JSON-Schema queryable definition.
 
     The result is the ``properties`` body of a ``pypgstac load-queryables`` file:
     ``{name: {"type": <json-type>}}``, one entry per item-level namelist property.

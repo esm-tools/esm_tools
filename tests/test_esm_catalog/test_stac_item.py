@@ -33,13 +33,25 @@ def test_item_to_dict_and_stac_version_and_type(item):
 
 def test_item_basic_fields(item):
     assert item.properties["variable"] == "temp"
-    assert item.properties["format"] == "netcdf"
     assert item.properties["component"] == "echam"
-    assert item.properties["experiment"] == "exp-alpha"
+    assert "experiment" not in item.properties  # item.collection already carries it
+    assert "format" not in item.properties  # the asset's type already carries it
     assert item.collection_id.startswith("exp-alpha-")  # name + path hash
     assert item.assets["200001"].href.startswith("file://")
+    assert item.assets["200001"].media_type == "application/x-netcdf"
     assert item.links[0].rel == "collection"
     assert item.links[0].target.startswith("#exp-alpha-")
+
+
+def test_item_variable_absent_when_cube_variables_would_fire(temp_nc):
+    # When the scanner reports dimensions, cube:variables (datacube.py) carries
+    # variable identity -- the bare properties["variable"] must not duplicate it.
+    file_metadata = make_file_metadata(
+        dimensions={"time": {"type": "temporal", "extent": ["2000-01-01", "2000-01-01"]}}
+    )
+    item = make_item(temp_nc, file_metadata, make_exp_metadata())
+    assert "variable" not in item.properties
+    assert "variables" not in item.properties
 
 
 def test_item_bbox_and_geometry_passthrough(temp_nc):

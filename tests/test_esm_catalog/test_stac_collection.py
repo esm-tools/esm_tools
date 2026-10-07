@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import pytest
-from pystac import Collection, Item
+from pystac import Collection, Item, ProviderRole
 
 from esm_catalog.collection import make_collection, update_extent
 from esm_catalog.models import Contact
@@ -42,7 +42,16 @@ def test_collection_minimal_skeleton(collection):
     assert collection.id.startswith("exp-alpha-")
     assert collection.title == "exp-alpha"
     # components come from the experiment's `components` field; none set → empty.
-    assert collection.extra_fields["components"] == []
+    # keywords (not a bare extra_fields key) is where the browser renders tags.
+    assert collection.keywords == []
+    assert "components" not in collection.extra_fields
+
+
+def test_collection_has_awi_provider(collection):
+    assert len(collection.providers) == 1
+    provider = collection.providers[0]
+    assert provider.name == "AWI"
+    assert set(provider.roles) == {ProviderRole.PRODUCER, ProviderRole.HOST}
 
 
 def test_collection_lists_all_experiment_components():
@@ -56,10 +65,10 @@ def test_collection_lists_all_experiment_components():
         },
     )
     collection = make_collection(exp_metadata)
-    assert collection.extra_fields["components"] == ["echam", "fesom"]
-    params = collection.extra_fields["nml:parameters"]
-    assert params["echam__namelist_echam__runctl__delta_time"] == 450
-    assert params["fesom__namelist_fesom__clockinit__yearnew"] == 1850
+    assert collection.keywords == ["echam", "fesom"]
+    params = collection.extra_fields["namelist:parameters"]
+    assert params["echam"]["namelist_echam"]["runctl"]["delta_time"] == 450
+    assert params["fesom"]["namelist_fesom"]["clockinit"]["yearnew"] == 1850
 
 
 def test_update_extent_expands_temporal(collection):

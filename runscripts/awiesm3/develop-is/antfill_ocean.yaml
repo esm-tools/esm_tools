@@ -126,12 +126,21 @@ fesom:
             # awiesm3.yaml's levante block points ocp_tool_dir at a270092's checkout;
             # TCO95_CORE3_ICE.yaml there is the file the _albedo variant was built from.
             ocp_template_config: "${general.shared_a270092}/software/ocp-tool/configs/TCO95_CORE3_ICE.yaml"
-            # conda is not on PATH in the batch environment, so _conda_env_python returns
-            # "" and both drivers fall back to the mambaforge python, which carries no
-            # pyfesom2 and no mpi4py (orogrun, 2026-08-25 11:54). albedo does not need
-            # this: awiesm3.yaml's albedo block sets ocp_weightgen_worker_env instead.
-            ocp_weightgen_driver_py: "${general.conda_env_dir}/ocp-tool2/bin/python"
-            ocp_weightgen_worker_py: "${general.conda_env_dir}/ocp-worker/bin/python"
+    # BOTH machines, not just levante. env_fesom.py:190 reads these keys first and only
+    # falls back to _conda_env_python(), which returns "" whenever conda is not on PATH --
+    # and it is not, in either batch environment. OCP_WEIGHTGEN_DRIVER_PY then arrives
+    # empty and ${OCP_WEIGHTGEN_DRIVER_PY:-python} in build_submesh runs the bare system
+    # python, which has no pyfesom2:
+    #     FileNotFoundError: .../python3.9/site-packages/pyfesom2/ascii_to_netcdf.py
+    # That killed antftest7's cycle-2 couple_in at fesom_mesh_to_cdo.py, after the mesh
+    # reduction and the 1792-way partition had both succeeded, and regenerate_oasis_weights
+    # would have stopped on its own ":?OCP_WEIGHTGEN_DRIVER_PY not set" immediately after.
+    # Only cycle 2 reaches this code, which is why antftest5 passed. orogrun hit the same
+    # thing on levante on 2026-08-25 and fixed it the same way.
+    # The two envs are not interchangeable: ocp-tool2 carries pyfesom2 + eccodes (driver),
+    # ocp-worker carries mpi4py built against the run's own OpenMPI (srun worker).
+    ocp_weightgen_driver_py: "${general.conda_env_dir}/ocp-tool2/bin/python"
+    ocp_weightgen_worker_py: "${general.conda_env_dir}/ocp-worker/bin/python"
     ocp_weightgen_partition: "compute"
     # Only the mesh-independent rmp_R096_to_RnfA is taken from here.
     oasis_rmp_template_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/1792"

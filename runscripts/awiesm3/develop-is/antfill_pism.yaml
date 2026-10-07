@@ -8,10 +8,12 @@ general:
         # not, so keep the 04:00:00 ism44 used until it is measured here.
         compute_time: "04:00:00"
         initial_date: "62370-01-01"
-        # STAGE 1: ONE leg (62370-62379), matching antfill_ocean's one-cycle cap.
+        # STAGE 2: TWO legs (62370-62389), matching antfill_ocean's two-cycle cap.
+        # 62370 + 2*10 - 1.  Leg 2's couple_in is the first build_submesh on a geometry PISM
+        # itself produced, i.e. the first mesh change.
         # TO GO TO THE FULL RUN: restore "62569-12-31" here AND "1920-01-01" in antfill_ocean.
         # 20 legs of 10 yr: 62370 + 20*10 - 1. Must end on the same cycle as antfill_ocean.
-        final_date: "62379-12-31"
+        final_date: "62389-12-31"
         user: !ENV ${USER}
         base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
         script_dir: "${general.esm_configs_dir}/../couplings/"

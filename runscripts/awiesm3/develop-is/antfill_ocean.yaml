@@ -10,12 +10,14 @@ general:
     # is ism44's value and leaves room for the first-run overhead.
     compute_time: "02:00:00"
     initial_date: "1900-01-01"
-    # STAGE 1: ONE cycle (1900) as a smoke test of the first albedo run of this coupling.
-    # Cycle 1 exercises the chunk-1 bundle; the first mesh change only happens in cycle 2, so a
-    # second cycle is the next step once this one completes.
+    # STAGE 2: TWO cycles (1900-1901).  Stage 1 (one cycle, antftest5) passed: FESOM and OIFS
+    # each completed 1900, the SMB and cavity handoffs went both ways and both chunk_1 markers
+    # were written.  Cycle 2 is the first MESH CHANGE, so it is what actually tests the new
+    # core3_ant_fill mother mesh, the cavity-dig patch ported to FESOM 2.8, and the
+    # enclosed-hole rule in the restart remap.
     # TO GO TO THE FULL RUN: restore "1920-01-01" here AND "62569-12-31" in antfill_pism.yaml.
     # 20 cycles, 1900-1919 inclusive (10 ice years per cycle: PISM 62370-62569).
-    final_date: "1901-01-01"
+    final_date: "1902-01-01"
     base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
     interactive_mesh: true
     ism_freshwater_return: true

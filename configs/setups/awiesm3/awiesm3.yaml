@@ -49,8 +49,8 @@ general:
     # REcoM uses for the air-sea gas exchange instead of a constant atmosphere.
     # Needs with_co2_oce_coupling, an OpenIFS that declares A_MSLP for FESOM, a
     # FESOM with use_atm_mslp, and A_MSLP in the coupler restart rst_co2_ao.nc.
-    # On for the moving carbon-cycle versions (develop-cc, v3.5-cc). Off for
-    # v3.5.0-cc: its tags (OpenIFS 48r1v5, FESOM 2.8.1) do not have the field.
+    # On for every carbon-cycle version (develop-cc, v3.5-cc, v3.5.0-cc); the
+    # field exists from OpenIFS 48r1v6 and FESOM 2.8.2.
     with_mslp_oce_coupling: false
 
     # PISM<->FESOM dynamic-mesh (ice2fesom) coupling. Feature switch (not version-
@@ -79,11 +79,25 @@ general:
     # atmosphere's snow-cap calving over the ice sheet. Both halves have to move
     # together: switching off the calving alone takes about 2000 Gt/yr out of
     # the Southern Ocean with nothing put back.
-    ism_freshwater_return: false
+    ism_freshwater_return: "$(( ${general.with_icb} ))"
 
-    # The iceberg module. Set it in the driver runscript next to with_recom:
-    # fesom's choose_with_icb resolves before a general-level choose_ block does,
-    # so setting it from one here leaves the whole iceberg block off.
+    # Antarctic icebergs without an ice-sheet model: what is left of the
+    # atmosphere's snow-cap calving after the cavities have melted their share
+    # (accumulation = basal melt + icebergs), released at the ice fronts with the
+    # observed present-day split between sectors. It follows from the other
+    # switches: icebergs on (with_icb) in a setup without PISM (with_pism false)
+    # can only get their mass this way, and the mapper's Antarctic calving
+    # (ism_freshwater_return, above) goes off with them. Needs cavities and the
+    # runoff mapper v1.4. The amount is recomputed after every leg and the seed
+    # files are written for each leg's own length, by two workflow jobs declared
+    # in the fesom section: see couplings/fesom/iceberg_budget.py.
+    icb_from_budget: "$(( ${general.with_icb} and not ${general.with_pism} ))"
+
+    # true in the ice-sheet variants (choose_version below).
+    with_pism: false
+
+    # The iceberg module. On by default in v3.5.0 and v3.5.0-cc (choose_version
+    # below); the ice-sheet runscripts set it themselves.
     with_icb: false
 
     # Counting the generated bergs into icebergs%ib_num. It has to go in the
@@ -214,6 +228,7 @@ general:
         #   esm_master comp-awiesm3-develop-is
         develop-is:
             major_version: v3.5
+            with_pism: true
             couplings:
                 - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             # PISM's surface height feeds back as the OIFS orography by default.
@@ -288,6 +303,7 @@ general:
         # dEBM and ismm are built by the coupling but not added as runtime models.
         v3.5-is:
             major_version: v3.5
+            with_pism: true
             couplings:
                 - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             ism_orog_coupled: true
@@ -304,13 +320,14 @@ general:
 
         # ------------------------------------------------------------------
         # v3.5.0: the release. Same settings as v3.5 / v3.5-cc / v3.5-is, but the
-        # couplings pin every component to a release tag (FESOM 2.8.1, OpenIFS
-        # 48r1v5, LPJ-GUESS 4.1.13, OASIS 5.3, XIOS 2.5.4, runoff mapper 1.4; the
+        # couplings pin every component to a release tag (FESOM 2.8.2, OpenIFS
+        # 48r1v6, LPJ-GUESS 4.1.13, OASIS 5.3, XIOS 2.5.4, runoff mapper 1.4; the
         # ice-sheet variant adds PISM 1.2.0-awi.1, dEBM 1.0-awi.1, ismm 4.1.8-awi.1).
         # Frozen: a later fix is v3.5.1 with its own coupling.
         # ------------------------------------------------------------------
         v3.5.0:
             major_version: v3.5
+            with_icb: true
             couplings:
                 - awiesm3_v3.5.0
             add_include_models:
@@ -322,6 +339,7 @@ general:
             with_co2_veg_coupling: false
         v3.5.0-cc:
             major_version: v3.5
+            with_icb: true
             couplings:
                 - awiesm3_v3.5.0
             add_include_models:
@@ -330,9 +348,11 @@ general:
             xios_interp_order: 1
             with_co2_tracer: true
             with_co2_oce_coupling: true
+            with_mslp_oce_coupling: true
             with_co2_veg_coupling: true
         v3.5.0-is:
             major_version: v3.5
+            with_pism: true
             couplings:
                 - awiesm3_v3.5.0-is
             ism_orog_coupled: true
@@ -810,6 +830,7 @@ oifs:
     # CO2 tracer (ECE_CPL_FESOM_RECOM_CONCDRIVEN), and keeps the tracer out of
     # radiation (LECO2TRA=.false.). Needs with_co2_oce_coupling (RECOM) and
     # with_co2_tracer (NGHG=1), both on for develop-cc.
+    co2_massfix_beta: 2
     choose_general.with_co2_concdriven:
         true:
             add_add_add_add_add_add_add_namelist_changes:
@@ -818,6 +839,15 @@ oifs:
                         ECE_CPL_FESOM_RECOM_CONCDRIVEN: true
                     NAERAD:
                         LECO2TRA: false
+                    NAMGFL:
+                        # The initial file carries present-day CO2 (about 403 ppm, paramId
+                        # 210061). The tracer is diagnostic in this mode, so start it at
+                        # the 1850 value instead: 4.3144e-4 kg/kg is about 284 ppm.
+                        YGHG_NL(1)%NREQIN: -1
+                        YGHG_NL(1)%REFVALI: 4.3144e-4
+            # proportional mass fixer; the additive one (2) divides by about zero for a
+            # nearly uniform field. Read by the NAMGFL block of with_co2_tracer below.
+            co2_massfix_beta: -1
 
     choose_general.with_co2_tracer:
         true:
@@ -834,7 +864,7 @@ oifs:
                         YGHG_NL(1)%LQM: FALSE
                         YGHG_NL(1)%LQM3D: TRUE
                         YGHG_NL(1)%LNEGFIX: FALSE
-                        YGHG_NL(1)%BETAMFBC: 2
+                        YGHG_NL(1)%BETAMFBC: "${oifs.co2_massfix_beta}"
                         YGHG_NL(1)%LASSIM: TRUE
                         NMFDIAGLEV: 2
                         NOPTVFE: 1
@@ -909,9 +939,9 @@ fesom:
     # is coupled (choose_general.with_co2_oce_coupling below). recom_input_path holds the
     # per-mesh REcoM forcing (<resolution>/DustClimMonthlyAlbani.nc ...). The 3D initial
     # fields of namelist.tra's tracer_init3d (GLODAP DIC/alkalinity, WOA nutrients and
-    # oxygen, PISCES iron) are read from ClimateDataPath next to PHC3: on levante the
-    # standard directory is used unchanged, on albedo the pool has only PHC3, so a
-    # directory that holds both is used instead.
+    # oxygen, PISCES iron) are read from ClimateDataPath next to PHC3, so they have to
+    # sit in the standard hydrography directory (on albedo: links into the pool's
+    # fesom2/recom).
     choose_computer.name:
         levante:
             ocp_tool_dir: "/work/ab0246/a270092/software/ocp-tool"
@@ -919,12 +949,53 @@ fesom:
             recom_climate_data_dir: "${fesom.climate_data_dir}"
         albedo:
             ocp_tool_dir: ""
-            recom_input_path: "/albedo/work/projects/p_awiesm3_cmip7/jstreffi/input/fesom2/recom/"
-            recom_climate_data_dir: "/albedo/work/projects/p_awiesm3_cmip7/jstreffi/input/fesom2/hydrography_recom/"
+            recom_input_path: "${fesom.pool_dir}/recom/"
+            recom_climate_data_dir: "${fesom.climate_data_dir}"
         "*":
             ocp_tool_dir: ""
             recom_input_path: "/work/ab0246/a270092/input/fesom2/recom/"
             recom_climate_data_dir: "${fesom.climate_data_dir}"
+    # Icebergs from the calving minus basal melt budget (general.icb_from_budget).
+    # Two workflow jobs around couplings/fesom/iceberg_budget.py, no step in the
+    # esm_runscripts recipes:
+    #   icb_seed    before prepcompute: writes icb_*.dat for exactly this leg into
+    #               the couple dir, from the rate and ledger kept there. It also
+    #               takes the previous leg's budget if icb_budget has not.
+    #   icb_budget  after tidy: measures the leg's calving and basal melt.
+    # The files are written before every leg, the first one included, so the
+    # run-1 directory is the couple dir too. A starting rate can be put into the
+    # pool as ${pool_dir}/icebergs_ini/<mesh>/iceberg_rate_init.json
+    # ({"rate_gt_yr": ...}); without it the first leg uses icb_default_rate.
+    choose_general.icb_from_budget:
+        true:
+            ini_iceberg_dir: "${general.experiment_couple_dir}"
+            icb_default_rate: 1100.0      # Gt/yr, 2475 calving - 1378 basal melt in PICAL 2200-2209
+            icb_relax_years: 20.0         # a ledger imbalance is paid back over this time
+            icb_rate_memory_years: 10.0   # memory of the rate, so one short leg does not set it
+            icb_init_rate_file: "${pool_dir}/icebergs_ini/${resolution}/iceberg_rate_init.json"
+            icb_leg: "--start ${general.start_date!syear}-${general.start_date!smonth}-${general.start_date!sday} --end ${general.end_date!syear}-${general.end_date!smonth}-${general.end_date!sday}"
+            icb_dirs: "--couple-dir ${general.experiment_couple_dir} --mesh-dir ${mesh_dir} --oifs-outdata ${oifs.experiment_outdata_dir} --fesom-outdata ${experiment_outdata_dir}"
+            # survivors of the previous leg: the parent's on a branched first leg
+            choose_general.run_number:
+                1:
+                    icb_restart_ism: "${ini_restart_dir}/iceberg.restart.ISM"
+                "*":
+                    icb_restart_ism: "${experiment_restart_in_dir}/iceberg.restart.ISM"
+            add_workflow:
+                add_subjobs:
+                    icb_seed:
+                        batch_or_shell: shell
+                        run_before: prepcompute
+                        nproc: 1
+                        script_dir: ${general.esm_couplings_dir}/fesom
+                        script: "iceberg_budget.sh seed ${fesom.icb_dirs} ${fesom.icb_leg} --restart-ism ${fesom.icb_restart_ism} --init-rate-file ${fesom.icb_init_rate_file} --default-rate ${fesom.icb_default_rate} --relax-years ${fesom.icb_relax_years} --rate-memory-years ${fesom.icb_rate_memory_years}"
+                    icb_budget:
+                        batch_or_shell: shell
+                        run_after: tidy
+                        nproc: 1
+                        script_dir: ${general.esm_couplings_dir}/fesom
+                        script: "iceberg_budget.sh budget ${fesom.icb_dirs} ${fesom.icb_leg} --rate-memory-years ${fesom.icb_rate_memory_years}"
+
     # FESOM receives mean sea-level pressure from OpenIFS into press_air; see
     # general.with_mslp_oce_coupling.
     choose_general.with_mslp_oce_coupling:
@@ -940,6 +1011,19 @@ fesom:
             # fesom2 main since #806, so it builds the v3.5 default branch.
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
+            # First leg: REcoM starts from the climatologies in ClimateDataPath, whatever
+            # the ocean physics start from, so no REcoM restart is read or staged. A run
+            # that branches from one with a REcoM restart sets recom_cold_start: false.
+            recom_cold_start: true
+            recom_restart_flag: true
+            choose_general.run_number:
+                1:
+                    choose_recom_cold_start:
+                        true:
+                            recom_restart_flag: false
+                            remove_restart_in_files: [par_bio_restart]
+                            remove_restart_in_in_work: [par_bio_restart]
+                            remove_restart_in_sources: [par_bio_restart]
             # REcoM's parallel restart (fesom.<date>.bio.restart/), stamped like
             # oce/ice in the v3.5 arm of choose_general.major_version below.
             add_restart_in_files:
@@ -1008,6 +1092,7 @@ fesom:
                         nm_co2_data_file: '${recom_input_path}/MonthlyAtmCO2_gcb2023.nc' # not used but searched for by bin. TODO: test removing.
                     pavariables:
                         REcoMDataPath: '${recom_input_path}/${resolution}' 
+                        recom_restart: "${fesom.recom_restart_flag}"
         false:
             recom_comp_flag: ""
 
@@ -1151,7 +1236,14 @@ fesom:
                         namelist.oce:
                             oce_dyn:
                                 spp: false
+                                # Hemispheric GM maximum (FESOM PR #1112): 2500 south of the
+                                # transition, 1000 north of it, blended over 10 degrees around
+                                # the equator. The Southern Ocean needs the larger value to
+                                # hold its surface cap; with it everywhere the Labrador Sea
+                                # freezes over (rounds 36 to 46 of the tuning campaign).
                                 K_GM_max: 2500.0
+                                K_GM_max_NH: 1000.0
+                                K_GM_hemi_trans: 10.0
                                 Redi_Kmax: 1000.0
                                 # Vertical mixing (oce_setup_step.F90 code 56). Four schemes
                                 # were run 20 years, 2020-2039, from one restart, differing
@@ -1177,7 +1269,11 @@ fesom:
                                 # rather than fatal and TKE spins up from tke_min = 1e-06.
                                 # That takes hours to days, so the first year after a switch
                                 # is not meaningful.
-                                mix_scheme: 'cvmix_TKE+cvmix_IDEMIX'
+                                #
+                                # Without IDEMIX since 2026-10: at the 1800 s time step IDEMIX
+                                # buries heat at 700-1500 m (+29 mK per decade) without lowering
+                                # the top-of-atmosphere imbalance.
+                                mix_scheme: 'cvmix_TKE'
                         namelist.tra:
                             tracer_phys:
                                 # momix is Timmermann & Beckmann (2004),
@@ -1262,7 +1358,7 @@ fesom:
                                 # past the 5.5 at which the Arctic goes unstable; at 0.78
                                 # the Arctic sat below a pre-2000 observational reference
                                 # it should exceed. albi/albim are FESOM's own values.
-                                albsn: 0.80
+                                albsn: 0.82
                                 albsnm: 0.65
                                 albi: 0.70
                                 albim: 0.68
@@ -1382,20 +1478,20 @@ fesom:
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
         # v3.5.0: as v3.5*, and FESOM is taken from the release tag. The tag has to
         # be named here: the setup pins fesom version "2.8", and that pin wins over
-        # the fesom-2.8.1 of the coupling in esm_master.
+        # the fesom-2.8.2 of the coupling in esm_master.
         v3.5.0:
-            branch: "2.8.1"
+            branch: "2.8.2"
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5.0-cc:
-            branch: "2.8.1"
+            branch: "2.8.2"
             # Double precision, as develop-cc: REcoM hardcodes its own WP = 8.
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5.0-is:
-            branch: "2.8.1"
+            branch: "2.8.2"
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 

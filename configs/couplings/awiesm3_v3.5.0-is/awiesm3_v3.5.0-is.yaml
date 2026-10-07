@@ -4,8 +4,8 @@
 components:
 - xios-2.5.4
 - rnfmap-v1.4
-- oifs-48r1v5
-- fesom-2.8.1
+- oifs-48r1v6
+- fesom-2.8.2
 - oasis3mct-5.3
 - lpj_guess-4.1.13
 - pism-1.2.0-awi.1

@@ -1,0 +1,106 @@
+# AWI-ESM3 v3.5.0-cc, TCO95L91-CORE3 on albedo: pre-industrial spin-up with the ocean carbon cycle.
+#
+# Everything that defines the model state is in configs/setups/awiesm3/awiesm3.yaml and the release
+# tags it pins. This file only says which experiment to run and how to lay it out on the machine.
+#
+# Starts: FESOM from the pool's short ocean-only restart, REcoM from its climatologies, OpenIFS from
+# initial conditions, LPJ-GUESS from the offline spin-up state named below.
+# CO2 is pre-industrial and concentration-driven. Antarctic icebergs carry calving minus basal melt.
+# Layout: 36 nodes (FESOM 2688, OpenIFS 192x4, XIOS 3 per OpenIFS node, LPJ-GUESS 64x2), 5-year legs.
+
+general:
+    user: !ENV ${USER}
+    install_esm_tools_branch: 'feat/awiesm3-v3.4-co2'
+    setup_name: "awiesm3"
+    version: "v3.5.0-cc"
+    # the account with the best fair-share, picked again for every leg by pre_run_commands.
+    # Before the first submission, run the export of pre_run_commands once in the shell.
+    account: !ENV ${ESM_ACCOUNT}
+    compute_time: "05:00:00"
+    initial_date: "1850-01-01"
+    final_date: "1900-01-01"
+    base_dir: "/albedo/work/projects/p_awiesm3_cmip7/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 5
+    use_venv: True
+    pre_run_commands: "ulimit -n 262144 || ulimit -n 65535 || true; export ESM_ACCOUNT=$(sshare -U -n -P -u $USER -o FairShare,Account | sort -t'|' -k1,1nr | head -1 | cut -d'|' -f2)"
+    with_co2_concdriven: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/albedo/work/user/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE3"
+    nproc: 2688
+    omp_num_threads: 1
+    ranks_per_node: 96
+    with_cavity: true
+    cmip7_cmor_output: True
+    restart_rate: 5
+    restart_unit: 'y'
+    restart_first: 5
+    lresume: true
+    ini_parent_exp_id: "CORE3_oceanonly"
+    ini_parent_date: "1901-12-31"
+    ini_restart_dir: "${fesom.pool_dir}/restart/CORE3"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.1902.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1902.ice.restart/*.nc
+
+lpj_guess:
+    resolution: "TCO95"
+    mip: cmip7
+    scenario: piControl
+    fixed_CO2: 1850
+    fixed_ndep: 1850
+    fixed_LU: 1850
+    daily_output: true
+    nproc: 64
+    omp_num_threads: 2
+    lresume: true
+    ini_parent_exp_id: "LPJG-SPINUP_2000Y_TCO95_CORE3_PICALforcing_ndep1850"
+    ini_parent_date: "3900-12-31"
+    ini_restart_dir: "/albedo/scratch/projects/p_awiesm3_cmip7/jstreffi/runtime/lpjg-spinup/LPJG-SPINUP_2000Y_TCO95_CORE3_PICALforcing_ndep1850/run_19000101-38991231/work/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_3901/*
+            restart_in_in_work:
+                state: lpjg_state_${initial_date!syear}/*
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    mip: cmip7
+    scenario: piControl
+    cmip7_cmor_output: True
+    time_step: 3600
+    nproc: 192
+    omp_num_threads: 4
+    lresume: false
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 16
+    omp_num_threads: 4
+    interleave_into: [oifs]
+    ranks_per_node: 3
+    compression_level: 3
+
+rnfmap:
+    omp_num_threads: 4
+    interleave_into: [oifs]

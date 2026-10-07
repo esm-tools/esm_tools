@@ -42,6 +42,10 @@ fesom:
       "2.8.1":
         branch: "2.8.1"
         repo_options: "--recurse-submodules"
+      # 2.8.1 plus PR #1115: mean sea-level pressure from OpenIFS for REcoM. The tag of awiesm3 v3.5.0.
+      "2.8.2":
+        branch: "2.8.2"
+        repo_options: "--recurse-submodules"
 
     destination: "fesom-2.8"
     install_bins: bin/fesom.x

@@ -101,3 +101,10 @@ computer:
         # -ffpe-trap by gfortran, so that kills it inside MPI_Init. Use hwloc's
         # own XML parser instead.
         HWLOC_LIBXML: 0
+
+        # Components that wait in MPI (rnfmap, LPJ-GUESS, XIOS, and whichever of
+        # ocean and atmosphere is ahead) spin at 100 % CPU by default. On a laptop
+        # they then compete with the ranks that compute. Yielding cut the wall
+        # time by 15 to 20 % in the two cases measured with more tasks than fast
+        # cores, and never made it worse.
+        OMPI_MCA_mpi_yield_when_idle: 1

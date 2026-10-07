@@ -1,6 +1,6 @@
 # Smallest AWI-ESM3 configuration: OpenIFS TQ21 L19 + FESOM PI mesh + LPJ-GUESS,
 # for the Docker container (see configs/machines/container.yaml).
-# One day, cold start, natural vegetation only, 7 MPI tasks in total.
+# One day, cold start, natural vegetation only, 6 MPI tasks in total.
 general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
@@ -25,7 +25,14 @@ awiesm3:
 fesom:
     resolution: "pi"
     lresume: false
-    time_step: 1800
+    # One hour, the same as OpenIFS and the coupling step. FESOM is the
+    # expensive component here, so its step sets the speed of the whole model.
+    time_step: 3600
+    # LUCIA shows the ocean as the bottleneck: about 38 s of computing per day
+    # on 2 tasks, against 16 s for OpenIFS. On the Apple M4 this was developed
+    # on (4 fast and 6 slow cores) more tasks did not help: 37 s on 3 and 56 s
+    # on 4. On a machine with more equal cores, try 4. The pool holds OASIS
+    # weights for 2, 3 and 4, and the mesh has partitions dist_2, 3, 4 and 8.
     nproc: 2
     omp_num_threads: 1
     restart_rate: 1
@@ -62,7 +69,9 @@ oifs:
     wam: false
     lresume: false
     time_step: 3600
-    nproc: 2
+    # One task is enough at T21: 16 to 17 s of computing per day on one task,
+    # 16 to 19 s on two.
+    nproc: 1
     omp_num_threads: 1
     # No CMIP forcing: the CMIP7 stratospheric aerosol files exist only for
     # 60, 91 and 137 levels, and the full set is tens of GB. These are the
@@ -99,7 +108,15 @@ oifs:
 
 oasis3mct:
     use_lucia: false
-    lresume: false
+    # lresume true (the setup default) reads the remapping weights and coupling
+    # restarts from the pool, ${pool}/oasis/cy48r1/TQ21-pi/<fesom.nproc>/, and
+    # exchanges fields with a one-step lag. Those files belong to the FESOM
+    # partition they were made with; sets for dist_2, dist_3 and dist_4 are in the pool. For another fesom.nproc either
+    # run once with lresume: false, which generates a new set in seconds at this
+    # size, and copy rmp_*.nc, rstas.nc and rstos.nc from restart/oasis3mct/
+    # into the pool folder for that nproc; or reorder an existing set with
+    # https://github.com/AWI-ESM/oasis_reorder_tool (read its README first).
+    lresume: true
     time_step: 3600
 
 rnfmap:

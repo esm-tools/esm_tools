@@ -286,7 +286,7 @@ class version_control_infos:
             commands = [raw_command]
 
             if package.permissions:
-                commands.append(f"chmod {package.permissions} -R {package.destination}")
+                commands.append(f"chmod -R {package.permissions} {package.destination}")
         else:
             commands = None
 

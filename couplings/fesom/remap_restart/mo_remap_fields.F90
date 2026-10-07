@@ -392,8 +392,22 @@ contains
             i_old  = mesh_old%map_base_to_mesh(n_base)
             ul_new = mesh_new%ulevels_nod2D(i_new)
             nl_new = mesh_new%nlevels_nod2D(i_new)
-            ul_old = mesh_old%ulevels_nod2D(i_old)
-            nl_old = mesh_old%nlevels_nod2D(i_old)
+            ! i_old == 0 means the base node is absent from the OLD mesh, i.e.
+            ! node_flag(i_new) == FLAG_NEW_NODE (328 such nodes on the first
+            ! antfill mesh change).  ulevels_nod2D/nlevels_nod2D have lower bound
+            ! 1, so reading them at 0 is out of bounds.  It is only ever read
+            ! here: FLAG_UNCHANGED indexes field_old by i_old alone, and
+            ! FLAG_VERT_EXTENDED re-reads both a few lines down -- so the guard
+            ! costs nothing and the values stay 0 for the branch that uses
+            ! neither.  Unguarded, -O3 read whatever precedes the array and the
+            ! run died later, inside nf90_inquire_variable on an unrelated file,
+            ! looking like a netCDF fault (antftest8 cycle 2, 2026-10-07).
+            ul_old = 0
+            nl_old = 0
+            if (i_old > 0) then
+                ul_old = mesh_old%ulevels_nod2D(i_old)
+                nl_old = mesh_old%nlevels_nod2D(i_old)
+            end if
 
             ! open-ocean donor node for newly-opened levels (0 = none)
             dn = 0

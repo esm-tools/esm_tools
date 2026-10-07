@@ -267,6 +267,11 @@ def stamp_files(model_files):
                 stamped_filepattern = stamp_filepattern(filepattern)
                 logging.debug(f"Adding [{model}][{idx}] = {stamped_filepattern}")
                 model_files[model][idx] = stamped_filepattern
+            except DatestampLocationError:
+                # No determinable (varying) datestamp for this file; leave it
+                # out of date-based archiving rather than crashing.
+                logging.debug(f"No datestamp for {filepattern}; skipping")
+                continue
             except AssertionError:  # List was longer than 1
                 stamped_filepatterns = stamp_filepattern(filepattern, force_return=True)
                 logging.debug(stamped_filepatterns)
@@ -419,6 +424,8 @@ def determine_datestamp_location(files):
             valid_slices.append(slice_)
     if len(valid_slices) > 1:
         raise DatestampLocationError("Unable to determine a unique datestamp!")
+    if not valid_slices:
+        raise DatestampLocationError("Unable to find a varying datestamp!")
     return valid_slices[0]
 
 
@@ -476,11 +483,32 @@ def get_files_for_date_range(
     # that's a horrible idea. Or at least, a difficult one. If we know the date
     # format, we can just build a list of the desired dates.
 
+    # A model with no archive frequency/date_format in the config cannot be
+    # date-matched; return nothing rather than crashing on None.
+    if not frequency or not date_format:
+        return []
+
     # BUG: determine_datestamp_location takes a list, not a string!!!
     date_stamp = ">>>DATE<<<"
+    # Use pandas Periods rather than Timestamps: Timestamps are datetime64[ns]
+    # and overflow outside ~1677-2262, which breaks paleo experiments (e.g. year
+    # 0800). period_range is end-inclusive, so drop the stop period to keep the
+    # documented "end date is not included" behaviour.
+    end_period = pd.Period(stop_date, freq=frequency)
+
+    def _stamp(period):
+        # strftime("%Y") does not zero-pad years below 1000 (e.g. year 800 ->
+        # "800", not "0800"), but ESM output files use a 4-digit zero-padded
+        # year. Substitute the padded year explicitly so paleo stamps match.
+        fmt = date_format
+        if "%Y" in fmt and 0 <= period.year < 1000:
+            fmt = fmt.replace("%Y", f"{period.year:04d}")
+        return period.strftime(fmt)
+
     dates = [
-        date.to_pydatetime().strftime(date_format)
-        for date in pd.date_range(start=start_date, end=stop_date, freq=frequency)
+        _stamp(period)
+        for period in pd.period_range(start=start_date, end=stop_date, freq=frequency)
+        if period < end_period
     ]
     files = [filepattern.replace(date_stamp, str(date)) for date in dates]
     return files
@@ -609,7 +637,7 @@ def run_command(command):
 
 
 # Pack the files into tarball(s), depending on the size of the list
-def pack_tarfile(flist, wdir, outname):
+def pack_tarfile(flist, wdir, outname, pigz_threads=None, progress=True):
     """
     Creates a compressed tarball (``outname``) with all files found in ``flist``.
 
@@ -624,6 +652,13 @@ def pack_tarfile(flist, wdir, outname):
         off the beginning of the flist
     outname : str
         The output file name
+    pigz_threads : int, optional
+        Threads for ``pigz``. ``None`` (default) lets pigz use all cores — right
+        when packing one tarball at a time. When packing tarballs concurrently,
+        pass a per-tarball budget so the pigz instances don't oversubscribe.
+    progress : bool, optional
+        Show the per-file ``tqdm`` progress bar (default). Turn off when packing
+        in parallel, so several bars don't clash on one terminal.
 
     Returns
     -------
@@ -634,12 +669,29 @@ def pack_tarfile(flist, wdir, outname):
     if not wdir.endswith("/"):
         wdir += "/"
     flist = [item.replace(wdir, "") for item in flist]
-    tar_part = (
-        f"tar --use-compress-program=pigz -cvf {outname} -C {wdir} {' '.join(flist)}"
-    )
-    tqdm_part = f"tqdm --total {len(flist)} --unit files"
-    output_part = f"{outname}.log"
-    run_command(tar_part + "|" + tqdm_part + ">>" + output_part)
+    # Pass the member list to tar via a temp file (``-T``) rather than on the
+    # command line: a single COSMOS century tarball can hold tens of thousands
+    # of files, which overruns ARG_MAX ("Argument list too long") if inlined.
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".filelist", dir=os.path.dirname(outname) or None, delete=False
+    ) as _fh:
+        _fh.write("\n".join(flist) + "\n")
+        listfile = _fh.name
+    try:
+        pigz = "pigz" if pigz_threads is None else f"pigz -p {pigz_threads}"
+        prog = f'--use-compress-program="{pigz}"'
+        if progress:
+            tar_part = f"tar {prog} -cvf {outname} -C {wdir} -T {listfile}"
+            tqdm_part = f"tqdm --total {len(flist)} --unit files"
+            output_part = f"{outname}.log"
+            run_command(tar_part + "|" + tqdm_part + ">>" + output_part)
+        else:
+            # quiet (no -v / no tqdm) so concurrent packs don't interleave bars
+            run_command(f"tar {prog} -cf {outname} -C {wdir} -T {listfile}")
+    finally:
+        os.remove(listfile)
     # with tarfile.open(outname, "w:gz") as tar:
     #    for f in tqdm.tqdm(flist):
     #        tar.add(f, arcname=os.path.basename(f))

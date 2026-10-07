@@ -45,6 +45,14 @@ top of the experiment folder. Note that the final date (1851-01-1 in this
 example) is **not included**. During packing, you get a progress bar indicating
 when the tarball is finished.
 
+Independent tarballs can be packed concurrently with ``-j/--jobs`` (or the
+``pack_jobs`` config key)::
+
+    esm_archive create /path/to/experiment 1850-01-01 1851-01-01 -j 4
+
+Each concurrent ``pigz`` gets a share of the cores (so they don't
+oversubscribe); the per-file progress bar is shown only for serial packing.
+
 Please be aware that are size limits in place on DKRZ's tape server. Any tar
 files **larger than 500 Gb will be trucated**. For more information, see:
 https://www.dkrz.de/up/systems/hpss/hpss
@@ -78,7 +86,6 @@ import pprint
 import click
 
 from .esm_archiving import (
-    archive_mistral,
     check_tar_lists,
     group_files,
     pack_tarfile,
@@ -86,12 +93,46 @@ from .esm_archiving import (
     stamp_files,
     sum_tar_lists_human_readable,
 )
+from .spec import collect_tarballs, load_archive_specs
 
 
 from .config import load_config, write_config_yaml
 
 pp = pprint.PrettyPrinter(width=41, compact=True)
 config = load_config()
+
+
+def _pack_all(tasks, base_dir, jobs):
+    """Pack the gathered tarballs. ``jobs<=1`` packs serially with a per-file
+    progress bar (pigz uses all cores). ``jobs>1`` packs that many at a time,
+    quietly, each pigz limited to a share of the cores so they don't
+    oversubscribe. Tarballs are independent, so this is a straight fan-out.
+    """
+    jobs = max(1, int(jobs or 1))
+    if jobs == 1:
+        for archive_name, flist, label in tasks:
+            click.secho(f" Packing {label}")
+            pack_tarfile(flist, base_dir, archive_name)
+        return
+    cores = (
+        len(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else (os.cpu_count() or 1)
+    )
+    per = max(1, cores // jobs)
+    click.secho(f" Packing {len(tasks)} tarballs, {jobs} at a time (pigz -p{per} each)")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        futs = {
+            pool.submit(
+                pack_tarfile, flist, base_dir, name, pigz_threads=per, progress=False
+            ): label
+            for name, flist, label in tasks
+        }
+        for fut in as_completed(futs):
+            fut.result()  # surface any packing error
+            click.secho(f" packed {futs[fut]}")
 
 
 @click.group(invoke_without_command=True)
@@ -125,25 +166,69 @@ def main(ctx, write_local_config=False, write_config=False):
 @click.argument("end_date")
 @click.option("--force", is_flag=True)
 @click.option("--interactive", is_flag=True)
-def create(base_dir, start_date, end_date, force, interactive):
-    session = Session()
-    click.secho(
-        " Creating archives for:", color="green"
-    )
+@click.option(
+    "-c", "--config", "config_path", default=None,
+    help="Path to an esm_archiving config file, overriding the search path "
+    "(e.g. a COSMOS profile).",
+)
+@click.option(
+    "-j", "--jobs", "jobs", type=int, default=None,
+    help="Pack this many tarballs concurrently (default: 1, or the config "
+    "`pack_jobs`). pigz threads per tarball are budgeted from the core count.",
+)
+def create(base_dir, start_date, end_date, force, interactive, config_path, jobs):
+    # local config: an explicit --config selects an alternate profile, otherwise
+    # fall back to the normal search-path config. No module-global mutation.
+    config = load_config(config_path) if config_path else load_config()
+    click.secho(" Creating archives for:", color="green")
     click.secho(base_dir, color="green")
     click.secho("From: %s" % start_date, color="green")
     click.secho("To: %s" % end_date, color="green")
 
-    exp_db = Experiments(expid=base_dir.split("/")[-1])
-    if not session.query(Experiments).filter_by(expid=exp_db.expid).all():
-        session.add(exp_db)
-    else:
-        exp_db = session.query(Experiments).filter_by(expid=exp_db.expid).all()[0]
+    # Template-driven path: if the config gives per-model lists of ArchiveSpec,
+    # find files by rendering their jinja `match` glob and pack them into
+    # tarballs named by the rendered `tar_template`.
+    templated = load_archive_specs(config)
+    if templated:
+        expid = os.path.basename(os.path.abspath(base_dir))
+        arch_dir = os.path.join(base_dir, config.get("archive_dir", "archive"))
+        os.makedirs(arch_dir, exist_ok=True)
+        # Gather every tarball to pack as (archive_name, flist, label), then pack
+        # them serially or `jobs`-at-a-time — they are independent tarballs.
+        tasks = []
+        for filetype in ["outdata", "restart"]:
+            for model, specs in templated.items():
+                tarballs = collect_tarballs(
+                    base_dir, filetype, model, specs, start_date, end_date, expid
+                )
+                for tar_name, flist in tarballs.items():
+                    tasks.append((
+                        os.path.join(arch_dir, tar_name + ".tgz"), flist,
+                        f"{tar_name} ({filetype}, {len(flist)} files)",
+                    ))
+        # Whole-directory captures (scripts/config/log): flat dirs with no model
+        # or datestamp, tarred as-is for reproducibility. forcing/input/bin are
+        # excluded by default (shared pools / large boundary data).
+        for extra in config.get("archive_extra_dirs", ["scripts", "config", "log"]):
+            src = os.path.join(base_dir, extra)
+            if not os.path.isdir(src):
+                continue
+            flist = [
+                os.path.join(root, f)
+                for root, _, fnames in os.walk(src)
+                for f in fnames
+            ]
+            if not flist:
+                continue
+            tasks.append((
+                os.path.join(arch_dir, f"{expid}_{extra}.tgz"), flist,
+                f"{expid}_{extra} ({extra}, {len(flist)} files)",
+            ))
+        n_jobs = jobs if jobs is not None else config.get("pack_jobs", 1)
+        _pack_all(tasks, base_dir, n_jobs)
+        return
 
-    archive_db = Archive(exp_ref=exp_db)
-    if not session.query(Archive).filter_by(exp_ref=exp_db):
-        session.add(archive_db)
-
+    # Legacy heuristic path (no templated specs configured):
     for filetype in ["outdata", "restart"]:
         files = group_files(base_dir, filetype)
         files = stamp_files(files)
@@ -159,47 +244,164 @@ def create(base_dir, start_date, end_date, force, interactive):
                 click.secho("The following files were requested but missing:")
                 pp.pprint(missing)
         for model in files:
-            click.secho(
-                f" Packing up files for {model} ({filetype})"
-            )
+            if not existing.get(model):
+                click.secho(
+                    f" Nothing to pack for {model} ({filetype}) in this date"
+                    " range, skipping"
+                )
+                continue
+            click.secho(f" Packing up files for {model} ({filetype})")
             archive_name = os.path.join(
                 base_dir, f"{model}_{filetype}_{start_date}_{end_date}.tgz"
             )
-            tarball_db = Tarball(fname=archive_name, archive=archive_db)
-            session.add(tarball_db)
             click.secho(archive_name)
             pack_tarfile(existing[model], base_dir, archive_name)
-            for file in existing[model]:
-                file_db = ArchivedFile(fname=file, tarball=tarball_db)
-                session.add(file_db)
-    session.commit()
 
 
 @main.command()
-@click.argument("base_dir")
-@click.argument("start_date")
-@click.argument("end_date")
-def upload(base_dir, start_date, end_date):
-    session = Session()
-    click.secho(" Uploading archives for:")
-    click.secho(base_dir)
+@click.argument("base_dir", default=".", required=False)
+@click.option(
+    "--to", "dest", default=None,
+    help="HSM target directory; overrides the hsm_target config key.",
+)
+@click.option(
+    "-c", "--config", "config_path", default=None,
+    help="Path to an esm_archiving config file, overriding the search path "
+    "(e.g. a COSMOS profile).",
+)
+@click.option(
+    "-j", "--jobs", "jobs", type=int, default=None,
+    help="Upload this many tarballs concurrently (default: 1, or the config "
+    "`upload_jobs`). Keep it small — parallel uploads fill the HSM online cache "
+    "faster than the releaser drains it. A single ssh-rsync stream is often "
+    "CPU-bound on the cipher, so 2-4 streams help without over-filling.",
+)
+def upload(base_dir, dest, config_path, jobs):
+    """Push the tarballs in <base_dir>/archive/ to the AWI HSM via ScoutFS.
 
-    for filetype in ["outdata", "restart"]:
-        files = group_files(base_dir, filetype)
-        files = stamp_files(files)
-        files = sort_files_to_tarlists(files, start_date, end_date, config)
+    Destination resolution: --to  >  config `hsm_target` (a jinja template, e.g.
+    "/hs/projects/paleodyn/from_experiments/{{ expid }}"). Files are NOT released
+    from the online cache here (they are not archdone until the HSM archiver has
+    run) — use hsm-release.sh for that.
+    """
+    # local config: an explicit --config selects an alternate profile, otherwise
+    # fall back to the normal search-path config. No module-global mutation.
+    config = load_config(config_path) if config_path else load_config()
+    import glob as _glob
 
-        for model in files:
-            archive_name = os.path.join(
-                base_dir, f"{model}_{filetype}_{start_date}_{end_date}.tgz"
+    expid = os.path.basename(os.path.abspath(base_dir))
+    arch_dir = os.path.join(base_dir, config.get("archive_dir", "archive"))
+    tarballs = sorted(_glob.glob(os.path.join(arch_dir, "*.tgz")))
+    if not tarballs:
+        click.secho(f"No tarballs in {arch_dir} - run `esm_archive create` first.")
+        return
+
+    if dest is None:
+        target = config.get("hsm_target")
+        if not target:
+            raise click.ClickException(
+                "No destination: pass --to, or set `hsm_target` in the config."
             )
-            # tarball_db = Tarball(fname=archive_name)
+        from jinja2 import Template
 
-            q = session.query(Tarball).filter_by(fname=archive_name)
-            archive_mistral(archive_name)
-            for f in q.all().pop().files:
-                f.on_tape = True
-    session.commit()
+        dest = Template(target).render(expid=expid, model=config.get("model"))
+
+    protocol = config.get("hsm_protocol")
+    if not protocol:
+        raise click.ClickException("Set `hsm_protocol` in the config (e.g. scoutfs).")
+    host = config.get("hsm_host")
+    if not host:
+        raise click.ClickException("Set `hsm_host` in the config (e.g. hsm.dmawi.de).")
+    click.secho(f" Uploading {len(tarballs)} tarball(s) to {host}:{dest}", color="green")
+
+    if protocol in ("scoutfs", "sftp", "ssh"):
+        # ssh-based: transfer with rsync (paramiko's SFTP tops out ~1-10 MB/s;
+        # rsync over ssh is ~100x that and resumes/verifies).
+        import shlex
+        import subprocess
+
+        ssh_cmd = "ssh"
+        key = config.get("hsm_ssh_key")
+        if key:
+            ssh_cmd += " -i " + shlex.quote(os.path.expanduser(key))
+        remote = f"{host}:{dest.rstrip('/')}/"
+        subprocess.run([*shlex.split(ssh_cmd), host, "mkdir", "-p", dest], check=True)
+
+        n_jobs = jobs if jobs is not None else config.get("upload_jobs", 1)
+        n_jobs = max(1, int(n_jobs or 1))
+        if n_jobs == 1:
+            # one stream, all tarballs — with the live progress bar
+            result = subprocess.run([
+                "rsync", "-a", "--partial", "--append-verify", "-h",
+                "--info=progress2,name,stats2", "-e", ssh_cmd, *tarballs, remote,
+            ])
+            if result.returncode != 0:
+                raise click.ClickException(f"rsync failed (exit {result.returncode})")
+        else:
+            # concurrent streams, one rsync per tarball (a thread pool balances
+            # the big and small tarballs across streams). Quiet, so the streams
+            # don't interleave; report each as it lands.
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            def _rsync_one(tarball):
+                r = subprocess.run([
+                    "rsync", "-a", "--partial", "--append-verify",
+                    "-e", ssh_cmd, tarball, remote,
+                ])
+                return tarball, r.returncode
+
+            click.secho(f" {n_jobs} concurrent streams", color="green")
+            failed = []
+            with ThreadPoolExecutor(max_workers=n_jobs) as pool:
+                futs = [pool.submit(_rsync_one, t) for t in tarballs]
+                for fut in as_completed(futs):
+                    tarball, rc = fut.result()
+                    if rc != 0:
+                        failed.append((os.path.basename(tarball), rc))
+                    else:
+                        click.secho(f"   uploaded {os.path.basename(tarball)}")
+            if failed:
+                detail = ", ".join(f"{n} (exit {c})" for n, c in failed)
+                raise click.ClickException(f"rsync failed for: {detail}")
+        total = sum(os.path.getsize(t) for t in tarballs)
+        click.secho(
+            f" {len(tarballs)} tarball(s), {total / 2 ** 30:.1f} GiB, now under {dest}",
+            color="green",
+        )
+    else:
+        # Non-ssh backend (s3, ...): stream via fsspec with a tqdm bar.
+        try:
+            import fsspec
+            from fsspec.callbacks import TqdmCallback
+        except ImportError:
+            raise click.ClickException("fsspec is required to upload (pip install it).")
+        storage_options = dict(config.get("hsm_storage_options") or {})
+        fs = fsspec.filesystem(protocol, **storage_options)
+        fs.makedirs(dest, exist_ok=True)
+        for tarball in tarballs:
+            name = os.path.basename(tarball)
+            remote = dest.rstrip("/") + "/" + name
+            local_size = os.path.getsize(tarball)
+            callback = TqdmCallback(
+                tqdm_kwargs={"desc": name, "unit": "B", "unit_scale": True,
+                             "unit_divisor": 1024}
+            )
+            callback.set_size(local_size)
+            with open(tarball, "rb") as src, fs.open(remote, "wb") as dst:
+                while True:
+                    data = src.read(8 * 1024 * 1024)
+                    if not data:
+                        break
+                    dst.write(data)
+                    callback.relative_update(len(data))
+            callback.close()
+            if fs.info(remote).get("size") != local_size:
+                raise click.ClickException(f"size mismatch for {name}")
+    click.secho(
+        " Upload complete. Files sit in the online cache until the HSM archiver "
+        "copies them to tape; release with hsm-release.sh.",
+        color="green",
+    )
 
 
 if __name__ == "__main__":

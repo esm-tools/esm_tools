@@ -68,16 +68,30 @@ DEFAULT_CONFIG = {
 }
 
 
-def load_config():
+def load_config(path=None):
     """
-    Loads the configuration from one of the default configuration directories.
-    If none can be found, returns the hard-coded default configuration.
+    Loads the configuration.
+
+    If ``path`` is given, that file is loaded directly (used by the
+    ``--config`` flag to select an alternate profile, e.g. a COSMOS profile
+    whose component keys would otherwise collide with the default one). If it is
+    not given, the default configuration directories are searched in order
+    (CWD, then the XDG config dirs). If nothing can be found, the hard-coded
+    default configuration is returned.
+
+    Parameters
+    ----------
+    path : str, optional
+        Explicit path to an ``esm_archiving_config`` file to load.
 
     Returns
     -------
     dict
         A representation of the configuration used for archiving.
     """
+    if path is not None:
+        with open(os.path.expanduser(path)) as source:
+            return yaml.load(source, Loader=yaml.FullLoader)
     for loc in config_dirs:
         read_config_fname = CONFIG_FNAME
         try:

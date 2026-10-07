@@ -1,0 +1,103 @@
+################################################################################
+# Machine file for the AWI-ESM3 Docker container (Ubuntu 24.04, GCC, Open MPI).
+#
+# The image is built from ~/software/awiesm3_container/Dockerfile. It carries a
+# single-node Slurm, so esm_runscripts submits as on a cluster. Libraries live
+# in fixed prefixes instead of modules:
+#   /opt/hdf5     MPI-enabled HDF5 (Ubuntu packages)
+#   /opt/netcdf   netCDF-C and netCDF-Fortran with parallel I/O
+################################################################################
+computer:
+    name: container
+    operating_system: "linux-ubuntu"
+    sh_interpreter: "/bin/bash"
+
+    # Batch system and configuration:
+    batch_system: "slurm"
+    accounting: false
+    further_reading:
+        - batch_system/slurm.yaml
+
+    # One node, sized to the cores Docker hands to the container
+    partition_cpn: 10
+
+    partitions:
+        compute:
+            name: compute
+            cores_per_node: ${computer.partition_cpn}
+        pp:
+            name: compute
+            cores_per_node: 1
+
+    logical_cpus_per_core: 1
+    threads_per_core: 1
+
+    # Input data is bind-mounted at /pool
+    pool_directories:
+        pool: "/pool"
+        projects: "/pool"
+        focipool: "/dev/null"
+    pool_dir: "${computer.pool_directories.pool}"
+
+    hyper_flag: ""
+    hetjob_flag: hetjob
+
+    # Same switch name as albedo, so components that key on it (XIOS) pick
+    # their GCC settings
+    compiler_suite: gcc
+
+    fc: mpifort
+    f77: mpifort
+    mpifc: mpifort
+    mpicc: mpicc
+    cc: mpicc
+    cxx: mpicxx
+
+    # No environment modules in the container
+    module_actions: []
+
+    export_vars:
+        LC_ALL: en_US.UTF-8
+
+        # Compilers
+        FC: ${fc}
+        F77: ${f77}
+        MPIFC: ${mpifc}
+        MPICC: ${mpicc}
+        CC: ${cc}
+        CXX: ${cxx}
+
+        FESOM_PLATFORM_STRATEGY: ubuntu
+
+        # I/O libraries
+        HDF5ROOT: /opt/hdf5
+        HDF5_ROOT: /opt/hdf5
+        NETCDFROOT: /opt/netcdf
+        NETCDFFROOT: /opt/netcdf
+        NETCDF_DIR: /opt/netcdf
+        NETCDF_ROOT: /opt/netcdf
+
+        OASIS_NETCDF: $NETCDFROOT
+        OASIS_NETCDFF: $NETCDFFROOT
+        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+        # MPI
+        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/lib } and print $1')"
+        MPI_LIB: "$(${mpifc} -show | sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+
+        # Linear algebra
+        LAPACK_LIB: "'-lopenblas'"
+
+        LD_LIBRARY_PATH: /opt/netcdf/lib:/opt/hdf5/lib:$LD_LIBRARY_PATH
+
+        # Ubuntu's GCC links with --as-needed, which drops a shared library that
+        # is named before the static library using it (LPJ-GUESS lists netcdff
+        # ahead of the OASIS archives). The HPC distributions these build
+        # recipes were written on do not, so match them.
+        LDFLAGS: "'-Wl,--no-as-needed'"
+
+        # Open MPI reads the node topology through hwloc, whose libxml2 backend
+        # divides by zero on purpose while initialising. OpenIFS is built with
+        # -ffpe-trap by gfortran, so that kills it inside MPI_Init. Use hwloc's
+        # own XML parser instead.
+        HWLOC_LIBXML: 0

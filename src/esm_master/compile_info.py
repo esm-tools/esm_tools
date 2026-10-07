@@ -66,6 +66,7 @@ def combine_components_yaml(parsed_args):
         "clone_destination",
         "archfile",
         "use_oasis",
+        "make_jobs",  # parallel build jobs, so small machines can lower them
         "pipe_options",  # deniz: Linux pipe support
         "contact",
         "source_code_permissions",

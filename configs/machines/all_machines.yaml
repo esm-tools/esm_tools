@@ -67,3 +67,8 @@ olaf:
         post_nodes: 'olaf*'
         
 
+
+# Docker container for AWI-ESM3; the hostname is set by the launcher scripts
+container:
+        login_nodes: 'awiesm3*'
+        compute_nodes: 'awiesm3*'

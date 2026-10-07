@@ -101,6 +101,17 @@ fesom:
                 redi_kmax: 0.0
                 k_gm_max: 1000.0
         namelist.cvmix:
+            # IDEMIX bottom forcing from our own copy. awiesm3.yaml builds both IDEMIX paths
+            # from ${fesom.pool_dir}/forcing/idemix/, which on albedo is
+            # /albedo/pool/fesom2/forcing/idemix/. The surface file is a real file there and
+            # reads fine, but forcing_idemix_final_bin is a symlink on to
+            # /albedo/pool/FESOM/fesom2.0/... = the p_pool_fesom1 project, which this account
+            # cannot read: FESOM stops with "ERROR: File not found ... status 13, Permission
+            # denied" and then hangs until the wall clock (antftest2, 2026-10-06).
+            # This copy is byte-identical to levante a270092/input/fesom2/forcing/idemix
+            # (md5 08887ab2...). IDEMIX is a FESOM 2.8 default, which is why 2.7 never hit it.
+            param_idemix:
+                idemix_botforc_file: "/albedo/work/user/${general.user}/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
             param_kpp:
                 kpp_av0: 0.005
                 kpp_kv0: 0.005

@@ -130,12 +130,26 @@ pism2esm() {
         # It holds input/oifs, which the AWI chain populates -- this is the one
         # thing in pism2esm that depends on a directory the sibling owns.
         _exp_dir=$(cd "${COUPLE_DIR}/.." 2>/dev/null && pwd)
+        # ICMGG*INIT is read for the OIFS reduced-Gaussian grid definition ONLY, so
+        # any copy of it will do. Under concurrent coupling the PISM chain reaches
+        # here long before the AWI chain's FIRST tidy, and <exp>/input/oifs is only
+        # filled at that tidy -- on antftest3 the PISM leg finished at 23:33 and the
+        # directory stayed empty until 00:36, which killed the chunk-1 handoff and
+        # would have parked the AWI chain on pism_chunk_1.done forever. So fall back
+        # to the AWI run directory, where prepcompute stages the same file.
         _icmgg=$(ls "${_exp_dir}"/input/oifs/ICMGG*INIT 2>/dev/null | head -1)
+        if [ -z "${_icmgg}" ] ; then
+            _icmgg=$(ls -t "${_exp_dir}"/run_*/work/ICMGG*INIT 2>/dev/null \
+                     | grep -v 'INIUA$' | head -1)
+            [ -n "${_icmgg}" ] && echo " *   input/oifs is not populated yet; using ${_icmgg}"
+        fi
         [ -f "${_usurf_py}" ]   || _orog_fail "${_usurf_py} not found"
         if [ -z "${_icmgg}" ] ; then
             echo " *   no ICMGG*INIT matched; listing what IS in the search dir:"
             ls -la "${_exp_dir}"/input/oifs/ 2>&1 | head -20 | sed 's/^/ *     /'
-            _orog_fail "no ICMGG*INIT to read the OIFS grid from, searched ${_exp_dir}/input/oifs/"
+            echo " *   and in the sibling run dirs:"
+            ls -la "${_exp_dir}"/run_*/work/ICMGG* 2>&1 | head -10 | sed 's/^/ *     /'
+            _orog_fail "no ICMGG*INIT to read the OIFS grid from, searched ${_exp_dir}/input/oifs/ and ${_exp_dir}/run_*/work/"
         fi
         [ -f "${_geom_out}" ]   || _orog_fail "${_geom_out} missing, cannot build usurf_oifs"
         command -v "${ISM_OROG_PY:-python3}" >/dev/null 2>&1 \

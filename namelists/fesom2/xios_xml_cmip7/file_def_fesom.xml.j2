@@ -50,6 +50,14 @@
     <file id="f_MLD2"            name="MLD2.fesom.%start_date%" ><field field_ref="MLD2"            freq_op="1mo"/></file>
     <file id="f_fw"              name="fw.fesom.%start_date%" ><field field_ref="fw"              freq_op="1mo"/></file>
     <file id="f_fh"              name="fh.fesom.%start_date%" ><field field_ref="fh"              freq_op="1mo"/></file>
+    {% if fesom.use_icebergs %}
+    <!-- Iceberg melt and heat fluxes; gated like the model's own registration (use_icebergs). -->
+    <file id="f_ibfwb"           name="ibfwb.fesom.%start_date%" ><field field_ref="ibfwb"           freq_op="1mo"/></file>
+    <file id="f_ibfwbv"          name="ibfwbv.fesom.%start_date%"><field field_ref="ibfwbv"          freq_op="1mo"/></file>
+    <file id="f_ibfwl"           name="ibfwl.fesom.%start_date%" ><field field_ref="ibfwl"           freq_op="1mo"/></file>
+    <file id="f_ibfwe"           name="ibfwe.fesom.%start_date%" ><field field_ref="ibfwe"           freq_op="1mo"/></file>
+    <file id="f_ibhf"            name="ibhf.fesom.%start_date%" ><field field_ref="ibhf"            freq_op="1mo"/></file>
+    {% endif %}
     <file id="f_thdgrarea"       name="thdgrarea.fesom.%start_date%" ><field field_ref="thdgrarea"       freq_op="1mo"/></file>
     <file id="f_dyngrarea"       name="dyngrarea.fesom.%start_date%" ><field field_ref="dyngrarea"       freq_op="1mo"/></file>
     <file id="f_thdgrice"        name="thdgrice.fesom.%start_date%" ><field field_ref="thdgrice"        freq_op="1mo"/></file>

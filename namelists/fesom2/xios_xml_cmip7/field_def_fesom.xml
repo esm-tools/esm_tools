@@ -13,6 +13,12 @@
     <field id="MLD3"   long_name="mixed layer depth (Griffies)"               unit="m"/>
     <field id="fw"     long_name="freshwater flux"                            unit="m s-1"/>
     <field id="fh"     long_name="surface heat flux"                          unit="W m-2"/>
+    <!-- Iceberg fluxes, as in xios_xml/field_def_fesom.xml: FESOM sends them only with
+         use_icebergs, and the <file> entries are gated on the same switch. -->
+    <field id="ibfwb"  long_name="basal iceberg melting"                      unit="m s-1" detect_missing_value="true"/>
+    <field id="ibfwbv" long_name="basal iceberg melting (bv)"                 unit="m s-1" detect_missing_value="true"/>
+    <field id="ibfwl"  long_name="lateral iceberg melting"                    unit="m s-1" detect_missing_value="true"/>
+    <field id="ibfwe"  long_name="iceberg erosion"                            unit="m s-1" detect_missing_value="true"/>
     <field id="uice"   long_name="sea-ice zonal velocity"                     unit="m s-1" detect_missing_value="true"/>
     <field id="vice"   long_name="sea-ice meridional velocity"                unit="m s-1" detect_missing_value="true"/>
     <field id="ist"              long_name="ice surface temperature"                  unit="K"     detect_missing_value="true"/>
@@ -77,6 +83,7 @@
     <field id="bolus_w" long_name="GM bolus vertical velocity"       unit="m s-1"/>
     <field id="N2"      long_name="Brunt-Vaisala frequency squared"  unit="s-2"/>
     <field id="Kv"      long_name="vertical tracer diffusivity"      unit="m2 s-1"/>
+    <field id="ibhf"    long_name="heat flux from iceberg melting"   unit="W m-2" detect_missing_value="true"/>
   </field_group>
 
   <!-- 3D fields on ELEMENTS, cell-center -->

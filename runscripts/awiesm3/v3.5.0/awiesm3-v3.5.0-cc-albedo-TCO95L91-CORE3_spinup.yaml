@@ -64,11 +64,11 @@ lpj_guess:
     lresume: true
     ini_parent_exp_id: "LPJG-SPINUP_2000Y_TCO95_CORE3_PICALforcing_ndep1850"
     ini_parent_date: "3900-12-31"
-    ini_restart_dir: "/albedo/scratch/projects/p_awiesm3_cmip7/jstreffi/runtime/lpjg-spinup/LPJG-SPINUP_2000Y_TCO95_CORE3_PICALforcing_ndep1850/run_19000101-38991231/work/"
+    ini_restart_dir: "${lpj_guess.input_dir}/restart/TCO95-CORE3/"
     choose_general.run_number:
         1:
             restart_in_sources:
-                state: /${ini_restart_dir}/lpjg_state_3901/*
+                state: /${ini_restart_dir}/lpjg_state_3901_PICALforcing_ndep1850/*
             restart_in_in_work:
                 state: lpjg_state_${initial_date!syear}/*
 

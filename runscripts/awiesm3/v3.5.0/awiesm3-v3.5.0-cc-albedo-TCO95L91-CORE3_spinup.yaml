@@ -27,6 +27,12 @@ general:
     pre_run_commands: "ulimit -n 262144 || ulimit -n 65535 || true; export ESM_ACCOUNT=$(sshare -U -n -P -u $USER -o FairShare,Account | sort -t'|' -k1,1nr | head -1 | cut -d'|' -f2)"
     with_co2_concdriven: true
 
+computer:
+    # SLURM mails these addresses when a job of the run ends or fails. (In computer, not general:
+    # general.mail_type collides with the batch system default.)
+    mail_type: "END,FAIL"
+    mail_user: "laszlohunor.hajdu@awi.de,jan.streffing@awi.de,christopher.danek@awi.de"
+
 awiesm3:
     postprocessing: false
     model_dir: "/albedo/work/user/${user}/model_codes/${general.setup_name}-${general.version}/"

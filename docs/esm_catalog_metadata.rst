@@ -69,8 +69,11 @@ a run ``test`` still get distinct entries.
      - ``paleo:datetime``, ``paleo:start_datetime``,
        ``paleo:end_datetime``, ``paleo:label``
      - paleo extension; first segment that declares it wins
+   * - ``general.models``
+     - ``keywords``
+     - Every top-level model in the run, incl. baked-in submodels
    * - ``config/<component>/namelist.*``
-     - ``nml:files``, ``nml:groups``, ``nml:parameters``
+     - ``namelist:parameters`` (nested component → file → group → key)
      - namelist extension; the inventory of what the Items carry
 
 Output file → STAC Item
@@ -89,15 +92,17 @@ look like ``temp2.echam.185001.a91b3c4d``.
    * - path
      - ``assets.data.href``
      - Local path or full URL (``sftp://…``) as seen from the scan root
+   * - file format
+     - ``assets.data.type``
+     - Real media type (``application/x-netcdf``, ``application/x-grib2``),
+       not a bare property
    * - which component wrote it
      - ``component``
      - from the tidy log entry
    * - main variable
      - ``variable``; ``variables`` when the file holds several
-     - from the file header
-   * - file format
-     - ``format``
-     - ``netcdf`` or ``grib``
+     - Only set when the scanner found no dimensions for the file (otherwise
+       ``cube:variables`` below already carries this, more richly)
    * - variables with units and standard names
      - ``cube:variables``
      - datacube extension
@@ -112,7 +117,7 @@ look like ``temp2.echam.185001.a91b3c4d``.
      - ``bbox``, ``geometry``
      -
    * - namelist parameters active for this file
-     - ``nml__<component>__<file>__<group>__<key>``
+     - ``namelist__<component>__<file>__<group>__<key>``
      - one field per parameter; dots in file names become underscores
        (``namelist.echam`` → ``namelist_echam``); see below
    * - geological time
@@ -124,19 +129,21 @@ On disk, ``scan`` writes the time-series Items into a
 covered — one per scan that found new segments, never touched afterwards —
 and the time-invariant files into a single ``<expid>_stac_fx.parquet`` that
 is rewritten in full on every scan. Every Item property is a column, and the
-``experiment`` column names the expid.
+``collection`` column names the owning Collection id (``<expid>-<path hash>``,
+not the bare expid — two experiments that happen to share a human name still
+resolve to distinct, non-conflated ids).
 
 Searching on namelist parameters
 --------------------------------
 
 Every namelist parameter becomes a field named
-``nml__<component>__<file>__<group>__<key>``, with the dot in the file name
+``namelist__<component>__<file>__<group>__<key>``, with the dot in the file name
 replaced by an underscore. The CO₂ mixing ratio in ECHAM's
 ``namelist.echam``, group ``radctl``, key ``co2vmr``, is therefore:
 
 .. code-block:: text
 
-   nml__echam__namelist_echam__radctl__co2vmr
+   namelist__echam__namelist_echam__radctl__co2vmr
 
 Locally you can see the fields the scan produced — this runs against the
 demo experiment:
@@ -151,18 +158,18 @@ demo experiment:
    import json, pyarrow.parquet as pq
 
    shard = next((catalog / "items").glob("*_stac_1850*.parquet"))
-   nml = [c for c in pq.read_table(shard).column_names if c.startswith("nml__")]
+   nml = [c for c in pq.read_table(shard).column_names if c.startswith("namelist__")]
    print(*nml, sep="\n")
    print(json.loads((catalog / "queryables.json").read_text())["properties"]
-         ["nml__echam__namelist_echam__radctl__co2vmr"])
+         ["namelist__echam__namelist_echam__radctl__co2vmr"])
 
 .. testoutput:: catalog
 
-   nml__echam__namelist_echam__runctl__lcouple
-   nml__echam__namelist_echam__radctl__co2vmr
-   nml__echam__namelist_echam__radctl__ch4vmr
-   nml__fesom__namelist_config__paths__meshpath
-   nml__fesom__namelist_config__timestep__step_per_day
+   namelist__echam__namelist_echam__runctl__lcouple
+   namelist__echam__namelist_echam__radctl__co2vmr
+   namelist__echam__namelist_echam__radctl__ch4vmr
+   namelist__fesom__namelist_config__paths__meshpath
+   namelist__fesom__namelist_config__timestep__step_per_day
    {'type': 'number'}
 
 One file, in full
@@ -174,19 +181,21 @@ The same shard, one row, the fields a reader cares about:
 
    row = pq.read_table(shard).slice(0, 1).to_pylist()[0]
    print(row["id"])
-   print(row["variable"], row["component"], row["format"], row["frequency"])
+   # "variable" is absent here -- cube:dimensions is set for this file, so
+   # cube:variables below already carries variable identity.
+   print(row["component"], row["frequency"])
    print(row["start_datetime"].date(), "→", row["end_datetime"].date())
    for name, dim in row["cube:dimensions"].items():
        print(f"  {name:5s} {dim['type']:9s} {dim['extent']}")
    print(row["cube:variables"])
-   print(row["nml__echam__namelist_echam__radctl__co2vmr"],
-         row["nml__fesom__namelist_config__paths__meshpath"])
+   print(row["namelist__echam__namelist_echam__radctl__co2vmr"],
+         row["namelist__fesom__namelist_config__paths__meshpath"])
 
 .. testoutput:: catalog
    :options: +ELLIPSIS
 
    var.echam.185001...
-   var echam netcdf mon
+   echam mon
    1850-01-16 → 1850-01-16
      time  temporal  ['1850-01-16T00:00:00+00:00', '1850-01-16T00:00:00+00:00']
      lat   spatial   [-89.0, 89.0]
@@ -194,7 +203,7 @@ The same shard, one row, the fields a reader cares about:
    {'var': {'dimensions': ['time', 'lat', 'lon'], 'unit': '1'}}
    0.0002847 /pool/data/meshes/core2/
 
-Every file in the experiment carries the same ``nml__`` values — they
+Every file in the experiment carries the same ``namelist__`` values — they
 describe the run, not the file — which is what makes "all files from runs
 with X" a one-line filter.
 
@@ -207,7 +216,7 @@ On the server the same field answers "every run with CO₂ above 400 ppm":
    cat = Client.open("https://stac-dev.awi.de")
    hits = cat.search(filter={
        "op": ">", "args": [
-           {"property": "nml__echam__namelist_echam__radctl__co2vmr"}, 400e-6
+           {"property": "namelist__echam__namelist_echam__radctl__co2vmr"}, 400e-6
        ]
    })
    for item in hits.items():

@@ -15,7 +15,7 @@ Landing Page, Items, and the Filter Panel
   authors, time covered, and the namelist inventory.
 - Open one to list its files (Items). Each shows the variable, component,
   time span, the datacube dimensions, and — under *Properties* — every
-  ``nml__`` namelist parameter and the ``paleo:`` fields.
+  ``namelist__`` namelist parameter and the ``paleo:`` fields.
 - The *Filter* panel searches within an experiment on any registered field:
   variable, component, time, bounding box, and the namelist parameters.
 - Each Item's ``data`` asset links to the file's path on the filesystem. The
@@ -52,17 +52,17 @@ it and as ``pystac-client`` would send it:
    cat.search(collections=["pi-ctrl-001-3f9a1c2e"], bbox=[-80, 30, 0, 70])
 
    # runs coupled to the ocean, across ALL experiments
-   cat.search(filter="nml__echam__namelist_echam__runctl__lcouple = true",
+   cat.search(filter="namelist__echam__namelist_echam__runctl__lcouple = true",
               filter_lang="cql2-text")
 
    # the same thing as CQL2-JSON, which is what the panel actually sends
    cat.search(filter={"op": "=", "args": [
-       {"property": "nml__echam__namelist_echam__runctl__lcouple"}, True]})
+       {"property": "namelist__echam__namelist_echam__runctl__lcouple"}, True]})
 
    # monthly echam output from experiments on the CORE2 mesh
    cat.search(filter=(
        "component = 'echam' AND frequency = 'mon' AND "
-       "nml__fesom__namelist_config__paths__meshpath LIKE '%core2%'"
+       "namelist__fesom__namelist_config__paths__meshpath LIKE '%core2%'"
    ), filter_lang="cql2-text")
 
 ``search`` returns lazily; ``.items()`` iterates, ``.item_collection()``

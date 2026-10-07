@@ -285,7 +285,7 @@ Finding your run from Python
 ----------------------------
 
 Once pushed, use `pystac-client <https://pystac-client.readthedocs.io/>`_.
-Filters use CQL2; namelist parameters are available as ``nml__`` fields (see
+Filters use CQL2; namelist parameters are available as ``namelist__`` fields (see
 :doc:`esm_catalog_metadata`).
 
 .. code-block:: python
@@ -466,14 +466,17 @@ which is what ``push`` does on the way to the server:
    first = next(sga.stac_table_to_items(table.slice(0, 1)))
    item = pystac.Item.from_dict(first)
    print(item.id, "->", item.collection_id)
-   print(item.properties["variable"], item.properties["component"], item.properties["frequency"])
+   # "variable" is absent here -- cube:dimensions is set for this file, so
+   # cube:variables already carries variable identity.
+   print(item.properties["component"], item.properties["frequency"])
 
    coll = pystac.Collection.from_file(str(catalog / "collection.json"))
-   print(coll.extra_fields["nml:groups"])
+   print(coll.extra_fields["namelist:parameters"]["echam"]["namelist_echam"]["radctl"]["co2vmr"])
 
 .. testoutput:: catalog
    :options: +ELLIPSIS
 
    var.echam.185001... -> pi-ctrl-001-...
-   var echam mon
+   echam mon
+   0.0002847
    ['paths', 'radctl', 'runctl', 'timestep']

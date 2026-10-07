@@ -56,7 +56,7 @@ unbounded year -- see :doc:`esm_catalog_metadata` -- not a typo):
      "format": "grib",
      "cube:dimensions": {"...": "..."},
      "cube:variables": {"...": "..."},
-     "nml__echam__namelist_echam__runctl__lcouple": true,
+     "namelist__echam__namelist_echam__runctl__lcouple": true,
      "paleo:datetime": "-21000-01-01T00:00:00"
    }
 

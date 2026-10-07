@@ -15,7 +15,23 @@ general:
         # 20 legs of 10 yr: 62370 + 20*10 - 1. Must end on the same cycle as antfill_ocean.
         final_date: "62389-12-31"
         user: !ENV ${USER}
-        base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
+        # MACHINE BLOCK -- the same variables antfill_ocean.yaml defines. The two chains
+        # are separate configs and neither sees the other's general, so the block is
+        # repeated here; keep the two copies in step.
+        choose_computer.name:
+                albedo:
+                        antfill_root: "/albedo/work/user/${general.user}"
+                        model_code_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is"
+                        conda_env_dir: "/albedo/home/xihao001/.conda/envs"
+                        shared_a270092: "/albedo/work/user/${general.user}/levante_shared/a270092"
+                        shared_a270234: "/albedo/work/user/${general.user}/levante_shared/a270234"
+                levante:
+                        antfill_root: "/work/ab0246/${general.user}"
+                        model_code_dir: "/work/ab0246/${general.user}/model_codes/awiesm3-develop-is"
+                        conda_env_dir: "/work/ab0246/a270234/conda/envs"
+                        shared_a270092: "/work/ab0246/a270092"
+                        shared_a270234: "/work/ab0246/a270234"
+        base_dir: "${general.antfill_root}/runtime/awiesm3-develop-is/"
         script_dir: "${general.esm_configs_dir}/../couplings/"
         nyear: 10
         change_ocean: 1
@@ -25,23 +41,23 @@ general:
         use_venv: False
 
 pism:
-        python_binary: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
-        fesom_mesh_dir: "/albedo/work/user/${general.user}/input/fesom2/pism_cavity_ini_antfill_newpar/submesh"
+        python_binary: "${general.conda_env_dir}/ocp-tool2/bin/python"
+        fesom_mesh_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar/submesh"
         # Chunk 1 conserves the cavity melt over PISM's OWN floating mask, read from the FIRST
         # record of this file -- the initial geometry. It must come from a run bootstrapped from
         # the same spinup_file, which this is: the first decade run from ic_X_nofrag.nc with the
         # parameters below. With a flotation test instead, only 0.87 of the cavity total arrives;
         # with this, 1.01 (ism43 measurement, coupling_ocean2pism.functions).
-        initial_mask_file: "/albedo/work/user/${general.user}/runtime/awiesm3-develop-is/newic_newpar/decade1/ex_decade1.nc"
+        initial_mask_file: "${general.antfill_root}/runtime/awiesm3-develop-is/newic_newpar/decade1/ex_decade1.nc"
         version: "github1.2.1"
         resolution: "08km"
         domain: "antarct_cr"
-        model_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is/pism-github1.2.1/"
+        model_dir: "${general.model_code_dir}/pism-github1.2.1/"
         lresume: 1
         # Chunk-1 atmosphere/ocean forcing. orog6's chunk-2 harvest, the first -is set built from
         # a FESOM carrying the 3-equation cavity melt fix (integrated basal melt 1280-1430 Gt/yr
         # against 250 in the older sets). Copied from levante a270234 with its submesh.
-        bootstrap_forcing_dir: "/albedo/work/user/${general.user}/levante_shared/a270234/input/pism/coupled_bootstrap/core3_antarct_cr-08km_TCO95/orog6_chunk2_202609200848_with_submesh"
+        bootstrap_forcing_dir: "${general.shared_a270234}/input/pism/coupled_bootstrap/core3_antarct_cr-08km_TCO95/orog6_chunk2_202609200848_with_submesh"
 
         nx: 761
         ny: 761
@@ -52,7 +68,7 @@ pism:
                         nprocb: 1
 
         downscale_precip: 0
-        debm_path: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is/bin/debm"
+        debm_path: "${general.model_code_dir}/bin/debm"
         debm_beta: 10
         lapse_rate: -0.005
         ablation_method: "DIRECT"
@@ -77,8 +93,8 @@ pism:
         # free-front run, and broke the SSA solve on the way out twice (test X, jobs 47845830
         # and 47847700). The chunk-1 bundle was built from THIS file; changing it means
         # rebuilding the bundle.
-        spinup_file: "/albedo/work/user/${general.user}/pism_repro/obs_forced_run/tillwat_tests/ic_X_nofrag.nc"
-        pool_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/pism/"
+        spinup_file: "${general.antfill_root}/pism_repro/obs_forced_run/tillwat_tests/ic_X_nofrag.nc"
+        pool_dir: "${general.shared_a270092}/input/pism/"
         ts_interval: "1"
         ex_interval: "yearly"
         force_bootstrap_first_run: False

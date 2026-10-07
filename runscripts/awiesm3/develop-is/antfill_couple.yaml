@@ -19,11 +19,30 @@ general:
                 - model2
         iterative_coupling: True
         ism_orog_coupled: True
-        ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
         use_venv: False
         user: !ENV ${USER}
-        base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
+        # Literals for the init-time checks: esm_tools reads general.account (and builds
+        # the experiment dir from base_dir) during "Initializing iterative coupling",
+        # BEFORE any choose_ block is resolved. The machine block below then overrides
+        # both. If the override ever failed to apply, levante would reject the albedo
+        # account at submit -- a loud failure, not a silent wrong run.
         account: paleodyn.paleodyn
+        base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
+        ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
+        # MACHINE BLOCK. Unlike antfill_ocean.yaml and antfill_pism.yaml, this file is
+        # the ITERATIVE-COUPLING DRIVER and its general section is resolved before the
+        # rest: a ${general.<var>} that points at a variable defined inside this very
+        # block sends esm_parser's find_variable into infinite recursion. So the driver
+        # sets the three final values directly instead of going through work_dir etc.
+        choose_computer.name:
+                albedo:
+                        account: paleodyn.paleodyn
+                        base_dir: "/albedo/work/user/${general.user}/runtime/awiesm3-develop-is/"
+                        ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
+                levante:
+                        account: bb1469
+                        base_dir: "/work/ab0246/${general.user}/runtime/awiesm3-develop-is/"
+                        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
         with_recom: False
         with_icb: True
 

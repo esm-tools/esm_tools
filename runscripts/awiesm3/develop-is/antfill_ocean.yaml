@@ -5,7 +5,43 @@ general:
     use_venv: False
     setup_name: "awiesm3"
     version: "develop-is"
+    # account must ALSO be a literal here, outside the machine block: esm_tools checks
+    # general.account during "Initializing iterative coupling", BEFORE any choose_ block
+    # is resolved, and aborts with "Missing account info" if it is only in the block.
+    # The block below then overrides it per machine. If that override ever failed to
+    # apply, levante would reject the albedo account at submit -- a loud failure.
     account: "paleodyn.paleodyn"
+    # MACHINE BLOCK. NOTE antfill_root, not work_dir: general.work_dir is RESERVED by
+    # esm_tools for <rundir>/work/, and a variable of that name is silently clobbered --
+    # every ${general.work_dir} path resolved under the run directory instead.
+    # Everything that differs between albedo and levante is reduced to
+    # these variables so a fix lands on both machines at once. The levante values are
+    # orogrun's -- the last configuration that actually ran there; the albedo values are
+    # what antftest1-7 ran with. ${general.user} is $USER: xihao001 / a270234.
+    choose_computer.name:
+        albedo:
+            account: "paleodyn.paleodyn"
+            antfill_root: "/albedo/work/user/${general.user}"
+            model_code_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is"
+            conda_env_dir: "/albedo/home/xihao001/.conda/envs"
+            # a270092's and a270234's levante directories, rsynced to albedo.
+            shared_a270092: "/albedo/work/user/${general.user}/levante_shared/a270092"
+            shared_a270234: "/albedo/work/user/${general.user}/levante_shared/a270234"
+            # PRIVATE COPY. The pool's forcing_idemix_final_bin is a symlink into
+            # p_pool_fesom1, which this account cannot read: FESOM stops with "status 13,
+            # Permission denied" and then hangs to the wall clock (antftest2, 2026-10-06).
+            # Byte-identical to the levante original (md5 08887ab2...), which is why
+            # levante below reads that original directly.
+            idemix_bot_forcing: "/albedo/work/user/${general.user}/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
+        levante:
+            account: "bb1469"
+            antfill_root: "/work/ab0246/${general.user}"
+            # NOTE "model_codes", plural, on levante; "model_code" on albedo.
+            model_code_dir: "/work/ab0246/${general.user}/model_codes/awiesm3-develop-is"
+            conda_env_dir: "/work/ab0246/a270234/conda/envs"
+            shared_a270092: "/work/ab0246/a270092"
+            shared_a270234: "/work/ab0246/a270234"
+            idemix_bot_forcing: "/work/ab0246/a270092/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
     # ism44 ran 1-yr awiesm3 legs in ~26-33 min on levante. Not measured on albedo; 02:00:00
     # is ism44's value and leaves room for the first-run overhead.
     compute_time: "02:00:00"
@@ -18,12 +54,12 @@ general:
     # TO GO TO THE FULL RUN: restore "1920-01-01" here AND "62569-12-31" in antfill_pism.yaml.
     # 20 cycles, 1900-1919 inclusive (10 ice years per cycle: PISM 62370-62569).
     final_date: "1902-01-01"
-    base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
+    base_dir: "${general.antfill_root}/runtime/awiesm3-develop-is/"
     interactive_mesh: true
     ism_freshwater_return: true
     smb_coupled: true
     # The chunk-1 bundle built on albedo for this mesh + initial condition; see its README.md.
-    pism_cavity_ini_dir: "/albedo/work/user/${user}/input/fesom2/pism_cavity_ini_antfill_newpar"
+    pism_cavity_ini_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar"
     nday: 0
     nmonth: 0
     nyear: 1
@@ -34,12 +70,12 @@ computer:
 
 awiesm3:
     postprocessing: false
-    model_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is/"
+    model_dir: "${general.model_code_dir}/"
 
 fesom:
     ini_iceberg_dir: "${general.pism_cavity_ini_dir}/icebergs"
     ini_disch_file: "${general.pism_cavity_ini_dir}/icebergs/ini_discharge.nc"
-    basin_file: "/albedo/work/user/${general.user}/levante_shared/a270092/input/pism/basins/antarct_cr.08km.nc"
+    basin_file: "${general.shared_a270092}/input/pism/basins/antarct_cr.08km.nc"
     chunk1_mesh: "${general.pism_cavity_ini_dir}/submesh"
     oce2ice_method: "DIRECT"
     resolution: "CORE3"
@@ -55,7 +91,7 @@ fesom:
     # NOTE its node numbering is NOT CORE3's (Hilbert order over the whole mesh), so "the first
     # 220509 nodes are CORE3's" does not hold; node_map_to_core3.txt is the map. See its
     # PROVENANCE.md.
-    mesh_dir: "/albedo/work/user/${general.user}/mesh/core3_ant_fill_bedmap2/"
+    mesh_dir: "${general.antfill_root}/mesh/core3_ant_fill_bedmap2/"
     # MUST equal the mother mesh node count. fix_namcouple_feom_dim seds this value to the
     # submesh count in the namcouple and PRINTS SUCCESS UNCONDITIONALLY, so a stale nx fails
     # silently and only surfaces as an OASIS "av gsize nx ny mismatch" at the LAST exchange of
@@ -83,10 +119,22 @@ fesom:
     #   KeyError: grid 'ismp' not found in .../grids.nc
     # (seen building this bundle, 2026-10-06). This variant is that file plus the ice section of
     # levante's TCO95_CORE3_ICE.yaml, pointing at the albedo copy of antarct_cr.initial_08km.nc.
-    ocp_template_config: "/albedo/work/user/${general.user}/tools/ocp-tool/configs/TCO95_CORE3_ICE_albedo.yaml"
+    choose_computer.name:
+        albedo:
+            ocp_template_config: "${general.antfill_root}/tools/ocp-tool/configs/TCO95_CORE3_ICE_albedo.yaml"
+        levante:
+            # awiesm3.yaml's levante block points ocp_tool_dir at a270092's checkout;
+            # TCO95_CORE3_ICE.yaml there is the file the _albedo variant was built from.
+            ocp_template_config: "${general.shared_a270092}/software/ocp-tool/configs/TCO95_CORE3_ICE.yaml"
+            # conda is not on PATH in the batch environment, so _conda_env_python returns
+            # "" and both drivers fall back to the mambaforge python, which carries no
+            # pyfesom2 and no mpi4py (orogrun, 2026-08-25 11:54). albedo does not need
+            # this: awiesm3.yaml's albedo block sets ocp_weightgen_worker_env instead.
+            ocp_weightgen_driver_py: "${general.conda_env_dir}/ocp-tool2/bin/python"
+            ocp_weightgen_worker_py: "${general.conda_env_dir}/ocp-worker/bin/python"
     ocp_weightgen_partition: "compute"
     # Only the mesh-independent rmp_R096_to_RnfA is taken from here.
-    oasis_rmp_template_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oasis/cy48r1/TCO95-CORE3/1792"
+    oasis_rmp_template_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/1792"
 
     # Ocean settings pinned to what ism44 ran: the v3.5 CORE3 defaults were tuned on develop,
     # which has no ice sheet and no moving cavity, and three of them act exactly where the
@@ -113,7 +161,7 @@ fesom:
             # This copy is byte-identical to levante a270092/input/fesom2/forcing/idemix
             # (md5 08887ab2...). IDEMIX is a FESOM 2.8 default, which is why 2.7 never hit it.
             param_idemix:
-                idemix_botforc_file: "/albedo/work/user/${general.user}/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
+                idemix_botforc_file: "${general.idemix_bot_forcing}"
             param_kpp:
                 kpp_av0: 0.005
                 kpp_kv0: 0.005
@@ -125,7 +173,7 @@ fesom:
             lresume: false
 
 lpj_guess:
-    slt_dir: "/albedo/work/user/${general.user}/input/lpj-guess/slt/"
+    slt_dir: "${general.antfill_root}/input/lpj-guess/slt/"
     nproc: 64
     omp_num_threads: 4
     mip: "cmip7"
@@ -153,10 +201,10 @@ oifs:
                 # The _orog file, not antar_pism2ece.nc: ECE_ISM_OROG below makes suorog read
                 # usurf_oifs from it at leg initialisation, and only this one carries that field.
                 pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece_orog.nc"
-                wam_grid_tables: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
-                wam_subgrid_0:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
-                wam_subgrid_1:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
-                wam_subgrid_2:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+                wam_grid_tables: "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
             add_input_in_work:
                 pism2ece_antar: antar_pism2ece.nc
             add_namelist_changes:
@@ -175,10 +223,10 @@ oifs:
             add_input_sources:
                 ICMGG_INIT: "${general.experiment_couple_dir}/oasis_regen/ICMGGab45INIT_feomdyn"
                 pism2ece_antar: "${general.experiment_couple_dir}/antar_pism2ece.nc"
-                wam_grid_tables: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
-                wam_subgrid_0:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
-                wam_subgrid_1:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
-                wam_subgrid_2:   "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+                wam_grid_tables: "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
             add_input_in_work:
                 pism2ece_antar: antar_pism2ece.nc
             add_namelist_changes:
@@ -227,7 +275,7 @@ oifs:
                 LHDHKS: ".false."
 
 rnfmap:
-    runoff_file: "/albedo/pool/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
+    runoff_file: "${general.pool_dir}/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
 
 oasis3mct:
     use_lucia: false
@@ -235,8 +283,8 @@ oasis3mct:
     time_step: 3600
     norestart: T
     debug_level: 1
-    input_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oasis/cy48r1/TCO95-CORE3/"
-    ini_restart_dir: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oasis/cy48r1/TCO95-CORE3/"
+    input_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/"
+    ini_restart_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/"
     choose_general.chunk_number:
         1:
             input_sources:

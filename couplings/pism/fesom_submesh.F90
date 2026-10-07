@@ -10,7 +10,17 @@ module m_mesh
                                          ! 0 = inner node
      integer, allocatable :: nod_map(:)    ! index mapping to max mesh
      integer, allocatable :: elem_map(:)   ! index mapping to max mesh
-     character(len=100)   :: MeshPath
+     ! 400, not 100.  get_command_argument() TRUNCATES SILENTLY into a short
+     ! buffer, and the path handed in here is
+     !   <runtime>/<exp>/couple//submesh_<YYYY>-12-31T00:00:00//
+     ! which for exp name "antftest6" is 102 characters.  The two trailing
+     ! slashes fell off the end, so TRIM(MeshPath)//'cavity_depth.out' wrote
+     ! couple/submesh_1901-12-31T00:00:00cavity_depth.out -- the whole submesh
+     ! landed in couple/ with the directory name as a filename prefix, the
+     ! submesh directory stayed empty, and ice2fesom died on the cavity guard
+     ! (antftest6, 2026-10-07).  Earlier experiments only fitted by luck:
+     ! "ism43" gave 98 characters.  See the status check in the main program.
+     character(len=400)   :: MeshPath
   end type t_mesh
   
 end module m_mesh
@@ -45,7 +55,7 @@ program fesom_submesh
   type(t_mesh)       :: sub_mesh
   real,allocatable   :: topo_raw(:), cavity_raw(:)
   integer,allocatable:: mesh_flag_raw(:), mask_raw(:)
-  INTEGER :: i, arg, num_args
+  INTEGER :: i, arg, num_args, arg_stat
 
   ! Get the number of arguments
   num_args = command_argument_count()
@@ -56,9 +66,22 @@ program fesom_submesh
      stop
   end if
 
-  ! Get the arguments
-  call get_command_argument(1, maxmesh%MeshPath )
-  call get_command_argument(2, sub_mesh%MeshPath)
+  ! Get the arguments.  The status argument is not optional decoration: a path
+  ! longer than the buffer is truncated and reported ONLY through status, and
+  ! a truncated directory path still "works" -- it just silently writes every
+  ! output file one level up with the directory name glued to the front.
+  call get_command_argument(1, maxmesh%MeshPath,  status=arg_stat)
+  if (arg_stat /= 0) then
+     print *, 'fesom_submesh: argument 1 (maxmesh path) could not be read, status =', arg_stat
+     print *, 'fesom_submesh: most likely TRUNCATED; MeshPath holds ', len(maxmesh%MeshPath), ' characters'
+     stop 1
+  end if
+  call get_command_argument(2, sub_mesh%MeshPath, status=arg_stat)
+  if (arg_stat /= 0) then
+     print *, 'fesom_submesh: argument 2 (submesh path) could not be read, status =', arg_stat
+     print *, 'fesom_submesh: most likely TRUNCATED; MeshPath holds ', len(sub_mesh%MeshPath), ' characters'
+     stop 1
+  end if
 
   print *, 'Reducing maxmesh '//adjustl(maxmesh%MeshPath)
   print *, 'writing submesh to '//adjustl(sub_mesh%MeshPath)
@@ -261,7 +284,7 @@ subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
   integer                   :: count_elem
   character(len=6)          :: ID_sl
   integer                   :: outfile_log
-  character(len=150)        :: logfile
+  character(len=450)        :: logfile   ! MeshPath(400) + the longest basename
   logical                   :: l_element_removed
   integer                   :: nod_nod(16*3)   ! 16*3 should be more than sufficient for the #nodes/patch 
   integer                   :: nod_el(16,M%nod2D)   ! 16 should be more than sufficient for the

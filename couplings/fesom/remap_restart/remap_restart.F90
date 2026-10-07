@@ -45,6 +45,15 @@ program remap_restart
 
     write(*,*) '============================================'
     write(*,*) ' FESOM2 restart remapping tool'
+#ifdef NETCDF_F_PREFIX
+    ! The netcdf-fortran this binary was COMPILED against. If a run ever loads a
+    ! different one (both are soname libnetcdff.so.7, so it loads silently), the
+    ! nf90_* call sequence disagrees and the tool dies with a nil dereference
+    ! inside netcdf, blaming an intact restart file. The link now pins it with
+    ! DT_RPATH, so this line is a record rather than a warning -- but it is the
+    ! line that would have made antftest8/antftest9 a five-minute diagnosis.
+    write(*,*) ' netcdf-fortran: '//NETCDF_F_PREFIX
+#endif
     write(*,*) '============================================'
     call system_clock(count_rate=clk_rate)
     call system_clock(clk0)

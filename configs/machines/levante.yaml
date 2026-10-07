@@ -268,7 +268,7 @@ computer:
             libaec_path: /sw/spack-levante/libaec-1.0.5-gij7yv
             tbb_path: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
             add_module_actions:
-                - "unload cdo"
+               #- "unload cdo"
                 - "load fftw/3.3.10-gcc-11.2.0"
                 - "load hdf5/1.12.1-openmpi-4.1.2-gcc-11.2.0"
                 - "load netcdf-c/4.8.1-openmpi-4.1.2-gcc-11.2.0"

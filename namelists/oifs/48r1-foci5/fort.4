@@ -1,267 +1,320 @@
+! See discussion: https://git.smhi.se/ec-earth/ecearth4/-/issues/112
+! ============================================================================
+&NAMECECFG
+! ----------------------------------------------------------------------------
+! * EC-Earth configuration
+! ----------------------------------------------------------------------------
+    ECE_CPL_NEMO_LIM = .true.,    ! Run coupled to NEMO (true) or not (false)
+    ECE_CPL_NEMO_PISCES = .false., ! Run coupled to NEMO-PISCES (true) or not (false)
+    ECE_CPL_NEMO_WEIGHTED_ICE = .true., ! Set true if NEMO sends temperature and
+                                      ! albedo that are weighted by the ice
+                                      ! fraction (check settings in namsbc_cpl
+                                      ! in nemo-oce namelist)
+    ECE_CPL_NEMO_CONSERVATIVE_HEATFLUX = .false., ! Set "false"(default) to couple
+                                      ! heat fluxes separately over ocean and
+                                      ! sea ice. Set "true" to use conservative
+                                      ! coupling (=sum of ocean and sea ice
+                                      ! fluxes). NOTE: setting "true" requires
+                                      ! additional changes in namcouple and
+                                      ! the nemo namelist.
+! LPJG coupling
+    ECE_CPL_LPJG = .false.,
+    ECE_CPL_LPJG_CO2 = .false.,
+! Ice sheet coupling. ECE_CPL_ISMM keys on ismm presence;
+! ECE_LANDICE keys on oifs.landice; NISMRGNS/ISMRGNPFX are
+! emitted whenever either is active. Activation matrix in
+! running docs section 'Land ice and ice-sheet coupling'.
+    ECE_CPL_ISMM = false,
+    NISMRGNS = 1,
+    ISMRGNPFX = 'grtes',
+    ECE_LANDICE = false,         ! Enable land-ice surface physics (standalone or coupled)
+    ECE_LANDICE_THRESH = 0.5,  ! Ice sheet mask threshold [0-1]; cells above treated as glacier (default 0.5)
+! ============================================================================
+/
+
+! ============================================================================
+&NAMMCC
+! ----------------------------------------------------------------------------
+! * Module YOMMCC: Keys for IFS "climate version"
+! ----------------------------------------------------------------------------
+
+    LMCCEC = true,               ! LMCCEC = .T.   ===> Boundary conditions updated by ECMWF routines
+                                 !        = .F.   ===> they are not updated
+    NFRCPL = 0,                  ! NFRCPL         ===> Coupling frequency
+    LMCCDYNSEAICE = true,        ! Use of dynamic sea-ice model
+    LMCC_COMPO = false,
+!   LNEMOCOUP                    ! LNEMOCOUP = .T. ===> SINGLE EXECUTABLE COUPLING TO NEMO
+!                                !           = .F. ===> NO SINGLE EXECUTABLE COUPLING TO NEMO
+!   LNEMOSSTFREEZ                ! LNEMOSSTFREEZ = .T. ===> SET SST TO FREEZING IF CI<=RCIMIN
+!                                !               = .F. ===> KEEP NEMO SST IF CI<=RCIMIN
+!   LNEMOFLUXNC                  ! LNEMOFLUXNC = .T. ===> OUTPUT FLUXES FOR NEMO COUPLING IN NETCDF
+!                                !             = .F. ===> DO NOT OUTPUT FLUXES FOR NEMO COUPLING IN NETCDF
+!   LNEMO1WAY                    ! LNEMO1WAY = .T. ===> 1WAY (IFS TO NEMO) COUPLING
+!                                !           = .F. ===> 2WAY IFS TO NEMO AND NEMO TO IFS COUPLING
+!   LNEMOIFSLOG                  ! LNEMOIFSLOG = .T. ===> NEMO LOG OUTPUT IN IFS NODE.???_?? FILES
+!                                !             = .F. ===> NORMAL NEMO LOG OUTPUT
+!   LNEMOLIMGET                  ! LNEMOLIMGET  = .T. ! Get new fields LIM
+!   LNEMOLIMPUT                  ! LNEMOLIMPUT  = .T. ! Put new fields LIM
+!   LNEMOLIMALB                  ! LNEMOLIMALB  = .T. ! Use albedo from LIM
+!   LNEMOLIMTEMP                 ! LNEMOLIMTEMP = .F. ! Use ice temp from LIM
+!   LNEMOLIMTLVL                 ! LNEMOLIMTLVL = .F. ! Receive temp levels from LIM
+!   LNEMOLIMTHK                  ! LNEMOLIMTHK  = .T. ! Use ice and snow thickness
+! ============================================================================
+/
+
+&NAMORB
+! ----------------------------------------------------------------------------
+! * Module YOMORB: Time-varying orbital forcing
+! ----------------------------------------------------------------------------
+! Feature ported from ECE3.
+! Original documentation:
+! https://dev.ec-earth.org/projects/ecearth3/wiki/Orbital_forcing_in_EC-Earth_3
+! Porting: https://dev.ec-earth.org/issues/1130
+!
+! Namelist settings
+!   LCORBMD:  apply orbital calculations (default: false)
+!   ORBMODE:
+!     fixed_year: calculate the orbital parameters at year ORBIY
+!     variable_year: calculate orbital parameters annually start from year ORBIY
+!     fixed_parameters: prescribe orbital parameters for given year
+!     (default: "fixed_year")
+!   ORBIY:    set year for fixed or variable year settings (default: 1850)
+! ----------------------------------------------------------------------------
+    LCORBMD = true,
+    ORBMODE = "variable_year",
+    ORBIY = 1950,
+! ============================================================================
+/
+
+&NAMECECMIP
+       LCMIP7 = .true.,
+       SCENARIONAME = "h",
+    CMIP6DATADIR = "/nobackup/proj/disk/ecearth3_input-data/shared/ece-4-inidata_4.1.10//cmip6-data",
+    CMIP7DATADIR = "/nobackup/proj/disk/ecearth3_input-data/shared/ece-4-inidata_4.1.10//cmip7-data",
+    NCMIPFIXYR = -1,
+    NCMIPFIXYR_CH4 = -1,
+    L1PCTCO2 = .false.,
+    LANxCO2  = .false.,
+    RNxCO2 = 4.0,
+    LMACV2SP = .true.,
+    LMACV2SP_CCNF = .true.,
+/
+
 &NAMIOS
-    CFRCF = './rcf'
-    CIOSPRF = './srf'
+    CFRCF = "./rcf",
+    CIOSPRF = "./srf",
 /
 
 &NAMGRIB
-    CFCLASS = 'rd'
-    NCYCLE = 154
+    CFCLASS = "rd",
+    NCYCLE = 154,
 /
 
 &NAMCVER
-    LVERTFE = .true.
-    NVSCH = 3
-    LVFE_GWMPA = .true.
-    LVFE_GW = .false.
-    LVFE_Z_TERM = .false.
-    LVFE_X_TERM = .false.
-    LVFE_LAPL_BC = .true.
-    LVFE_LAPL = .true.
-    NDLNPR = 0
-/
-
-&NAMMCC
-    LMCCEC = .true.
-    LMCC_COMPO = .false.
-    LMCCDYNSEAICE = .true.
+    LVERTFE = true,
+    NVSCH = 3,
+    LVFE_GWMPA = true,
+    LVFE_GW = false,
+    LVFE_Z_TERM = false,
+    LVFE_X_TERM = false,
+    LVFE_LAPL_BC = true,
+    LVFE_LAPL = true,
+    NDLNPR = 0,
 /
 
 &NAMTRANS
-    LUSEFLT = .false.
-    LFFTW = .true.
+    LUSEFLT = false,
+    LFFTW = true,
 /
 
+! -----------------------------------------------------------------------------
+! * NAMRES: Restart control
+! -----------------------------------------------------------------------------
 &NAMRES
-    NFRRES = 1
+    NFRRES = 1,             ! Restart file intervall
+
+                               ! NRESTS = List of restart times
+    NRESTS = 1,35040,
+                               !   NRESTS(1) = NR (positive): NRESTS(2..)*NR define *time-steps* for restart file creation
+                               !   NRESTS(1) = NR (negative): NRESTS(2..)*NR define *hours* for restart file creation
+
+                               ! LSDHM = .TRUE. if time stamp is written as 'ddddhhmm'
+                               !                else time stamp is controlled by LINC (NAMOPH)
+
+                               ! LDELRES = .TRUE. if old restart files are deleted
+                               ! COPY = "cp" used for moving restart
 /
 
 &NAERAD
-    CRTABLEDIR = '/work/bb1460/b383103/MYMODELS/openifs_48r1_general/rtables/'
-    NRPROMA = 0
-    LECOMPGRID = .true.
-    NSOLARSPECTRUM = 1
-    NGHGRAD = 21
+    CRTABLEDIR = './rtables/',
+    NRPROMA = 0,
+    CSOLARIRRADIANCEFILE = './ifsdata/total_solar_irradiance_CMIP6_49r1.nc',
+    LAER3D = .false.
+    LEPO3RA = .false.
+    NRADINT=2,
+    NO3CMIP = 7
+    CO3DATADIR = "/nobackup/proj/disk/ecearth3_input-data/shared/ece-4-inidata_4.1.10//cmip7-data"
+    LCMIP_STRATAER_CMIP7 = .true.
+    CCMIP_STRAT_FULL = "/nobackup/proj/disk/ecearth3_input-data/shared/ece-4-inidata_4.1.10//cmip7-data-refactored/strataero/CMIP7_stratospheric_aerosols_opt_EC_EARTH_historical+ScenarioMIP_1750-2100_2-2-1_L91.nc"
+    CCMIP_STRAT_FULL_CLIM = "/nobackup/proj/disk/ecearth3_input-data/shared/ece-4-inidata_4.1.10//cmip7-data-refactored/strataero/CMIP7_stratospheric_aerosols_opt_EC_EARTH_climatology2-2-1_L91.nc"
+    LCMIP_STRATAER_BCKGD = .false.
+    LECOMPGRID=.true.
+    LECO2TRA=.false.
+
 /
 
-!!    CRTABLEDIR = ' /work/bb1460/b383103/MYMODELS/openifs_48r1_general    |         CRTABLEDIR = './rtables/',
-!!    CRTABLEDIR = '/work/bb1460/b383103/DATA_JK/oifs/rtables/'             |         NRPROMA = 0,
-!!    NRPROMA = 0                                                           |         CSOLARIRRADIANCEFILE = './ifsdata/total_solar_irradiance_CMIP6_49r
-!!    LECOMPGRID = .true.                                                   |         LAER3D = .false.
-!!    NSOLARSPECTRUM = 1                                                    |         NO3CMIP = 6
-!!    NGHGRAD = 21                                                          |         CO3DATADIR = "/home/rossby/ece-4-inidata/cmip6-data/"
-                                                                          >         LECOMPGRID=.false.
-
-
 &NAEPHY
-
-!! &NAEPHY                                                                         &NAEPHY
-!!    LEPHYS = .true.                                                       |         LEPHYS=true,
-!!    LEVDIF = .true.                                                       |         LEVDIF=true,
-!!    LESURF = .true.                                                       |         LESURF=true,
-!!    LECOND = .true.                                                       |         LECOND=true,
-!!    LECUMF = .true.                                                       |         LECUMF=true,
-!!    LEPCLD = .true.                                                       |         LEPCLD=true,
-!!    LEEVAP = .true.                                                       |         LEEVAP=true,
-!!    LEVGEN = .true.                                                       |         LEVGEN=true,
-!!    LESSRO = .true.                                                       |         LESSRO=true,
-!!    LECURR = .false.                                                      |         LECURR=false,
-!!    LEOCWA = .true.                                                       |         LEGWDG=true,
-!!    LEGWDG = .true.                                                       |         LEGWWMS=true,
-!!    LEGWWMS = .true.                                                      |         LEOZOC=true,
-!!    LEOZOC = .true.                                                       |         LEQNGT=true,
-!!    LEQNGT = .true.                                                       |         LERADI=true,
-!!    LERADI = .true.                                                       |         LERADS=true,
-!!    LERADS = .true.                                                       |         LELAIV = true,
-!!    LESICE = .true.                                                       |         LESICE = false,
-!!    LEO3CH = .true. ! switched off due to issue with reading input?       |         LEOCWA = false,
-!!    LO3CH_HLO = .true.                                                    |         LEO3CH=false,
-!!    CO3CHEM = 'H1.0'                                                      |         LO3CH_HLO=true,
-!!    LEDCLD = .true.                                                       |         CO3CHEM="H1.0",
-!!    LDUCTDIA = .false.                                                    |         LEDCLD=true,
-!!    LDIAGTURB_EC = .false.                                                |         LDUCTDIA=false,
-!!    LELIGHT = .false.                                                     |         LDIAGTURB_EC=false,
-!!    LWCOU = .true. ! switch off for testing; NOTE can only run 67 year    |         LELIGHT=false,
-!!    LWCOU2W = .true. ! switch off for testing; NOTE can only run 67 ye    |         LWCOU=false,
-!!    LWCOUHMF = .false.                                                    |         LWCOU2W=false,
-!!    LWCOURNW = .false.                                                    |         LWCOUHMF=false,
-!!    NSTPW = 1                                                             |         LWCOURNW=false,
-!!    LSLPHY = .true.                                                       |         NSTPW=1,
-!!    LESNML = .true.                                                       |         LSLPHY=true,
-!!    NSNMLWS = 2                                                           |         LESNML=true,
-!!    LEFARQUHAR = .true.                                                   |         NSNMLWS=2,
-!!    LEOPTSURF = .false.                                                   |         LEFARQUHAR=true,
-!!    LEAIRCO2COUP = .false.                                                |         LEOPTSURF=false,
-!!    LEC4MAP = .true.                                                      |         LEAIRCO2COUP=false,
-!!    LEAGS = .false.                                                       |         LEC4MAP=true,
-!!    NALBEDOSCHEME = 3                                                     |         LEAGS=false,
-!!                                                                          >         RCIMIN = 0.,
-!!                                                                          >         NALBEDOSCHEME=3,
-    LEPHYS = .true.
-    LEVDIF = .true.
-    LESURF = .true.
-    LECOND = .true.
-    LECUMF = .true.
-    LEPCLD = .true.
-    LEEVAP = .true.
-    LEVGEN = .true.
-    LESSRO = .true.
-    LECURR = .false.
-    LEOCWA = .false. !.true. ! switch off - no change
-    LEGWDG = .true.
-    LEGWWMS = .true.
-    LEOZOC = .true.
-    LEQNGT = .true.
-    LERADI = .true.
-    LERADS = .true.
-    LESICE = .false. !.true.
-    LEO3CH = .true. ! switched off due to issue with reading input?
-    LO3CH_HLO = .true.
-    CO3CHEM = 'H1.0'
-    LEDCLD = .true.
-    LDUCTDIA = .false.
-    LDIAGTURB_EC = .false.
-    LELIGHT = .false.
-    LWCOU = .true. ! switch off for testing; NOTE can only run 67 years
-    LWCOU2W = .true. ! switch off for testing; NOTE can only run 67 years
-    LWCOUHMF = .false.
-    LWCOURNW = .false.
-    NSTPW = 1
-    LSLPHY = .true.
-    LESNML = .true.
-    NSNMLWS = 2
-    LEFARQUHAR = .true.
-    LEOPTSURF = .false.
-    LEAIRCO2COUP = .false.
-    LEC4MAP = .true.
-    LEAGS = .false.
-    NALBEDOSCHEME = 3
+    LEPHYS=true,
+    LEVDIF=true,
+    LESURF=true,
+    LECOND=true,
+    LECUMF=true,
+    LEPCLD=true,
+    LEEVAP=true,
+    LEVGEN=true,
+    LESSRO=true,
+    LECURR=false,
+    LEGWDG=true,
+    LEGWWMS=true,
+    LEOZOC=true,
+    LEQNGT=true,
+    LERADI=true,
+    LERADS=true,
+    LELAIV = true,
+    LESICE = false,
+    LEOCWA = false,
+    LEO3CH=false,
+    LO3CH_HLO=true,
+    CO3CHEM="H1.0",
+    LEDCLD=true,
+    LDUCTDIA=false,
+    LDIAGTURB_EC=false,
+    LELIGHT=false,
+    LWCOU=true,
+    LWCOU2W=true,
+    LWCOUHMF=false,
+    LWCOURNW=false,
+    NSTPW=1,
+    LSLPHY=true,
+    LESNML=true,
+    NSNMLWS=2,
+    LEFARQUHAR=true,
+    LEOPTSURF=false,
+    LEAIRCO2COUP=false,
+    LEC4MAP=true,
+    LEAGS=false,
+    RCIMIN = 0.,
+    NALBEDOSCHEME=3,
+    LRDALB = false,  ! Do not use soil albedo
 /
 
 &NAMPAR1
-    NOUTTYPE = 1
-    LSPLIT = .true.
-    NWRTOUT = 4
-    NFLDIN = 0
-    NSTRIN = 1
+    NOUTTYPE = 1,
+    LSPLIT = true,
+    NFLDIN = 0,
+    NSTRIN = 1,
 /
-
 &NAMPAR0
-    LSTATS = .true.
-    LDETAILED_STATS = .false.
-    LSYNCSTATS = .false.
-    LSTATSCPU = .false.
-    NPRNT_STATS = 62
-    LBARRIER_STATS = .false.
-    LBARRIER_STATS2 = .false.
-    NPROC = 192 !384
-    NSPECRESMIN = 320
-    NOUTPUT = 1
-    MP_TYPE = 1
-    MBX_SIZE = 0
+    LSTATS = true,
+    LDETAILED_STATS = false,
+    LSYNCSTATS = false,
+    LSTATSCPU=false,
+    NPRNT_STATS=446,
+    LBARRIER_STATS=false,
+    LBARRIER_STATS2=false,
+    NPROC = 446,      ! Number of MPI ranks (cores of no OpenMP)
+    NSPECRESMIN=400,
+    NOUTPUT = 1,
+    MP_TYPE = 2, ! 1=blocked   (MPI_SEND/RECV)
+                 ! 2=buffered  (MPI_BSEND/MPI_BRECV)
+                 ! 3=immediate (MPI_ISEND/MPI_IRECV)
+    MBX_SIZE = 96000000,
 /
 
 &NAMDYNA
-    LSLAG = .true.
-    LNHEE = .false.
-    LNHQE = .false.
-    LGRADSP = .false.
+    LSLAG=true,
+    LNHEE=false,
+    LNHQE=false,
+    LGRADSP=false
 /
 
 &NAMDYNCORE
-    LAQUA = .false.
+    LAQUA = false,
 /
 
 &NAMDYN
-    LMASCOR = .true. ! .false. !.true. ! MASS correction switsched off for testing ; no change
-    NITMP = 3
-    LMASDRY = .false.
+    LMASCOR = true,
+    NITMP = 3,
+    LMASDRY = false ! default:F
 /
 
 &NAMNMI
-    LASSI = .false.
 /
 
 &NAMCT0
-    LARPEGEF = .false.
-    LFDBOP = .false.
-    LSMSSIG = .false.
-    N3DINI = 0
-    NFRDHP = 12
-    NFRDHFD = 1
-    NFRSDI = 1
-    NFRPOS = 24
-    NFRHIS = 24
-    NFRMASSCON = 1
-    NFPOS = 2
-    NPOSTS = 0
-    NHISTS = 0
-    NMASSCONS = 0
-    NFRCO = 4
-    NFRDHFZ = 48
-    NDHFZTS = 0
-    NDHFDTS = 0
-    NUNDEFLD = -999999
-    CMETER = 'xmeter'
-    CEVENT = 'xevent'
-    LXIOS = .true.
+    LARPEGEF = false,
+    LFDBOP = false,
+    LSMSSIG = false,
+    N3DINI = 0,
+    NFRDHP = 12,
+    NFRDHFD = 1,
+    NFRSDI = 1,
+    NFRPOS = 6,
+    NFRHIS = 6,
+    NFRMASSCON = 1,
+    NFPOS = 2,
+    NPOSTS = 0,
+    NHISTS = 0,
+    NMASSCONS = 0,
+    NFRCO = 4,
+    NFRDHFZ = 48,
+    NDHFZTS = 0,
+    NDHFDTS = 0,
+    NUNDEFLD = -999999,
+    CMETER = "xmeter",
+    CEVENT = "xevent",
+    LXIOS = true,
+    NOUTPUT_XIOS = 1,
+    NSPPR = -1,
 /
 
 &NAMDDH
-    BDEDDH(1:6,1) = 4.0, 1.0, 0.0, 50.0, 0.0, 49.0
-    NDHKD = 72
-    LHDZON = .false.
-    LHDEFZ = .false.
-    LHDDOP = .false.
-    LHDEFD = .false.
-    LHDGLB = .true.
-    LHDPRG = .true.
-    LHDHKS = .true.
 /
 
 &NAMIO_SERV
-    NPROCESS_LEVEL = 5
-    NIO_SERV_METHOD = 2
-    NMSG_LEVEL_CLIENT = 0
-    NMSG_LEVEL_SERVER = 1
+    NPROCESS_LEVEL = 5,
+    NIO_SERV_METHOD = 2,
+    NMSG_LEVEL_CLIENT = 0,
+    NMSG_LEVEL_SERVER = 1,
 /
 
 &NAMGFL
-    YQ_NL%LGP = .true.
-    YQ_NL%LSP = .false.
-    YL_NL%LGP = .true.
-    YI_NL%LGP = .true.
-    YA_NL%LGP = .true.
-    YO3_NL%LGP = .true.
+    LTRCMFQM=true,
+    YQ_NL%LGP = true,
+    YQ_NL%LSP = false,
+    YL_NL%LGP = true,
+    YI_NL%LGP = true,
+    YA_NL%LGP = true,
+    YO3_NL%LGP = true,
     NMFDIAGLEV = 1
     NOPTVFE = 0
-    YA_NL%LGP = .true.
     YI_NL%BETAMFBC = -1
     YI_NL%LGP = .true.
     YI_NL%LINTLIN = .true.
     YL_NL%BETAMFBC = -1
     YL_NL%LGP = .true.
     YL_NL%LINTLIN = .true.
-    YO3_NL%LGP = .true.
-    YQ_NL%LSP = .false.
     YR_NL%BETAMFBC = -1
     YR_NL%LINTLIN = .true.
     YS_NL%BETAMFBC = -1
     YS_NL%LINTLIN = .true.
+! M7 AEROSOLS
 /
 
 &NAMFPC
-    CFPFMT = 'MODEL'
-    NFP3DFP = 3
-    MFP3DFP(:) = 129, 130, 133
-    RFP3P(:) = 100000.0, 92500.0, 85000.0, 70000.0, 60000.0, 50000.0, 40000.0,
-               30000.0, 25000.0, 20000.0, 15000.0, 10000.0, 7000.0, 5000.0,
-               3000.0, 2000.0, 1000.0, 500.0, 100.0
-    NFPPHY = 2
-    MFPPHY(:) = 166, 167
-    NFPCLI = 0
-    LFPQ = .false.
-    LTRACEFP = .false.
-    RFPCORR = 60000.0
+    CFPFMT="MODEL",
+    LTRACEFP=false,
+    RFPCORR=60000.,
 /
 
 &NAMDIM
@@ -269,512 +322,404 @@
 /
 
 &NAMDPHY
-    NCSNEC = 5
+    NCSNEC=5,
 /
 
 &NAMGEM
-    LNONHYD_GEOM = .false.
-    NHTYP = 2
+    NHTYP = 2,
 /
 
 &NAMRIP
     TSTEP = 900
-    CSTOP = 't2976'
+    CSTOP = 'd0000365', ! txx = timesteps, hxx = hours, dxx = days.
 /
-
 &NAMARG
-    NCONF = 1
-    CNMEXP = 'ECE3'
+    NCONF = 1,
+    CNMEXP = 'HC01'
 /
-
 &NAMRLX
 /
-
 &NAMVAR
-    LMODERR = .false.
-    LJCDFI = .false.
-    LUSEJCDFI = .false.
-    LECV = .false.
+    LMODERR = .false.,
+    LJCDFI = .false.,
+    LUSEJCDFI = .false.,
+    LECV = false,
 /
-
 &NAETLDIAG
 /
-
 &NAMVV0
-    LLFORCE_READ = .false.
+    LLFORCE_READ = false,
+/
+&NAMAFN
+/
+&NAMPPC
+    LRSACC = true,             ! reset accumulated fields to zero at model output frequency
+/
+&NAMRIP0
 /
 
 &NAEAER
 /
 
+&NAEPHY
+/
 &NALBAR
 /
-
 &NALORI
 /
-
 &NAM_DISTRIBUTED_VECTORS
 /
-
 &NAM926
 /
-
 &NAMAFN
 /
-
 &NAMANA
 /
-
 &NAMARPHY
 /
-
 &NAMCA
 /
-
 &NAMCAPE
 /
-
 &NAMCFU
 /
-
 &NAMCHK
 /
-
 &NAMCHET
 /
-
 &NAMCLDP
-    RCLDIFF = 5e-06
+    RCL_OVERLAPLIQICE = 0.1,
 /
-
 &NAMCLTC
 /
-
 &NAMCOM
 /
-
 &NAMCOS
 /
-
 &NAMCTAN
 /
-
 &NAMCUMF
 /
-
 &NAMCUMFS
 /
-
 &NAMCT1
+N1GDI = 0,
 /
-
 &NAMCVA
 /
-
+&NAMDDH
+/
 &NAMDFHD
 /
-
 &NAMDFI
 /
-
 &NAMDIF
 /
-
+&NAMDIM
+/
 &NAMDIMO
 /
-
 &NAMDMSP
 /
-
+&NAMDPHY
+/
+&NAMDYN
+/
+&NAMDYNA
+/
 &NAMDYNA_STATIC
 /
-
+&NAMDYNCORE
+/
 &NAMEMIS_CONF
 /
-
 &NAMENKF
 /
-
 &NAMFA
 /
-
 &NAMFFT
 /
-
-&NAMFPD
-    NLAT = 640
-    NLON = 1280
+&NAMFPC
 /
-
+&NAMFPD
+/
 &NAMFPDY2
 /
-
 &NAMFPDYH
 /
-
 &NAMFPDYP
 /
-
 &NAMFPDYS
 /
-
 &NAMFPDYT
 /
-
 &NAMFPDYV
 /
-
 &NAMFPEZO
 /
-
 &NAMFPF
 /
-
 &NAMFPG
-    NFPLEV = 137
-    NFPMAX = 319
 /
-
 &NAMFPIOS
 /
-
 &NAMFPPHY
 /
-
 &NAMFPSC2
 /
-
 &NAMFPSC2_DEP
 /
-
 &NAMFY2
 /
-
+&NAMGEM
+/
+&NAMGFL
+/
 &NAMGMS
 /
-
 &NAMGOES
 /
-
 &NAMGOM
 /
-
+&NAMGRIB
+/
 &NAMGWD
 /
-
 &NAMGWWMS
 /
-
 &NAMHLOPT
 /
-
 &NAMINI
 /
-
 &NAMIOMI
 /
-
+&NAMIOS
+/
 &NAMJBCODES
 /
-
 &NAMJFH
 /
-
 &NAMJG
 /
-
 &NAMJO
 /
-
 &NAMKAP
 /
-
 &NAMLCZ
 /
-
 &NAMLEG
 /
-
 &NAMLFI
 /
-
+&NAMMCC
+/
 &NAMMCUF
 /
-
 &NAMMETEOSAT
 /
-
 &NAMMTS
 /
-
 &NAMMTSAT
 /
-
 &NAMMTT
 /
-
 &NAMMUL
 /
-
+&NAMNMI
+/
 &NAMNASA
 /
-
 &NAMNN
 /
-
 &NAMNPROF
 /
-
 &NAMNUD
 /
-
 &NAMOBS
 /
-
 &NAMONEDVAR
 /
-
 &NAMOPH
 /
-
 &NAMOPTCMEM
 /
-
+&NAMPAR0
+/
 &NAMPARAR
 /
-
+&NAMPAR1
+/
 &NAMPHY
 /
-
 &NAMPHY0
 /
-
 &NAMPHY1
 /
-
 &NAMPHY2
 /
-
 &NAMPHY3
 /
-
 &NAMPHYDS
 /
-
 &NAMPPC
-    LRSACC = .true.
 /
-
 &NAMPONG
 /
-
 &NAMRAD15
 /
-
 &NAMRADCMEM
 /
-
 &NAMRCOEF
 /
-
+&NAMRES
+/
 &NAMRINC
 /
-
+&NAMRIP
+/
 &NAMSATS
 /
-
 &NAMSCC
 /
-
 &NAMSCEN
 /
-
 &NAMSCM
 /
-
 &NAMSENS
 /
-
 &NAMSIMPHL
 /
-
 &NAMSKF
 /
-
 &NAMSPSDT
 /
-
 &NAMSPP
 /
-
 &NAMSSMI
 /
-
 &NAMSTA
 /
-
 &NAMSTOPH
 /
-
 &NAMTCWV
 /
-
 &NAMTESTVAR
 /
-
 &NAMTOPH
 /
-
 &NAMTOVS
 /
-
 &NAMTRAJP
 /
-
+&NAMTRANS
+/
 &NAMTRM
 /
-
+&NAMVAR
+/
 &NAMVARBC
 /
-
 &NAMVARBC_AIREP
 /
-
 &NAMVARBC_ALLSKY
 /
-
 &NAMVARBC_GBRAD
 /
-
 &NAMVARBC_RAD
 /
-
 &NAMVARBC_SFCOBS
 /
-
 &NAMVARBC_TCWV
 /
-
 &NAMVARBC_TO3
 /
-
 &NAMVAREPS
 /
-
 &NAMVDOZ
 /
-
 &NAMVFP
 /
-
 &NAMVRTL
 /
-
+&NAMVV0
+/
 &NAMVV1
 /
-
 &NAMVV2
 /
-
 &NAMVWRK
 /
-
 &NAMWAVELETJB
 /
-
 &NAMXFU
 /
-
 &NAMZDI
 /
-
 &NAPHLC
 /
-
 &NAV1IS
 /
-
 &NAEPHLI
 /
-
+&NAMCVER
+/
 &NAMPPVI
 /
-
 &NAMSPNG
 /
-
+&NAMRLX
+/
 &NAMTHLIM
 /
-
 &NAMOOPS
 /
-
 &NAMINTFLEX
 /
-
 &NAMIAU
 /
-
 &NAMDIM_TRAJ
 /
-
 &NAMVDF
 /
-
 &NAMGWDIAG
 /
-
 &NAMTRANS0
 /
-
 &NAMMETHOX
 /
-
 &NAM_ATLAS_IFS
 /
-
+&NAETLDIAG
+/
 &NAMACV
 /
-
 &NAM_MGRIDS_ADVECTION
 /
-
 &NAMTRAJ
 /
-
 &NAMSATSIM
 /
-
 &NAMCMEM_MW
 /
-
 &NAMPHMSE
 /
-
 &NAMNORGWD
 /
-
 &NAMCLRADLID
 /
-
 &NAMDVISI
 /
-
 &NAM_MGRIDS_ADVECTION
 /
-
 &NAMNUDGLH
 /
-
 &NAMPERTOBS
 /
-
 &NAMVARBC_MODES
 /
-
-&NAMECECFG
-    ECE_CPL_NEMO_LIM = .true.
-    ECE_CPL_NEMO_CONSERVATIVE_HEATFLUX = .true.
+&NAMM7CTL
 /
-&NAMECECMIP
+&NAMCHEM
+/
+&NAMCOMPO
 /

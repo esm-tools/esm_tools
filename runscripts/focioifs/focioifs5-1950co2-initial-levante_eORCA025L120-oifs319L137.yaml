@@ -88,7 +88,7 @@ oifs:
    scenario: "piControl"
    copy_forcing: true
    mip: ""
-   o3_scheme: default
+   o3_scheme: none # all CMIP7 settings are in fort.4 already 
    pool_dir: /work/bb1460/foci_input2/
    input_dir: "${pool_dir}/openifs_cy48_tco319/"
    rtables_dir: "${pool_dir}/openifs_cy48_general/rtables/"
@@ -96,8 +96,8 @@ oifs:
    tl_o3_data_dir: "${pool_dir}/openifs_cy48_tco319/"
    ifsdata_dir: "${pool_dir}/openifs_cy48_general/ifsdata/"
    cmip5_data_dir: "${pool_dir}/openifs_cy48_general/cmip5_ghg/"
-   cmip6_data_dir: "${pool_dir}/openifs_cy48_general/cmip6-data/"
-   #cmip7_data_dir: "${pool_dir}/openifs_cy48_general/cmip7-data/"
+   #cmip6_data_dir: "${pool_dir}/openifs_cy48_general/cmip6-data/"
+   cmip7_data_dir: "${pool_dir}/openifs_cy48_general/cmip7-data/"
    icmcl_dir: "${pool_dir}/openifs_cy48_tco319/${prepifs_startdate}00/"
    icmcl_file: "ICMCLabooINIT"
    # This would use initial conditions from ERA-Interim 2008-01-01
@@ -126,6 +126,19 @@ oifs:
    add_input_files:
        icmcl: icmcl
 
+   add_namelist_changes:
+      fort.4:
+         NAMECECMIP:
+            LCMIP6: false
+            LCMIP7: true
+            CMIP7DATADIR: ${cmip7_data_dir} 
+            NCMIPFIXYR: 1950
+         NAERAD:
+            LCMIP_STRATAER_CMIP7: false
+            NO3CMIP: 7
+            CO3DATADIR: ${cmip7_data_dir}/
+         NAEPHY:
+            LRDALB: true
 oasis3mct:
    # DONE
    # cd /home/b/b383098/_work/foci_input2
@@ -149,7 +162,7 @@ oasis3mct:
    # in FOCIOIFS all oasis input files are treated as restarts.
    # in FOCI all remapping files are handled as inputs. Both approaches work.
    #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
-   #oasis_date_stamp: "${general.oasis_date_stamp}"
+   oasis_date_stamp: "${general.oasis_date_stamp}"
    #oasis_date_stamp: "" 
    coupling_time_step: 900
 
@@ -182,6 +195,8 @@ nemo:
    time_step: 900
    add_namelist_changes:
        namelist_cfg:
+          namdom:
+               ln_meshmask: false
           namtsd:
                 cn_dir: '${input_dir}'
                 sn_tem: ['ctemp_an_WOA13_ctemp-eORCA025.L120_' , -1. , 'ctemp_an' , .true. ,  .true. , 'yearly' , '' , '' , '']
@@ -295,7 +310,8 @@ rnfmap:
 xios: 
    with_model: focioifs 
    version: 3.0_trunk
-   xml_dir: /home/b/b383098/_work/b383098/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/ 
+   #xml_dir: /home/b/b383098/_work/b383098/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/ 
+   xml_dir: ${general.model_dir}/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/ 
    nproc: 180
    omp_num_threads: 1
 
@@ -318,4 +334,4 @@ computer:
            OIFS_LOGFILE: '${model_dir}/oifs-48r1/build/oifs_test_log.txt'
            # required on glogin where eccodes is not available for
            # all compiler versions, specific to oifs48r1
-           PATH: "${general.model_dir}/${oifs.destination}/install/bin"
+           PATH: "${general.model_dir}/${oifs.destination}/install/bin:$PATH"

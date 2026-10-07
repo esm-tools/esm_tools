@@ -369,6 +369,8 @@ general:
             pool_dir: "/proj/awi/input"
         albedo:
             pool_dir: "/albedo/pool/"
+        container:
+            pool_dir: "/pool/"
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -1769,6 +1771,10 @@ xios:
         TL:
             regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"
             regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"
+        # Full Gaussian grid N = (3T+1)/4: 2N latitudes, 4N longitudes
+        TQ:
+            regular_res_lat: "$(( (3*${oifs.res_number}+1)//4*2 ))"    #For TQ21->32
+            regular_res_lon: "$(( (3*${oifs.res_number}+1)//4*4 ))"    #For TQ21->64
     cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
     choose_cmip7_cmor_output:
         True:

@@ -1,0 +1,117 @@
+# Smallest AWI-ESM3 configuration: OpenIFS TQ21 L19 + FESOM PI mesh + LPJ-GUESS,
+# for the Docker container (see configs/machines/container.yaml).
+# One day, cold start, natural vegetation only, 7 MPI tasks in total.
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "none"
+    compute_time: "00:30:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-02"
+    base_dir: "/work/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+    use_venv: False
+
+computer:
+    taskset: false
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/home/esm/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "pi"
+    lresume: false
+    time_step: 1800
+    nproc: 2
+    omp_num_threads: 1
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+
+lpj_guess:
+    nproc: 1
+    omp_num_threads: 1
+    lresume: false
+    firemodel: NOFIRE
+    output_mode: collect_txt
+    # Natural vegetation only: no land-use, peat or fire inputs exist for TQ21
+    run_peatland: 0
+    run_landcover: 0
+    use_luh3_input: 0
+    # Empty: LPJ-GUESS uses one constant pre-industrial N deposition everywhere
+    ndep_cmip_dir: ""
+    # ... so do not stage them either
+    remove_forcing_files:
+        - drynhx
+        - drynoy
+        - wetnhx
+        - wetnoy
+        - peat
+        - simfire_ba
+        - simfire_popdens
+
+oifs:
+    resolution: TQ21
+    levels: "L19"
+    prepifs_expid: epc8
+    input_expid: awi3
+    wam: false
+    lresume: false
+    time_step: 3600
+    nproc: 2
+    omp_num_threads: 1
+    # No CMIP forcing: the CMIP7 stratospheric aerosol files exist only for
+    # 60, 91 and 137 levels, and the full set is tens of GB. These are the
+    # OpenIFS source defaults, i.e. the built-in climatologies from ifsdata,
+    # as in ECMWF's own T21 test case.
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                LCMIP7: False
+                LCMIP6: False
+                LMACV2SP: False
+                LMACV2SP_CCNF: False
+            NAERAD:
+                NO3CMIP: 0
+                LCMIP_STRATAER_CMIP7: False
+                LCMIP_STRATAER_BCKGD: False
+            # The T21 initial file (ICMGGepc8INIUA) holds q, cloud water, cloud ice
+            # and cloud cover only. As in ECMWF's T21 test namelist: no prognostic
+            # ozone, and rain and snow start from zero instead of being read.
+            NAMGFL:
+                YO3_NL%LGP: ".false."
+                YR_NL%NREQIN: -1
+                YS_NL%NREQIN: -1
+            NAEPHY:
+                LEO3CH: False
+            # Domain diagnostics off. DRESDDH posts them with a blocking MPI_Send
+            # on every rank at once and relies on MPI buffering; with Open MPI in
+            # the container the two ranks deadlock at the first posting step
+            # (step 12, NFRDHP). Raising btl_vader_eager_limit to 1 MB did not help.
+            NAMDDH:
+                LHDGLB: False
+                LHDPRG: False
+                LHDHKS: False
+
+oasis3mct:
+    use_lucia: false
+    lresume: false
+    time_step: 3600
+
+rnfmap:
+    nproc: 1
+    # The setup default is one full node of threads, which makes esm_runscripts
+    # request one node per component; the container has a single node
+    omp_num_threads: 1
+
+xios:
+    with_model: oifs
+    nproc: 1
+    omp_num_threads: 1
+    # This XIOS compresses with a blosc/zstd HDF5 filter plugin, which is not
+    # built in the container; 0 writes uncompressed and skips the filter
+    compression_level: 0

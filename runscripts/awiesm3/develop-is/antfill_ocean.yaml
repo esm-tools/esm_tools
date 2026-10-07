@@ -200,7 +200,14 @@ oifs:
             NAMECECMIP:
                 LCMIP6: False
                 LCMIP7: True
-                CMIP7DATADIR: "/albedo/work/user/${general.user}/levante_shared/a270092/input/oifs-48r1/cmip7-data/"
+                # CMIP7DATADIR is NOT set here. oifs48.cmip.yaml derives it, with
+                # CO3DATADIR and CCMIP_STRAT_FULL*, from ${input_dir}/cmip7-data =
+                # /albedo/pool/oifs-48r1/cmip7-data, which holds the complete CMIP7
+                # set (727 files). Pointing it at the levante_shared copy instead
+                # left the three siblings on the pool and this one on a directory
+                # that holds nothing but dust/, so OIFS aborted on the first
+                # UPDRGAS call: "ECE_CMIP_GHG: No such file or directory" for
+                # ghg/co2_input4MIPs_...nc (antftest4, 2026-10-07).
                 NCMIPFIXYR: 1850
                 SCENARIONAME: 'SSP2-4.5'
                 LMACV2SP: True

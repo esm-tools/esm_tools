@@ -168,6 +168,38 @@ definition-list mess.
 - `license` defaulting to `"proprietary"` is the honest default when nothing
   is configured. No change proposed.
 
+### Item-level redundant properties (also in scope)
+
+`_build_properties` (`item.py:139`) sets six bare, unprefixed item
+properties on every Item — the same untitled-"General"-card problem as
+`components` had on the Collection, except this repeats across all ~393k
+items instead of once per experiment. Two are unconditionally redundant with
+a real STAC field already being set from the same source data, confirmed by
+reading the actual call sites, not assumed:
+
+- **`experiment`** — `item.py:97` already passes `collection=
+  exp_metadata.collection_id` to the `Item(...)` constructor, i.e. pystac's
+  real, core, top-level `item.collection` field already carries the exact
+  same value. Drop the bare `properties["experiment"]` entirely.
+- **`format`** — `_build_asset` (`item.py:238`) already derives the asset's
+  real `type` (media type) from the same `file_metadata.format` the bare
+  `properties["format"]` duplicates. Drop it; the asset's `type` already
+  carries the information, correctly encoded.
+- **`variable`/`variables`** — conditionally redundant with `cube:variables`
+  (`datacube.py`, already wired via the pluggy hook), which is built from the
+  same `file_metadata.variables`. But `datacube.py:62` no-ops when
+  `file_metadata.dimensions` is empty, so the bare property is the *only*
+  place this data lives when datacube didn't fire. Keep it, but only when
+  `cube:variables` wasn't set for that item — not a blind drop.
+
+`component`, `stream`, `frequency` have no existing STAC field or
+already-wired extension to fold into (checked `cmip6:*`'s real facet set —
+`activity_id`/`source_id`/`variant_label`/etc., no `frequency`, and it only
+fires for CMIP-aligned experiments anyway). Giving them a proper home would
+need a new small first-party extension (an `esm:` prefix, same pattern as
+`namelist`/`paleo`) — bigger than a rename, **deferred out of this change**
+pending a separate decision on scope.
+
 ### Filesystem paths in parameter values (considered, no change)
 
 Several parameters are absolute HPC paths (`meshpath`, `resultpath`,
@@ -219,6 +251,10 @@ re-scan step; not resolved in this spec.
   (not just flattened).
 - Schema conformance tests (`stac_ext.apply_extension`'s validation path)
   against the new `v2.0.0` schema, both Item and Collection branches.
+- `item.py` unit tests: `properties` no longer carries `experiment`/`format`;
+  `item.collection` and the asset's `type` still carry the same values.
+  `variable`/`variables` present when `cube:dimensions` is absent, absent
+  when `cube:variables` fired.
 - The live asterix-001 before/after comparison above stands in for an
   end-to-end check a unit test can't give: does the actual STAC browser
   render it well.

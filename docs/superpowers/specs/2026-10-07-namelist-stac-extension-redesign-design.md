@@ -63,6 +63,37 @@ Conclusion: nesting is safe **only if every leaf is explicitly registered**
 as a dotted-path queryable. Never rely on the unregistered fallback for a
 nested property.
 
+## Browser rendering, confirmed empirically
+
+A separate session ran `asterix-001`'s live collection JSON through STAC
+Browser 5.1's actual renderer
+(`@radiantearth/stac-fields` ~1.6.1, the library that does essentially all of
+the Metadata section's work — card grouping, labels, value formatting), not
+just reasoning about the API shape. Findings that confirm or bound this
+design:
+
+- **Card title**: confirmed independently — an unregistered prefix is
+  title-cased by `formatKey`. `namelist` isn't one of the library's 47
+  pre-registered extension labels (`cube`, `sci`, `proj`, ... ), so it
+  renders as plain "Namelist". Corroborates the rename.
+- **Native field placement**: `keywords`, `providers`, `license`, `assets`,
+  `item_assets` are drawn in fixed page sections outside Metadata entirely —
+  confirms moving `components` to `keywords` removes the untitled card, and
+  that `providers` entries take `name`/`roles` (`licensor`/`producer`/
+  `processor`/`host`)/`url`.
+- **Two cosmetic limits nesting does NOT fix** — both are
+  `stac-fields`/`fields.config.js` build-time concerns (a STAC Browser
+  rebuild we don't control), explicitly out of scope for this spec:
+  - **Number formatting**: values are locale-formatted by the generic
+    fallback, so `delta_min = 1e-11` displays as `0` and `yr_perp = 1850`
+    gets a thousands separator. Storing values as strings to dodge this
+    would break `queryable_value`'s numeric typing and CQL2 numeric
+    comparison — not worth it for a display quirk.
+  - **Flat repeated-record arrays**: `io_list`-style values (Fortran
+    output-interval tuples) render as one flat bullet list (116 items)
+    instead of a 29×4 table. Fixing this generically would mean guessing a
+    stride per array by name — fragile, whack-a-mole, not attempted.
+
 ## Design
 
 ### One vocabulary: `nml` → `namelist`, both scopes
@@ -136,6 +167,16 @@ definition-list mess.
   `general_metadata`, not a code bug. No change proposed here.
 - `license` defaulting to `"proprietary"` is the honest default when nothing
   is configured. No change proposed.
+
+### Filesystem paths in parameter values (considered, no change)
+
+Several parameters are absolute HPC paths (`meshpath`, `resultpath`,
+`out_datapath`, tidal-forcing files, `ifile_transit`), one including an
+account/project path segment, published on `stac-dev.awi.de`'s
+unauthenticated-readable API (confirmed: a plain unauthenticated `curl` to
+`/api/collections` returns `200` with full collection bodies). Raised
+explicitly and decided: these are internal cluster paths, not sensitive —
+left as-is. No redaction/stripping added by this change.
 
 ### Schema version bump
 

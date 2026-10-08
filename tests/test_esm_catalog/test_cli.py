@@ -56,7 +56,7 @@ def test_auth_subcommands_registered(runner):
 
 def test_scan_missing_run_reports_clean_error(runner):
     """A directory with no finished_config yields a one-line error, no traceback."""
-    result = runner.invoke(main, ["scan", "--exp-root", "/nonexistent/xyz"])
+    result = runner.invoke(main, ["workflow", "scan", "--exp-root", "/nonexistent/xyz"])
     assert result.exit_code != 0
     assert "scan requires a completed ESM-Tools run" in result.output
     assert "Traceback" not in result.output
@@ -106,8 +106,8 @@ def fake_connect(monkeypatch):
         def delete_collection(self, cid):
             calls.append(("delete_collection", cid))
 
-        def list_items(self, cid, limit=None):
-            calls.append(("list_items", cid, limit))
+        def list_items(self, cid, limit=None, cql2_filter=None):
+            calls.append(("list_items", cid, limit, cql2_filter))
             return {"features": [{"id": "i1", "collection": cid}], "numberMatched": 1}
 
         def get_item(self, cid, iid):

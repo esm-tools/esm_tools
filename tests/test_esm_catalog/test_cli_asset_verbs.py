@@ -64,7 +64,7 @@ def _build_experiment(tmp_path) -> UPath:
 
 
 def _scan(runner, exp_root) -> None:
-    result = runner.invoke(main, ["scan", "--exp-root", str(exp_root)])
+    result = runner.invoke(main, ["workflow", "scan", "--exp-root", str(exp_root)])
     assert result.exit_code == 0, result.output
 
 

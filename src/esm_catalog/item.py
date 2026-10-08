@@ -1,22 +1,38 @@
-"""Build a STAC Item from file metadata and experiment metadata."""
+"""Build a STAC Item (one asset) for a single output file.
+
+An Item is identified by ``(component, stream)`` -- a growing dataset, not a
+file. Many files of the same stream, scanned across many runs, all produce
+Items sharing the same id, each carrying exactly one asset for its own file.
+Reconciling them into one logical Item with every accumulated asset happens
+at push time (see :mod:`esm_catalog.push`), not here -- this module only ever
+builds the single-asset view for one file.
+"""
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
+from typing import Optional
 
 from pystac import Asset, Item, Link
 from upath import UPath
 
-from esm_catalog.datacube import add_datacube_item_extension
 from esm_catalog.models import ExperimentMetadata
-from esm_catalog.namelist import add_namelist_item_extension
-from esm_catalog.paleo import add_paleo_item_extension
+from esm_catalog.plugins import get_plugin_manager
 from esm_catalog.types import FileMetadata, Href
 
 ItemId = str
-"""A STAC Item id, e.g. 'tas.echam.20000101.a1b2c3'."""
+"""A STAC Item id: ``{component}-{stream}``, e.g. 'fesom-restart', 'echam-echam_nc'."""
+
+AssetKey = str
+"""A single asset's key within its Item: ``{semantic_name}_{timestamp}`` for a
+restart asset (several restart categories share one Item), or just
+``{timestamp}`` for a data asset (the stream name already carries the
+semantic identity, so only the timestamp disambiguates)."""
+
+FX_FREQUENCY = "fx"
+"""The ``properties.frequency`` value marking a time-invariant item (CMIP 'fx');
+the scan layer routes these to the mutable fx shard."""
 
 
 def make_item(
@@ -31,7 +47,7 @@ def make_item(
     path : Path or UPath or str
         Path to the source file (local Path, UPath, or URI string).
     file_metadata : FileMetadata
-        The file's scanned metadata (scan_netcdf/scan_grib output).
+        The file's scanned metadata (a Reader's output, e.g. NetCdfReader).
     exp_metadata : ExperimentMetadata
         Experiment identity and pre-scanned config (experiment_id, namelists,
         paleo config). Contacts are set on the Collection.
@@ -39,29 +55,45 @@ def make_item(
     Returns
     -------
     pystac.Item
-        A STAC Item for the file, with the datacube, namelist, and paleo
-        extensions applied where the metadata warrants them.
+        A STAC Item for the file, with every registered item-contract
+        extension (see :mod:`esm_catalog.plugins`) applied where its metadata
+        warrants it. A time-invariant (fx) file, one with no per-file
+        datetime, is placed across the experiment's run span and marked
+        ``frequency == "fx"``.
+
+    Raises
+    ------
+    ValueError
+        If the file has no per-file datetime and the experiment has no run span
+        (``run_start``/``run_end``) to place it across.
     """
     if isinstance(path, str):
         path = UPath(path if "://" in path else Path(path).resolve())
 
-    dt_start, dt_end, item_datetime = _build_datetime(file_metadata)
-    item_id = _build_id(
-        file_metadata.get("variable", "unknown"),
-        file_metadata.get("component", "unknown"),
-        file_metadata.get("datetime_str", "000000"),
-        path,
+    dt_start, dt_end, item_datetime, is_fx = _build_datetime(
+        file_metadata, exp_metadata
     )
+    # A time-varying file stamps its asset key from its own datetime; a
+    # time-invariant (fx) file has none, so it borrows the experiment run
+    # span's start (dt_start, set to run_start by _build_datetime).
+    id_stamp = file_metadata.datetime_str or dt_start.strftime("%Y%m")
+    stream = file_metadata.stream or file_metadata.variable or "unknown"
+    item_id = _build_id(file_metadata.component or "unknown", stream)
+    asset_key = _build_asset_key(id_stamp, file_metadata.category)
+
+    properties = _build_properties(file_metadata, exp_metadata)
+    if is_fx:
+        properties["frequency"] = FX_FREQUENCY
 
     item = Item(
         id=item_id,
-        geometry=file_metadata.get("geometry"),
-        bbox=file_metadata.get("bbox"),
+        geometry=file_metadata.geometry,
+        bbox=file_metadata.bbox,
         datetime=item_datetime,
-        properties=_build_properties(file_metadata, exp_metadata),
+        properties=properties,
         start_datetime=dt_start,
         end_datetime=dt_end,
-        assets={"data": _build_data_asset(path, file_metadata)},
+        assets={asset_key: _build_asset(path, file_metadata)},
         collection=exp_metadata.collection_id,
     )
 
@@ -73,36 +105,35 @@ def make_item(
         )
     )
 
-    add_datacube_item_extension(item, file_metadata)
-    add_namelist_item_extension(item, exp_metadata.namelists_by_component)
-    add_paleo_item_extension(item, exp_metadata.paleo_config)
+    # hints: a free-form payload an extension can use to share values across
+    # its own calls (see esm_catalog.namelist/paleo, which memoize their own
+    # per-experiment properties internally rather than through this dict) --
+    # nothing populates it centrally, so it's empty by default.
+    get_plugin_manager().hook.apply_to_item(
+        item=item, file_metadata=file_metadata, exp_metadata=exp_metadata, hints={}
+    )
 
     return item
 
 
-def _build_id(
-    variable: str, component: str, datetime_str: str, path: Path | UPath
-) -> ItemId:
-    """Build a stable unique item id of the form {variable}.{component}.{datetime_str}.{hash}.
-
-    Parameters
-    ----------
-    variable : str
-        The primary data variable name.
-    component : str
-        The model component that produced the file.
-    datetime_str : str
-        The file's nominal timestamp, already formatted for the id.
-    path : Path or UPath
-        The source file path, hashed to disambiguate otherwise-identical ids.
-
-    Returns
-    -------
-    ItemId
-        The composed item id.
+def _build_id(component: str, stream: str) -> ItemId:
+    """Build the Item id for a ``(component, stream)`` -- a growing dataset,
+    not a file. Every file of this stream, from every scan of this
+    experiment, produces an Item sharing this same id (see the module
+    docstring for how those get reconciled at push time).
     """
-    path_hash = hashlib.md5(str(path).encode()).hexdigest()[:6]
-    return f"{variable}.{component}.{datetime_str}.{path_hash}"
+    return f"{component}-{stream}"
+
+
+def _build_asset_key(timestamp: str, category: Optional[str]) -> str:
+    """Build this file's asset key within its Item.
+
+    A restart file's stream ('restart') covers several categories
+    (oce_restart, ice_restart, ...) in one Item, so the category prefixes the
+    key to keep them distinct; a data file's stream already carries the
+    semantic identity, so the timestamp alone is enough.
+    """
+    return f"{category}_{timestamp}" if category else timestamp
 
 
 def _build_properties(
@@ -125,18 +156,19 @@ def _build_properties(
     """
 
     properties: dict = {
-        "variable": file_metadata.get("variable", "unknown"),
+        "variable": file_metadata.variable or "unknown",
         "experiment": exp_metadata.experiment_id,
-        "component": file_metadata.get("component", "unknown"),
-        "format": file_metadata.get("format", "unknown"),
+        "component": file_metadata.component or "unknown",
+        "stream": file_metadata.stream or "unknown",
+        "format": file_metadata.format or "unknown",
     }
-    if file_metadata.get("output_frequency"):
-        properties["output_frequency"] = file_metadata["output_frequency"]
+    if file_metadata.frequency:
+        properties["frequency"] = file_metadata.frequency
 
     variable_names = [
-        variable["name"]
-        for variable in file_metadata.get("variables", [])
-        if variable.get("name") and variable["name"] != "unknown"
+        variable.name
+        for variable in file_metadata.variables
+        if variable.name and variable.name != "unknown"
     ]
     if len(variable_names) > 1:
         properties["variables"] = variable_names
@@ -146,49 +178,80 @@ def _build_properties(
 
 def _build_datetime(
     file_metadata: FileMetadata,
-) -> tuple[datetime | None, datetime | None, datetime | None]:
-    """Parse and normalise the datetime fields from file metadata.
+    exp_metadata: ExperimentMetadata,
+) -> tuple[Optional[datetime], Optional[datetime], Optional[datetime], bool]:
+    """Parse and normalise the datetime fields for the item.
 
     Naive datetimes are assumed UTC and made timezone-aware.
+
+    A time-varying file carries a per-file ``datetime_start``; it keeps that
+    time (single instant, or an interval when ``datetime_end`` differs). A
+    time-invariant (fx) file has no ``datetime_start``: STAC forbids a truly
+    timeless Item, so it is placed across the experiment's run span
+    (``run_start``/``run_end``) with a null instant, and flagged as fx.
 
     Parameters
     ----------
     file_metadata : FileMetadata
         The file's scanned metadata.
+    exp_metadata : ExperimentMetadata
+        The owning experiment; its ``run_start``/``run_end`` provide the span
+        for a time-invariant file.
 
     Returns
     -------
-    tuple of (datetime or None, datetime or None, datetime or None)
-        ``(dt_start, dt_end, item_datetime)``. ``item_datetime`` is set only for
-        a single-time file (start == end, or no end), otherwise None.
+    tuple of (datetime or None, datetime or None, datetime or None, bool)
+        ``(dt_start, dt_end, item_datetime, is_fx)``. For a time-varying file,
+        ``item_datetime`` is set only for a single instant (start == end, or no
+        end) and ``is_fx`` is False. For an fx file, ``dt_start``/``dt_end`` are
+        the run span, ``item_datetime`` is None, and ``is_fx`` is True.
+
+    Raises
+    ------
+    ValueError
+        If the file has no per-file datetime and the experiment has no run span.
     """
-    dt_start = file_metadata.get("datetime_start")
-    dt_end = file_metadata.get("datetime_end")
-    if dt_start and dt_start.tzinfo is None:
-        dt_start = dt_start.replace(tzinfo=timezone.utc)
-    if dt_end and dt_end.tzinfo is None:
-        dt_end = dt_end.replace(tzinfo=timezone.utc)
+    dt_start = _as_utc(file_metadata.datetime_start)
+    dt_end = _as_utc(file_metadata.datetime_end)
+
+    if dt_start is None:
+        run_start = _as_utc(exp_metadata.run_start)
+        run_end = _as_utc(exp_metadata.run_end)
+        if run_start is None or run_end is None:
+            raise ValueError(
+                "cannot place a time-invariant item: experiment has no "
+                "run_start/run_end"
+            )
+        return run_start, run_end, None, True
 
     single = dt_end is None or dt_start == dt_end
-    return dt_start, dt_end, (dt_start if single else None)
+    return dt_start, dt_end, (dt_start if single else None), False
 
 
-def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
-    """Build the single ``data`` asset for the source file.
+def _as_utc(value: Optional[datetime]) -> Optional[datetime]:
+    """Return *value* as a UTC-aware datetime, assuming UTC when it is naive."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def _build_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
+    """Build this file's asset.
 
     Parameters
     ----------
     path : Path or UPath
         The source file path, used for the asset href and title.
     file_metadata : FileMetadata
-        The file's scanned metadata; its ``format`` selects the media type.
+        The file's scanned metadata; its ``format`` selects the media type,
+        its ``role`` ('data' or 'restart') becomes the asset's STAC role.
 
     Returns
     -------
     pystac.Asset
-        The file's data asset.
+        The file's asset.
     """
-    file_format = file_metadata.get("format", "")
+    file_format = file_metadata.format or ""
     media_type = (
         "application/x-grib2" if file_format == "grib" else "application/x-netcdf"
     )
@@ -196,7 +259,7 @@ def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
         href=_to_href(path),
         media_type=media_type,
         title=PurePosixPath(str(path)).name,
-        roles=["data"],
+        roles=[file_metadata.role],
     )
 
 

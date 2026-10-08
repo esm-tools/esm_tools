@@ -27,9 +27,12 @@ The values come from the ``general.paleo`` config section (see
 
 from __future__ import annotations
 
-import pystac
-from typing_extensions import TypedDict  # pydantic needs this flavor as a model field
+from typing import Optional
 
+import pystac
+from pydantic import BaseModel, ConfigDict
+
+from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 
@@ -41,26 +44,32 @@ PaleoLabel = str
 """A free-text label for a paleo interval, e.g. 'LGM' (not a controlled vocabulary)."""
 
 
-class PaleoConfig(TypedDict, total=False):
-    """The ``general.paleo`` config section — every key optional.
+class PaleoConfig(BaseModel):
+    """The ``general.paleo`` config section — every field optional.
 
     A time-slice run sets ``datetime``; a transient run sets ``start_datetime``
     and ``end_datetime``; ``label`` is an optional free-text name.
     """
 
-    datetime: PaleoDatetime
-    start_datetime: PaleoDatetime
-    end_datetime: PaleoDatetime
-    label: PaleoLabel
+    model_config = ConfigDict(extra="allow")
+
+    datetime: Optional[PaleoDatetime] = None
+    start_datetime: Optional[PaleoDatetime] = None
+    end_datetime: Optional[PaleoDatetime] = None
+    label: Optional[PaleoLabel] = None
 
 
 # The config keys map 1:1 onto the paleo: fields — derived from PaleoConfig so
 # the two never drift.
-_KEYS = tuple(PaleoConfig.__annotations__)
+_KEYS = tuple(PaleoConfig.model_fields)
 
 
-def _to_paleo_props(paleo_config: PaleoConfig | None) -> dict:
+def paleo_item_props(paleo_config: Optional[PaleoConfig]) -> dict:
     """Return the ``paleo:*`` fields set by *paleo_config*.
+
+    The same for every item in an experiment -- a bulk caller should compute
+    this once per scan and reuse it, rather than re-validate/re-dump the
+    config per item.
 
     Parameters
     ----------
@@ -73,12 +82,20 @@ def _to_paleo_props(paleo_config: PaleoConfig | None) -> dict:
         The ``paleo:*`` properties; empty when the config is None or sets no
         paleo fields (i.e. not a paleo run).
     """
-    cfg = paleo_config or {}
-    return {f"paleo:{key}": cfg[key] for key in _KEYS if cfg.get(key) is not None}
+    if paleo_config is None:
+        return {}
+    # Accept a dict or a PaleoConfig; normalize to the model at this boundary.
+    paleo_config = PaleoConfig.model_validate(paleo_config)
+    fields_set = paleo_config.model_dump(exclude_none=True)
+    return {f"paleo:{key}": fields_set[key] for key in _KEYS if key in fields_set}
 
 
 def add_paleo_item_extension(
-    item: pystac.Item, paleo_config: PaleoConfig | None = None
+    item: pystac.Item,
+    paleo_config: Optional[PaleoConfig] = None,
+    *,
+    props: Optional[dict] = None,
+    validate: bool = True,
 ) -> None:
     """Set the ``paleo:*`` geological time on *item* from *paleo_config*.
 
@@ -90,16 +107,27 @@ def add_paleo_item_extension(
         The item to annotate in place.
     paleo_config : PaleoConfig or None, optional
         The ``general.paleo`` config section. No-op when it sets no paleo fields.
+    props : dict, optional
+        The already-computed ``paleo:*`` properties (see :func:`paleo_item_props`),
+        when the caller is applying this to many items and has computed it
+        once -- every item in an experiment gets the same paleo config, so
+        validating and dumping it per item is wasted work. Recomputed from
+        *paleo_config* when omitted.
+    validate : bool, optional
+        Whether to jsonschema-validate the item after applying the extension.
+        A bulk caller that already trusts these code paths should pass False
+        after the first item.
     """
-    props = _to_paleo_props(paleo_config)
+    if props is None:
+        props = paleo_item_props(paleo_config)
     if not props:
         return
     item.properties.update(props)
-    apply_extension(item, Extension.paleo)
+    apply_extension(item, Extension.paleo, validate=validate)
 
 
 def add_paleo_collection_extension(
-    collection: pystac.Collection, paleo_config: PaleoConfig | None = None
+    collection: pystac.Collection, paleo_config: Optional[PaleoConfig] = None
 ) -> None:
     """Summarize the ``paleo:*`` geological time on *collection* from *paleo_config*.
 
@@ -113,9 +141,53 @@ def add_paleo_collection_extension(
     paleo_config : PaleoConfig or None, optional
         The ``general.paleo`` config section. No-op when it sets no paleo fields.
     """
-    props = _to_paleo_props(paleo_config)
+    props = paleo_item_props(paleo_config)
     if not props:
         return
     for key, value in props.items():
         collection.summaries.add(key, [value])
     apply_extension(collection, Extension.paleo)
+
+
+#: collection_id -> already-computed paleo:* item props, computed and
+#: validated once per experiment (see :func:`_paleo_props_once`).
+_PROPS_CACHE: dict[str, dict] = {}
+
+
+def _paleo_props_once(exp_metadata) -> tuple[dict, bool]:
+    """The paleo:* item props for *exp_metadata*, computed once per experiment.
+
+    Same reasoning as :func:`esm_catalog.namelist._namelist_props_once`:
+    identical for every item in an experiment, so recompute-and-validate once,
+    cached by ``collection_id`` (``ExperimentMetadata`` itself isn't hashable,
+    and ``experiment_id`` alone is documented as reusable across distinct
+    experiments -- ``collection_id`` is what disambiguates them).
+
+    Returns
+    -------
+    tuple of (dict, bool)
+        The props, and whether this call computed them fresh (the caller
+        should validate only when it did).
+    """
+    collection_id = exp_metadata.collection_id
+    if collection_id in _PROPS_CACHE:
+        return _PROPS_CACHE[collection_id], False
+    props = paleo_item_props(exp_metadata.paleo_config)
+    _PROPS_CACHE[collection_id] = props
+    return props, True
+
+
+@hookimpl
+def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    props, validate = _paleo_props_once(exp_metadata)
+    add_paleo_item_extension(
+        item,
+        exp_metadata.paleo_config,
+        props=props,
+        validate=validate,
+    )
+
+
+@hookimpl
+def apply_to_collection(collection, exp_metadata, hints) -> None:
+    add_paleo_collection_extension(collection, exp_metadata.paleo_config)

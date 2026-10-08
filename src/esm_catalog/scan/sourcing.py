@@ -1,0 +1,888 @@
+"""Source experiment metadata and output-file paths from an ESM-Tools run.
+
+The catalog is built from what an ESM-Tools run *declared*, not from what a
+filesystem walk happens to find. Every completed run writes a ``finished_config``
+(one per run segment) under ``<exp_root>/config/`` recording the experiment's
+identity, its scientific metadata, and the absolute target path of every output
+file. This module reads those configs and turns them into the scan layer's fixed
+contracts -- :class:`~esm_catalog.models.ExperimentMetadata` and
+:class:`~esm_catalog.scan.types.OutputFile` -- so the config is the single,
+authoritative discovery path.
+
+Assumptions about the (loosely specified) finished_config schema, all handled
+tolerantly with ``.get`` and defaults:
+
+* ``general.expid`` holds the experiment id; the filename prefix is the fallback.
+* A run segment's window comes from ``general`` run dates (``start_date`` /
+  ``end_date``, or ``run_datestamp``), falling back to the ``YYYYMMDD-YYYYMMDD``
+  suffix ESM-Tools appends to the filename. ``run_start`` / ``run_end`` on the
+  returned metadata are the min / max across all segments (their union).
+* Experiment metadata lives in ``general.metadata``: ``Description``, ``Authors``
+  (-> :class:`Contact` list) and ``License``. A component's own ``metadata``
+  describes the model, not the experiment, and is not read.
+* The concrete output files (and their MD5s) come from the tidy-phase
+  file-operations logs, the authoritative record of what the run produced. Each
+  component's ``outdata_targets`` mapping holds glob *patterns*, used only as a
+  fallback when tidy logs are absent.
+
+``namelists_by_component`` is populated from ``config/<component>/namelist.*``,
+parsed with f90nml.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from datetime import date, datetime
+from itertools import chain
+from pathlib import Path
+from typing import Any, Callable, Iterable, Optional
+
+import f90nml
+from loguru import logger
+from pydantic import BaseModel, ConfigDict
+from ruamel.yaml import YAML
+from upath import UPath
+
+from esm_catalog.cmip6 import Cmip6Config
+from esm_catalog.models import Contact, ExperimentMetadata
+from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
+from esm_catalog.paleo import PaleoConfig
+from esm_catalog.scan.parallel import parallel_map
+from esm_catalog.scan.types import Md5, OutputFile, RunStamp, Stream
+from esm_catalog.types import ComponentName, ExperimentId
+
+FinishedConfigDoc = dict[str, Any]
+"""A raw parsed finished_config: the ``general`` block plus per-component blocks.
+
+The keys are dynamic (arbitrary component names), so this stays an untyped
+mapping; typed slices (:class:`GeneralBlock`, :class:`MetadataBlock`) are parsed
+out of it at the point of use.
+"""
+
+RunWindow = tuple[datetime, datetime]
+"""A single run segment's (start, end) span."""
+
+
+class GeneralBlock(BaseModel):
+    """The ``general`` section of a finished_config, validated at the parse boundary.
+
+    Fields are the keys the scan reads; every other key is preserved
+    (``extra="allow"``). Values are kept as parsed (``Any``) so the date/paleo
+    coercion helpers see exactly what the YAML supplied.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    expid: Any = None
+    start_date: Any = None
+    initial_date: Any = None
+    current_date: Any = None
+    end_date: Any = None
+    final_date: Any = None
+    run_datestamp: Any = None
+    paleo: Any = None
+
+
+class MetadataBlock(BaseModel):
+    """A ``general.metadata`` block (config-supplied experiment metadata).
+
+    Carries the keys the scan reads for identity and contacts; any other key is
+    preserved (``extra="allow"``).
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    Description: Any = None
+    Authors: Any = None
+    License: Any = None
+    Institute: Any = None
+
+
+@dataclass(frozen=True)
+class TidyOutdataEntry:
+    """One ``outdata`` entry from a tidy log: a produced file and its checksum.
+
+    ``stream`` is the tidy log's own entry key (e.g. ``'echam_nc'``) -- the
+    same config-declared category :func:`_outdata_targets` reads from
+    ``outdata_targets``, just observed via the tidy log instead.
+    """
+
+    component: ComponentName
+    stream: Stream
+    destination: str
+    md5: Optional[Md5]
+
+
+@dataclass(frozen=True)
+class ComponentPath:
+    """A component paired with one of its output paths (config target or walked).
+
+    ``stream`` is the declared category this path came from (an
+    ``outdata_targets``/``restart_out_sources`` key) -- ``None`` for a path
+    found by walking the filesystem, which carries no declared category; the
+    caller resolves an effective stream from the file's own content instead
+    (see :func:`~esm_catalog.scan.ingest.resolve_stream`).
+    """
+
+    component: ComponentName
+    path: UPath
+    stream: Optional[Stream] = None
+
+_CONFIG_SUBDIR = "config"
+_LOG_SUBDIR = "log"
+_OUTDATA_SUBDIR = "outdata"
+_FINISHED_CONFIG_GLOB = "*_finished_config.yaml*"
+_TIDY_LOG_GLOB = "*_file_operations_tidy_*.yaml"
+_FINISHED_CONFIG_MARKER = "_finished_config.yaml"
+
+_START_DATE_KEYS = ("start_date", "initial_date", "current_date")
+_END_DATE_KEYS = ("end_date", "final_date")
+_RESTART_MARKERS = ("restart", "rerun")
+_SIDECAR_SUFFIXES = (".codes", ".idx")
+
+
+class SourcingError(Exception):
+    """Raised when an experiment cannot be sourced from its ESM-Tools config."""
+
+
+@dataclass(frozen=True)
+class _RunConfig:
+    """One run's finished_config: its path and parsed document."""
+
+    path: UPath
+    doc: FinishedConfigDoc
+
+
+def source_experiment(
+    exp_root: UPath, *, run_cfgs: Optional[list[_RunConfig]] = None
+) -> ExperimentMetadata:
+    """Build :class:`ExperimentMetadata` from an experiment's finished_config(s).
+
+    Parameters
+    ----------
+    exp_root : UPath
+        The experiment root directory, containing a ``config/`` subdirectory with
+        one ``*_finished_config.yaml`` per run.
+    run_cfgs : list of _RunConfig, optional
+        Pre-parsed run configs, when the caller already has them (e.g.
+        :func:`~esm_catalog.scan.ingest.scan_experiment` shares one parse with
+        :func:`output_files`). Parsed from *exp_root* when omitted.
+
+    Returns
+    -------
+    ExperimentMetadata
+        Identity, description, license, contacts, paleo config, the run span
+        (min start / max end across all runs), and each component's namelists.
+
+    Raises
+    ------
+    SourcingError
+        If no finished_config is found under ``<exp_root>/config``.
+    """
+    if run_cfgs is None:
+        run_cfgs = _load_run_cfgs(exp_root)
+    docs = [run_cfg.doc for run_cfg in run_cfgs]
+
+    general_metadata = list(_general_metadata_blocks(docs))
+    run_start, run_end = _run_span(run_cfgs)
+
+    return ExperimentMetadata(
+        experiment_id=_experiment_id(run_cfgs),
+        experiment_path=Path(str(exp_root)),
+        description=_first_value(general_metadata, "Description"),
+        data_license=_first_value(general_metadata, "License"),
+        contacts=_contacts(general_metadata),
+        paleo_config=_paleo_config(docs),
+        cmip6_config=_cmip6_config(general_metadata),
+        run_start=run_start,
+        run_end=run_end,
+        components=_components(docs),
+        namelists_by_component=_namelists_by_component(exp_root),
+    )
+
+
+def _components(docs: Iterable[FinishedConfigDoc]) -> list[ComponentName]:
+    """The experiment's components: the union of every segment's ``general.models``.
+
+    Not every non-``general`` top-level block -- a finished_config's top level
+    also carries non-component sections (``computer``, ``defaults``, ...) and
+    baked-in submodels that ``general.models`` deliberately excludes (e.g.
+    ``jsbach``, folded into ``echam``). ``general.models`` is ESM-Tools' own
+    record of which top-level models are actually in the run.
+    """
+    names: set[ComponentName] = set()
+    for doc in docs:
+        general = doc.get("general")
+        if not isinstance(general, dict):
+            continue
+        models = general.get("models")
+        if isinstance(models, list):
+            names.update(str(m) for m in models)
+    return sorted(names)
+
+
+_NAMELIST_GLOB = "namelist.*"
+"""Namelist files live at ``config/<component>/namelist.<name>``."""
+
+_RUN_STAMP_RE = re.compile(r"_\d{8}-\d{8}$")
+"""A per-segment run stamp suffix, e.g. ``_18500101-18500131``."""
+
+
+def _namelists_by_component(exp_root: UPath) -> NamelistsByComponent:
+    """Parse each ``config/<component>/namelist.*`` into an f90nml Namelist.
+
+    The per-segment copies (``namelist.echam_18500101-18500131``) are skipped;
+    the base file (no run-stamp suffix) is the canonical one. A namelist that
+    fails to parse is logged and skipped -- a bad file never aborts the scan.
+    """
+    result: NamelistsByComponent = {}
+    config_dir = exp_root / _CONFIG_SUBDIR
+    if not config_dir.exists():
+        return result
+    for component_dir in sorted(config_dir.iterdir()):
+        if not component_dir.is_dir():
+            continue
+        namelists: ComponentNamelists = {}
+        for path in sorted(component_dir.glob(_NAMELIST_GLOB)):
+            if _RUN_STAMP_RE.search(path.name):
+                continue
+            try:
+                namelists[path.name] = f90nml.reads(path.read_text())
+            except Exception as exc:  # noqa: BLE001 -- a bad namelist is not fatal
+                logger.warning("Skipping unparseable namelist {}: {}", path, exc)
+        if namelists:
+            result[component_dir.name] = namelists
+    return result
+
+
+def _on_exp_fs(exp_root: UPath, destination: str) -> UPath:
+    """Re-anchor a recorded destination path onto exp_root's filesystem.
+
+    Tidy logs and ``outdata_targets`` record destinations as they were seen on
+    the machine that produced the run -- an absolute path, or a full URL. When
+    exp_root is remote (e.g. ``sftp://``) the bare path must be reinterpreted on
+    that same filesystem: its host and credentials live in exp_root's storage
+    options, not in the recorded string, so ``UPath(destination)`` alone would
+    resolve to the local disk. For a local exp_root this is a no-op.
+    """
+    return UPath(
+        UPath(destination).path,
+        protocol=exp_root.protocol,
+        **exp_root.storage_options,
+    )
+
+
+def _walk_outdata(
+    exp_root: UPath, on_file: Optional[Callable[[int], None]] = None
+) -> Iterable[ComponentPath]:
+    """Yield a :class:`ComponentPath` for every real file under ``<exp_root>/outdata``.
+
+    A filesystem walk reports what the run actually wrote, which is the only
+    reliable source when the tidy manifest is absent and the config's
+    ``outdata_targets`` are missing or theoretical. Component is the immediate
+    subdirectory of ``outdata/``.
+
+    The walk streams through the filesystem's own ``walk`` (one listing per
+    directory, files only -- no per-entry stat), yielding as it descends rather
+    than materialising the whole tree first: essential over a remote root with
+    thousands of files. *on_file* is called with the running file count so a
+    caller can show progress during the (potentially slow) listing.
+    """
+    outdata = exp_root / _OUTDATA_SUBDIR
+    if not outdata.exists():
+        return
+    fs = outdata.fs
+    base = outdata.path.rstrip("/")
+    # The component is the first path segment below outdata/. Split on the
+    # outdata boundary rather than slicing by len(base): fs.walk may return
+    # absolute roots even when base is relative (e.g. exp_root='.'), and a bare
+    # root[len(base):] would then strip the wrong prefix -- a '/albedo/...' root
+    # under a 7-char base 'outdata' famously yields the component 'work'.
+    marker = "/" + _OUTDATA_SUBDIR + "/"
+    count = 0
+    for root, _dirs, files in fs.walk(base):
+        after = root.rsplit(marker, 1)
+        if len(after) < 2 or not after[1]:
+            continue  # files sitting directly in outdata/ have no component
+        component = after[1].split("/", 1)[0]
+        for name in sorted(files):
+            count += 1
+            if on_file is not None:
+                on_file(count)
+            yield ComponentPath(
+                component=component, path=_on_exp_fs(exp_root, f"{root}/{name}")
+            )
+
+
+def _walk_restart(
+    exp_root: UPath, on_file: Optional[Callable[[int], None]] = None
+) -> Iterable[ComponentPath]:
+    """Yield a :class:`ComponentPath` for every real file under ``<exp_root>/restart``.
+
+    Fallback for a component that declares no ``restart_out_targets`` at all
+    -- confirmed against a real production experiment: fesom manages restart
+    files via wildcard matching (``restart_out_sources_wild_card``), so its
+    tidied destination is never explicitly declared, only walkable. Same
+    reasoning and structure as :func:`_walk_outdata`. Yielded paths carry no
+    declared ``stream`` -- the category is derived from the filename by the
+    caller (see :func:`restart_files`).
+    """
+    restart = exp_root / "restart"
+    if not restart.exists():
+        return
+    fs = restart.fs
+    base = restart.path.rstrip("/")
+    marker = "/restart/"
+    count = 0
+    for root, _dirs, files in fs.walk(base):
+        after = root.rsplit(marker, 1)
+        if len(after) < 2 or not after[1]:
+            continue
+        component = after[1].split("/", 1)[0]
+        for name in sorted(files):
+            count += 1
+            if on_file is not None:
+                on_file(count)
+            yield ComponentPath(
+                component=component, path=_on_exp_fs(exp_root, f"{root}/{name}")
+            )
+
+
+_DIGIT_RUN_RE = re.compile(r"\d{4,}")
+"""A run of 4+ digits -- a date stamp, stripped when deriving a restart
+category from a walked filename with no declared category."""
+
+
+def _category_from_filename(name: str) -> str:
+    """Best-effort restart category from a filename with no declared category.
+
+    ``fesom.2000.oce.restart`` -> ``fesom.oce`` -- strips the date-like digit
+    run and the final extension, keeping whatever distinguishes this file
+    from its siblings (e.g. 'oce' vs 'ice').
+    """
+    stem = Path(name).stem
+    stripped = _DIGIT_RUN_RE.sub("", stem).strip(".")
+    return re.sub(r"\.{2,}", ".", stripped) or stem
+
+
+def output_files(
+    exp_root: UPath,
+    on_file: Optional[Callable[[int], None]] = None,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
+) -> list[OutputFile]:
+    """Return the experiment's concrete output files, one per produced file.
+
+    The authoritative source is the tidy-phase logs: they list every file the run
+    actually produced, with its real destination path and MD5, keyed by component.
+    When no tidy manifest exists, fall back to the config's ``outdata_targets``
+    that resolve to real files, then walk ``outdata/`` for anything the config did
+    not declare -- a run with non-default output writes files the config never
+    names, and some components (e.g. fesom) declare no targets at all, so the walk
+    is what actually finds them. Restart, rerun, and non-data sidecar files
+    (GRIB ``.codes``/``.idx``) are excluded. MD5 is left ``None`` when unknown.
+
+    Parameters
+    ----------
+    exp_root : UPath
+        The experiment root directory.
+    on_file : Callable or None, optional
+        Called with the running file count while walking ``outdata/`` -- a
+        progress hook for the slow remote-listing case.
+    run_cfgs : list of _RunConfig, optional
+        Pre-parsed run configs, when the caller already has them (see
+        :func:`source_experiment`). Parsed from *exp_root* when omitted.
+
+    Returns
+    -------
+    list of OutputFile
+        Deduplicated by path, in first-seen order.
+
+    Raises
+    ------
+    SourcingError
+        If no finished_config is found under ``<exp_root>/config``.
+    """
+    if run_cfgs is None:
+        run_cfgs = _load_run_cfgs(exp_root)  # validates the run completed; may raise
+
+    tidy_entries = list(_tidy_outdata(exp_root))
+    if tidy_entries:
+        candidates: Iterable[OutputFile] = (
+            OutputFile(
+                path=_on_exp_fs(exp_root, entry.destination),
+                component=entry.component,
+                stream=entry.stream,
+                role="data",
+                md5=entry.md5,
+            )
+            for entry in tidy_entries
+        )
+    else:
+        # No tidy manifest: trust config outdata_targets that resolve to real
+        # files, then walk outdata/ for whatever the config missed. A walked
+        # path carries no declared stream -- the caller resolves one from the
+        # file's own content (see scan.ingest.resolve_stream).
+        configured = (
+            ComponentPath(
+                target.component, _on_exp_fs(exp_root, str(target.path)), target.stream
+            )
+            for run_cfg in run_cfgs
+            for target in _outdata_targets(run_cfg.doc)
+        )
+        candidates = (
+            OutputFile(path=cp.path, component=cp.component, stream=cp.stream, role="data")
+            for cp in chain(
+                (cp for cp in configured if cp.path.exists()),
+                _walk_outdata(exp_root, on_file),
+            )
+        )
+
+    files: list[OutputFile] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate.path)
+        if key in seen or _is_restart(candidate.path) or _is_sidecar(candidate.path):
+            continue
+        seen.add(key)
+        files.append(candidate)
+    return files
+
+
+def restart_files(
+    exp_root: UPath,
+    on_file: Optional[Callable[[int], None]] = None,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
+) -> list[OutputFile]:
+    """Return the experiment's restart files.
+
+    Parallel to :func:`output_files`: trusts declared ``restart_out_targets``
+    (the tidied, resolved destination -- see :func:`_restart_targets`) that
+    resolve to real files, same trust model as outdata's config-target
+    fallback (existence checked, contents are not). No tidy-log equivalent
+    exists for restarts, so this is the primary source, not a fallback --
+    except for a component that declares no restart_out_targets at all (e.g.
+    fesom, which manages restarts via wildcard matching): confirmed against a
+    real production experiment, so :func:`_walk_restart` covers it exactly
+    like :func:`_walk_outdata` covers outdata's undeclared case.
+
+    Parameters
+    ----------
+    exp_root : UPath
+        The experiment root directory.
+    on_file : Callable or None, optional
+        Called with the running file count while walking ``restart/`` for
+        undeclared components -- a progress hook for the slow remote-listing
+        case.
+    run_cfgs : list of _RunConfig, optional
+        Pre-parsed run configs, when the caller already has them. Parsed from
+        *exp_root* when omitted.
+
+    Returns
+    -------
+    list of OutputFile
+        Deduplicated by path, in first-seen order, each with ``role='restart'``.
+
+    Raises
+    ------
+    SourcingError
+        If no finished_config is found under ``<exp_root>/config``.
+    """
+    if run_cfgs is None:
+        run_cfgs = _load_run_cfgs(exp_root)
+
+    files: list[OutputFile] = []
+    seen: set[str] = set()
+    for run_cfg in run_cfgs:
+        for target in _restart_targets(run_cfg.doc):
+            path = _on_exp_fs(exp_root, str(target.path))
+            key = str(path)
+            if key in seen or not path.exists():
+                continue
+            seen.add(key)
+            files.append(
+                OutputFile(
+                    path=path, component=target.component, stream="restart",
+                    role="restart", category=target.stream,
+                )
+            )
+    for cp in _walk_restart(exp_root, on_file):
+        key = str(cp.path)
+        if key in seen:
+            continue
+        seen.add(key)
+        files.append(
+            OutputFile(
+                path=cp.path, component=cp.component, stream="restart",
+                role="restart", category=_category_from_filename(cp.path.name),
+            )
+        )
+    return files
+
+
+def source_files(
+    exp_root: UPath,
+    on_file: Optional[Callable[[int], None]] = None,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
+) -> list[OutputFile]:
+    """Every file the scan should catalogue: outdata (role='data') plus restart
+    (role='restart') files, discovered via :func:`output_files` and
+    :func:`restart_files` respectively.
+    """
+    return output_files(exp_root, on_file, run_cfgs=run_cfgs) + restart_files(
+        exp_root, on_file, run_cfgs=run_cfgs
+    )
+
+
+def _load_run_cfgs(
+    exp_root: UPath,
+    *,
+    distributed: bool = False,
+    scheduler: Optional[str] = None,
+    jobs: Optional[int] = None,
+) -> list[_RunConfig]:
+    """Load every finished_config under ``<exp_root>/config``, sorted chronologically.
+
+    The finished_config filenames sort chronologically because their
+    ``YYYYMMDD-YYYYMMDD`` suffixes are zero-padded.
+
+    Parameters
+    ----------
+    exp_root : UPath
+        The experiment root directory.
+    distributed, scheduler, jobs : optional
+        Same meaning as :func:`~esm_catalog.scan.parallel.parallel_map`'s --
+        parse the finished_configs there too when a scan is already running
+        distributed, instead of serially in this (the driver) process. A run
+        with hundreds of segments can spend real wall-clock time here
+        (measured: 60-300s serially, depending on filesystem load), and the
+        cluster used for the read phase is sitting right there. Falls back
+        to a plain sequential loop -- the only path before this parameter
+        existed -- when *distributed* is false (the default).
+
+    Raises
+    ------
+    SourcingError
+        If none are found.
+    """
+    config_dir = exp_root / _CONFIG_SUBDIR
+    paths = sorted(
+        candidate
+        for candidate in config_dir.glob(_FINISHED_CONFIG_GLOB)
+        if _FINISHED_CONFIG_MARKER in candidate.name
+    )
+    if not paths:
+        raise SourcingError(
+            "scan requires a completed ESM-Tools run; "
+            f"no file matching '{_FINISHED_CONFIG_GLOB}' under {config_dir} "
+            "(e.g. '<expid>_finished_config.yaml', written by ESM-Tools at the "
+            "end of a run)"
+        )
+    if distributed:
+        docs = parallel_map(
+            paths,
+            _load_yaml,
+            distributed=True,
+            scheduler=scheduler,
+            jobs=jobs,
+            label="sourcing",
+        )
+    else:
+        docs = [_load_yaml(path) for path in paths]
+    return [_RunConfig(path=path, doc=doc) for path, doc in zip(paths, docs)]
+
+
+def _experiment_id(run_cfgs: list[_RunConfig]) -> ExperimentId:
+    """The experiment id, from ``general.expid`` or the filename prefix fallback."""
+    for run_cfg in run_cfgs:
+        expid = _general(run_cfg.doc).expid
+        if expid:
+            return str(expid)
+    name = run_cfgs[0].path.name
+    return name.split(_FINISHED_CONFIG_MARKER, 1)[0].rstrip("_")
+
+
+def _general_metadata_blocks(
+    docs: Iterable[FinishedConfigDoc],
+) -> Iterable[MetadataBlock]:
+    """Yield the ``general.metadata`` block of each segment doc.
+
+    Experiment-level metadata (description, license, contacts) lives under
+    ``general``. A component's own ``metadata`` describes the model, not the
+    experiment, so it is not consulted here.
+    """
+    for doc in docs:
+        general = doc.get("general")
+        if isinstance(general, dict):
+            meta = general.get("metadata")
+            if isinstance(meta, dict) and meta:
+                yield MetadataBlock.model_validate(meta)
+
+
+def _first_value(blocks: Iterable[MetadataBlock], key: str) -> Optional[str]:
+    """The first non-empty ``key`` across metadata *blocks*, or None."""
+    for block in blocks:
+        value = getattr(block, key, None)
+        if value:
+            return str(value)
+    return None
+
+
+def _contacts(blocks: Iterable[MetadataBlock]) -> list[Contact]:
+    """The de-duplicated :class:`Contact` list parsed from every ``Authors`` block."""
+    contacts: list[Contact] = []
+    seen: set[tuple] = set()
+    for block in blocks:
+        institution = block.Institute
+        for author in _as_list(block.Authors):
+            contact = _to_contact(author, institution)
+            if contact is None:
+                continue
+            fingerprint = (contact.name, contact.orcid, contact.institution)
+            if fingerprint not in seen:
+                seen.add(fingerprint)
+                contacts.append(contact)
+    return contacts
+
+
+def _as_list(value: object) -> list:
+    """Wrap a scalar in a list, pass a list through, treat None as empty."""
+    if value is None:
+        return []
+    return list(value) if isinstance(value, (list, tuple)) else [value]
+
+
+def _to_contact(author: object, institution: Optional[str]) -> Optional[Contact]:
+    """Coerce one ``Authors`` entry (a name string or a mapping) into a Contact."""
+    if isinstance(author, str):
+        name = author.strip()
+        return Contact(name=name, institution=institution) if name else None
+    if isinstance(author, dict):
+        name = author.get("name") or author.get("Name")
+        return Contact(
+            name=str(name).strip() if name else None,
+            orcid=author.get("orcid") or author.get("ORCID"),
+            institution=author.get("institution")
+            or author.get("Institute")
+            or author.get("affiliation")
+            or institution,
+        )
+    return None
+
+
+def _cmip6_config(blocks: Iterable[MetadataBlock]) -> Optional[Cmip6Config]:
+    """The ``general.metadata.cmip6`` block, from the first segment that declares one.
+
+    Lives in ``general.metadata`` (an ``extra`` key, alongside the existing
+    Description/Authors/License/Institute fields) rather than its own
+    top-level ``general.cmip6`` section -- it is experiment *metadata*, the
+    same category as those fields, not a distinct config concept.
+    """
+    for block in blocks:
+        cmip6 = getattr(block, "cmip6", None)
+        if isinstance(cmip6, dict) and cmip6:
+            return Cmip6Config.model_validate(cmip6)
+    return None
+
+
+def _paleo_config(docs: Iterable[FinishedConfigDoc]) -> Optional[PaleoConfig]:
+    """The ``general.paleo`` section, from the first segment that declares one."""
+    for doc in docs:
+        paleo = _general(doc).paleo
+        if isinstance(paleo, dict) and paleo:
+            return paleo
+    return None
+
+
+def _run_span(
+    run_cfgs: list[_RunConfig],
+) -> tuple[Optional[datetime], Optional[datetime]]:
+    """The union (min start, max end) of every run's window."""
+    windows = [w for w in map(_run_cfg_window, run_cfgs) if w is not None]
+    if not windows:
+        return None, None
+    return min(start for start, _ in windows), max(end for _, end in windows)
+
+
+def _run_cfg_window(run_cfg: _RunConfig) -> Optional[RunWindow]:
+    """One run's (start, end), from its config run dates or filename suffix."""
+    general = _general(run_cfg.doc)
+
+    start = _first_date(general, _START_DATE_KEYS)
+    end = _first_date(general, _END_DATE_KEYS)
+    if start and end:
+        return start, end
+
+    stamp = general.run_datestamp
+    from_stamp = _parse_datestamp(stamp) if isinstance(stamp, str) else None
+    if from_stamp:
+        return from_stamp
+
+    return _suffix_window(run_cfg.path.name)
+
+
+def _first_date(general: GeneralBlock, keys: Iterable[str]) -> Optional[datetime]:
+    """The first parseable datetime among *keys* in the ``general`` block."""
+    for key in keys:
+        parsed = _to_datetime(getattr(general, key, None))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _suffix_window(filename: str) -> Optional[RunWindow]:
+    """The run window from a ``..._YYYYMMDD-YYYYMMDD`` filename suffix, if present."""
+    _, _, suffix = filename.partition(_FINISHED_CONFIG_MARKER)
+    return _parse_datestamp(suffix.lstrip("._"))
+
+
+def _parse_datestamp(stamp: Optional[RunStamp]) -> Optional[RunWindow]:
+    """Parse a ``YYYYMMDD-YYYYMMDD`` :data:`RunStamp` into a (start, end) window."""
+    if not stamp:
+        return None
+    text = stamp.strip()
+    if "-" not in text:
+        return None
+    start_text, _, end_text = text.partition("-")
+    start = _to_datetime(start_text)
+    end = _to_datetime(end_text)
+    if start is None or end is None:
+        return None
+    return start, end
+
+
+def _to_datetime(value: object) -> Optional[datetime]:
+    """Coerce a datetime, date, or date-like string to a datetime, else None."""
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, date):
+        return datetime(value.year, value.month, value.day)
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(text, "%Y%m%d")
+    except ValueError:
+        return None
+
+
+def _outdata_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
+    """Yield a :class:`ComponentPath` for every ``outdata_targets`` entry in *doc*."""
+    for name, block in doc.items():
+        if not isinstance(block, dict):
+            continue
+        targets = block.get("outdata_targets")
+        if not isinstance(targets, dict):
+            continue
+        for stream, target in targets.items():
+            if target:
+                yield ComponentPath(
+                    component=str(name), path=UPath(str(target)), stream=str(stream)
+                )
+
+
+def _restart_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
+    """Yield a :class:`ComponentPath` for every ``restart_out_targets`` entry in *doc*.
+
+    Parallel to :func:`_outdata_targets`. ``restart_out_targets`` is the
+    tidied, persistent destination (``exp/restart/<component>/...``) --
+    ``restart_out_sources`` is the ephemeral ``run_DATE/work/`` path the file
+    lived at *before* tidy moved it, gone once that run directory is cleaned
+    up. Confirmed against a real production finished_config: echam declares
+    ``restart_out_targets``; components using wildcard-based restart handling
+    (e.g. fesom, via ``restart_out_sources_wild_card``) declare neither, so
+    they fall through to :func:`_walk_restart`.
+    """
+    for name, block in doc.items():
+        if not isinstance(block, dict):
+            continue
+        targets = block.get("restart_out_targets")
+        if not isinstance(targets, dict):
+            continue
+        for stream, target in targets.items():
+            if target:
+                yield ComponentPath(
+                    component=str(name), path=UPath(str(target)), stream=str(stream)
+                )
+
+
+def _tidy_outdata(exp_root: UPath) -> Iterable[TidyOutdataEntry]:
+    """Yield a :class:`TidyOutdataEntry` for every tidy-log ``outdata`` entry.
+
+    Iterates all tidy-phase logs under ``<exp_root>/log`` in chronological order.
+    This is the authoritative list of files the run actually produced.
+    """
+    log_dir = exp_root / _LOG_SUBDIR
+    for log_path in sorted(log_dir.glob(_TIDY_LOG_GLOB)):
+        yield from _tidy_log_outdata(_load_yaml(log_path))
+
+
+def _load_yaml(path: UPath) -> FinishedConfigDoc:
+    """Parse a finished-config or tidy-log document as plain YAML.
+
+    Loaded with a plain safe parser through the path's own opener, so it works
+    on remote roots (e.g. ``sftp://``) where the host lives in the UPath's
+    storage options and would be lost by a ``str(path)`` round-trip. The
+    esm_parser config loader is deliberately avoided: it re-wraps the path as a
+    string, and would add provenance and config-only checks these documents
+    should never be subject to.
+    """
+    with path.open() as stream:
+        doc = YAML(typ="safe").load(stream)
+    return doc if isinstance(doc, dict) else {}
+
+
+def _tidy_log_outdata(doc: FinishedConfigDoc) -> Iterable[TidyOutdataEntry]:
+    """Yield a :class:`TidyOutdataEntry` per ``outdata`` entry in a tidy log.
+
+    The tidy log nests as ``{component: {files: {outdata: {name: entry}}}}``;
+    ``restart_out``, ``log`` and other categories are skipped, so restart files
+    never appear here. An entry without a ``destination`` is skipped; a missing
+    ``checksum`` yields ``None`` (the file is still catalogued, just without an md5).
+    """
+    for component, block in doc.items():
+        if not isinstance(block, dict):
+            continue
+        outdata = (block.get("files") or {}).get("outdata")
+        if not isinstance(outdata, dict):
+            continue
+        for stream, entry in outdata.items():
+            if not isinstance(entry, dict):
+                continue
+            destination = entry.get("destination")
+            if not destination:
+                continue
+            checksum = entry.get("checksum")
+            md5 = str(checksum).strip() if checksum else None
+            yield TidyOutdataEntry(
+                component=str(component),
+                stream=str(stream),
+                destination=str(destination).strip(),
+                md5=md5,
+            )
+
+
+def _is_restart(path: UPath) -> bool:
+    """Whether *path* names a restart or rerun file (excluded from the catalog)."""
+    name = path.name.lower()
+    return any(marker in name for marker in _RESTART_MARKERS)
+
+
+def _is_sidecar(path: UPath) -> bool:
+    """Whether *path* is a non-data sidecar (e.g. GRIB ``.codes``/``.idx`` index)."""
+    return path.suffix.lower() in _SIDECAR_SUFFIXES
+
+
+def _general(doc: FinishedConfigDoc) -> GeneralBlock:
+    """The ``general`` block of *doc*, parsed into a :class:`GeneralBlock`."""
+    general = doc.get("general")
+    return GeneralBlock.model_validate(general if isinstance(general, dict) else {})

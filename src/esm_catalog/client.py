@@ -1,0 +1,232 @@
+"""A thin STAC Transaction/Bulk-Transaction client over httpx.
+
+Writes go through the STAC API (and therefore its auth proxy), so they are
+authenticated and role-gated. Two granularities:
+
+- :meth:`StacClient.upsert_collection` / :meth:`StacClient.upsert_item` — single
+  objects, create-or-update (``POST``; on 409 conflict, ``PUT``).
+- :meth:`StacClient.bulk_items` — a batch of Items for one collection via the
+  Bulk Transactions extension (``POST .../bulk_items``), which pgstac bulk-loads
+  server-side. This is the efficient path for stac-geoparquet shards.
+"""
+
+from __future__ import annotations
+
+from types import TracebackType
+from typing import Any, Literal, Optional
+
+import httpx
+
+from esm_catalog.auth import AccessToken
+from esm_catalog.config import Url
+
+#: A STAC object (Collection or Item) as a plain JSON dict.
+StacObject = dict[str, Any]
+
+#: A STAC Collection id. A documented alias (not a NewType): ids surface out of
+#: ``StacObject`` dict reads, where a NewType would only add cast() noise.
+CollectionId = str
+
+#: How ``bulk_items`` treats existing ids: fail on conflict, or overwrite.
+BulkMethod = Literal["insert", "upsert"]
+
+
+class StacClientError(RuntimeError):
+    """A STAC API write returned a non-success status."""
+
+    def __init__(self, action: str, status: int, body: str) -> None:
+        super().__init__(f"{action} failed (HTTP {status}): {body}")
+        self.status = status
+
+
+class StacClient:
+    """Authenticated client for STAC transaction endpoints.
+
+    Parameters
+    ----------
+    api_url:
+        STAC API base, e.g. ``https://stac-dev.awi.de/api`` (no trailing slash).
+    token:
+        OAuth access token; sent as ``Authorization: Bearer``.
+    verify_tls:
+        Verify the server certificate (disable only for dev self-signed).
+    """
+
+    def __init__(
+        self,
+        api_url: Url,
+        token: AccessToken,
+        verify_tls: bool = True,
+        transport: Optional[httpx.BaseTransport] = None,
+    ) -> None:
+        # Absolute URLs are built from this base; we deliberately do not use
+        # httpx's base_url, whose RFC-3986 join drops the path prefix for
+        # leading-slash request paths (…/api would silently vanish).
+        self._base = api_url.rstrip("/")
+        self._client = httpx.Client(
+            headers={"Authorization": f"Bearer {token}"},
+            verify=verify_tls,
+            timeout=60,
+            transport=transport,
+        )
+
+    def __enter__(self) -> "StacClient":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
+        self.close()
+
+    def close(self) -> None:
+        self._client.close()
+
+    # ----------------------------------------------------------------- #
+    # Single-object upserts (POST, then PUT on 409).
+    # ----------------------------------------------------------------- #
+
+    def get_collection(self, collection_id: CollectionId) -> Optional[StacObject]:
+        """Fetch one Collection, or None if it does not exist yet.
+
+        Used by :mod:`esm_catalog.push` to widen the server's stored extent
+        rather than overwrite it with only the pushing run's local view.
+        """
+        resp = self._client.get(f"{self._base}/collections/{collection_id}")
+        if resp.status_code == 404:
+            return None
+        self._check(resp, f"get collection {collection_id!r}")
+        return resp.json()
+
+    def upsert_collection(self, collection: StacObject) -> None:
+        """Create *collection*, or update it if it already exists."""
+        cid = collection["id"]
+        self._upsert("collection", collection, "/collections", f"/collections/{cid}")
+
+    def get_item(self, collection_id: CollectionId, item_id: str) -> Optional[StacObject]:
+        """Fetch one Item, or None if it does not exist yet.
+
+        Used by :mod:`esm_catalog.push` to merge a newly-scanned asset into
+        whatever's already on the server for a growing (Item = stream) id,
+        rather than overwriting it.
+        """
+        resp = self._client.get(f"{self._base}/collections/{collection_id}/items/{item_id}")
+        if resp.status_code == 404:
+            return None
+        self._check(resp, f"get item {item_id!r}")
+        return resp.json()
+
+    def upsert_item(self, item: StacObject) -> None:
+        """Create *item*, or update it if it already exists.
+
+        The Item must carry a ``collection`` id; its target collection must
+        already exist on the server.
+        """
+        cid = item.get("collection")
+        if not cid:
+            raise ValueError(f"item {item.get('id')!r} has no 'collection' field")
+        iid = item["id"]
+        self._upsert(
+            "item",
+            item,
+            f"/collections/{cid}/items",
+            f"/collections/{cid}/items/{iid}",
+        )
+
+    def list_collections(self, limit: Optional[int] = None) -> StacObject:
+        """Return the server's ``GET /collections`` response (all collections)."""
+        params = {"limit": limit} if limit is not None else None
+        resp = self._client.get(self._base + "/collections", params=params)
+        self._check(resp, "list collections")
+        return resp.json()
+
+    def delete_collection(self, collection_id: CollectionId) -> None:
+        """Delete a Collection (cascades its items server-side)."""
+        resp = self._client.delete(self._base + f"/collections/{collection_id}")
+        self._check(resp, f"delete collection {collection_id!r}")
+
+    def list_items(
+        self,
+        collection_id: CollectionId,
+        limit: Optional[int] = None,
+        cql2_filter: Optional[str] = None,
+    ) -> StacObject:
+        """Return the server's ``GET /collections/{id}/items`` response.
+
+        *cql2_filter* is forwarded verbatim as a cql2-text filter (OGC API
+        Features Filter extension), e.g. ``"variable='temp2'"``. A plain
+        top-level property name needs no queryables registration to be
+        filterable this way (confirmed live against stac-dev) -- see
+        :mod:`esm_catalog.namelist` for why that holds, and where it stops
+        holding (a colon or dot in the property name).
+        """
+        params: dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if cql2_filter is not None:
+            params["filter"] = cql2_filter
+            params["filter-lang"] = "cql2-text"
+        resp = self._client.get(
+            self._base + f"/collections/{collection_id}/items",
+            params=params or None,
+        )
+        self._check(resp, f"list items in {collection_id!r}")
+        return resp.json()
+
+    def delete_item(self, collection_id: CollectionId, item_id: str) -> None:
+        """Delete a single Item."""
+        resp = self._client.delete(
+            self._base + f"/collections/{collection_id}/items/{item_id}"
+        )
+        self._check(resp, f"delete item {item_id!r} in {collection_id!r}")
+
+    def _check(self, resp: httpx.Response, action: str) -> None:
+        """Raise :class:`StacClientError` unless *resp* is a 200/201/204 success.
+
+        A redirect (e.g. Caddy's http→https 308) is reported with the target and
+        the likely cause, rather than a bare status — the client does not follow
+        it, because the slash redirect on these endpoints drops the ``/api``
+        prefix and would send the request somewhere wrong.
+        """
+        if resp.status_code in (200, 201, 204):
+            return
+        if resp.is_redirect:
+            location = resp.headers.get("location", "<none>")
+            raise StacClientError(
+                f"{action} — server sent a redirect to {location}; check that "
+                "server_url uses https (not http) and has no trailing slash",
+                resp.status_code,
+                resp.text,
+            )
+        raise StacClientError(action, resp.status_code, resp.text)
+
+    def _upsert(self, kind: str, body: StacObject, post_path: str, put_path: str) -> None:
+        resp = self._client.post(self._base + post_path, json=body)
+        if resp.status_code == 409:
+            resp = self._client.put(self._base + put_path, json=body)
+        self._check(resp, f"upsert {kind} {body.get('id')!r}")
+
+    # ----------------------------------------------------------------- #
+    # Bulk items (Bulk Transactions extension).
+    # ----------------------------------------------------------------- #
+
+    def bulk_items(
+        self,
+        collection_id: CollectionId,
+        items: list[StacObject],
+        method: BulkMethod = "upsert",
+    ) -> None:
+        """Upsert a batch of Items into *collection_id* in one request.
+
+        Items are keyed by their id, as the Bulk Transactions extension expects.
+        The collection must already exist on the server.
+        """
+        if not items:
+            return
+        payload = {"items": {item["id"]: item for item in items}, "method": method}
+        resp = self._client.post(
+            f"{self._base}/collections/{collection_id}/bulk_items", json=payload
+        )
+        self._check(resp, f"bulk_items into {collection_id!r} ({len(items)} items)")

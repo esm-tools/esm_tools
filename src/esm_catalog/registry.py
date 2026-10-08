@@ -1,25 +1,15 @@
 """Extension registry — the single source of truth for STAC extensions.
 
-`Extension` is a StrEnum of every extension esm_catalog can attach; EXTENSION_URLS
+``Extension`` is a StrEnum of every extension esm_catalog can attach; EXTENSION_URLS
 is keyed by it, so a schema URL can never reference a name the type system does
 not know, and every call site is checked against the enum rather than a bare str.
 """
 
 from __future__ import annotations
 
-import sys
-from enum import Enum, auto
+from enum import auto
 
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:  # pragma: no cover - py<3.11 fallback
-
-    class StrEnum(str, Enum):
-        __str__ = str.__str__
-
-        @staticmethod
-        def _generate_next_value_(name, start, count, last_values):
-            return name.lower()  # matches enum.StrEnum: auto() -> the member name
+from esm_catalog._compat import StrEnum
 
 
 class Extension(StrEnum):
@@ -33,12 +23,14 @@ class Extension(StrEnum):
     contacts = auto()
     paleo = auto()
     namelist = auto()
+    cmip6 = auto()
 
 
 EXTENSION_URLS: dict[Extension, str] = {
     # Upstream stac-extensions (remote schema, no local copy to validate against)
     Extension.datacube: "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
     Extension.contacts: "https://stac-extensions.github.io/contacts/v0.1.1/schema.json",
+    Extension.cmip6: "https://stac-extensions.github.io/cmip6/v1.0.0/schema.json",
     # Custom ESM-Tools extensions — https://esm-tools.github.io/stac-extensions/
     Extension.paleo: "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json",
     Extension.namelist: "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json",

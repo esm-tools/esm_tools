@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
 
-from esm_catalog.contacts import add_contacts_collection_extension
 from esm_catalog.models import ExperimentMetadata
-from esm_catalog.namelist import add_namelist_collection_extension
-from esm_catalog.paleo import add_paleo_collection_extension
+from esm_catalog.plugins import get_plugin_manager
 from esm_catalog.types import BBox
 
 # STAC-valid "coverage unknown" default; update_extent swaps it out on the first
@@ -32,7 +30,8 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
         A Collection with a default global extent and no parent — the
         experiment is the catalog root. Its ``id`` is unique (see
         ``ExperimentMetadata.collection_id``); its ``title`` is the human
-        experiment name.
+        experiment name. Every registered collection-contract extension (see
+        :mod:`esm_catalog.plugins`) has been applied.
     """
     collection = Collection(
         id=exp_metadata.collection_id,
@@ -46,9 +45,9 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
         license=exp_metadata.data_license or "proprietary",
         extra_fields={"components": sorted(exp_metadata.components)},
     )
-    add_contacts_collection_extension(collection, exp_metadata.contacts)
-    add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)
-    add_paleo_collection_extension(collection, exp_metadata.paleo_config)
+    get_plugin_manager().hook.apply_to_collection(
+        collection=collection, exp_metadata=exp_metadata, hints={}
+    )
     return collection
 
 

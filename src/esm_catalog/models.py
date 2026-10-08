@@ -65,7 +65,7 @@ class ExperimentMetadata(BaseModel):
     single component — the per-file component lives on FileMetadata instead.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     experiment_id: ExperimentId
     experiment_path: Path
@@ -85,6 +85,12 @@ class ExperimentMetadata(BaseModel):
     paleo_config: Optional[PaleoConfig] = None
     cmip6_config: Optional[Cmip6Config] = None
     contacts: list[Contact] = []
+    # Each component's model_dir, straight from finished_config. The vcs
+    # extension's fallback path (no vcs_info_initial.yaml on disk) reads git
+    # state directly from these -- which is the *shared*, possibly-drifted
+    # checkout, not a frozen snapshot, hence that path always marks its
+    # result "reconstructed".
+    model_dirs: dict[ComponentName, str] = {}
 
     @property
     def collection_id(self) -> str:

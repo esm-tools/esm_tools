@@ -673,22 +673,30 @@ def _write_catalog(
     collection_path.write_text(json.dumps(collection.to_dict(), indent=2))
 
 
-def _write_queryables(catalog, exp_metadata: ExperimentMetadata) -> None:
-    """Write (or clear) the queryables sidecar for this experiment's namelists.
+#: Bare Item properties worth registering as queryables outside the namelist
+#: pipeline -- a stream can hold several variables, so "find item(s) by
+#: variable" is a real, common query. Unlike component/stream/experiment/format
+#: (candidates for removal or a future esm: extension, see
+#: docs/superpowers/specs/2026-10-07-namelist-stac-extension-redesign-design.md),
+#: "variable" is not in question, so it's safe to register now.
+_BARE_ITEM_QUERYABLES: dict[str, dict[str, str]] = {"variable": {"type": "string"}}
 
-    Its ``properties`` are the item-level ``nml__`` keys and their JSON types --
-    the exact file ``pypgstac load-queryables`` consumes. ``push`` diffs it
-    against the server's registered queryables to tell an operator which (if
-    any) are new.
+
+def _write_queryables(catalog, exp_metadata: ExperimentMetadata) -> None:
+    """Write (or clear) the queryables sidecar for this experiment.
+
+    Its ``properties`` are _BARE_ITEM_QUERYABLES plus the item-level ``nml__``
+    keys and their JSON types -- the exact file ``pypgstac load-queryables``
+    consumes. ``push`` diffs it against the server's registered queryables to
+    tell an operator which (if any) are new.
     """
     from esm_catalog.namelist import namelist_queryables
 
     path = catalog / QUERYABLES_FILENAME
-    properties = namelist_queryables(exp_metadata.namelists_by_component)
-    if not properties:
-        if path.exists():
-            path.unlink()
-        return
+    properties = {
+        **_BARE_ITEM_QUERYABLES,
+        **namelist_queryables(exp_metadata.namelists_by_component),
+    }
     path.write_text(json.dumps({"properties": properties}, indent=2))
 
 

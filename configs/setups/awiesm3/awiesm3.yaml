@@ -975,7 +975,11 @@ fesom:
             icb_init_rate_file: "${pool_dir}/icebergs_ini/${resolution}/iceberg_rate_init.json"
             icb_leg: "--start ${general.start_date!syear}-${general.start_date!smonth}-${general.start_date!sday} --end ${general.end_date!syear}-${general.end_date!smonth}-${general.end_date!sday}"
             icb_dirs: "--couple-dir ${general.experiment_couple_dir} --mesh-dir ${mesh_dir} --oifs-outdata ${oifs.experiment_outdata_dir} --fesom-outdata ${experiment_outdata_dir}"
-            # survivors of the previous leg: the parent's on a branched first leg
+            # survivors of the previous leg: the parent's on a branched first leg.
+            # ini_restart_dir needs a value here: esm_master resolves this block without
+            # a runscript, and a cold start has no parent. A runscript's own
+            # ini_restart_dir takes precedence.
+            ini_restart_dir: "${experiment_restart_in_dir}"
             choose_general.run_number:
                 1:
                     icb_restart_ism: "${ini_restart_dir}/iceberg.restart.ISM"

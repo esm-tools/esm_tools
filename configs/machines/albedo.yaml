@@ -235,3 +235,6 @@ computer:
 
         PATH[(1)]: "$PERL5LIB/../bin:$PATH"
         PATH[(2)]: "$PATH:$ECCODESROOT/bin"  #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
+        # esm_tools installed with pip --user: the generated job scripts call esm_runscripts
+        # after the module purge, when ~/.local/bin is no longer on PATH.
+        PATH[(100)]: "$HOME/.local/bin:$PATH"

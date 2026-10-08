@@ -186,6 +186,7 @@ def source_experiment(
 
     general_metadata = list(_general_metadata_blocks(docs))
     run_start, run_end = _run_span(run_cfgs)
+    components = _components(docs)
 
     return ExperimentMetadata(
         experiment_id=_experiment_id(run_cfgs),
@@ -197,8 +198,9 @@ def source_experiment(
         cmip6_config=_cmip6_config(general_metadata),
         run_start=run_start,
         run_end=run_end,
-        components=_components(docs),
+        components=components,
         namelists_by_component=_namelists_by_component(exp_root),
+        model_dirs=_model_dirs(docs, components),
     )
 
 
@@ -220,6 +222,27 @@ def _components(docs: Iterable[FinishedConfigDoc]) -> list[ComponentName]:
         if isinstance(models, list):
             names.update(str(m) for m in models)
     return sorted(names)
+
+
+def _model_dirs(
+    docs: Iterable[FinishedConfigDoc], components: Iterable[ComponentName]
+) -> dict[ComponentName, str]:
+    """Each component's ``model_dir``, from the most recent segment that has one.
+
+    A component with no ``model_dir`` in any segment (e.g. XIOS, per
+    esm_runscripts' own comment on this) is simply absent from the result --
+    the vcs extension's reconstruction path treats a missing entry the same
+    way esm_runscripts does, as "not locatable", not an error.
+    """
+    docs = list(docs)
+    result: dict[ComponentName, str] = {}
+    for component in components:
+        for doc in reversed(docs):
+            block = doc.get(component)
+            if isinstance(block, dict) and isinstance(block.get("model_dir"), str):
+                result[component] = block["model_dir"]
+                break
+    return result
 
 
 _NAMELIST_GLOB = "namelist.*"

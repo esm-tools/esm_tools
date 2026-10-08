@@ -66,13 +66,14 @@ def _build_plugin_manager() -> pluggy.PluginManager:
     pm = pluggy.PluginManager("esm_catalog")
     pm.add_hookspecs(ItemContractSpec)
     pm.add_hookspecs(CollectionContractSpec)
-    from esm_catalog import cmip6, contacts, datacube, namelist, paleo
+    from esm_catalog import cmip6, contacts, datacube, namelist, paleo, vcs
 
     pm.register(datacube)
     pm.register(namelist)
     pm.register(paleo)
     pm.register(contacts)
     pm.register(cmip6)
+    pm.register(vcs)
     pm.load_setuptools_entrypoints("esm_catalog")
     return pm
 

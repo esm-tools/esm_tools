@@ -68,7 +68,8 @@ olaf:
         
 
 
-# Docker container for AWI-ESM3; the hostname is set by the launcher scripts
-container:
+# Ubuntu container with GCC and Open MPI (.github/containers/ubuntu-gcc-openmpi);
+# the hostname is set by its launcher scripts
+ubuntu_gcc_openmpi:
         login_nodes: 'awiesm3*'
         compute_nodes: 'awiesm3*'

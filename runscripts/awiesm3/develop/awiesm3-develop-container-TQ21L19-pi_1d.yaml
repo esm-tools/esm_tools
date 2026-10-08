@@ -1,5 +1,6 @@
 # Smallest AWI-ESM3 configuration: OpenIFS TQ21 L19 + FESOM PI mesh + LPJ-GUESS,
-# for the Docker container (see configs/machines/container.yaml).
+# for the Ubuntu container (see configs/machines/ubuntu_gcc_openmpi.yaml and
+# .github/containers/ubuntu-gcc-openmpi/).
 # One day, cold start, natural vegetation only, 6 MPI tasks in total.
 general:
     user: !ENV ${USER}

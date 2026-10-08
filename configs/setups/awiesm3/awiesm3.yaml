@@ -369,7 +369,7 @@ general:
             pool_dir: "/proj/awi/input"
         albedo:
             pool_dir: "/albedo/pool/"
-        container:
+        ubuntu_gcc_openmpi:
             pool_dir: "/pool/"
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"

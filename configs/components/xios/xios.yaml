@@ -162,7 +162,7 @@ xios:
                     "*":
                         foo: bar
             # 8 GB of memory for the whole container: 24 C++ compiles at once do not fit
-            container:
+            ubuntu_gcc_openmpi:
                 make_jobs: 4
         # Parallel compile jobs for make_xios
         make_jobs: 24

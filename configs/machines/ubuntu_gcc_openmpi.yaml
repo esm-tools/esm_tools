@@ -1,14 +1,16 @@
 ################################################################################
-# Machine file for the AWI-ESM3 Docker container (Ubuntu 24.04, GCC, Open MPI).
+# Machine file for the Ubuntu 24.04 container with GCC and Open MPI.
 #
-# The image is built from ~/software/awiesm3_container/Dockerfile. It carries a
-# single-node Slurm, so esm_runscripts submits as on a cluster. Libraries live
+# The image is built from .github/containers/ubuntu-gcc-openmpi/Dockerfile and
+# is recognised by its hostname (awiesm3*, set by the launcher scripts there).
+# It carries a single-node Slurm, so esm_runscripts submits as on a cluster.
+# So far it has been used for AWI-ESM3 develop at TQ21 + PI. Libraries live
 # in fixed prefixes instead of modules:
 #   /opt/hdf5     MPI-enabled HDF5 (Ubuntu packages)
 #   /opt/netcdf   netCDF-C and netCDF-Fortran with parallel I/O
 ################################################################################
 computer:
-    name: container
+    name: ubuntu_gcc_openmpi
     operating_system: "linux-ubuntu"
     sh_interpreter: "/bin/bash"
 

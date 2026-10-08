@@ -192,6 +192,13 @@ def build_login_url(
         "scope": settings.scopes,
         "code_challenge": challenge,
         "code_challenge_method": "S256",
+        # Non-standard Helmholtz AAI (Unity IdM) param: without it, scoped
+        # claims like eduperson_entitlement land only in the ID token/userinfo,
+        # never the access token -- and stac-auth-proxy validates the access
+        # token's own JWT claims, never calling userinfo. "token" asks for
+        # them on the access token too (confirmed against
+        # https://hifis.net/doc/helmholtz-aai/howto-claims-in-token/).
+        "claims_in_tokens": "token",
     }
     return str(httpx.URL(meta.authorization_endpoint, params=params))
 

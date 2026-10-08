@@ -368,6 +368,13 @@ lpj_guess:
     choose_resolution:
         # Note:
         # Tco grids only work with version 43r3.
+        TQ21:
+            nx: 2048
+            ny: 1
+            oasis_grid_name: "016"
+            res_number: 21
+            res_number_tl: "21_full"
+            truncation: "TQ"
         TCO95:
             nx: 40320
             ny: 1

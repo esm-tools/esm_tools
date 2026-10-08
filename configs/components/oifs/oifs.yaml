@@ -530,6 +530,16 @@ oifs:
     choose_resolution:
             # Note:
             # Tco grids only work with version 43r3.
+            # Quadratic truncation on the full Gaussian grid N16 (64 x 32). ECMWF's
+            # T21 test case; with the FESOM PI mesh the smallest coupled setup.
+            TQ21:
+                    nx: 2048
+                    ny: 1
+                    time_step: 3600
+                    oasis_grid_name: "016"
+                    res_number: 21
+                    res_number_tl: "21_full"
+                    truncation: "TQ"
             TCO95:
                     nx: 40320
                     ny: 1
@@ -676,6 +686,15 @@ oifs:
                     lassi: true
                     lfdbop: true
                     lsmssig: true
+            # Full Gaussian grid, N = (3T+1)/4. The switches are the IFS defaults,
+            # which ECMWF's own T21 test namelist leaves untouched.
+            TQ:
+                    nlat: "$(( (3*${res_number}+1)//4*2 ))"
+                    lecompgrid: false
+                    lgradsp: false
+                    lassi: false
+                    lfdbop: false
+                    lsmssig: false
 
     # Apply truncation and other general options to the namelist
     namelist_changes:
@@ -731,6 +750,8 @@ oifs:
     oasis_grid_name_l: "L${oasis_grid_name}"
 
     choose_levels:
+            L19:
+                    levels_number: 19
             L60:
                     levels_number: 60
             L62:

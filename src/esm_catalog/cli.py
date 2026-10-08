@@ -411,7 +411,17 @@ def auth_logout(server_url: Optional[str]) -> None:
         click.secho(f"Nothing to remove for {server_url}.", fg="yellow")
 
 
-@main.command()
+@main.group()
+def workflow() -> None:
+    """Higher-level operations than the bare server/asset nouns.
+
+    Looser naming than 'server'/'asset' on purpose: these mirror esm_runscripts
+    conventions (e.g. 'scan' and -e NAME) or do server-side JSON surgery that
+    doesn't map cleanly to a single REST verb (e.g. 'reroot-experiment').
+    """
+
+
+@workflow.command("scan")
 @click.option(
     "--exp-root",
     default=".",
@@ -1260,6 +1270,81 @@ _SERVER_OPTION = click.option(
 _INSECURE_OPTION = click.option(
     "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
 )
+
+
+@workflow.command("reroot-experiment")
+@click.argument("old_root")
+@click.argument("new_root")
+@click.option(
+    "--exp-root",
+    default=".",
+    help="Experiment root; may be remote (e.g. sftp://host/path). Defaults to '.'.",
+)
+@click.option(
+    "--catalog-dir",
+    default=None,
+    help="Local catalog to rewrite; defaults to <exp-root>/catalog. Must already "
+    "exist (a prior 'workflow scan') -- this command edits local shards, it "
+    "does not paginate everything off the server.",
+)
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@click.option(
+    "--dry-run", is_flag=True,
+    help="Report what would change without writing or pushing anything.",
+)  # fmt: skip
+def reroot_experiment(
+    old_root: str,
+    new_root: str,
+    exp_root: str,
+    catalog_dir: Optional[str],
+    server: Optional[str],
+    insecure: bool,
+    dry_run: bool,
+) -> None:
+    """Rewrite OLD_ROOT to NEW_ROOT in every asset href, after an on-disk move.
+
+    Scoped to asset hrefs only (never a blind substring replace across the
+    whole document) -- the Collection's own assets, plus every Item's assets
+    in every local shard under ITEMS. Then pushes exactly what changed,
+    unless --dry-run.
+    """
+    from esm_catalog.workflow_reroot import push_rerooted
+    from esm_catalog.workflow_reroot import reroot_experiment as do_reroot
+
+    _, catalog = _resolve_catalog(exp_root, catalog_dir)
+    if not catalog.exists():
+        raise click.ClickException(
+            f"no local catalog at {catalog} -- run 'esm-catalog workflow scan' first"
+        )
+
+    report = do_reroot(catalog, old_root, new_root, dry_run=dry_run)
+
+    if report.total_changed == 0:
+        click.echo(f"no asset hrefs under {catalog} contain {old_root!r}")
+        return
+
+    click.echo(
+        f"{'would rewrite' if dry_run else 'rewrote'} "
+        f"{report.collection_assets_changed} collection asset(s), "
+        f"{report.item_assets_changed} item asset(s) across "
+        f"{len(report.shards_touched)} shard(s)"
+    )
+
+    if dry_run:
+        return
+
+    settings = _settings_for(server, insecure)
+    with _stac_client(settings) as client:
+        summary = push_rerooted(catalog, report, client)
+    if summary is not None:
+        click.echo(f"pushed {summary.collections} collection(s), {summary.items} item(s)")
+        if summary.errors:
+            for error in summary.errors:
+                click.secho(f"  ! {error.path}: {error.message}", fg="red")
+            raise click.ClickException(f"{len(summary.errors)} path(s) failed to push")
+
+
 _FORMAT_OPTIONS = [
     click.option(
         "--json",

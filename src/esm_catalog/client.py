@@ -148,12 +148,29 @@ class StacClient:
         self._check(resp, f"delete collection {collection_id!r}")
 
     def list_items(
-        self, collection_id: CollectionId, limit: Optional[int] = None
+        self,
+        collection_id: CollectionId,
+        limit: Optional[int] = None,
+        cql2_filter: Optional[str] = None,
     ) -> StacObject:
-        """Return the server's ``GET /collections/{id}/items`` response."""
-        params = {"limit": limit} if limit is not None else None
+        """Return the server's ``GET /collections/{id}/items`` response.
+
+        *cql2_filter* is forwarded verbatim as a cql2-text filter (OGC API
+        Features Filter extension), e.g. ``"variable='temp2'"``. A plain
+        top-level property name needs no queryables registration to be
+        filterable this way (confirmed live against stac-dev) -- see
+        :mod:`esm_catalog.namelist` for why that holds, and where it stops
+        holding (a colon or dot in the property name).
+        """
+        params: dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if cql2_filter is not None:
+            params["filter"] = cql2_filter
+            params["filter-lang"] = "cql2-text"
         resp = self._client.get(
-            self._base + f"/collections/{collection_id}/items", params=params
+            self._base + f"/collections/{collection_id}/items",
+            params=params or None,
         )
         self._check(resp, f"list items in {collection_id!r}")
         return resp.json()

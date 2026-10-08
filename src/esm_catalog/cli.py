@@ -1409,6 +1409,15 @@ def get_collections(
     "--limit", type=int, default=None,
     help="Max results (list form only); passed through to the API's own 'limit'.",
 )  # fmt: skip
+@click.option(
+    "--filter", "cql2_filter", default=None,
+    help=(
+        "List form only: a cql2-text filter, passed through to the API verbatim "
+        "(OGC API Features Filter extension), e.g. --filter \"variable='temp2'\". "
+        "A plain top-level property needs no queryables registration to be "
+        "filterable this way."
+    ),
+)  # fmt: skip
 @_format_options
 def get_items(
     collection_id: str,
@@ -1416,6 +1425,7 @@ def get_items(
     server: Optional[str],
     insecure: bool,
     limit: Optional[int],
+    cql2_filter: Optional[str],
     json_fmt: bool,
     pretty_fmt: bool,
 ) -> None:
@@ -1424,6 +1434,8 @@ def get_items(
     settings = _settings_for(server, insecure)
     with _stac_client(settings) as client:
         if item_id:
+            if cql2_filter is not None:
+                raise click.ClickException("--filter only applies when listing items")
             obj = client.get_item(collection_id, item_id)
             if obj is None:
                 raise click.ClickException(
@@ -1431,7 +1443,7 @@ def get_items(
                 )
             _emit_single(obj, fmt, _render_item_pretty)
         else:
-            resp = client.list_items(collection_id, limit)
+            resp = client.list_items(collection_id, limit, cql2_filter)
             _emit_list(resp.get("features", []), fmt, _render_items_table)
 
 

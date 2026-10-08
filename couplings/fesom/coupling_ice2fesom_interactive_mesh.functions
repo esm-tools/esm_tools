@@ -559,9 +559,25 @@ function remap_fesom_restart {
 NML
 
     echo " *   running ${remap_bin}"
+    # Thread cap when there is no allocation. remap_restart is OpenMP, and with
+    # no OMP_NUM_THREADS set Intel OpenMP asks for one thread per core -- 256 on
+    # an albedo login node. Combined with the unlimited stack below, each worker
+    # thread wants an enormous stack and pthread_create gives up:
+    #     OMP: System error #11: Resource temporarily unavailable
+    #     forrtl: error (76): Abort trap signal
+    # which aborts the tool (rc=134) before it opens a single file. Inside an
+    # allocation the node is ours and the default is right, so only cap outside
+    # one. regenerate_oasis_weights below makes the same inside/outside
+    # distinction; this is the other half of running couple_in off a login node,
+    # which is what resuming a stalled chain does.
+    local omp_env=""
+    if [ -z "${SLURM_JOB_ID:-}" ]; then
+        omp_env="OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}"
+        echo " *   no allocation: running remap_restart with ${omp_env}"
+    fi
     # Large temp arrays inside remap_restart can blow the default stack
     # (Levante netcdf-fortran is known to need this — same setting as FESOM).
-    ( cd ${COUPLE_DIR} && ulimit -s unlimited && ${remap_bin} )
+    ( cd ${COUPLE_DIR} && ulimit -s unlimited && env ${omp_env} ${remap_bin} )
     local rc=$?
     if [ ${rc} -ne 0 ]; then
         echo " *   remap_restart FAILED (rc=${rc})"

@@ -43,7 +43,7 @@ fesom:
     omp_num_threads: 1
     ranks_per_node: 96
     with_cavity: true
-    cmip7_cmor_output: True
+    cmip7_cmor_output: False   # spin-up: the 118 monthly fields of the default set
     restart_rate: 5
     restart_unit: 'y'
     restart_first: 5
@@ -64,7 +64,7 @@ lpj_guess:
     fixed_CO2: 1850
     fixed_ndep: 1850
     fixed_LU: 1850
-    daily_output: true
+    daily_output: false
     nproc: 64
     omp_num_threads: 2
     lresume: true
@@ -86,7 +86,7 @@ oifs:
     wam: true
     mip: cmip7
     scenario: piControl
-    cmip7_cmor_output: True
+    cmip7_cmor_output: monthly   # spin-up: monthly means only
     time_step: 3600
     nproc: 192
     omp_num_threads: 4

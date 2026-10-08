@@ -1879,6 +1879,14 @@ xios:
                 field_def: ${xml_dir}/cmip7/field_def_cmip7.xml.j2
                 axis_def: ${xml_dir}/cmip7/axis_def.xml
                 grid_def: ${xml_dir}/cmip7/grid_def.xml
+        # Monthly means only, on the regular grid: the light set for spin-ups. It keeps
+        # what the iceberg budget reads (sf, e, ro, lsm) and the surface and
+        # top-of-atmosphere budgets. Set oifs.cmip7_cmor_output: monthly.
+        monthly:
+            config_sources:
+                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                domain_def: ${xml_dir}/domain_def.xml.j2
+                file_def: ${xml_dir}/file_def_oifs_mon.xml.j2
         "*":
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2

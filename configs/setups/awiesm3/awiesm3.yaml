@@ -96,9 +96,13 @@ general:
     # true in the ice-sheet variants (choose_version below).
     with_pism: false
 
-    # The iceberg module. On by default in v3.5.0 and v3.5.0-cc (choose_version
-    # below); the ice-sheet runscripts set it themselves.
-    with_icb: false
+    # The iceberg module. On by default in v3.5.0 and v3.5.0-cc: choose_version
+    # below sets with_icb_default, not with_icb itself, because a value set in a
+    # choose_ block cannot be overridden from the runscript. So with_icb: false in
+    # a runscript switches the icebergs off (needed for legs shorter than a year).
+    # The ice-sheet runscripts set with_icb themselves.
+    with_icb_default: false
+    with_icb: "$(( ${general.with_icb_default} ))"
 
     # Counting the generated bergs into icebergs%ib_num. It has to go in the
     # general recipe: the prepcompute_recipe under fesom's choose_with_icb is
@@ -327,7 +331,7 @@ general:
         # ------------------------------------------------------------------
         v3.5.0:
             major_version: v3.5
-            with_icb: true
+            with_icb_default: true
             couplings:
                 - awiesm3_v3.5.0
             add_include_models:
@@ -339,7 +343,7 @@ general:
             with_co2_veg_coupling: false
         v3.5.0-cc:
             major_version: v3.5
-            with_icb: true
+            with_icb_default: true
             couplings:
                 - awiesm3_v3.5.0
             add_include_models:

@@ -331,6 +331,27 @@ def get_git_branch(path):
         return f"DETACHED HEAD at commit {repo.head.commit.hexsha}"
 
 
+def get_git_remote(path):
+    """Gets the fetch URL of the repo's ``origin`` remote, if any.
+
+    Parameters
+    ----------
+    path : str
+        The path of the repository to examine
+
+    Returns
+    -------
+    str or None :
+        The ``origin`` remote's URL, or ``None`` if the repo has no remote
+        named ``origin`` (e.g. a local-only clone).
+    """
+    repo = git.Repo(path)
+    for remote in repo.remotes:
+        if remote.name == "origin":
+            return remote.url
+    return None
+
+
 def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore.RED}):
     """
     Gets the differences
@@ -376,6 +397,7 @@ def get_all_git_info(path):
         "path": path,
         "hash": get_git_hash(path),
         "branch_name": get_git_branch(path),
+        "remote": get_git_remote(path),
         # NOTE(PG): Dumping to YAML is not friendly with colors, it seems...
         "diffs": get_git_diffs(path, add_colors=False),
     }

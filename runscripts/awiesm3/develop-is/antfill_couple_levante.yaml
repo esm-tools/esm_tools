@@ -1,0 +1,63 @@
+# LEVANTE DRIVER of the antfill coupling. Identical to antfill_couple.yaml except for the
+# three literals esm_tools reads before it resolves any choose_ block: account, base_dir and
+# ism_orog_python. chunky_parts probes <base_dir>/<expid>/scripts/*.date and prepexp creates
+# the experiment folders from the LITERAL base_dir, so antfill_couple.yaml's albedo literal
+# made the first levante launch die with "Permission denied: '/albedo'" (2026-10-08). The
+# model runscripts (antfill_ocean.yaml, antfill_pism.yaml) are shared unchanged.
+#
+# Launch one chain per model:
+#   esm_runscripts antfill_couple_levante.yaml -e <expid> --coupling-chain awiesm3
+#   esm_runscripts antfill_couple_levante.yaml -e <expid> --coupling-chain pism
+general:
+        coupling_mode: concurrent
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        ism_orog_coupled: True
+        use_venv: False
+        user: !ENV ${USER}
+        # Literals for the init-time checks: esm_tools reads general.account (and builds
+        # the experiment dir from base_dir) during "Initializing iterative coupling",
+        # BEFORE any choose_ block is resolved, and the experiment dir keeps this literal
+        # base_dir (the machine block below does NOT override it in time). Hence this
+        # separate driver with levante values; antfill_couple.yaml keeps albedo's.
+        account: ab0246
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+        # MACHINE BLOCK. Unlike antfill_ocean.yaml and antfill_pism.yaml, this file is
+        # the ITERATIVE-COUPLING DRIVER and its general section is resolved before the
+        # rest: a ${general.<var>} that points at a variable defined inside this very
+        # block sends esm_parser's find_variable into infinite recursion. So the driver
+        # sets the three final values directly instead of going through work_dir etc.
+        choose_computer.name:
+                albedo:
+                        account: paleodyn.paleodyn
+                        base_dir: "/albedo/work/user/${general.user}/runtime/awiesm3-develop-is/"
+                        ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
+                levante:
+                        account: ab0246   # a270234 has ab0246 and ab0995, not bb1469 (sacctmgr, 2026-10-08)
+                        base_dir: "/work/ab0246/${general.user}/runtime/awiesm3-develop-is/"
+                        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+        with_recom: False
+        with_icb: True
+
+model1:
+        setup_name: awiesm3
+        runscript: antfill_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: antfill_pism.yaml
+        # 10-yr PISM legs: the ice sheet advances 10 years per ocean year.
+        # Must be a multiple of general.nyear in antfill_pism.yaml.
+        #
+        # Why 10 and not ism44's 25: the ocean only ever sees ONE year per leg, so the sea-ice
+        # and iceberg fluxes it receives are a single year's worth however long the ice leg is,
+        # and the ice front moves further per mesh change the longer the leg. On ism44's 25-yr
+        # legs the restart remap had to carry newly-opened nodes a median 17 km but up to 78 km
+        # from the nearest open water; at 10 yr that tail is shorter.
+        chunk_size: 10
+        chunk_unit: "years"

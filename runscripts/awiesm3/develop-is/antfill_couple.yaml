@@ -23,9 +23,10 @@ general:
         user: !ENV ${USER}
         # Literals for the init-time checks: esm_tools reads general.account (and builds
         # the experiment dir from base_dir) during "Initializing iterative coupling",
-        # BEFORE any choose_ block is resolved. The machine block below then overrides
-        # both. If the override ever failed to apply, levante would reject the albedo
-        # account at submit -- a loud failure, not a silent wrong run.
+        # BEFORE any choose_ block is resolved, and the experiment dir keeps this literal
+        # base_dir (the machine block below does NOT override it in time: the first levante
+        # launch died with "Permission denied: '/albedo'"). On levante launch
+        # antfill_couple_levante.yaml instead, which carries levante's literals.
         account: paleodyn.paleodyn
         base_dir: "/albedo/work/user/${user}/runtime/awiesm3-develop-is/"
         ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"

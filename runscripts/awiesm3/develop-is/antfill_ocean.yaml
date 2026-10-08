@@ -127,13 +127,23 @@ fesom:
     #   KeyError: grid 'ismp' not found in .../grids.nc
     # (seen building this bundle, 2026-10-06). This variant is that file plus the ice section of
     # levante's TCO95_CORE3_ICE.yaml, pointing at the albedo copy of antarct_cr.initial_08km.nc.
+    # ONE choose_computer.name per section: YAML keeps only the last key of a
+    # duplicated mapping, so a second block here silently deletes this one.
     choose_computer.name:
         albedo:
             ocp_template_config: "${general.antfill_root}/tools/ocp-tool/configs/TCO95_CORE3_ICE_albedo.yaml"
+            # albedo has no "compute" partition. The levante name was inherited from
+            # ism44 and stayed latent for 15 cycles, because regenerate_oasis_weights
+            # only reaches its sbatch path when it runs OUTSIDE an allocation; inside
+            # the chain's own batch job it runs inline. Resuming a chain from the
+            # login node is what exposed it, with
+            #   sbatch: error: invalid partition specified: compute
+            ocp_weightgen_partition: "mpp"
         levante:
             # awiesm3.yaml's levante block points ocp_tool_dir at a270092's checkout;
             # TCO95_CORE3_ICE.yaml there is the file the _albedo variant was built from.
             ocp_template_config: "${general.shared_a270092}/software/ocp-tool/configs/TCO95_CORE3_ICE.yaml"
+            ocp_weightgen_partition: "compute"
     # BOTH machines, not just levante. env_fesom.py:190 reads these keys first and only
     # falls back to _conda_env_python(), which returns "" whenever conda is not on PATH --
     # and it is not, in either batch environment. OCP_WEIGHTGEN_DRIVER_PY then arrives
@@ -149,7 +159,6 @@ fesom:
     # ocp-worker carries mpi4py built against the run's own OpenMPI (srun worker).
     ocp_weightgen_driver_py: "${general.conda_env_dir}/ocp-tool2/bin/python"
     ocp_weightgen_worker_py: "${general.conda_env_dir}/ocp-worker/bin/python"
-    ocp_weightgen_partition: "compute"
     # Only the mesh-independent rmp_R096_to_RnfA is taken from here.
     oasis_rmp_template_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/1792"
 

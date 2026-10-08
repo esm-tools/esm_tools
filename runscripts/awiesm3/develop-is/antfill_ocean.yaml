@@ -34,7 +34,7 @@ general:
             # levante below reads that original directly.
             idemix_bot_forcing: "/albedo/work/user/${general.user}/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
         levante:
-            account: "bb1469"
+            account: "ab0246"   # a270234 has ab0246 and ab0995, not bb1469 (sacctmgr, 2026-10-08)
             antfill_root: "/work/ab0246/${general.user}"
             # NOTE "model_codes", plural, on levante; "model_code" on albedo.
             model_code_dir: "/work/ab0246/${general.user}/model_codes/awiesm3-develop-is"

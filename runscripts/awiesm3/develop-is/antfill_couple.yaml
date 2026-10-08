@@ -40,7 +40,7 @@ general:
                         base_dir: "/albedo/work/user/${general.user}/runtime/awiesm3-develop-is/"
                         ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
                 levante:
-                        account: bb1469
+                        account: ab0246   # a270234 has ab0246 and ab0995, not bb1469 (sacctmgr, 2026-10-08)
                         base_dir: "/work/ab0246/${general.user}/runtime/awiesm3-develop-is/"
                         ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
         with_recom: False

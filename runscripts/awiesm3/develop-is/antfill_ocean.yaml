@@ -64,6 +64,9 @@ general:
     # EXTENDED 2026-10-09: the 20 cycles finished on albedo (1919 / 62569); 10 more cycles,
     # 1920-1929 / 62570-62669. Must end on the same cycle as antfill_pism.yaml's "62669-12-31".
     final_date: "1930-01-01"
+    # No 6-hourly pressure-level 3D atmosphere (z t u v q w vo r): ~39 GB of the ~100 GB a
+    # cycle writes, and 831 GB over the first 20. Off from 1921 on (1920 was already prepared).
+    oifs_6h_pl_output: false
     base_dir: "${general.antfill_root}/runtime/awiesm3-develop-is/"
     interactive_mesh: true
     ism_freshwater_return: true

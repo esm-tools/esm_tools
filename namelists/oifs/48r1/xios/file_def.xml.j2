@@ -321,8 +321,9 @@
             </field_group>
         </file>
 
+        <!-- general.oifs_6h_pl_output: false switches this file off (~39 GB per model year at TCO95) -->
         <file
-            enabled="true"
+            enabled="{% if general.oifs_6h_pl_output | default(true) %}true{% else %}false{% endif %}"
 	          timeseries="only"
 	          output_freq="6h"
             name_suffix="_6h_pl"

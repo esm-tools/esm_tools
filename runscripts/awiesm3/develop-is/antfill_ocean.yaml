@@ -61,7 +61,9 @@ general:
     #                                       328 new, 808 dropped; FESOM then ran 1901 on the
     #                                       changed mesh to completion.
     # TO GO BACK TO THE TWO-CYCLE TEST: "1902-01-01" here AND "62389-12-31" in antfill_pism.yaml.
-    final_date: "1920-01-01"
+    # EXTENDED 2026-10-09: the 20 cycles finished on albedo (1919 / 62569); 10 more cycles,
+    # 1920-1929 / 62570-62669. Must end on the same cycle as antfill_pism.yaml's "62669-12-31".
+    final_date: "1930-01-01"
     base_dir: "${general.antfill_root}/runtime/awiesm3-develop-is/"
     interactive_mesh: true
     ism_freshwater_return: true

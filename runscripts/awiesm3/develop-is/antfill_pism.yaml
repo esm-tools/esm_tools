@@ -13,7 +13,8 @@ general:
         # TO GO BACK TO THE TWO-CYCLE TEST: "62389-12-31" here AND "1902-01-01" in
         # antfill_ocean.yaml. That test passed as antftest10; leg 2's couple_in is the first
         # build_submesh on a geometry PISM itself produced, i.e. the first mesh change.
-        final_date: "62569-12-31"
+        # EXTENDED 2026-10-09 by 10 legs to 62669, with antfill_ocean.yaml's "1930-01-01".
+        final_date: "62669-12-31"
         user: !ENV ${USER}
         # MACHINE BLOCK -- the same variables antfill_ocean.yaml defines. The two chains
         # are separate configs and neither sees the other's general, so the block is

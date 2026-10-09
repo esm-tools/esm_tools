@@ -370,6 +370,7 @@ def auth_login(
                     "server_url": server_url,
                     "token_cache_path": str(token_file(server_url)),
                     "has_refresh_token": bool(token.refresh_token),
+                    "expires_at": token.expires_at,
                 }
             )
         )
@@ -384,8 +385,16 @@ def auth_login(
             "Refresh token stored; future pushes will not need a login.", fg="green"
         )
     else:
+        import datetime as _dt
+
+        expiry = (
+            _dt.datetime.fromtimestamp(token.expires_at).strftime("%Y-%m-%d %H:%M:%S")
+            if token.expires_at is not None
+            else "unknown"
+        )
         click.secho(
-            "Note: no refresh token returned — you will re-login when it expires.",
+            f"Note: no refresh token returned — you'll need to log in again once "
+            f"this access token expires ({expiry}).",
             fg="yellow",
         )
 

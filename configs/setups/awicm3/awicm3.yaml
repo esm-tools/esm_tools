@@ -34,6 +34,7 @@ general:
         - 'v3.4.2'
         - 'v3.4.3'
         - 'v3.5'
+        - 'v3.5.0'
         - 'develop'
         - 'frontiers-xios'
 
@@ -162,10 +163,21 @@ general:
             - xios
             oasis_with_yac: False
             xios_interp_order: 1
-          develop:
-            major_version: v3.4
+          # v3.5.0: the release. Same settings as v3.5, but the coupling pins every
+          # component to a release tag, the ones of awiesm3 v3.5.0 without LPJ-GUESS.
+          v3.5.0:
+            major_version: v3.5
             couplings:
-            - fesom-2.7+oifs-48r1+xios-2.5
+            - awicm3_v3.5.0
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          # develop follows v3.5: FESOM main and the OpenIFS branch awiesm3-develop.
+          develop:
+            major_version: v3.5
+            couplings:
+            - fesom-2.8+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -623,6 +635,10 @@ fesom:
                         with_xios: true
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+                # The v3.5 arm above pins version 2.8, and that pin wins over the
+                # fesom-2.8.2 of the coupling in esm_master, so the tag is named here.
+                v3.5.0:
+                        branch: "2.8.2"
                 develop:
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}

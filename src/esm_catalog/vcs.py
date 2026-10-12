@@ -43,8 +43,11 @@ def _vcs_info_initial_path(exp_root: UPath, experiment_id: str) -> UPath:
 
 def read_vcs_info_initial(exp_metadata: ExperimentMetadata) -> Optional[dict]:
     """The authoritative, frozen VCS snapshot, or ``None`` if never written."""
-    exp_root = UPath(str(exp_metadata.experiment_path))
-    path = _vcs_info_initial_path(exp_root, exp_metadata.experiment_id)
+    # exp_metadata.experiment_path is already the real UPath (storage_options
+    # and all) -- re-deriving one from str() loses the host for remote
+    # protocols (sftp://, ...); confirmed live (SSHFileSystem.__init__()
+    # missing 'host').
+    path = _vcs_info_initial_path(exp_metadata.experiment_path, exp_metadata.experiment_id)
     if not path.exists():
         return None
     try:

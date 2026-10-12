@@ -190,7 +190,9 @@ def source_experiment(
 
     return ExperimentMetadata(
         experiment_id=_experiment_id(run_cfgs),
-        experiment_path=Path(str(exp_root)),
+        # Keep the real UPath (storage_options and all) -- stringifying and
+        # rewrapping it loses the host for remote protocols (sftp://, ...).
+        experiment_path=exp_root,
         description=_first_value(general_metadata, "Description"),
         data_license=_first_value(general_metadata, "License"),
         contacts=_contacts(general_metadata),

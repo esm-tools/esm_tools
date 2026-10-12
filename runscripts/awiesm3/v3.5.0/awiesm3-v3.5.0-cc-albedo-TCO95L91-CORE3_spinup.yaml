@@ -18,11 +18,13 @@ general:
     account: !ENV ${ESM_ACCOUNT}
     compute_time: "05:00:00"
     initial_date: "1850-01-01"
-    final_date: "1900-01-01"
+    final_date: "2350-01-01"
     base_dir: "/albedo/work/projects/p_awiesm3_cmip7/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 0
     nyear: 5
+    clean_old_rundirs_except: 10
+    clean_old_rundirs_keep_every: 10
     use_venv: True
     pre_run_commands: "ulimit -n 262144 || ulimit -n 65535 || true; export ESM_ACCOUNT=$(sshare -U -n -P -u $USER -o FairShare,Account | sort -t'|' -k1,1nr | head -1 | cut -d'|' -f2)"
     with_co2_concdriven: true
@@ -56,6 +58,14 @@ fesom:
             restart_in_sources:
                 par_oce_restart: /${ini_restart_dir}/fesom.1902.oce.restart/*.nc
                 par_ice_restart: /${ini_restart_dir}/fesom.1902.ice.restart/*.nc
+    add_namelist_changes:
+        namelist.recom:
+            pavariables:
+                restore_alkalinity: false
+        namelist.config:
+            icebergs:
+                l_allowgrounding: 1
+                l_cap_ibhf_n: true
 
 lpj_guess:
     resolution: "TCO95"

@@ -230,8 +230,8 @@
 
             <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
                 <field field_ref="lsm" name="lsm" long_name="Land-sea mask"/>
-        <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
-        <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
+                <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>
+                <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>
         <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
         <!--    <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>  -->
                 <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
@@ -291,6 +291,7 @@
 {% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
                 <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
                 <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
+                <field field_ref="co2fire" name="co2fire"/>
                 <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
 {% endif %}
             </field_group>

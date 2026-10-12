@@ -1,8 +1,17 @@
-"""VCS/provenance STAC extension: which code version produced this experiment.
+"""VCS/provenance STAC extension: which code version produced each component.
 
-Collection-level only (a Collection is a whole experiment, see
-:mod:`esm_catalog.namelist`'s own docstring for the same reasoning). Two
-sources, in priority order:
+Item-level, not Collection-level: each Item is exactly one (component,
+stream) (see item.py's module docstring), so each Item's own component has
+exactly one VCS state -- there is no need to force a per-component dict onto
+the Collection the way an earlier, now-abandoned design did (bare
+``processing:software``, keyed by component). The real ``vcs`` stac-extension
+fields (``vcs:type``/``vcs:branch``/``vcs:revision``) land directly on each
+Item's properties instead; a plain, unprefixed ``remote`` sits alongside
+them (the real extension has no remote field, and is ``additionalProperties:
+false`` -- bare ``remote`` is a deliberate, acknowledged addition, not an
+extension-schema field).
+
+Two sources per component, in priority order:
 
 1. ``<expid>_vcs_info_initial.yaml`` under the experiment's ``log/`` dir --
    written once by ``esm_runscripts.prepare.add_vcs_info`` from a frozen,
@@ -13,7 +22,10 @@ sources, in priority order:
    component's ``model_dir`` in the finished_config. This is the *shared*,
    possibly-drifted central checkout, not a per-experiment snapshot, so the
    result is always marked ``reconstructed: true``: it is a best-effort
-   after-the-fact guess at what was probably used, not a recorded fact.
+   after-the-fact guess at what was probably used, not a recorded fact. Both
+   sources share the same per-component dict shape (path, hash, branch_name,
+   remote, diffs, [reconstructed, note]) -- see
+   ``esm_runscripts.helpers.get_all_git_info``.
 """
 
 from __future__ import annotations
@@ -102,8 +114,8 @@ def _reconstruct_component_vcs(path: str) -> dict[str, Any]:
     }
 
 
-def vcs_processing_software(exp_metadata: ExperimentMetadata) -> dict[str, dict]:
-    """``processing:software``'s value: per-component VCS state, however sourced."""
+def vcs_by_component(exp_metadata: ExperimentMetadata) -> dict[str, dict]:
+    """Every component's VCS state (frozen snapshot if present, else reconstructed)."""
     initial = read_vcs_info_initial(exp_metadata)
     if initial is not None:
         return initial
@@ -113,25 +125,72 @@ def vcs_processing_software(exp_metadata: ExperimentMetadata) -> dict[str, dict]
     }
 
 
-def add_vcs_collection_extension(collection, exp_metadata: ExperimentMetadata) -> None:
-    software = vcs_processing_software(exp_metadata)
-    if not software:
+#: collection_id -> already-computed vcs_by_component() result, computed once
+#: per experiment (reading the snapshot file or shelling out to git is not
+#: free, and every Item in the experiment would otherwise trigger it again).
+_SOFTWARE_CACHE: dict[str, dict] = {}
+
+
+def _vcs_by_component_once(exp_metadata: ExperimentMetadata) -> dict[str, dict]:
+    collection_id = exp_metadata.collection_id
+    if collection_id in _SOFTWARE_CACHE:
+        return _SOFTWARE_CACHE[collection_id]
+    software = vcs_by_component(exp_metadata)
+    _SOFTWARE_CACHE[collection_id] = software
+    return software
+
+
+def vcs_item_props(component_vcs: dict) -> dict:
+    """The ``vcs:*`` (+ bare ``remote``) Item properties for one component's VCS dict.
+
+    Parameters
+    ----------
+    component_vcs : dict
+        One component's entry from :func:`vcs_by_component` (frozen-snapshot
+        or reconstructed shape -- both share path/hash/branch_name/remote/
+        diffs/[reconstructed/note]).
+
+    Returns
+    -------
+    dict
+        The properties to set on the Item; empty if *component_vcs* has no
+        hash (nothing to report).
+    """
+    if not component_vcs.get("hash"):
+        return {}
+    props: dict[str, Any] = {
+        "vcs:type": "git",
+        "vcs:revision": component_vcs["hash"],
+    }
+    if component_vcs.get("branch_name"):
+        props["vcs:branch"] = component_vcs["branch_name"]
+    if component_vcs.get("remote"):
+        # Bare, not vcs:remote: the real extension has no remote field and is
+        # additionalProperties: false.
+        props["remote"] = component_vcs["remote"]
+    if component_vcs.get("reconstructed"):
+        props["reconstructed"] = True
+        if component_vcs.get("note"):
+            props["reconstructed_note"] = component_vcs["note"]
+    return props
+
+
+def add_vcs_item_extension(item, component: str, exp_metadata: ExperimentMetadata) -> None:
+    """Set ``vcs:*`` on *item* from *component*'s VCS state, if any is known."""
+    software = _vcs_by_component_once(exp_metadata)
+    component_vcs = software.get(component)
+    if not isinstance(component_vcs, dict):
         return
-    collection.extra_fields["processing:software"] = software
-    if any(info.get("reconstructed") for info in software.values() if isinstance(info, dict)):
-        collection.extra_fields["processing:lineage"] = (
-            "One or more components' VCS state was reconstructed after the "
-            "fact from the shared model_dir (no per-experiment snapshot was "
-            "recorded for this run) -- see each component's own 'note'."
-        )
-    else:
-        collection.extra_fields["processing:lineage"] = (
-            "Recorded from a frozen per-experiment source snapshot "
-            "(esm_runscripts.prepare.add_vcs_info)."
-        )
-    apply_extension(collection, Extension.processing, validate=False)
+    props = vcs_item_props(component_vcs)
+    if not props:
+        return
+    item.properties.update(props)
+    apply_extension(item, Extension.vcs, validate=False)
 
 
 @hookimpl
-def apply_to_collection(collection, exp_metadata, hints) -> None:
-    add_vcs_collection_extension(collection, exp_metadata)
+def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    component = file_metadata.component
+    if not component:
+        return
+    add_vcs_item_extension(item, component, exp_metadata)

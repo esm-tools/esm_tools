@@ -139,6 +139,14 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
         file_metadata.component = output_file.component
         file_metadata.role = output_file.role
         file_metadata.category = output_file.category
+        if output_file.md5:
+            file_metadata.checksum = _md5_to_multihash(output_file.md5)
+        try:
+            file_metadata.size = output_file.path.stat().st_size
+        except OSError:
+            # file:size is a nice-to-have, not worth failing a scan over --
+            # same tolerant stance as _fingerprint's own stat() fallback.
+            pass
         # A walked outdata file (no outdata_targets entry) carries no declared
         # stream. Try path-facet extraction first, same resolution _triage
         # uses -- so a later file of this stream, shortcut via the facet
@@ -718,6 +726,19 @@ def _run_stamp(exp_metadata: ExperimentMetadata) -> RunStamp:
     if start is None or end is None:
         return "unknown"
     return f"{start:%Y%m%d}-{end:%Y%m%d}"
+
+
+_MD5_MULTIHASH_PREFIX = "d50110"
+"""Multihash prefix for MD5: varint-encoded function code 0xd5 ('d501', two
+bytes since 0xd5 > 127 needs continuation) + varint digest length 16 ('10').
+The file extension's ``file:checksum`` is defined as a multihash, not a bare
+hex digest -- e.g. the SHA-256 reference shape is '1220' + 64 hex chars
+(code 0x12, length 0x20); this is the MD5 equivalent, prefix + 32 hex chars."""
+
+
+def _md5_to_multihash(md5_hex: str) -> str:
+    """*md5_hex* (a bare lowercase hex digest) as a multihash string."""
+    return f"{_MD5_MULTIHASH_PREFIX}{md5_hex}"
 
 
 def _fingerprint(output_file: OutputFile) -> str:

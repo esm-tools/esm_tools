@@ -32,6 +32,7 @@ general:
         - 'v3.4.0'
         - 'v3.4.1'
         - 'v3.4.2'
+        - 'v3.4.3'
         - 'v3.5'
         - 'develop'
         - 'frontiers-xios'
@@ -139,6 +140,18 @@ general:
             - xios
             oasis_with_yac: False
             xios_interp_order: 1
+          # v3.4.2 with OpenIFS 48r1v4.1 (48r1v4 plus the source fixes for the
+          # Intel LLVM compilers of 2025, no change in results intended). The
+          # atmosphere-ocean part of awiesm3 v3.4.3; first version that builds
+          # and runs on blogin.
+          v3.4.3:
+            major_version: v3.4
+            couplings:
+            - awicm3_v3.4.3
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
           # First version on FESOM 2.8. Otherwise a copy of v3.4; the two are
           # expected to diverge, which is what makes it a new major version.
           v3.5:
@@ -184,7 +197,10 @@ general:
                 aleph:
                         pool_dir: "/proj/awi/input"
                 blogin:
-                        pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
+                        # /scratch/usr/hbkawi/AWICM3_INPUT no longer exists. No
+                        # shared pool on blogin yet; this is the copy the v3.4.3
+                        # port was tested with, the same as for awiesm3.
+                        pool_dir: "/scratch/usr/hbkmpaha/input"
                 albedo:
                         pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
                 "*":
@@ -592,6 +608,19 @@ fesom:
         # per-mesh whichEVP default from fesom-2.7.yaml.
         choose_general.version:
                 v3.4.2:
+                        choose_resolution:
+                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+                v3.4.3:
+                        # The v3.4 arm above pins version 2.7, and a version
+                        # pinned in the setup wins in esm_master over the one
+                        # in the coupling, so the build takes the default branch
+                        # of fesom-2.7.yaml, 2.7.0. v3.4.0 to v3.4.2 are left
+                        # as they are; v3.4.3 builds the 2.7.7 its coupling names.
+                        branch: "2.7.7"
+                        # FESOM 2.7.7 is built with XIOS (comp_command above) and
+                        # waits at start-up for its XIOS context, so the context
+                        # files have to be staged, as awiesm3 v3.4 does.
+                        with_xios: true
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
                 develop:
@@ -1149,6 +1178,10 @@ computer:
                         compiler_mpi: intel2022_openmpi
                     albedo:
                         mpi_implementation: openmpi_2026
+                    blogin:
+                        # The machine default is intel2024_impi2021 (FOCI).
+                        iolibraries: system_libs
+                        compiler_mpi: intel2025_impi2021
             v3.5:
                 choose_name:
                     juwels:

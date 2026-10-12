@@ -126,6 +126,7 @@ oifs:
     - 48r1v1
     - 48r1v2
     - 48r1v4
+    - 48r1v4.1
     - 48r1v5
     - 48r1v6
     - 48r1-develop
@@ -389,6 +390,19 @@ oifs:
         major_version: 48r1
       48r1v4:
         branch: '48r1v4'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1v4.1:
+        # 48r1v4 plus the source changes of 992ad16 "Fixes for Intel LLVM compiler (2025)"
+        # (suvfe_knot, aer_macv2sp_mod, srfsn_regrid_mod). Used by awiesm3 v3.4.3. Needed with
+        # ifx 2025.3, where 48r1v4 stops with a floating invalid during setup.
+        branch: '48r1v4.1'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS

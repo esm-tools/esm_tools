@@ -264,7 +264,9 @@ group "common" (
 	has_aerenchyma 0		! PFTs do not have aerenchyma for gas transport by default
 	stem_frac 1
 	twig_frac 0
+{% if lpj_guess.set_ltos | default(true) %}
 	ltos 0.1
+{% endif %}
 )
 
 group "tree" (
@@ -372,7 +374,9 @@ group "grass" (
 	turnover_harv_prod 1 	! Turnover rate for long-lived harvested products (wood): 
 				! 1-year turnover time for GRASS
 	harvest_slow_frac 0
+{% if lpj_guess.set_ltos | default(true) %}
 	ltos 0.05
+{% endif %}
 )
 
 group "broadleaved" (

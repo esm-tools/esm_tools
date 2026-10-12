@@ -151,6 +151,7 @@ general:
         - 'v3.4.0'
         - 'v3.4.1'
         - 'v3.4.2'
+        - 'v3.4.3'
         - 'v3.5'
         - 'v3.5-cc'
         - 'v3.5-is'
@@ -194,6 +195,24 @@ general:
             icmgg_suffix: ""
             couplings:
                 - awiesm3_v3.4.2
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        # v3.4.2 as the CMIP7 production runs use it, plus technical fixes:
+        # LPJ-GUESS 4.1.12.1 (lpj_guess_awiesm3_cmip7 at d670d66, what production
+        # was rebuilt with on 2026-09-28) and OpenIFS 48r1v4.1 (48r1v4 plus the
+        # source fixes for the Intel LLVM compilers of 2025, no change in results
+        # intended). First version that builds and runs on blogin.
+        v3.4.3:
+            major_version: v3.4
+            # Released with the pre-863c94a ICMGG. Keep that name.
+            icmgg_suffix: ""
+            couplings:
+                - awiesm3_v3.4.3
             add_include_models:
                 - xios
             oasis_with_yac: false
@@ -393,6 +412,10 @@ general:
             pool_dir: "/proj/awi/input"
         albedo:
             pool_dir: "/albedo/pool/"
+        blogin:
+            # No shared AWI-ESM3 pool on blogin yet; this is the copy the
+            # v3.4.3 port was tested with.
+            pool_dir: "/scratch/usr/hbkmpaha/input"
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -1447,6 +1470,9 @@ fesom:
         v3.4.2:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.4.3:
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop:
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
@@ -1696,6 +1722,13 @@ lpj_guess:
     # LR (TCO95 with FESOM CORE3): soil temperature from IFS; cells the LUH3 data
     # never covers on the CORE3 coastline are authorised as natural.
     choose_general.major_version:
+        "v3.4":
+            # The LPJ-GUESS tags of v3.4.x (4.1.5, 4.1.6, 4.1.12.1) do not know ltos.
+            set_ltos: false
+            # v3.4.x input (masks.nc, LPJ-GUESS state) is on the L-grid, and the
+            # CMIP7 production runs use it. coupled_land, the default in
+            # lpj_guess.yaml, needs <resolution>-land in masks.nc.
+            grid_product: legacy
         "v3.5":
             # Peat capped at the smallest natural fraction LUH3 has in the cell
             # over 0850-2024, so the peat area always fits inside natural land.
@@ -2082,8 +2115,11 @@ oasis3mct:
                     - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                     - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 rstos.nc:
-                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo:A_Ice_thickness <--gauswgt_i--
-                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom:sit_feom'
+                    # Five fields: FESOM 2.7.x does not send sit_feom. The ice
+                    # thickness exchange belongs to v3.5 only; with it in this
+                    # list OASIS aborts on a namcouple field nobody declares.
+                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i--
+                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                     - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 vegin.nc:
                     # BUG FIX (2025-03-16): GUE_TYPH and GUE_FRAL were swapped, causing IFS to receive? Investigate further and check if this has any impact on the results. The old (wrong) configuration is included here for reference.
@@ -2591,6 +2627,10 @@ computer:
                 albedo:
                     mpi_implementation: openmpi_2026
                     load_python: true
+                blogin:
+                    # The machine default is intel2024_impi2021 (FOCI).
+                    iolibraries: system_libs
+                    compiler_mpi: intel2025_impi2021
         # v3.5: the develop* variants. Identical to v3.4 here; the coupling
         # differences live in the oasis3mct block. v3.4.x is untouched.
         "v3.5":

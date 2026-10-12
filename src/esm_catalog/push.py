@@ -34,6 +34,7 @@ from stac_geoparquet.arrow import stac_table_to_items
 from upath import UPath
 
 from esm_catalog.client import CollectionId, StacClient, StacClientError, StacObject
+from esm_catalog.scan.ingest import FAILURES_FILENAME
 from esm_catalog.scan.workspace import QUERYABLES_FILENAME, STATE_FILENAME
 from esm_catalog.storage.geoparquet import read_shard
 
@@ -47,7 +48,12 @@ _SHARD_SUFFIXES = {".parquet", ".geoparquet"}
 QUERYABLES_DELTA_FILENAME = "queryables-delta.json"
 
 #: Catalog sidecars that are not STAC objects and must never be pushed.
-_SKIP_FILES = {STATE_FILENAME, QUERYABLES_FILENAME, QUERYABLES_DELTA_FILENAME}
+_SKIP_FILES = {
+    STATE_FILENAME,
+    QUERYABLES_FILENAME,
+    QUERYABLES_DELTA_FILENAME,
+    FAILURES_FILENAME,
+}
 
 
 class PushError(BaseModel):
@@ -109,6 +115,8 @@ def classify_file(path: Path) -> PathKind:
 
 def _stac_kind(obj: StacObject) -> PathKind:
     """Classify a parsed STAC object by its ``type`` field."""
+    if not isinstance(obj, dict):
+        return "unknown"
     t = str(obj.get("type", "")).lower()
     if t == "collection":
         return "collection"

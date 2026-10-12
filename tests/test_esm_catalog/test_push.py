@@ -355,6 +355,26 @@ def test_expand_paths_skips_queryables_sidecar(tmp_path):
     assert "esm-catalog.json" not in names
 
 
+def test_expand_paths_skips_scan_failures_sidecar(tmp_path):
+    # scan-failures.json is a bare JSON list -- classify_file/_stac_kind must
+    # not crash on a non-dict JSON body, and the file itself must never be
+    # treated as a STAC object to push.
+    catalog = tmp_path / "catalog"
+    catalog.mkdir()
+    (catalog / "collection.json").write_text(
+        json.dumps({"type": "Collection", "id": "c"})
+    )
+    (catalog / "scan-failures.json").write_text(json.dumps([{"path": "x.nc"}]))
+
+    names = [p.name for p in pushmod.expand_paths([catalog])]
+    assert "collection.json" in names
+    assert "scan-failures.json" not in names
+
+
+def test_stac_kind_handles_non_dict_json():
+    assert pushmod._stac_kind([1, 2, 3]) == "unknown"
+
+
 def _asset_item(item_id, collection, asset_key, dt="2020-01-01T00:00:00Z"):
     """A single-asset shard-row shape, as pushed for a growing (Item=stream) id."""
     return {

@@ -6,9 +6,11 @@ import subprocess
 from pathlib import Path
 
 import yaml
+from upath import UPath
 
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.vcs import (
+    _ssh_host,
     add_vcs_item_extension,
     read_vcs_info_initial,
     vcs_by_component,
@@ -105,3 +107,59 @@ def test_add_vcs_item_extension_noop_for_unknown_component(tmp_path, item):
     add_vcs_item_extension(item, "fesom", em)  # not in model_dirs
 
     assert "vcs:type" not in item.properties
+
+
+# --- remote (sftp) scans: model_dir reconstruction must run on the remote host ---
+
+
+def test_ssh_host_none_for_local_scan(tmp_path):
+    em = _experiment_metadata(tmp_path)
+    assert _ssh_host(em) is None
+
+
+def test_ssh_host_from_sftp_experiment_path():
+    em = ExperimentMetadata(
+        experiment_id="exp1",
+        experiment_path=UPath("sftp://albedo0.dmawi.de/work/exp1"),
+    )
+    assert _ssh_host(em) == "albedo0.dmawi.de"
+
+
+def test_reconstruction_runs_git_over_ssh_for_remote_scan(monkeypatch):
+    calls = []
+
+    def fake_run(argv, **kwargs):
+        calls.append(argv)
+        out = "true" if argv[:2] == ["ssh", "albedo0.dmawi.de"] else ""
+        return subprocess.CompletedProcess(argv, 0, stdout=out, stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    em = ExperimentMetadata(
+        experiment_id="exp1",
+        experiment_path=UPath("sftp://albedo0.dmawi.de/work/exp1"),
+        model_dirs={"echam": "/work/models/echam"},
+    )
+    software = vcs_by_component(em)
+
+    assert software["echam"]["reconstructed"] is True
+    assert all(argv[0] == "ssh" and argv[1] == "albedo0.dmawi.de" for argv in calls)
+    # the git invocation itself is one already-quoted string, not split argv
+    assert all(len(argv) == 3 for argv in calls)
+    assert "git -C /work/models/echam" in calls[0][2]
+
+
+def test_reconstruction_remote_unreachable_note_distinct_from_non_git(monkeypatch):
+    def fake_run(argv, **kwargs):
+        return subprocess.CompletedProcess(argv, 255, stdout="", stderr="ssh: connect failed")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    em = ExperimentMetadata(
+        experiment_id="exp1",
+        experiment_path=UPath("sftp://albedo0.dmawi.de/work/exp1"),
+        model_dirs={"echam": "/work/models/echam"},
+    )
+    software = vcs_by_component(em)
+
+    assert software["echam"]["note"] == "unreachable over ssh"

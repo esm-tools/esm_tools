@@ -114,6 +114,10 @@ setup(
             "pydantic-settings>=2.2",
             "platformdirs>=4.0",
             "pyyaml>=6.0",
+            # Parses/compares the paleo: extension's geological-time strings
+            # (unbounded, optionally negative years RFC3339 can't express) --
+            # used by paleo.py to compute the paleo:year range summary.
+            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
         # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
         # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5
@@ -123,7 +127,6 @@ setup(
             "pytest>=7.4",
             "scipy>=1.10",
             "h5py>=3.8",
-            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
         # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
         # is heavy and awkward in CI, so the scanner treats GRIB as unsupported

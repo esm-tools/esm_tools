@@ -8,17 +8,32 @@ Deliberately scoped to the DRS facets that describe *the experiment as a
 whole* and can be honestly declared by a runscript author -- ``activity_id``,
 ``institution_id``, ``source_id``, ``experiment_id``, ``mip_era``,
 ``variant_label``, ``sub_experiment_id``, ``source_type``,
-``further_info_url``. Left out on purpose:
+``further_info_url``, ``institution``, ``experiment``. ``frequency`` is set
+automatically at Item level from the already-scanned ``FileMetadata.frequency``
+(a real per-file fact, not something a runscript author declares). Left out
+on purpose, against the real upstream schema's own 19-field list
+(confirmed by fetching ``cmip6/v1.0.0/schema.json`` directly, not assumed):
 
-- ``variable_id``, ``table_id``, ``frequency``, ``cf_standard_name``,
-  ``variable_units``, ``nominal_resolution``, ``grid_label`` -- these describe
-  one *output file*, not the experiment, and need either scan-time derivation
-  (frequency is already in ``FileMetadata``) or a raw-name -> CMOR-standard-name
-  mapping this extension does not attempt (that belongs to a PyCMOR/CMOR-style
-  enricher, see ``scan/enrichers.py``, not here).
-- ``version``, ``retracted``, ``data_specs_version``, ``citation_url`` -- these
-  are ESGF publication-time facts (assigned when data is actually submitted),
-  not properties of a scanned experiment.
+- ``variable_id``, ``table_id``, ``variable_long_name``, ``grid_label``,
+  ``nominal_resolution``, ``grid`` -- these describe one *output
+  file*/*variable*, not the experiment (``grid`` varies by component --
+  ECHAM and FESOM report different grid descriptions in the same
+  experiment), and need either per-file derivation this module doesn't
+  attempt, or a raw-name -> CMOR-standard-name mapping. Planned as a
+  PyCMOR integration, not built yet.
+- ``data_specs_version`` -- an ESGF publication-time fact (assigned when
+  data is actually submitted), not a property of a scanned experiment.
+
+Not attempted at all: ``Conventions``, ``license``, ``product``, ``realm``,
+``tracking_id``, ``creation_date``, ``forcing_index``/
+``initialization_index``/``physics_index``/``realization_index``, bare
+``source``, bare ``sub_experiment``. These are real CMIP6 fields, but they
+belong to the CMOR *NetCDF global-attributes* convention, not the
+``stac-extensions/cmip6`` STAC extension this module implements (confirmed
+against the real schema, which defines neither). Support for that broader
+set belongs in the planned PyCMOR integration, which already generates
+CMOR global attributes -- not a reason to invent non-standard ``cmip6:``
+extras here.
 
 The values come from the ``general.metadata.cmip6`` config section -- an
 ``extra`` key alongside ``general.metadata``'s existing Description/Authors/
@@ -81,6 +96,10 @@ class Cmip6Config(BaseModel):
     variant_label: Optional[Cmip6FacetValue] = None
     source_type: Optional[Cmip6FacetValue] = None
     further_info_url: Optional[Cmip6FacetValue] = None
+    institution: Optional[Cmip6FacetValue] = None
+    """Full institution name, distinct from the short ``institution_id`` code."""
+    experiment: Optional[Cmip6FacetValue] = None
+    """Full descriptive experiment name, distinct from the short ``experiment_id`` code."""
 
 
 #: The config keys map 1:1 onto the cmip6: fields — derived from Cmip6Config so
@@ -110,11 +129,17 @@ def cmip6_props(cmip6_config: Optional[Cmip6Config]) -> dict:
 
 
 def add_cmip6_item_extension(
-    item: pystac.Item, cmip6_config: Optional[Cmip6Config] = None
+    item: pystac.Item,
+    cmip6_config: Optional[Cmip6Config] = None,
+    *,
+    frequency: Optional[str] = None,
 ) -> None:
     """Set ``cmip6:*`` DRS facets on *item* from *cmip6_config*.
 
-    No-op when *cmip6_config* declares no facets.
+    No-op when *cmip6_config* declares no facets -- a non-CMIP-aligned run
+    stays a complete no-op, *frequency* included: it is only added once
+    *cmip6_config* has already marked this experiment CMIP-aligned, never on
+    its own.
 
     Parameters
     ----------
@@ -122,10 +147,16 @@ def add_cmip6_item_extension(
         The item to annotate in place.
     cmip6_config : Cmip6Config or None, optional
         The ``general.metadata.cmip6`` config section.
+    frequency : str or None, optional
+        This item's own ``FileMetadata.frequency`` -- a real per-file fact,
+        not something a runscript author declares, so it is not a
+        :class:`Cmip6Config` field.
     """
     props = cmip6_props(cmip6_config)
     if not props:
         return
+    if frequency:
+        props["cmip6:frequency"] = frequency
     item.properties.update(props)
     # Remote schema (upstream stac-extensions) — nothing local to validate against.
     apply_extension(item, Extension.cmip6, validate=False)
@@ -155,7 +186,9 @@ def add_cmip6_collection_extension(
 
 @hookimpl
 def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
-    add_cmip6_item_extension(item, exp_metadata.cmip6_config)
+    add_cmip6_item_extension(
+        item, exp_metadata.cmip6_config, frequency=file_metadata.frequency
+    )
 
 
 @hookimpl

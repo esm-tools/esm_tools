@@ -181,6 +181,11 @@ lpj_guess:
     # collect_txt: combile into one run1 folder for ec2cmor2 few files, fast
     # convert_netcdf (future)
     output_mode: collect_txt
+    # collect_txt: script of the Combine_LPJG subjob. Set your own in the runscript or a
+    # further_reading yaml (e.g. to change the lpjg2nc options), e.g.
+    #   lpj_guess:
+    #       combine_script: /abs/path/to/my_subjob_combine.sh
+    combine_script: "${esm_configs_dir}/components/lpj_guess/subjob_combine.sh"
     choose_output_mode:
         esm_tools_copy:
             # Define files to ignore
@@ -282,7 +287,7 @@ lpj_guess:
             scripts_files:
                 combine1: combine1
             scripts_sources:
-                combine1: "${esm_configs_dir}/components/lpj_guess/subjob_combine.sh"
+                combine1: "${lpj_guess.combine_script}"
             scripts_targets:
                 combine1: "${general.experiment_scripts_dir}/${model}/subjob_combine.sh"
 

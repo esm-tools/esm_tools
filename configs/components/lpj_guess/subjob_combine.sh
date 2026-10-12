@@ -49,11 +49,11 @@ else
     exit $rc
 fi
 
-# Run lpjg2nc with --remap --nc_keep_unstruc --nc_rm_ascii
-echo "$(date):: Running lpjg2nc --remap --nc_keep_unstruc --nc_rm_ascii ..."
+# Run lpjg2nc with --remap
+echo "$(date):: Running lpjg2nc --remap ..."
 lpjg2nc=$(command -v lpjg2nc)
-echo "${lpjg2nc} -p ${output_path} --remap --nc_keep_unstruc --nc_rm_ascii -o ${output_path} -j ${njobs}"
-${lpjg2nc} -p "${output_path}" --remap --nc_keep_unstruc --nc_rm_ascii -o "${output_path}" -j "${njobs}"
+echo "${lpjg2nc} -p ${output_path} --remap -o ${output_path} -j ${njobs}"
+${lpjg2nc} -p "${output_path}" --remap -o "${output_path}" -j "${njobs}"
 rc=$?
 if [ $rc -eq 0 ]; then
     echo "$(date):: Successfully converted LPJ-GUESS output to nc"

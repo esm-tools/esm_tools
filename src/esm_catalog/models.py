@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime
-from pathlib import Path
-from typing import Optional, TypedDict, cast
+from typing import Any, Optional, TypedDict, cast
 
-from pydantic import BaseModel, ConfigDict, Field, SkipValidation, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SkipValidation,
+    field_serializer,
+    field_validator,
+)
+from upath import UPath
 
 from esm_catalog.cmip6 import Cmip6Config
 from esm_catalog.namelist import NamelistsByComponent
@@ -68,8 +75,27 @@ class ExperimentMetadata(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     experiment_id: ExperimentId
-    experiment_path: Path
+    # UPath, not pathlib.Path: a remote exp_root (sftp://, s3://, ...) carries
+    # storage_options (host, credentials, ...) that a plain Path can't
+    # represent, and pydantic's own Path validator rejects a UPath instance
+    # outright rather than silently degrading it -- confirmed live. Keep this
+    # the actual UPath all the way through; don't round-trip via str().
+    experiment_path: UPath
     description: Optional[str] = None
+
+    @field_validator("experiment_path", mode="before")
+    @classmethod
+    def _coerce_experiment_path(cls, value: Any) -> Any:
+        """Promote any path-like value to UPath, leaving a UPath untouched.
+
+        A plain local path (test fixtures, a bare string) just wraps; a
+        UPath that already carries storage_options (host, credentials, ...
+        for a remote exp_root) passes through as-is rather than being
+        rebuilt from its string form, which would drop them.
+        """
+        if isinstance(value, UPath):
+            return value
+        return UPath(value)
     data_license: Optional[License] = None
     # Model components, including baked-in submodels (e.g. jsbach inside echam).
     components: list[ComponentName] = []

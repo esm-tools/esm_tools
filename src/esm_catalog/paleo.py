@@ -30,7 +30,9 @@ from __future__ import annotations
 from typing import Optional
 
 import pystac
+from paleodatetime import PaleoDateTime
 from pydantic import BaseModel, ConfigDict
+from pystac.summaries import RangeSummary
 
 from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
@@ -126,13 +128,54 @@ def add_paleo_item_extension(
     apply_extension(item, Extension.paleo, validate=validate)
 
 
+def _paleo_year_range(props: dict) -> Optional[RangeSummary[int]]:
+    """The ``[min, max]`` integer-year span of *props*' geological datetimes.
+
+    ``paleo:datetime``/``start_datetime``/``end_datetime`` are ISO-8601-like
+    strings with an unbounded year that RFC3339/CQL2's temporal literals
+    can't parse, and plain string comparison silently breaks across
+    different year-magnitude digit counts (e.g. "-2000-01-01" sorts *less*
+    than "-21000-01-01" as text, even though -2000 is numerically greater).
+    This parses them with ``paleodatetime`` into real integers instead, so a
+    search UI can filter/sort on them correctly.
+
+    Returns ``None`` when *props* sets no datetime field (a label-only run).
+    """
+    years = [
+        PaleoDateTime.fromisoformat(props[f"paleo:{field}"]).year
+        for field in ("datetime", "start_datetime", "end_datetime")
+        if f"paleo:{field}" in props
+    ]
+    if not years:
+        return None
+    return RangeSummary(min(years), max(years))
+
+
+# Added to every negative-capable paleo year before it's ever compared in a
+# CQL2 filter (see paleo:year_filter below). Confirmed live against a real
+# deployment: a bare negative numeric literal in a CQL2 filter against this
+# field crashes the server --
+#   "operator does not exist: text * text" (UndefinedFunctionError)
+# -- the backend's CQL2-to-SQL compiler evidently lowers unary minus to a
+# multiply-by-negative-one against a text-typed JSON path, which fails
+# outright; positive literals are unaffected. 100 billion safely exceeds any
+# real geological timescale (Earth is ~4.6 billion years old) while staying
+# far below float64 precision loss. paleo:year (see above) stays the honest,
+# unshifted value for display -- only paleo:year_filter is shifted, and only
+# because a search UI needs to build a working filter against it.
+PALEO_YEAR_FILTER_OFFSET = 100_000_000_000
+
+
 def add_paleo_collection_extension(
     collection: pystac.Collection, paleo_config: Optional[PaleoConfig] = None
 ) -> None:
     """Summarize the ``paleo:*`` geological time on *collection* from *paleo_config*.
 
     The collection-level view of the same fields lives in ``summaries`` (their
-    STAC-idiomatic home).
+    STAC-idiomatic home). Also adds ``paleo:year`` -- a ``{minimum, maximum}``
+    range summary of the real integer year(s), for range search/sort (see
+    :func:`_paleo_year_range`); the ``paleo:datetime*`` string fields stay as
+    the human-readable display value, unchanged.
 
     Parameters
     ----------
@@ -146,6 +189,16 @@ def add_paleo_collection_extension(
         return
     for key, value in props.items():
         collection.summaries.add(key, [value])
+    year_range = _paleo_year_range(props)
+    if year_range is not None:
+        collection.summaries.add("paleo:year", year_range)
+        collection.summaries.add(
+            "paleo:year_filter",
+            RangeSummary(
+                year_range.minimum + PALEO_YEAR_FILTER_OFFSET,
+                year_range.maximum + PALEO_YEAR_FILTER_OFFSET,
+            ),
+        )
     apply_extension(collection, Extension.paleo)
 
 

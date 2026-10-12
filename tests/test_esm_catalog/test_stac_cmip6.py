@@ -74,6 +74,33 @@ def test_url_appended_once(item):
     assert item.stac_extensions.count(CMIP6_URL) == 1
 
 
+def test_institution_and_experiment_full_names(item):
+    add_cmip6_item_extension(
+        item,
+        cmip6_config=_config(
+            institution="Alfred Wegener Institute, Helmholtz Centre for "
+            "Polar and Marine Research, Am Handelshafen 12, "
+            "27570 Bremerhaven, Germany",
+            experiment="all-forcing simulation of the recent past",
+        ),
+    )
+    assert item.properties["cmip6:institution"].startswith("Alfred Wegener")
+    assert item.properties["cmip6:experiment"] == "all-forcing simulation of the recent past"
+
+
+def test_frequency_set_from_file_metadata_when_cmip_aligned(item):
+    add_cmip6_item_extension(item, cmip6_config=_config(), frequency="mon")
+    assert item.properties["cmip6:frequency"] == "mon"
+
+
+def test_frequency_not_set_without_cmip6_config(item):
+    # frequency must never appear on its own -- it's only meaningful once
+    # cmip6_config has already marked the run CMIP-aligned.
+    add_cmip6_item_extension(item, cmip6_config=None, frequency="mon")
+    assert "cmip6:frequency" not in item.properties
+    assert item.stac_extensions == []
+
+
 # --- add_cmip6_collection_extension ---
 
 

@@ -30,6 +30,7 @@ Two sources per component, in priority order:
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from typing import Any, Optional
 
@@ -69,10 +70,30 @@ def read_vcs_info_initial(exp_metadata: ExperimentMetadata) -> Optional[dict]:
     return data if isinstance(data, dict) else None
 
 
-def _run_git(path: str, *args: str) -> Optional[str]:
+def _ssh_host(exp_metadata: ExperimentMetadata) -> Optional[str]:
+    """The remote host *model_dirs* live on, or ``None`` for a local scan.
+
+    ``model_dirs`` are plain path strings taken from the finished_config,
+    which was itself written on whatever host ran the experiment -- the same
+    host ``experiment_path`` points at. A local ``git -C <model_dir>``
+    subprocess only makes sense when that host is this machine.
+    """
+    path = exp_metadata.experiment_path
+    if getattr(path, "protocol", None) in ("ssh", "sftp"):
+        return getattr(path, "storage_options", {}).get("host") or None
+    return None
+
+
+def _run_git(path: str, *args: str, host: Optional[str] = None) -> Optional[str]:
+    if host is None:
+        argv = ["git", "-C", path, *args]
+    else:
+        # ssh joins trailing argv with bare spaces, not shell-quoting --
+        # build one already-quoted remote command string ourselves.
+        argv = ["ssh", host, shlex.join(["git", "-C", path, *args])]
     try:
         result = subprocess.run(
-            ["git", "-C", path, *args],
+            argv,
             capture_output=True,
             text=True,
             timeout=_GIT_TIMEOUT_SECONDS,
@@ -85,32 +106,39 @@ def _run_git(path: str, *args: str) -> Optional[str]:
     return result.stdout.strip()
 
 
-def _reconstruct_component_vcs(path: str) -> dict[str, Any]:
+def _reconstruct_component_vcs(path: str, host: Optional[str] = None) -> dict[str, Any]:
     """Live git state for *path*, marked as a reconstruction, never a record.
 
     Mirrors ``esm_runscripts.helpers.get_all_git_info``'s shape (path, hash,
     branch_name, remote, diffs), minus that module's own dependency, plus the
     ``reconstructed``/``note`` pair this extension adds everywhere it has to
     guess instead of read a recorded fact.
+
+    *host* runs every git invocation over ``ssh <host> ...`` instead of a
+    local subprocess -- required when *path* is a model_dir on the same
+    remote machine ``exp_root`` was scanned from (see :func:`_ssh_host`);
+    passwordless ssh to that host is assumed, same as the sftp access the
+    scan itself already needs to reach ``exp_root``.
     """
     note = (
         "Reconstructed after the fact from the shared model_dir, not a "
         "per-experiment snapshot -- may not reflect the exact code state "
         "actually used for this run (drift is possible)."
     )
-    if _run_git(path, "rev-parse", "--is-inside-work-tree") != "true":
-        return {"path": path, "reconstructed": True, "note": "not a git-controlled checkout"}
+    if _run_git(path, "rev-parse", "--is-inside-work-tree", host=host) != "true":
+        reason = "unreachable over ssh" if host else "not a git-controlled checkout"
+        return {"path": path, "reconstructed": True, "note": reason}
 
-    diff = _run_git(path, "diff") or ""
+    diff = _run_git(path, "diff", host=host) or ""
     if diff.count("\n") > _DIFF_LINE_CAP:
-        stat = _run_git(path, "diff", "--stat") or ""
+        stat = _run_git(path, "diff", "--stat", host=host) or ""
         diff = f"[diff truncated, over {_DIFF_LINE_CAP} lines -- stat: {stat.strip().splitlines()[-1] if stat else 'unavailable'}]"
 
     return {
         "path": path,
-        "hash": _run_git(path, "rev-parse", "--short", "HEAD"),
-        "branch_name": _run_git(path, "rev-parse", "--abbrev-ref", "HEAD"),
-        "remote": _run_git(path, "remote", "get-url", "origin"),
+        "hash": _run_git(path, "rev-parse", "--short", "HEAD", host=host),
+        "branch_name": _run_git(path, "rev-parse", "--abbrev-ref", "HEAD", host=host),
+        "remote": _run_git(path, "remote", "get-url", "origin", host=host),
         "diffs": diff,
         "reconstructed": True,
         "note": note,
@@ -122,8 +150,9 @@ def vcs_by_component(exp_metadata: ExperimentMetadata) -> dict[str, dict]:
     initial = read_vcs_info_initial(exp_metadata)
     if initial is not None:
         return initial
+    host = _ssh_host(exp_metadata)
     return {
-        component: _reconstruct_component_vcs(model_dir)
+        component: _reconstruct_component_vcs(model_dir, host=host)
         for component, model_dir in exp_metadata.model_dirs.items()
     }
 

@@ -24,7 +24,8 @@ class Extension(StrEnum):
     paleo = auto()
     namelist = auto()
     cmip6 = auto()
-    processing = auto()
+    file = auto()
+    vcs = auto()
 
 
 EXTENSION_URLS: dict[Extension, str] = {
@@ -32,7 +33,8 @@ EXTENSION_URLS: dict[Extension, str] = {
     Extension.datacube: "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
     Extension.contacts: "https://stac-extensions.github.io/contacts/v0.1.1/schema.json",
     Extension.cmip6: "https://stac-extensions.github.io/cmip6/v1.0.0/schema.json",
-    Extension.processing: "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
+    Extension.file: "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    Extension.vcs: "https://stac-extensions.github.io/vcs/v0.1.0/schema.json",
     # Custom ESM-Tools extensions — https://esm-tools.github.io/stac-extensions/
     Extension.paleo: "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json",
     Extension.namelist: "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json",

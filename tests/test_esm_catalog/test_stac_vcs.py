@@ -9,9 +9,9 @@ import yaml
 
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.vcs import (
-    add_vcs_collection_extension,
+    add_vcs_item_extension,
     read_vcs_info_initial,
-    vcs_processing_software,
+    vcs_by_component,
 )
 
 
@@ -41,7 +41,7 @@ def test_reads_frozen_snapshot_when_present(tmp_path):
 
     em = _experiment_metadata(tmp_path)
     assert read_vcs_info_initial(em) == frozen
-    assert vcs_processing_software(em) == frozen
+    assert vcs_by_component(em) == frozen
 
 
 def test_no_snapshot_file_returns_none(tmp_path):
@@ -54,7 +54,7 @@ def test_reconstructs_live_from_model_dir_when_no_snapshot(tmp_path):
     _git_repo(model_dir, remote="https://example.com/echam.git")
 
     em = _experiment_metadata(tmp_path, model_dirs={"echam": str(model_dir)})
-    software = vcs_processing_software(em)
+    software = vcs_by_component(em)
 
     assert software["echam"]["reconstructed"] is True
     assert software["echam"]["remote"] == "https://example.com/echam.git"
@@ -68,26 +68,40 @@ def test_reconstruction_flags_non_git_directory(tmp_path):
     model_dir.mkdir(parents=True)
 
     em = _experiment_metadata(tmp_path, model_dirs={"xios": str(model_dir)})
-    software = vcs_processing_software(em)
+    software = vcs_by_component(em)
 
     assert software["xios"]["reconstructed"] is True
     assert software["xios"]["note"] == "not a git-controlled checkout"
 
 
-def test_add_vcs_collection_extension_sets_fields(tmp_path, collection):
+def test_add_vcs_item_extension_sets_fields(tmp_path, item):
+    model_dir = tmp_path / "models" / "echam"
+    _git_repo(model_dir, remote="https://example.com/echam.git")
+    em = _experiment_metadata(tmp_path, model_dirs={"echam": str(model_dir)})
+
+    add_vcs_item_extension(item, "echam", em)
+
+    assert item.properties["vcs:type"] == "git"
+    assert item.properties["vcs:revision"]
+    assert item.properties["vcs:branch"] in ("main", "master")
+    assert item.properties["remote"] == "https://example.com/echam.git"
+    assert item.properties["reconstructed"] is True
+    assert "note" not in item.properties  # the dict key is "note"; the Item field is "reconstructed_note"
+    assert "after the fact" in item.properties["reconstructed_note"]
+    assert any("vcs" in ext for ext in item.stac_extensions)
+
+
+def test_add_vcs_item_extension_noop_without_model_dirs(item, tmp_path):
+    em = _experiment_metadata(tmp_path)
+    add_vcs_item_extension(item, "echam", em)
+    assert "vcs:type" not in item.properties
+
+
+def test_add_vcs_item_extension_noop_for_unknown_component(tmp_path, item):
     model_dir = tmp_path / "models" / "echam"
     _git_repo(model_dir)
     em = _experiment_metadata(tmp_path, model_dirs={"echam": str(model_dir)})
 
-    add_vcs_collection_extension(collection, em)
+    add_vcs_item_extension(item, "fesom", em)  # not in model_dirs
 
-    assert "echam" in collection.extra_fields["processing:software"]
-    assert "reconstructed" in collection.extra_fields["processing:lineage"].lower() or (
-        "after the fact" in collection.extra_fields["processing:lineage"]
-    )
-
-
-def test_add_vcs_collection_extension_noop_without_model_dirs(collection, tmp_path):
-    em = _experiment_metadata(tmp_path)
-    add_vcs_collection_extension(collection, em)
-    assert "processing:software" not in collection.extra_fields
+    assert "vcs:type" not in item.properties

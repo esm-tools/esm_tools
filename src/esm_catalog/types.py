@@ -105,3 +105,9 @@ class FileMetadata(BaseModel):
     frequency: Optional[str] = None
     geometry: Optional[Geometry] = None
     bbox: Optional[BBox] = None
+    # Set by the scan layer (not the Reader) from the sourced OutputFile, once
+    # it's known which file this metadata belongs to -- see
+    # scan/ingest.py:_read_output_file. checksum is a multihash-prefixed
+    # string (the file extension's own format), not a bare hex digest.
+    checksum: Optional[str] = None
+    size: Optional[int] = None

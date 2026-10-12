@@ -201,10 +201,36 @@ def test_item_id_same_for_different_paths(tmp_path):
 
 
 def test_grib_media_type(tmp_path):
+    # Generic, not an edition-specific media type: ECHAM (and other
+    # ESM-Tools models) write GRIB1, not GRIB2.
     f = tmp_path / "temp.grb"
     f.write_bytes(b"x")
     item = make_item(f, make_file_metadata(format="grib"), make_exp_metadata())
-    assert item.assets["200001"].media_type == "application/x-grib2"
+    assert item.assets["200001"].media_type == "application/grib"
+
+
+def test_asset_checksum_and_size(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"hello")
+    item = make_item(
+        f,
+        make_file_metadata(checksum="d501109e107d9d372bb6853573e4dc280d3", size=5),
+        make_exp_metadata(),
+    )
+    asset = item.assets["200001"]
+    assert asset.extra_fields["file:checksum"] == "d501109e107d9d372bb6853573e4dc280d3"
+    assert asset.extra_fields["file:size"] == 5
+    assert any("file" in ext for ext in item.stac_extensions)
+
+
+def test_asset_has_no_file_extension_fields_without_checksum_or_size(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"hello")
+    item = make_item(f, make_file_metadata(), make_exp_metadata())
+    asset = item.assets["200001"]
+    assert "file:checksum" not in asset.extra_fields
+    assert "file:size" not in asset.extra_fields
+    assert not any("file" in ext for ext in item.stac_extensions)
 
 
 def test_to_href_bucket_protocol_uri():

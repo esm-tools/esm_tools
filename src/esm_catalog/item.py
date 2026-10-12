@@ -19,6 +19,8 @@ from upath import UPath
 
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.plugins import get_plugin_manager
+from esm_catalog.registry import Extension
+from esm_catalog.stac_ext import apply_extension
 from esm_catalog.types import FileMetadata, Href
 
 ItemId = str
@@ -104,6 +106,9 @@ def make_item(
             media_type="application/json",
         )
     )
+
+    if file_metadata.checksum or file_metadata.size is not None:
+        apply_extension(item, Extension.file, validate=False)
 
     # hints: a free-form payload an extension can use to share values across
     # its own calls (see esm_catalog.namelist/paleo, which memoize their own
@@ -244,7 +249,9 @@ def _build_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
         The source file path, used for the asset href and title.
     file_metadata : FileMetadata
         The file's scanned metadata; its ``format`` selects the media type,
-        its ``role`` ('data' or 'restart') becomes the asset's STAC role.
+        its ``role`` ('data' or 'restart') becomes the asset's STAC role,
+        its ``checksum``/``size`` (if set) become the ``file:`` extension
+        fields.
 
     Returns
     -------
@@ -252,14 +259,20 @@ def _build_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
         The file's asset.
     """
     file_format = file_metadata.format or ""
-    media_type = (
-        "application/x-grib2" if file_format == "grib" else "application/x-netcdf"
-    )
+    # ECHAM (and other ESM-Tools models) write GRIB1, not GRIB2 -- the
+    # generic media type is correct where the edition-specific ones aren't.
+    media_type = "application/grib" if file_format == "grib" else "application/x-netcdf"
+    extra_fields = {}
+    if file_metadata.checksum:
+        extra_fields["file:checksum"] = file_metadata.checksum
+    if file_metadata.size is not None:
+        extra_fields["file:size"] = file_metadata.size
     return Asset(
         href=_to_href(path),
         media_type=media_type,
         title=PurePosixPath(str(path)).name,
         roles=[file_metadata.role],
+        extra_fields=extra_fields or None,
     )
 
 

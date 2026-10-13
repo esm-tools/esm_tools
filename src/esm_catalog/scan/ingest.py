@@ -29,7 +29,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -43,7 +43,7 @@ from upath import UPath
 from esm_catalog.collection import make_collection, update_extent
 from esm_catalog.item import FX_FREQUENCY, make_item
 from esm_catalog.models import ExperimentMetadata
-from esm_catalog.scan.format import UnknownFormatError, detect
+from esm_catalog.scan.format import UnknownFormatError, detect, needs_sniff
 from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.path_facets import get_path_facet_plugin_manager
 from esm_catalog.scan.reader import UnsupportedContentError, reader_for
@@ -123,6 +123,16 @@ class _ReadResult:
 
 
 @contextmanager
+def _local_copy(path: UPath) -> Iterator[UPath]:
+    """Fetch *path* in full to a local temp file and yield its local UPath."""
+    suffix = Path(path.name).suffix
+    with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
+        tmp.write(path.read_bytes())
+        tmp.flush()
+        yield UPath(tmp.name)
+
+
+@contextmanager
 def _local_read_path(path: UPath, reader) -> Iterator[UPath]:
     """Yield a path *reader* can actually read: a local temp copy for a remote
     path when the reader declares ``supports_remote = False`` (e.g. GRIB/cfgrib,
@@ -130,18 +140,17 @@ def _local_read_path(path: UPath, reader) -> Iterator[UPath]:
     handing it a remote path string silently fails, since that path does not
     exist on the machine running the scan).
 
-    A no-op (yields *path* unchanged) for a local path or a reader that already
+    A no-op (yields *path* unchanged) for a local path -- including one
+    already localized by :func:`_local_copy` upstream for a sniff, in which
+    case this never fetches a second time -- or a reader that already
     supports remote paths directly.
     """
     is_remote = bool(getattr(path, "protocol", None)) and path.protocol != "file"
     if not is_remote or getattr(reader, "supports_remote", True):
         yield path
         return
-    suffix = Path(path.name).suffix
-    with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
-        tmp.write(path.read_bytes())
-        tmp.flush()
-        yield UPath(tmp.name)
+    with _local_copy(path) as local_path:
+        yield local_path
 
 
 def _read_output_file(output_file: OutputFile) -> _ReadResult:
@@ -157,41 +166,54 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
     -- killing this function's own process mid-C-call was tried first and
     rejected (see :data:`_READ_TIMEOUT_SECONDS`).
     """
+    path = output_file.path
+    is_remote = bool(getattr(path, "protocol", None)) and path.protocol != "file"
     try:
-        file_format = detect(output_file.path)
-        reader = reader_for(file_format)
-    except (UnknownFormatError, LookupError):
-        return _ReadResult(output_file, None, None, unsupported=True)
-    try:
-        with _local_read_path(output_file.path, reader) as read_path:
+        with ExitStack() as stack:
+            # Extension-less remote files (routine for ECHAM/FESOM native
+            # output) need their magic bytes sniffed before a format/reader
+            # is even known. Fetch once here, up front, rather than once for
+            # the sniff and a second time for the read: _local_read_path
+            # below sees an already-local path afterwards and becomes a
+            # no-op, so there is never a double fetch either way.
+            detect_path = path
+            if is_remote and needs_sniff(path):
+                detect_path = stack.enter_context(_local_copy(path))
+            try:
+                file_format = detect(detect_path)
+                reader = reader_for(file_format)
+            except (UnknownFormatError, LookupError):
+                return _ReadResult(output_file, None, None, unsupported=True)
+            read_path = stack.enter_context(_local_read_path(detect_path, reader))
             file_metadata = FileMetadata.model_validate(reader.read(read_path))
-        file_metadata.component = output_file.component
-        file_metadata.role = output_file.role
-        file_metadata.category = output_file.category
-        if output_file.md5:
-            file_metadata.checksum = _md5_to_multihash(output_file.md5)
-        stat_result = None
-        try:
-            stat_result = output_file.path.stat()
-            file_metadata.size = stat_result.st_size
-        except OSError:
-            # file:size is a nice-to-have, not worth failing a scan over --
-            # same tolerant stance as _fingerprint's own stat() fallback.
-            pass
-        # A walked outdata file (no outdata_targets entry) carries no declared
-        # stream. Try path-facet extraction first, same resolution _triage
-        # uses -- so a later file of this stream, shortcut via the facet
-        # extractor, agrees with this (the frozen, actually-read) file on the
-        # stream identity, rather than each independently guessing. Only
-        # when no extractor claims it does this fall back to the reader's
-        # own primary variable, the closest thing to a stream identity a raw
-        # filesystem walk can otherwise offer.
-        if output_file.stream:
-            file_metadata.stream = output_file.stream
-        else:
-            facets = _try_path_facets(output_file)
-            file_metadata.stream = facets[0] if facets else file_metadata.variable
-        return _ReadResult(output_file, file_metadata, None, stat=stat_result)
+            file_metadata.component = output_file.component
+            file_metadata.role = output_file.role
+            file_metadata.category = output_file.category
+            if output_file.md5:
+                file_metadata.checksum = _md5_to_multihash(output_file.md5)
+            stat_result = None
+            try:
+                stat_result = output_file.path.stat()
+                file_metadata.size = stat_result.st_size
+            except OSError:
+                # file:size is a nice-to-have, not worth failing a scan over --
+                # same tolerant stance as _fingerprint's own stat() fallback.
+                pass
+            # A walked outdata file (no outdata_targets entry) carries no
+            # declared stream. Try path-facet extraction first, same
+            # resolution _triage uses -- so a later file of this stream,
+            # shortcut via the facet extractor, agrees with this (the frozen,
+            # actually-read) file on the stream identity, rather than each
+            # independently guessing. Only when no extractor claims it does
+            # this fall back to the reader's own primary variable, the
+            # closest thing to a stream identity a raw filesystem walk can
+            # otherwise offer.
+            if output_file.stream:
+                file_metadata.stream = output_file.stream
+            else:
+                facets = _try_path_facets(output_file)
+                file_metadata.stream = facets[0] if facets else file_metadata.variable
+            return _ReadResult(output_file, file_metadata, None, stat=stat_result)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)
     except (

@@ -12,7 +12,13 @@ import xarray as xr
 from ruamel.yaml import YAML
 from upath import UPath
 
-from esm_catalog.scan.ingest import _fingerprint, _local_read_path, scan_experiment
+from esm_catalog.scan.format import needs_sniff
+from esm_catalog.scan.ingest import (
+    _fingerprint,
+    _local_read_path,
+    _read_output_file,
+    scan_experiment,
+)
 from esm_catalog.scan.sourcing import source_files
 from esm_catalog.scan.types import OutputFile
 from esm_catalog.scan.workspace import catalog_dir
@@ -214,3 +220,39 @@ def test_fingerprint_stats_when_none_supplied(tmp_path):
     f.write_bytes(b"hello")
     output_file = OutputFile(path=UPath(f), component="echam", stream="echam_nc")
     assert _fingerprint(output_file) == _fingerprint(output_file, stat=UPath(f).stat())
+
+
+# --- extension-less remote files: sniff and read must share one fetch ---
+
+
+def test_extensionless_remote_file_sniffed_and_read_with_one_fetch(tmp_path, monkeypatch):
+    # ECHAM/FESOM native output has no file extension -- detect() must sniff
+    # it before a reader is even known. A remote file like this must share
+    # one fetch between that sniff and the real read, not pay a separate
+    # remote open for each.
+    local = tmp_path / "src.nc"
+    _write_time_varying(local)
+
+    dest = UPath("memory://extensionless-fetch/exp-alpha_echam_200001")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(local.read_bytes())
+    assert needs_sniff(dest)
+
+    calls = []
+    path_cls = type(dest)
+    real_read_bytes = path_cls.read_bytes
+
+    def counting_read_bytes(self):
+        if str(self) == str(dest):
+            calls.append(str(self))
+        return real_read_bytes(self)
+
+    monkeypatch.setattr(path_cls, "read_bytes", counting_read_bytes)
+
+    output_file = OutputFile(path=dest, component="echam", stream="echam_ts")
+    result = _read_output_file(output_file)
+
+    assert result.failure is None
+    assert not result.unsupported
+    assert result.file_metadata is not None
+    assert len(calls) == 1

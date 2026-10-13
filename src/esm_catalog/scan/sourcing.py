@@ -31,6 +31,7 @@ parsed with f90nml.
 
 from __future__ import annotations
 
+import io
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -867,15 +868,23 @@ def _tidy_outdata(exp_root: UPath) -> Iterable[TidyOutdataEntry]:
 def _load_yaml(path: UPath) -> FinishedConfigDoc:
     """Parse a finished-config or tidy-log document as plain YAML.
 
-    Loaded with a plain safe parser through the path's own opener, so it works
-    on remote roots (e.g. ``sftp://``) where the host lives in the UPath's
-    storage options and would be lost by a ``str(path)`` round-trip. The
-    esm_parser config loader is deliberately avoided: it re-wraps the path as a
-    string, and would add provenance and config-only checks these documents
-    should never be subject to.
+    Loaded with a plain safe parser, so it works on remote roots (e.g.
+    ``sftp://``) where the host lives in the UPath's storage options and
+    would be lost by a ``str(path)`` round-trip. The esm_parser config
+    loader is deliberately avoided: it re-wraps the path as a string, and
+    would add provenance and config-only checks these documents should
+    never be subject to.
+
+    Reads the full file into memory first rather than handing the parser a
+    live remote stream -- ruamel.yaml's reader pulls a few KB at a time, and
+    each of those reads is a separate round trip over sftp; a finished_config
+    with thousands of lines (real ones commonly run well past that, full of
+    per-key provenance comments) turned into dozens of round trips, measured
+    live at 20-30s per file against a loaded remote host. One read_bytes()
+    call per file instead -- whatever batching the filesystem itself does
+    for a single transfer applies, instead of none.
     """
-    with path.open() as stream:
-        doc = YAML(typ="safe").load(stream)
+    doc = YAML(typ="safe").load(io.BytesIO(path.read_bytes()))
     return doc if isinstance(doc, dict) else {}
 
 

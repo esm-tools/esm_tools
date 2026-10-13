@@ -496,12 +496,18 @@ def scan_experiment(
         catalog = catalog_dir(exp_root)
     _emit("sourcing")
     run_cfgs = _load_run_cfgs(
-        exp_root, distributed=distributed, scheduler=scheduler, jobs=jobs
+        exp_root,
+        distributed=distributed,
+        scheduler=scheduler,
+        jobs=jobs,
+        on_config=lambda loaded, total: _emit(
+            "sourcing", loaded, total, detail=f"{loaded}/{total} run configs loaded"
+        ),
     )
     exp_metadata = source_experiment(exp_root, run_cfgs=run_cfgs)
     files = source_files(
         exp_root,
-        on_file=lambda n: _emit("sourcing", detail=f"{n} files found"),
+        on_file=lambda n: _emit("sourcing", detail=f"walking outdata — {n} files found"),
         run_cfgs=run_cfgs,
     )
     state = load_state(catalog) or WorkspaceState(

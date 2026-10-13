@@ -568,6 +568,7 @@ def _load_run_cfgs(
     distributed: bool = False,
     scheduler: Optional[str] = None,
     jobs: Optional[int] = None,
+    on_config: Optional[Callable[[int, int], None]] = None,
 ) -> list[_RunConfig]:
     """Load every finished_config under ``<exp_root>/config``, sorted chronologically.
 
@@ -587,6 +588,14 @@ def _load_run_cfgs(
         cluster used for the read phase is sitting right there. Falls back
         to a plain sequential loop -- the only path before this parameter
         existed -- when *distributed* is false (the default).
+    on_config : Callable or None, optional
+        Called as ``on_config(loaded, total)`` after each finished_config
+        loads in the sequential path, so a long remote load (the common
+        case: no *distributed* cluster) isn't silent -- without this the
+        caller's progress display shows nothing between the one "sourcing"
+        tick before this call and its return, however long that takes.
+        Not called on the *distributed* path (parallel_map has its own
+        progress reporting).
 
     Raises
     ------
@@ -616,7 +625,11 @@ def _load_run_cfgs(
             label="sourcing",
         )
     else:
-        docs = [_load_yaml(path) for path in paths]
+        docs = []
+        for i, path in enumerate(paths, start=1):
+            docs.append(_load_yaml(path))
+            if on_config is not None:
+                on_config(i, len(paths))
     return [_RunConfig(path=path, doc=doc) for path, doc in zip(paths, docs)]
 
 

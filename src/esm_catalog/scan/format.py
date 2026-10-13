@@ -32,6 +32,18 @@ class UnknownFormatError(ValueError):
     """Raised when a path matches no known format by extension or magic bytes."""
 
 
+def needs_sniff(path: UPath) -> bool:
+    """Whether :func:`detect` would have to sniff *path*'s magic bytes.
+
+    Lets a caller fetch a remote, extension-less file once and reuse those
+    same bytes for both the sniff and the eventual read, instead of paying
+    one remote open for the sniff and a second for the read -- see
+    ``scan/ingest.py``'s ``_read_output_file``.
+    """
+    suffix = path.suffix.lower()
+    return get_format_plugin_manager().hook.claim_by_suffix(suffix=suffix) is None
+
+
 def detect(path: UPath) -> FileFormat:
     """Resolve the :class:`FileFormat` of *path*.
 

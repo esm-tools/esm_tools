@@ -397,6 +397,7 @@ def output_files(
     on_file: Optional[Callable[[int], None]] = None,
     *,
     run_cfgs: Optional[list[_RunConfig]] = None,
+    on_tidy_log: Optional[Callable[[int, int], None]] = None,
 ) -> list[OutputFile]:
     """Return the experiment's concrete output files, one per produced file.
 
@@ -419,6 +420,9 @@ def output_files(
     run_cfgs : list of _RunConfig, optional
         Pre-parsed run configs, when the caller already has them (see
         :func:`source_experiment`). Parsed from *exp_root* when omitted.
+    on_tidy_log : Callable or None, optional
+        Called as ``on_tidy_log(loaded, total)`` after each tidy-phase log is
+        parsed -- see :func:`_tidy_outdata`.
 
     Returns
     -------
@@ -433,7 +437,7 @@ def output_files(
     if run_cfgs is None:
         run_cfgs = _load_run_cfgs(exp_root)  # validates the run completed; may raise
 
-    tidy_entries = list(_tidy_outdata(exp_root))
+    tidy_entries = list(_tidy_outdata(exp_root, on_tidy_log=on_tidy_log))
     if tidy_entries:
         candidates: Iterable[OutputFile] = (
             OutputFile(
@@ -565,14 +569,15 @@ def source_files(
     on_file: Optional[Callable[[int], None]] = None,
     *,
     run_cfgs: Optional[list[_RunConfig]] = None,
+    on_tidy_log: Optional[Callable[[int, int], None]] = None,
 ) -> list[OutputFile]:
     """Every file the scan should catalogue: outdata (role='data') plus restart
     (role='restart') files, discovered via :func:`output_files` and
     :func:`restart_files` respectively.
     """
-    return output_files(exp_root, on_file, run_cfgs=run_cfgs) + restart_files(
-        exp_root, on_file, run_cfgs=run_cfgs
-    )
+    return output_files(
+        exp_root, on_file, run_cfgs=run_cfgs, on_tidy_log=on_tidy_log
+    ) + restart_files(exp_root, on_file, run_cfgs=run_cfgs)
 
 
 def _load_run_cfgs(
@@ -866,15 +871,27 @@ def _restart_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
                 )
 
 
-def _tidy_outdata(exp_root: UPath) -> Iterable[TidyOutdataEntry]:
+def _tidy_outdata(
+    exp_root: UPath, on_tidy_log: Optional[Callable[[int, int], None]] = None
+) -> Iterable[TidyOutdataEntry]:
     """Yield a :class:`TidyOutdataEntry` for every tidy-log ``outdata`` entry.
 
     Iterates all tidy-phase logs under ``<exp_root>/log`` in chronological order.
     This is the authoritative list of files the run actually produced.
+
+    There is one tidy log per run segment, same cardinality as finished_configs,
+    and each is a full YAML parse of a potentially large document -- without
+    *on_tidy_log*, a run with many segments goes silent for as long as this
+    takes (confirmed live: a frozen progress display for minutes, confused with
+    a hang), the same silent-phase gap :func:`_load_run_cfgs` already fixed for
+    finished_configs.
     """
     log_dir = exp_root / _LOG_SUBDIR
-    for log_path in sorted(log_dir.glob(_TIDY_LOG_GLOB)):
+    paths = sorted(log_dir.glob(_TIDY_LOG_GLOB))
+    for i, log_path in enumerate(paths, start=1):
         yield from _tidy_log_outdata(_load_yaml(log_path))
+        if on_tidy_log is not None:
+            on_tidy_log(i, len(paths))
 
 
 def _load_yaml(path: UPath) -> FinishedConfigDoc:

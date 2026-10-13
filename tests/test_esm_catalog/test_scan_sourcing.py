@@ -11,6 +11,7 @@ from upath import UPath
 from esm_catalog.scan.sourcing import (
     SourcingError,
     TidyOutdataEntry,
+    _load_run_cfgs,
     _namelists_by_component,
     _parse_datestamp,
     _tidy_log_outdata,
@@ -308,6 +309,22 @@ def test_no_general_metadata_leaves_fields_empty(tmp_path):
     assert metadata.description is None
     assert metadata.data_license is None
     assert metadata.contacts == []
+
+
+def test_load_run_cfgs_reports_progress_per_file(tmp_path):
+    # The sequential (non-distributed) path is the common case; without this
+    # callback a slow remote load of many finished_configs is silent for its
+    # whole duration (confirmed live: one static spinner, no movement).
+    exp_root = UPath(tmp_path)
+    _write_finished_config(exp_root, suffix="_20000101-20001231")
+    _write_finished_config(exp_root, suffix="_20010101-20011231")
+    _write_finished_config(exp_root, suffix="_20020101-20021231")
+
+    calls = []
+    run_cfgs = _load_run_cfgs(exp_root, on_config=lambda i, n: calls.append((i, n)))
+
+    assert len(run_cfgs) == 3
+    assert calls == [(1, 3), (2, 3), (3, 3)]
 
 
 def test_missing_config_raises_sourcing_error(tmp_path):

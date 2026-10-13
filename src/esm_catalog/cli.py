@@ -233,7 +233,7 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
                 "sourcing", None, description="loading exp configs…", total=None
             )
             if event.detail:
-                progress.update(task, description=f"walking outdata — {event.detail}")
+                progress.update(task, description=event.detail)
         elif event.phase == "reading":
             task = enter_phase(
                 "reading", "sourcing", description="reading", total=event.total

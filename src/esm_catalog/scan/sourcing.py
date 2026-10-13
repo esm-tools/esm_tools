@@ -457,10 +457,22 @@ def output_files(
             for run_cfg in run_cfgs
             for target in _outdata_targets(run_cfg.doc)
         )
+        # Dedupe by path *before* exists() -- a destination that repeats
+        # across segments (several do) must not pay an exists() round trip
+        # more than once; the final seen-set below only dedupes the already-
+        # existence-checked result, too late to save the repeat check.
+        deduped_configured: list[ComponentPath] = []
+        seen_configured: set[str] = set()
+        for cp in configured:
+            key = str(cp.path)
+            if key in seen_configured:
+                continue
+            seen_configured.add(key)
+            deduped_configured.append(cp)
         candidates = (
             OutputFile(path=cp.path, component=cp.component, stream=cp.stream, role="data")
             for cp in chain(
-                (cp for cp in configured if cp.path.exists()),
+                (cp for cp in deduped_configured if cp.path.exists()),
                 _walk_outdata(exp_root, on_file),
             )
         )

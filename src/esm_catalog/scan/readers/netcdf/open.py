@@ -16,6 +16,12 @@ from upath import UPath
 
 from esm_catalog.scan.reader import UnsupportedContentError
 
+_REMOTE_BLOCK_SIZE = 8 * 1024 * 1024
+"""Block size for the "blockcache" fsspec cache on a remote open -- large
+enough that HDF5's scattered metadata reads (superblock, b-tree, chunk index)
+mostly land in blocks already fetched, small enough not to pull an excessive
+amount of a large file for a scan that may only touch its metadata."""
+
 
 def _open_dataset(path: UPath) -> xr.Dataset:
     """Open *path* with xarray, retrying without time decoding on a cftime failure.
@@ -43,7 +49,15 @@ def _open_dataset(path: UPath) -> xr.Dataset:
     def _open(**open_kwargs) -> xr.Dataset:
         if not is_remote:
             return xr.open_dataset(path, **open_kwargs)
-        store = path.fs.open(path.path, "rb")
+        # HDF5 does scattered reads (superblock, b-tree, chunk index, attribute
+        # headers) rather than one sequential pass -- fsspec's default
+        # "readahead" cache assumes forward-sequential access and gets
+        # invalidated on every seek, re-fetching from the new offset each
+        # time. "blockcache" caches fixed-size blocks by index instead, so a
+        # seek back into an already-fetched block costs nothing.
+        store = path.fs.open(
+            path.path, "rb", cache_type="blockcache", block_size=_REMOTE_BLOCK_SIZE
+        )
         try:
             return xr.open_dataset(store, engine="h5netcdf", **open_kwargs)
         except OSError as error:

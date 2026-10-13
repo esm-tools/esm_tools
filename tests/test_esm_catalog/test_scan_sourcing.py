@@ -109,6 +109,31 @@ def test_output_files_from_outdata_targets(tmp_path):
     assert only.md5 is None
 
 
+def test_output_files_dedupes_before_exists_check(tmp_path, monkeypatch):
+    # Two segments declaring the same destination (the default helper target
+    # is static across suffixes) must not pay an exists() round trip twice --
+    # dedup has to happen before the check, not just on the final result list.
+    exp_root = UPath(tmp_path)
+    _write_finished_config(exp_root, suffix="_20000101-20001231")
+    _write_finished_config(exp_root, suffix="_20010101-20011231")
+
+    calls = []
+    path_cls = type(exp_root)  # local paths dispatch to a pathlib subclass
+    real_exists = path_cls.exists
+
+    def counting_exists(self):
+        calls.append(str(self))
+        return real_exists(self)
+
+    monkeypatch.setattr(path_cls, "exists", counting_exists)
+
+    files = output_files(exp_root)
+
+    assert len(files) == 1
+    target_path = files[0].path
+    assert calls.count(str(target_path)) == 1
+
+
 def test_output_files_excludes_restart(tmp_path):
     exp_root = UPath(tmp_path)
     _write_finished_config(

@@ -12,8 +12,9 @@ import xarray as xr
 from ruamel.yaml import YAML
 from upath import UPath
 
-from esm_catalog.scan.ingest import scan_experiment
+from esm_catalog.scan.ingest import _fingerprint, _local_read_path, scan_experiment
 from esm_catalog.scan.sourcing import source_files
+from esm_catalog.scan.types import OutputFile
 from esm_catalog.scan.workspace import catalog_dir
 from esm_catalog.storage.geoparquet import fx_shard_name, read_shard
 
@@ -145,3 +146,71 @@ def test_scan_is_incremental(tmp_path):
     # the time-varying file is recorded and skipped; the fx file is always re-read.
     assert report.skipped >= 1
     assert report.scanned <= 1
+
+
+# --- _local_read_path: fetch a remote file locally only when the reader needs it ---
+
+
+class _FakeReader:
+    def __init__(self, supports_remote: bool) -> None:
+        self.supports_remote = supports_remote
+
+
+def test_local_read_path_noop_for_local_path(tmp_path):
+    f = tmp_path / "x.grb"
+    f.write_bytes(b"GRIB")
+    with _local_read_path(UPath(f), _FakeReader(False)) as out:
+        assert str(out) == str(UPath(f))
+
+
+def test_local_read_path_noop_when_reader_supports_remote():
+    p = UPath("memory://local-read-path/x.nc")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(b"netcdf-bytes")
+    with _local_read_path(p, _FakeReader(True)) as out:
+        assert out is p
+
+
+def test_local_read_path_fetches_remote_file_when_reader_cannot_read_remote():
+    p = UPath("memory://local-read-path/x.grb")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(b"GRIB-bytes")
+    with _local_read_path(p, _FakeReader(False)) as out:
+        assert out.protocol in ("", "file")
+        assert str(out).endswith(".grb")
+        assert out.read_bytes() == b"GRIB-bytes"
+
+
+# --- _fingerprint: reuse a caller-supplied stat() instead of a second one ---
+
+
+def test_fingerprint_prefers_md5_over_any_stat():
+    output_file = OutputFile(
+        path=UPath("memory://fingerprint/never-touched.nc"),
+        component="echam",
+        stream="echam_nc",
+        md5="deadbeef",
+    )
+    assert _fingerprint(output_file) == "deadbeef"
+
+
+def test_fingerprint_reuses_supplied_stat_without_a_second_stat_call(tmp_path):
+    f = tmp_path / "x.nc"
+    f.write_bytes(b"hello")
+    path = UPath(f)
+    real_stat = path.stat()
+
+    class _ExplodingPath:
+        def stat(self):
+            raise AssertionError("must not stat() again when a stat is supplied")
+
+    output_file = OutputFile(path=_ExplodingPath(), component="echam", stream="echam_nc")
+    fp = _fingerprint(output_file, stat=real_stat)
+    assert fp == f"{real_stat.st_size}-{getattr(real_stat, 'st_mtime_ns', real_stat.st_mtime)}"
+
+
+def test_fingerprint_stats_when_none_supplied(tmp_path):
+    f = tmp_path / "x.nc"
+    f.write_bytes(b"hello")
+    output_file = OutputFile(path=UPath(f), component="echam", stream="echam_nc")
+    assert _fingerprint(output_file) == _fingerprint(output_file, stat=UPath(f).stat())

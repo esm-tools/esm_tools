@@ -78,10 +78,11 @@ def state_path(catalog: UPath) -> UPath:
 
 def load_state(catalog: UPath) -> Optional[WorkspaceState]:
     """Load the workspace state, or None if the experiment has not been inited/scanned."""
-    path = state_path(catalog)
-    if not path.exists():
+    try:
+        text = state_path(catalog).read_text()
+    except FileNotFoundError:
         return None
-    return WorkspaceState.model_validate_json(path.read_text())
+    return WorkspaceState.model_validate_json(text)
 
 
 def save_state(catalog: UPath, state: WorkspaceState) -> None:

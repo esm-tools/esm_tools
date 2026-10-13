@@ -28,9 +28,12 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Optional
+from pathlib import Path
+from typing import Callable, Iterator, Optional
 
 import pandas as pd
 from loguru import logger
@@ -114,6 +117,31 @@ class _ReadResult:
     file_metadata: Optional[FileMetadata]
     failure: Optional[ScanFailure]
     unsupported: bool = False
+    stat: Optional[os.stat_result] = None
+    """The stat() already taken for file_metadata.size, reused by _fingerprint
+    instead of a second stat() call on the same (possibly remote) path."""
+
+
+@contextmanager
+def _local_read_path(path: UPath, reader) -> Iterator[UPath]:
+    """Yield a path *reader* can actually read: a local temp copy for a remote
+    path when the reader declares ``supports_remote = False`` (e.g. GRIB/cfgrib,
+    which shells out to eccodes's C backend against a local filename only --
+    handing it a remote path string silently fails, since that path does not
+    exist on the machine running the scan).
+
+    A no-op (yields *path* unchanged) for a local path or a reader that already
+    supports remote paths directly.
+    """
+    is_remote = bool(getattr(path, "protocol", None)) and path.protocol != "file"
+    if not is_remote or getattr(reader, "supports_remote", True):
+        yield path
+        return
+    suffix = Path(path.name).suffix
+    with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
+        tmp.write(path.read_bytes())
+        tmp.flush()
+        yield UPath(tmp.name)
 
 
 def _read_output_file(output_file: OutputFile) -> _ReadResult:
@@ -135,14 +163,17 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
     except (UnknownFormatError, LookupError):
         return _ReadResult(output_file, None, None, unsupported=True)
     try:
-        file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
+        with _local_read_path(output_file.path, reader) as read_path:
+            file_metadata = FileMetadata.model_validate(reader.read(read_path))
         file_metadata.component = output_file.component
         file_metadata.role = output_file.role
         file_metadata.category = output_file.category
         if output_file.md5:
             file_metadata.checksum = _md5_to_multihash(output_file.md5)
+        stat_result = None
         try:
-            file_metadata.size = output_file.path.stat().st_size
+            stat_result = output_file.path.stat()
+            file_metadata.size = stat_result.st_size
         except OSError:
             # file:size is a nice-to-have, not worth failing a scan over --
             # same tolerant stance as _fingerprint's own stat() fallback.
@@ -160,7 +191,7 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
         else:
             facets = _try_path_facets(output_file)
             file_metadata.stream = facets[0] if facets else file_metadata.variable
-        return _ReadResult(output_file, file_metadata, None)
+        return _ReadResult(output_file, file_metadata, None, stat=stat_result)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)
     except (
@@ -640,7 +671,7 @@ def scan_experiment(
         else:
             ts_items.append(item)
             state.scanned[str(result.output_file.path)] = _fingerprint(
-                result.output_file
+                result.output_file, stat=result.stat
             )
 
     _write_catalog(
@@ -747,9 +778,17 @@ def _md5_to_multihash(md5_hex: str) -> str:
     return f"{_MD5_MULTIHASH_PREFIX}{md5_hex}"
 
 
-def _fingerprint(output_file: OutputFile) -> str:
-    """The incremental key for a time-varying file: its md5, else size+mtime."""
+def _fingerprint(
+    output_file: OutputFile, stat: Optional[os.stat_result] = None
+) -> str:
+    """The incremental key for a time-varying file: its md5, else size+mtime.
+
+    *stat* reuses a stat() already taken (e.g. _read_output_file's, for
+    file_metadata.size) instead of a second one on the same, possibly remote,
+    path -- only fetched here when the caller has none to offer.
+    """
     if output_file.md5:
         return output_file.md5
-    stat = output_file.path.stat()
+    if stat is None:
+        stat = output_file.path.stat()
     return f"{stat.st_size}-{getattr(stat, 'st_mtime_ns', stat.st_mtime)}"

@@ -1,5 +1,5 @@
 # AWI-CM3 v3.5 and develop: the moving line, on the EC-Earth OpenIFS 48r1.1
-# (branch awiesm3-develop). The pinned release is awicm3_v3.5.0.
+# (branch awiesm3-develop) and FESOM main. The pinned release is awicm3_v3.5.0.
 components:
 - xios-2.5-ece
 - rnfmap-v1.1

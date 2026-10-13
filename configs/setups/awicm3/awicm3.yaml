@@ -158,7 +158,7 @@ general:
           v3.5:
             major_version: v3.5
             couplings:
-            - fesom-2.8+oifs-48r1+xios-2.5
+            - awicm3_develop
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -177,7 +177,7 @@ general:
           develop:
             major_version: v3.5
             couplings:
-            - fesom-2.8+oifs-48r1+xios-2.5
+            - awicm3_develop
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -1025,7 +1025,14 @@ rnfmap:
                 "v3.4":
                         version: v1.1
                 "v3.5":
-                        version: v1.1
+                        # v3.5.0 builds the runoff mapper tag 1.4 (its coupling), which
+                        # reads the NAMRNFMAPARRAYS group and so needs the 1.4 namelist.
+                        # As awiesm3 v3.5.0; with NumCoupledRegions 0 it maps as v1.1.
+                        choose_general.version:
+                                "v3.5.0":
+                                        version: v1.4
+                                "*":
+                                        version: v1.1
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -1186,6 +1193,10 @@ oasis3mct:
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.5':
                         mct_version: "5.0"
+                        # Start with zero for a coupling field the coupler restart does not
+                        # carry, as awiesm3 does. The pool rstas.nc has no A_Ice_tskin, and
+                        # without this OASIS aborts in mod_oasis_io at the first restart read.
+                        norestart: "T"
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'

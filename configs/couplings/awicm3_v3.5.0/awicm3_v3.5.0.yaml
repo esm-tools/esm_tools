@@ -1,5 +1,5 @@
 # AWI-CM3 v3.5.0: the atmosphere-ocean part of awiesm3 v3.5.0, every component
-# pinned to a release tag. The moving line is fesom-2.8+oifs-48r1+xios-2.5 (v3.5, develop).
+# pinned to a release tag. The moving line is awicm3_develop (v3.5, develop).
 components:
 - xios-2.5.4
 - rnfmap-v1.4

@@ -562,6 +562,9 @@ def scan_experiment(
         exp_root,
         on_file=lambda n: _emit("sourcing", detail=f"walking outdata — {n} files found"),
         run_cfgs=run_cfgs,
+        on_tidy_log=lambda loaded, total: _emit(
+            "sourcing", loaded, total, detail=f"{loaded}/{total} tidy logs loaded"
+        ),
     )
     state = load_state(catalog) or WorkspaceState(
         experiment_id=exp_metadata.experiment_id

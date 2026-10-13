@@ -237,6 +237,44 @@ def test_output_files_pulls_md5_from_tidy_log(tmp_path):
     assert only.md5 == "d41d8cd98f00b204e9800998ecf8427e"
 
 
+def _write_tidy_log(exp_root, suffix, component, filename, destination, checksum):
+    log_dir = exp_root / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    tidy = {
+        component: {
+            "files": {
+                "outdata": {
+                    filename: {"destination": destination, "checksum": checksum}
+                }
+            }
+        }
+    }
+    tidy_path = log_dir / f"{_EXPID}_echam_file_operations_tidy_{suffix}.yaml"
+    with tidy_path.open("w") as stream:
+        YAML(typ="safe").dump(tidy, stream)
+
+
+def test_output_files_reports_progress_per_tidy_log(tmp_path):
+    # Each tidy log is a full YAML parse, same cost shape as a finished_config
+    # -- without this callback, a run with many segments goes silent for as
+    # long as parsing all of them takes (confirmed live: a frozen progress
+    # display, mistaken for a hang).
+    exp_root = UPath(tmp_path)
+    _write_finished_config(exp_root)
+    target1 = str(exp_root / "outdata" / "a.nc")
+    target2 = str(exp_root / "outdata" / "b.nc")
+    for target in (target1, target2):
+        UPath(target).parent.mkdir(parents=True, exist_ok=True)
+        UPath(target).write_bytes(b"")
+    _write_tidy_log(exp_root, "20000101-20001231", "echam", "a.nc", target1, "a" * 32)
+    _write_tidy_log(exp_root, "20010101-20011231", "echam", "b.nc", target2, "b" * 32)
+
+    calls = []
+    output_files(exp_root, on_tidy_log=lambda i, n: calls.append((i, n)))
+
+    assert calls == [(1, 2), (2, 2)]
+
+
 def test_run_span_is_union_over_segments(tmp_path):
     exp_root = UPath(tmp_path)
     _write_finished_config(

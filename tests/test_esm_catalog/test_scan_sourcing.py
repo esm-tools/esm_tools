@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 
 import pytest
@@ -16,6 +17,7 @@ from esm_catalog.scan.sourcing import (
     _parse_datestamp,
     _tidy_log_outdata,
     _walk_outdata,
+    _walk_restart,
     output_files,
     restart_files,
     source_experiment,
@@ -476,8 +478,6 @@ def test_walk_outdata_component_from_boundary(tmp_path):
     # Relative exp_root must give the same result. Regression: a len(base) slice
     # stripped an absolute walk-root prefix and mislabelled the component (a
     # '/albedo/...' root under 'outdata' produced 'work').
-    import os
-
     cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
@@ -487,3 +487,36 @@ def test_walk_outdata_component_from_boundary(tmp_path):
         }
     finally:
         os.chdir(cwd)
+
+
+def test_walk_outdata_local_root_never_stats_an_entry(tmp_path, monkeypatch):
+    # fsspec's generic walk() stat()s every entry just to populate size/mtime
+    # this walk never uses -- on a Lustre-backed root each of those is its
+    # own MDS round trip. os.scandir()'s is_dir()/is_file() must settle the
+    # file/dir question from readdir()'s own d_type instead, with no syscall
+    # at all -- confirmed here by making a real stat() call fail the test.
+    outdata = UPath(tmp_path) / "outdata" / "echam"
+    outdata.mkdir(parents=True)
+    (outdata / "tas.nc").write_text("x")
+
+    def exploding_stat(*args, **kwargs):
+        raise AssertionError("must not stat() while walking")
+
+    monkeypatch.setattr(os, "stat", exploding_stat)
+
+    (only,) = list(_walk_outdata(UPath(tmp_path)))
+    assert only.component == "echam"
+
+
+def test_walk_restart_local_root_never_stats_an_entry(tmp_path, monkeypatch):
+    restart = UPath(tmp_path) / "restart" / "fesom"
+    restart.mkdir(parents=True)
+    (restart / "fesom.oce.restart.nc").write_text("x")
+
+    def exploding_stat(*args, **kwargs):
+        raise AssertionError("must not stat() while walking")
+
+    monkeypatch.setattr(os, "stat", exploding_stat)
+
+    (only,) = list(_walk_restart(UPath(tmp_path)))
+    assert only.component == "fesom"

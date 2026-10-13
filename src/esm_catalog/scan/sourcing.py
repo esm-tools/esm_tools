@@ -32,6 +32,7 @@ parsed with f90nml.
 from __future__ import annotations
 
 import io
+import os
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -299,6 +300,60 @@ def _on_exp_fs(exp_root: UPath, destination: str) -> UPath:
     )
 
 
+def _local_walk_files(base: str) -> Iterable[tuple[str, list[str]]]:
+    """Yield ``(root, filenames)`` for every directory under *base*, via a raw
+    ``os.scandir`` recursion -- no ``stat()`` per entry.
+
+    ``DirEntry.is_dir()``/``is_file()`` (called with ``follow_symlinks=False``)
+    use the ``d_type`` already returned by ``readdir()`` in the common case,
+    no extra syscall at all. fsspec's generic ``AbstractFileSystem.walk()``
+    instead calls ``ls(path, detail=True)``, which ``stat()``s every single
+    entry just to populate a size/mtime this walk never uses -- on a
+    Lustre-backed root, each of those ``stat()`` calls is its own synchronous
+    MDS round trip. Measured live: a directory with many files left the scan
+    stuck with zero visible progress for minutes, indistinguishable from a
+    hang, purely from that per-entry stat cost.
+    """
+    # fsspec's own walk() always returns absolute roots, even for a relative
+    # base -- the marker-splitting callers rely on that (see _walk_outdata's
+    # docstring); os.scandir() instead preserves whatever form it's given, so
+    # a relative base must be resolved here to match.
+    stack = [os.path.abspath(base)]
+    while stack:
+        root = stack.pop()
+        files: list[str] = []
+        try:
+            with os.scandir(root) as it:
+                for entry in it:
+                    try:
+                        is_dir = entry.is_dir(follow_symlinks=False)
+                    except OSError:
+                        continue
+                    if is_dir:
+                        stack.append(entry.path)
+                    else:
+                        files.append(entry.name)
+        except OSError:
+            continue
+        yield root, files
+
+
+def _walk_files(root: UPath) -> Iterable[tuple[str, list[str]]]:
+    """Yield ``(root, filenames)`` for every directory under *root*.
+
+    Local roots use :func:`_local_walk_files` (no per-entry stat -- see its
+    docstring); other backends (sftp, ...) use the filesystem's own
+    ``walk()``, not profiled here and so not touched by that optimization.
+    """
+    base = root.path.rstrip("/")
+    is_remote = bool(getattr(root, "protocol", None)) and root.protocol != "file"
+    if not is_remote:
+        yield from _local_walk_files(base)
+        return
+    for walked_root, _dirs, files in root.fs.walk(base):
+        yield walked_root, files
+
+
 def _walk_outdata(
     exp_root: UPath, on_file: Optional[Callable[[int], None]] = None
 ) -> Iterable[ComponentPath]:
@@ -309,25 +364,23 @@ def _walk_outdata(
     ``outdata_targets`` are missing or theoretical. Component is the immediate
     subdirectory of ``outdata/``.
 
-    The walk streams through the filesystem's own ``walk`` (one listing per
-    directory, files only -- no per-entry stat), yielding as it descends rather
-    than materialising the whole tree first: essential over a remote root with
-    thousands of files. *on_file* is called with the running file count so a
-    caller can show progress during the (potentially slow) listing.
+    The walk streams through :func:`_walk_files` (one listing per directory),
+    yielding as it descends rather than materialising the whole tree first:
+    essential over a root with thousands of files. *on_file* is called with
+    the running file count so a caller can show progress during the
+    (potentially slow) listing.
     """
     outdata = exp_root / _OUTDATA_SUBDIR
     if not outdata.exists():
         return
-    fs = outdata.fs
-    base = outdata.path.rstrip("/")
     # The component is the first path segment below outdata/. Split on the
-    # outdata boundary rather than slicing by len(base): fs.walk may return
-    # absolute roots even when base is relative (e.g. exp_root='.'), and a bare
+    # outdata boundary rather than slicing by len(base): a walked root may be
+    # absolute even when exp_root is relative (e.g. exp_root='.'), and a bare
     # root[len(base):] would then strip the wrong prefix -- a '/albedo/...' root
     # under a 7-char base 'outdata' famously yields the component 'work'.
     marker = "/" + _OUTDATA_SUBDIR + "/"
     count = 0
-    for root, _dirs, files in fs.walk(base):
+    for root, files in _walk_files(outdata):
         after = root.rsplit(marker, 1)
         if len(after) < 2 or not after[1]:
             continue  # files sitting directly in outdata/ have no component
@@ -357,11 +410,9 @@ def _walk_restart(
     restart = exp_root / "restart"
     if not restart.exists():
         return
-    fs = restart.fs
-    base = restart.path.rstrip("/")
     marker = "/restart/"
     count = 0
-    for root, _dirs, files in fs.walk(base):
+    for root, files in _walk_files(restart):
         after = root.rsplit(marker, 1)
         if len(after) < 2 or not after[1]:
             continue

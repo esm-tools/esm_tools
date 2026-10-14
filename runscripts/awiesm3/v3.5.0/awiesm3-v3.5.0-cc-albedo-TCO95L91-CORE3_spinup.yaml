@@ -30,6 +30,8 @@ general:
     with_co2_concdriven: true
 
 computer:
+    # Use boost for both compute and postprocessing jobs.
+    qos: "boost"
     # SLURM mails these addresses when a job of the run ends or fails. (In computer, not general:
     # general.mail_type collides with the batch system default.)
     mail_type: "END,FAIL"

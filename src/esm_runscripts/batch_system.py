@@ -567,10 +567,20 @@ class batch_system:
             if config["general"].get("submit_to_batch_system", True):
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
+                    # The launcher runs in the background and observe_compute is not
+                    # its parent, so the exit status would be lost and a failed run
+                    # tidied and advanced like a good one (levante 2026-10-13: fesom
+                    # and rnfma died at start with "libiomp5.so: cannot open shared
+                    # object file", srun exit 127 / task failure, and the workflow
+                    # moved on). Record it for observe.check_compute_failure: "running"
+                    # before the launch, srun's exit status after it.
+                    status = compute_status_file(config)
+                    commands.append(f"echo running > {status}")
                     commands.append(
-                        "time "
+                        "{ time "
                         + batch_system["execution_command"]
-                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
+                        + f" 2>&1{config['computer'].get('write_execution_log', '')}"
+                        + f"; echo $? > {status}; }} &"
                     )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
@@ -1081,6 +1091,11 @@ class batch_system:
         launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
+
+
+def compute_status_file(config):
+    """Where the compute job script leaves the launcher's exit status."""
+    return os.path.join(config["general"]["thisrun_work_dir"], ".esm_compute_exit_status")
 
 
 def submits_another_job(config, cluster):

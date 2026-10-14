@@ -1244,8 +1244,15 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     fi
     echo " *   PISM discharge file: ${pism_discharge_file}"
 
+    # The fesom chain's own file name. The pism chain's couple_out writes
+    # ${COUPLE_DIR}/latest_discharge.nc too (from the leg it just ran, times the
+    # chunk size, no cell bounds), and in concurrent mode it can do so while
+    # make_icebergs is still reading: on levante (antfill1, 2026-10-09) it replaced
+    # the file mid-read and make_icebergs died with "All arrays must be of the same
+    # length". Nothing reads the pism chain's copy.
+    local icb_disch=${COUPLE_DIR}/latest_discharge_fesom.nc
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
-            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${icb_disch}
 
     # Turn that discharge into the berg set for THIS leg's mesh. A subprocess
     # under the ocp-tool python, like the weight regeneration: the generator
@@ -1260,7 +1267,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # weight regeneration gets away without this by running from the repo root.
     if ! PYTHONPATH="${OCP_TOOL_DIR}:${PYTHONPATH}" \
             ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
-            "${COUPLE_DIR}/latest_discharge.nc" "${ICB_BASIN_FILE}" ; then
+            "${icb_disch}" "${ICB_BASIN_FILE}" ; then
         couple_fail "ice2fesom FAILED: add_cell_bounds"
     fi
 
@@ -1303,7 +1310,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         echo " *   note: no latest_submesh, placing bergs on ${MESH_DIR_fesom}"
     fi
     if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${icb_py}" \
-            "${COUPLE_DIR}/latest_discharge.nc" \
+            "${icb_disch}" \
             "${icb_mesh}" \
             "${COUPLE_DIR}" \
             "${ICB_BASIN_FILE}" \

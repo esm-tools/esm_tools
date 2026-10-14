@@ -10,7 +10,7 @@ import esm_environment
 from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
-from . import dataprocess, helpers, placement, prepare
+from . import dataprocess, helpers, hold_allocation, placement, prepare
 from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
@@ -661,6 +661,10 @@ class batch_system:
                 for line in header:
                     runfile.write(line + "\n")
                 runfile.write("\n")
+                if cluster == "compute" and hold_allocation.requested(config):
+                    for line in hold_allocation.job_script_head_lines(config):
+                        runfile.write(line + "\n")
+                    runfile.write("\n")
 
             else:
                 header = batch_system.get_shell_header(config, cluster)
@@ -785,6 +789,14 @@ class batch_system:
 
             runfile.write("\n")
             runfile.write("wait\n")
+            if (
+                batch_or_shell == "batch"
+                and cluster == "compute"
+                and hold_allocation.requested(config)
+            ):
+                runfile.write("\n")
+                for line in hold_allocation.job_script_tail_lines(config):
+                    runfile.write(line + "\n")
 
         config["general"]["submit_command"] = batch_system.get_submit_command(
             config, batch_or_shell, runfilename

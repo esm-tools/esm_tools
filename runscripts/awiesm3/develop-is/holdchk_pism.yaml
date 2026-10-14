@@ -1,0 +1,185 @@
+# holdchk (2026-10-13): Levante test of general.hold_allocation (esm_runscripts/hold_allocation.py).
+# antg065's coupling, 3 cycles: AWI-ESM 1900-1902 (1 yr legs) + PISM 62370-62429 (20 yr legs), so both
+# chains wait for each other inside their own allocations; 04:00:00 jobs hold all 3 cycles.
+#
+# antg065 (2026-10-12): as antfill_pism.yaml but 50-yr legs, sia_e 1.3, run-9 tillphi, and a chunk-1
+# bootstrap built from antfill1's own 1919-1928 climate (melt scaled to the gamma-0.65 estimate).
+# PISM chain of the antfill coupling (albedo). Paired with antfill_ocean.yaml through
+# antfill_couple.yaml. Derived from ism44's fast_pism.yaml (levante).
+general:
+        setup_name: pism
+        # ism44 measured 29 min for a 25-yr leg on 512 ranks, and the leg must also cover the
+        # NEXT awiesm3 chunk's couple_in (build_submesh + griddes + OASIS weight-gen + restart
+        # remap) which runs in this same allocation. 10-yr legs are shorter, but couple_in is
+        # not, so keep the 04:00:00 ism44 used until it is measured here.
+        compute_time: "04:00:00"
+        initial_date: "62370-01-01"
+        # FULL RUN: 20 legs of 10 yr, 62370 + 20*10 - 1. Must end on the same cycle as
+        # antfill_ocean.yaml's "1920-01-01".
+        # TO GO BACK TO THE TWO-CYCLE TEST: "62389-12-31" here AND "1902-01-01" in
+        # antfill_ocean.yaml. That test passed as antftest10; leg 2's couple_in is the first
+        # build_submesh on a geometry PISM itself produced, i.e. the first mesh change.
+        # EXTENDED 2026-10-09 by 10 legs to 62669, with antfill_ocean.yaml's "1930-01-01".
+        # antg065: 2-leg test passed 2026-10-12; EXTENDED to 20 legs of 50 yr, 62370 + 20*50 - 1,
+        # with antg065_ocean.yaml "1920-01-01".
+        final_date: "62429-12-31"   # holdchk: 3 legs of 20 yr
+        user: !ENV ${USER}
+        # MACHINE BLOCK -- the same variables antfill_ocean.yaml defines. The two chains
+        # are separate configs and neither sees the other's general, so the block is
+        # repeated here; keep the two copies in step.
+        choose_computer.name:
+                albedo:
+                        antfill_root: "/albedo/work/user/${general.user}"
+                        model_code_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is"
+                        conda_env_dir: "/albedo/home/xihao001/.conda/envs"
+                        shared_a270092: "/albedo/work/user/${general.user}/levante_shared/a270092"
+                        shared_a270234: "/albedo/work/user/${general.user}/levante_shared/a270234"
+                levante:
+                        antfill_root: "/work/ab0246/${general.user}"
+                        model_code_dir: "/work/ab0246/${general.user}/model_codes/awiesm3-develop-is"
+                        conda_env_dir: "/work/ab0246/a270234/conda/envs"
+                        shared_a270092: "/work/ab0246/a270092"
+                        shared_a270234: "/work/ab0246/a270234"
+        base_dir: "${general.antfill_root}/runtime/awiesm3-develop-is/"
+        script_dir: "${general.esm_configs_dir}/../couplings/"
+        nyear: 20   # holdchk
+        change_ocean: 1
+        files_to_wait_for:
+            - "latest_atmo_forcing_file.nc"
+            - "latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism:
+        python_binary: "${general.conda_env_dir}/ocp-tool2/bin/python"
+        fesom_mesh_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar/submesh"
+        # Chunk 1 conserves the cavity melt over PISM's OWN floating mask, read from the FIRST
+        # record of this file -- the initial geometry. It must come from a run bootstrapped from
+        # the same spinup_file, which this is: the first decade run from ic_X_nofrag.nc with the
+        # parameters below. With a flotation test instead, only 0.87 of the cavity total arrives;
+        # with this, 1.01 (ism43 measurement, coupling_ocean2pism.functions).
+        initial_mask_file: "${general.antfill_root}/runtime/awiesm3-develop-is/newic_newpar/decade1/ex_decade1.nc"
+        version: "github1.2.1"
+        resolution: "08km"
+        domain: "antarct_cr"
+        model_dir: "${general.model_code_dir}/pism-github1.2.1/"
+        lresume: 1
+        # Chunk-1 atmosphere/ocean forcing. orog6's chunk-2 harvest, the first -is set built from
+        # a FESOM carrying the 3-equation cavity melt fix (integrated basal melt 1280-1430 Gt/yr
+        # against 250 in the older sets). Copied from levante a270234 with its submesh.
+        # antg065: antfill1's own harvest, see its README.md (1919-1928 SMB, 1928 melt scaled to ~790).
+        bootstrap_forcing_dir: "${general.antfill_root}/input/pism/coupled_bootstrap/antfill1_1928_g065"
+
+        nx: 761
+        ny: 761
+        choose_computer.partitions.compute.cores_per_node:
+                128:
+                        nnodes: 4
+                        nproca: 512
+                        nprocb: 1
+
+        downscale_precip: 0
+        debm_path: "${general.model_code_dir}/bin/debm"
+        debm_beta: 10
+        lapse_rate: -0.005
+        ablation_method: "DIRECT"
+        regrid_method: "NONE"
+        iceberg_coupling: 1
+        thk_threshold: 5.0
+        select_min_glacial_depth: 1
+        account_all_fw_input: 1
+        change_emiss: 0
+        change_emiss_by: 0
+        multi_year_mean: 0
+        change_ocean: 1
+        oce2ice_method: "DIRECT"   # consume FESOM's melt via -ocean given
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+
+        # INITIAL CONDITION. BEDMAP2 geometry with the tillphi of inversion run 7
+        # (inv_albedo_run7/ic_014.nc: thickness + MEaSUREs velocity, with the freeze rules),
+        # and with the isolated 6-cell ice fragment at 66.7 S 48.3 E removed (~70 Gt). That
+        # fragment is in the original BEDMAP2 file, is calved away in the first year of every
+        # free-front run, and broke the SSA solve on the way out twice (test X, jobs 47845830
+        # and 47847700). The chunk-1 bundle was built from THIS file; changing it means
+        # rebuilding the bundle.
+        # antg065: ic_X_nofrag.nc with tillphi from inv_albedo_run9_thkonly/ic_014.nc; geometry identical,
+        # so the antfill chunk-1 bundle still applies.
+        spinup_file: "${general.antfill_root}/pism_repro/antg065/ic_X_nofrag_phi9.nc"
+        pool_dir: "${general.shared_a270092}/input/pism/"
+        ts_interval: "1"
+        ex_interval: "yearly"
+        force_bootstrap_first_run: False
+        orog_reference_pism: "1"
+
+        # PHYSICS. These are the values the run-7 tillphi was inverted with, and they differ
+        # from ism44's. The inversion only means anything if the forward model reproduces it,
+        # so these must not be retuned without redoing the inversion.
+        #   ssa_e 0.6 / sia_e 1.0   ism44 ran 0.512 / 2.5. Chosen from the obs-forced tests:
+        #                           sia_e 2.5 overdrives the interior (interior/obs 1.6).
+        #   q 0.25                  ism44 also 0.25 (orogrun still had 0.75).
+        #   delta 0.02              ism44 0.025. PISM's own default; the inversion used it.
+        #   tillwat_max 2 + decay 1 ism44 ran tillwat_max 1. 2 m is PISM's default and is what
+        #                           keeps the fast-flow beds wet in the inversion.
+        #   K 1e17                  ism44 5e17. 1e17 holds the front much closer to BEDMAP2.
+        kv_pairs:
+            stress_balance.model: "ssa+sia"
+            stress_balance.sia.max_diffusivity: 64000
+            # antg065: 1.3 (stand-alone tests sa_bm2_phi9_siae1.3 and spin-up spin9_s13)
+            sia_e: 1.3
+            ssa_e: 0.6
+            sia_n: 3.0
+            ssa_n: 3.0
+            hydrology.tillwat_max: 2
+            hydrology.tillwat_decay_rate: 1
+            basal_resistance.pseudo_plastic.q: 0.25
+            basal_resistance.pseudo_plastic.u_threshold: 100
+            basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.02
+            basal_yield_stress.mohr_coulomb.till_phi_default: 30
+            bed_deformation.model: "none"
+            calving.methods: 'eigen_calving,thickness_calving'
+            calving.eigen_calving.K: "1.0e17"
+            calving.thickness_calving.threshold: 75
+            ocean.pik_melt_factor: "1e-2"
+            atmosphere.elevation_change.precip_lapse_rate: 0.0
+            atmosphere.elevation_change.smb_lapse_rate: 0.0
+            dt_max: 0.02
+        flags:
+            - "pik"
+            - "basal_resistance.pseudo_plastic.enabled"
+            - "basal_yield_stress.slippery_grounding_lines"
+            - "no_subgl_basal_melt"
+            # Marks ocean enclosed by floating ice as a hole, so the calving laws do not act on
+            # its rim and eat the shelf from the inside. Measured on ism44, such holes cover
+            # 0.2-0.4 % of the shelf area.
+            - "label_floating_holes"
+        couplers:
+            surface:
+                given:
+                    files:
+                        surface_given_file: "latest_atmo_forcing_file.nc"
+                    kv_pairs:
+                        surface_given_period: 1
+            ocean:
+                given:
+                    files:
+                        ocean_given_file: "latest_ocean_forcing_file.nc"
+        workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: real_esm2pism.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: esm2pism
+                        env_preparation: env_pism.py
+                        run_only: first_run_in_chunk
+                couple_out:
+                        nproc: 1
+                        run_after: tidy
+                        script: coupling_pism2esm.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: pism2esm
+                        env_preparation: env_pism2awiesm.py
+                        run_only: last_run_in_chunk

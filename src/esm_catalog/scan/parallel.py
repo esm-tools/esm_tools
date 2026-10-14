@@ -36,7 +36,8 @@ or sentinel-filled list.
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ProcessPoolExecutor
+import os
+from concurrent.futures import Future, ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Callable, Optional, Sequence, TypeVar
 
@@ -47,6 +48,11 @@ except ImportError:  # pragma: no cover - loguru is the normal path
 
 Input = TypeVar("Input")
 Result = TypeVar("Result")
+
+_SUBMIT_WINDOW_MULTIPLIER = 4
+"""How many futures to keep in flight per worker in _process_map_with_timeout's
+sliding submission window -- enough slack that a worker is never left idle
+waiting for its next input, without materializing every future up front."""
 
 Worker = Callable[[Input], Result]
 """A module-level, picklable callable mapping one input to one result."""
@@ -215,19 +221,38 @@ def _process_map_with_timeout(
     mapped back to the OS process running it through the public API, an
     overrun kills and replaces the *entire* pool -- simple, and correct,
     at the cost of re-running whatever else was in flight in that pool.
+
+    Submission is a bounded sliding window, not every input up front: a plain
+    ``[executor.submit(worker, item) for item in pending]`` pickles and
+    enqueues every item before awaiting even the first result -- for a scan
+    of 100k+ files that submission loop alone, with nothing yet running, ran
+    for well over a minute (confirmed live: zero visible progress the whole
+    time). Keeping only ``_SUBMIT_WINDOW`` futures in flight amortizes that
+    cost across the run instead of paying it all before the first result.
     """
     results: list[Result] = []
     pending = list(inputs)
+    window = max(1, (jobs or os.cpu_count() or 1)) * _SUBMIT_WINDOW_MULTIPLIER
     executor = ProcessPoolExecutor(
         max_workers=jobs, initializer=initializer, initargs=tuple(initargs)
     )
+    futures: dict[int, Future] = {}
+    next_submit = 0
+
+    def _fill_window(upto: int) -> None:
+        nonlocal next_submit
+        while next_submit < upto and next_submit < len(pending):
+            futures[next_submit] = executor.submit(worker, pending[next_submit])
+            next_submit += 1
+
     try:
-        futures = [executor.submit(worker, item) for item in pending]
+        _fill_window(window)
         i = 0
         while i < len(pending):
+            _fill_window(i + window + 1)
             item = pending[i]
             try:
-                result = futures[i].result(timeout=timeout)
+                result = futures.pop(i).result(timeout=timeout)
             except FutureTimeoutError:
                 _logger.warning(
                     "{}: {} exceeded {}s; killing its worker pool",
@@ -243,11 +268,12 @@ def _process_map_with_timeout(
                 if on_timeout is None:
                     raise
                 result = on_timeout(item)
-                remaining = pending[i + 1 :]
                 executor = ProcessPoolExecutor(
                     max_workers=jobs, initializer=initializer, initargs=tuple(initargs)
                 )
-                futures[i + 1 :] = [executor.submit(worker, it) for it in remaining]
+                futures.clear()
+                next_submit = i + 1
+                _fill_window(next_submit + window)
             results.append(result)
             if on_item is not None:
                 on_item(item)

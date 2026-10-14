@@ -7,6 +7,7 @@ separate process, so every worker used here is defined at module scope.
 from __future__ import annotations
 
 import time
+from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 
 import pytest
@@ -86,6 +87,34 @@ def test_timeout_replaces_overrun_input_and_keeps_going():
 def test_timeout_without_on_timeout_reraises():
     with pytest.raises(FutureTimeoutError):
         parallel_map([1, 2, 3], _hang_on_three, jobs=2, timeout=2)
+
+
+def test_timeout_path_submits_a_bounded_window_not_every_input_up_front(monkeypatch):
+    # A plain [executor.submit(worker, item) for item in pending] pickles and
+    # enqueues every input before awaiting even the first result -- for a
+    # 100k+-file scan that submission loop alone ran for over a minute with
+    # zero visible progress (confirmed live). Submission must stay bounded
+    # relative to job count, not grow with the full input size.
+    submit_counts_at_first_result = []
+    real_submit = ProcessPoolExecutor.submit
+    submit_calls = []
+
+    def counting_submit(self, *args, **kwargs):
+        submit_calls.append(1)
+        return real_submit(self, *args, **kwargs)
+
+    monkeypatch.setattr(ProcessPoolExecutor, "submit", counting_submit)
+
+    def on_item(item):
+        if item == 1:  # first input in input order
+            submit_counts_at_first_result.append(len(submit_calls))
+
+    inputs = list(range(1, 51))
+    parallel_map(inputs, _square, jobs=2, timeout=30, on_item=on_item)
+
+    assert submit_counts_at_first_result, "on_item was never called"
+    # Bounded by the sliding window (jobs * multiplier), nowhere near all 50.
+    assert submit_counts_at_first_result[0] < len(inputs)
 
 
 @pytest.mark.slow

@@ -326,12 +326,12 @@ oasis3mct:
                 'AMIP->atma':
                         lag: 0
                         seq: 1
-                'atma->${lpj_guess.mygrid}-land':
+                'atma->${lpj_guess.selected_grid_name}':
                         lag: ${a2v_lag}
                         seq: ${a2v_seq}
                         coupling_time_step: ${oasis3mct.time_step}
                         lag_overwrite: true
-                '${lpj_guess.mygrid}-land->atma':
+                '${lpj_guess.selected_grid_name}->atma':
                         lag: ${v2a_lag}
                         seq: ${v2a_seq}
                         coupling_time_step: ${oasis3mct.time_step}
@@ -466,12 +466,12 @@ lpj_guess:
 
     coupling_fields:
         "[[veg_atm_fields-->FIELD]]":
-            grid: ${lpj_guess.mygrid}-land
+            grid: ${lpj_guess.selected_grid_name}
 
     resolution: ${oifs.resolution}
     grids:
-        ${resolution}-land:
-            name: ${resolution}-land
+        ${selected_grid_name}:
+            name: ${selected_grid_name}
             nx: "${nx}"
             ny: "${ny}"
             oasis_grid_type: "D"

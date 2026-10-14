@@ -63,7 +63,8 @@ general:
     # TO GO BACK TO THE TWO-CYCLE TEST: "1902-01-01" here AND "62389-12-31" in antfill_pism.yaml.
     # EXTENDED 2026-10-09: the 20 cycles finished on albedo (1919 / 62569); 10 more cycles,
     # 1920-1929 / 62570-62669. Must end on the same cycle as antfill_pism.yaml's "62669-12-31".
-    final_date: "1930-01-01"
+    # GAMMA TEST (2026-10-10): stop after 1928, three cycles at cavity_gamma_scale 0.75.
+    final_date: "1929-01-01"
     # No 6-hourly pressure-level 3D atmosphere (z t u v q w vo r): ~39 GB of the ~100 GB a
     # cycle writes, and 831 GB over the first 20. Off from 1921 on (1920 was already prepared).
     oifs_6h_pl_output: false
@@ -176,7 +177,11 @@ fesom:
             run_config:
                 # 1.0 is the FESOM default and what ism44 ran. ism45 ran 0.6 and the pair was
                 # never conclusive; start from the default here.
-                cavity_gamma_scale: 1.0
+                # GAMMA TEST from 1926 on (2026-10-10): 1900-1925 ran with 1.0. Three cycles
+                # (1926-1928 / PISM 62640-62669) with the transfer velocities scaled by 0.75,
+                # to calibrate how far FESOM's cavity melt drops toward x0.75 of the gamma=1
+                # level -- the melt factor chosen for the PISM spin-up and the next coupled run.
+                cavity_gamma_scale: 0.75
         namelist.oce:
             oce_dyn:
                 redi_kmax: 0.0

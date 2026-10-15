@@ -18,11 +18,16 @@ def print_datetime(config):
     logger.debug(datetime.now())
 
 
-def evaluate(config, job_type, recipe_name):
+def get_recipe_step_names(config, job_type, recipe_name):
+    """Resolve the ordered list of step names for ``job_type``.
 
-    # Check for a user defined compute recipe in the setup section of the
-    # general section. If nothing is found, recipe_steps should evaluate to
-    # None and the default is used
+    Honors a user-defined override in ``general.<recipe_name>`` or
+    ``<setup_name>.<recipe_name>`` over the framework default in
+    ``esm_runscripts.yaml``, and prepends any configured ``pre_recipe``
+    steps -- the same resolution ``evaluate`` uses, factored out so the
+    native pplan execution path can reuse it without pulling in plugin
+    resolution/execution.
+    """
     try:
         setup_name = config["general"]["setup_name"]
         recipe_steps = config.get(setup_name, {}).get(recipe_name) or config[
@@ -35,6 +40,25 @@ def evaluate(config, job_type, recipe_name):
         )
         sys.exit(1)
 
+    FUNCTION_PATH = esm_tools.get_config_filepath()
+    recipe = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_runscripts.yaml"
+
+    framework_recipe = esm_plugin_manager.read_recipe(
+        recipe, {"job_type": job_type}, True
+    )
+    if recipe_steps:
+        framework_recipe["recipe"] = recipe_steps
+
+    pre_recipe = config.get("general", {}).get("pre_recipe", {})
+    excluded_jobs = pre_recipe.get("exclude_job_types", [])
+    pre_steps = pre_recipe.get("steps", [])
+    if job_type not in excluded_jobs and pre_steps:
+        framework_recipe["recipe"] = pre_steps + framework_recipe["recipe"]
+
+    return framework_recipe["recipe"]
+
+
+def evaluate(config, job_type, recipe_name):
     FUNCTION_PATH = esm_tools.get_config_filepath()
 
     ####################################################################################
@@ -50,25 +74,15 @@ def evaluate(config, job_type, recipe_name):
         sys.path.remove("/global/AWIsoft/tkleiner/lib/python2.7/site-packages")
     ####################################################################################
 
-    recipe = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_runscripts.yaml"
-    need_to_parse_recipe = True
     plugins_bare = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_plugins.yaml"
-    need_to_parse_plugins = True
 
-    framework_recipe = esm_plugin_manager.read_recipe(
-        recipe, {"job_type": job_type}, need_to_parse_recipe
-    )
-    if recipe_steps:
-        framework_recipe["recipe"] = recipe_steps
-
-    pre_recipe = config.get("general", {}).get("pre_recipe", {})
-    excluded_jobs = pre_recipe.get("exclude_job_types", [])
-    pre_steps = pre_recipe.get("steps", [])
-    if job_type not in excluded_jobs and pre_steps:
-        framework_recipe["recipe"] = pre_steps + framework_recipe["recipe"]
+    framework_recipe = {
+        "recipe": get_recipe_step_names(config, job_type, recipe_name),
+        "job_type": job_type,
+    }
 
     framework_plugins = esm_plugin_manager.read_plugin_information(
-        plugins_bare, framework_recipe, need_to_parse_plugins
+        plugins_bare, framework_recipe, True
     )
     esm_plugin_manager.check_plugin_availability(framework_plugins)
 

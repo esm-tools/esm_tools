@@ -9,8 +9,8 @@ from loguru import logger
 import esm_parser
 from esm_tools import __version__
 
-from . import (config_initialization, helpers, logfiles, prepare, prepexp,
-               prev_run, resubmit, workflow)
+from . import (config_initialization, helpers, logfiles, plan, prepare,
+               prepexp, prev_run, resubmit, workflow)
 
 
 class SimulationSetup(object):
@@ -109,8 +109,24 @@ class SimulationSetup(object):
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
         self.store_prev_objects()
 
-        # 12. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
-        self.config = prepare.run_job(self.config)
+        # 12. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax), or for
+        # the native pplan engine, run its stub ``prepare`` SubPlan instead
+        # -- legacy prepare (and the ``assemble_workflow`` step buried inside
+        # it) never runs in that case.
+        wf_engine = (command_line_config or {}).get("wf_engine", "legacy")
+        if wf_engine == "pplan":
+            prepare_steps = [
+                plan.Step(name=step_name)
+                for step_name in helpers.get_recipe_step_names(
+                    self.config, "prepare", "prepare_recipe"
+                )
+            ]
+            self.plan = plan.SubPlan(
+                name="prepare", parent_plan="initialization", steps=prepare_steps
+            )
+            self.config = plan.run_steps(self.plan, self.config)
+        else:
+            self.config = prepare.run_job(self.config)
 
         # 13. Store the ESM-Tools version in the config for later reference
         self.config["general"]["esm_tools_version"] = __version__

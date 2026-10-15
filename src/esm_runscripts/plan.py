@@ -17,9 +17,22 @@ covers structural read access.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
+from loguru import logger
 from pydantic import BaseModel, ConfigDict
+
+
+class Step(BaseModel):
+    """A single recipe step (``p-plan:Step``) -- a function or bash script
+    that makes up a :class:`SubPlan`, run sequentially."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str
+
+    def __repr__(self) -> str:  # pragma: no cover - cosmetic
+        return f"<Step {self.name}>"
 
 
 class SubPlan(BaseModel):
@@ -40,6 +53,9 @@ class SubPlan(BaseModel):
     submit_to_batch_system: bool = False
     run_on_queue: Optional[str] = None
     batch_or_shell: Optional[str] = None
+    steps: List[Step] = []
+    kind: Literal["esm_subplan", "bash"] = "esm_subplan"
+    concurrent: bool = False
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         bits = [f"nproc={self.nproc}"]
@@ -71,6 +87,8 @@ class Plan(BaseModel):
     batch_or_shell: Optional[str] = None
     submit_to_batch_system: bool = False
     order_in_cluster: Optional[str] = None
+    runs_on: Optional[Literal["login_node", "sbatch"]] = None
+    cycling: Optional[dict] = None
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         bits = []
@@ -84,7 +102,7 @@ class Plan(BaseModel):
 class Workflow(BaseModel):
     """The root plan (``p-plan:Plan``): the whole per-chunk workflow.
 
-    Two parallel namespaces, matching ``config["general"]["workflow"]``:
+    Two parallel namespaces, matching ``config["workflow"]``:
 
     * :attr:`plans` -- clusters, keyed by cluster name.
     * :attr:`sub_plans` -- phases, keyed by phase name (which may be
@@ -113,13 +131,14 @@ class Workflow(BaseModel):
 
     @classmethod
     def from_config(cls, config: dict) -> "Workflow":
-        """Snapshot ``config["general"]["workflow"]`` into a :class:`Workflow`.
+        """Snapshot ``config["workflow"]`` (top-level, not nested under
+        ``general``) into a :class:`Workflow`.
 
         Expects the assembled shape: every plan has ``sub_plans`` (list of
         names) and ``preceded_by`` resolved (except the entry point), as
         produced by ``complete_plans`` + ``order_plans`` in ``workflow.py``.
         """
-        gw_config = config["general"]["workflow"]
+        gw_config = config["workflow"]
 
         sub_plans = {
             name: SubPlan(name=name, **_only_known_fields(SubPlan, conf))
@@ -153,3 +172,16 @@ def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> d
     """
     known = set(model.model_fields) - {"name"} - exclude
     return {k: v for k, v in conf.items() if k in known}
+
+
+def run_steps(sub_plan: SubPlan, config: dict) -> dict:
+    """Stub executor for a :class:`SubPlan`'s :attr:`steps`.
+
+    Logs each step name in order and returns ``config`` unchanged -- proves
+    the native pplan execution mechanism without resolving or calling any
+    real plugin function yet (that's ``esm_plugin_manager``'s job, for a
+    later pass).
+    """
+    for step in sub_plan.steps:
+        logger.info(f"[pplan stub] would run: {step.name}")
+    return config

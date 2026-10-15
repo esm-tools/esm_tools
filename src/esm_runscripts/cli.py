@@ -223,6 +223,7 @@ def main():
     command_line_config = parsed_args
     command_line_config["jobtype"] = jobtype
     command_line_config["use_venv"] = use_venv
+    command_line_config["wf_engine"] = wf_engine
 
     runscript_full_path = os.path.realpath(ARGS.runscript)
     runscript_dir, runscript = os.path.split(runscript_full_path)
@@ -248,7 +249,7 @@ def main():
     setup = SimulationSetup(command_line_config=command_line_config)
 
     if wf_engine == "pplan":
-        drop_into_pplan_debug(setup.config)
+        drop_into_pplan_debug(setup.plan, setup.config)
         return
 
     # if not Setup.config['general']['submitted']:
@@ -257,31 +258,25 @@ def main():
     setup()
 
 
-def drop_into_pplan_debug(config):
-    """Assemble the workflow, snapshot it into the pydantic Plan/SubPlan/Workflow
-    view, print it, and drop into a debug session for poking around.
+def drop_into_pplan_debug(sub_plan, config):
+    """Print the native pplan ``SubPlan`` that ``SimulationSetup`` built for
+    this job type, and drop into a debug session for poking around.
 
     Does not submit or run anything -- this is purely for exploring where
-    recipe steps will hook into the new ``plan.py`` models.
+    recipe steps hook into the new ``plan.py`` models. Legacy
+    ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
+    ``SimulationSetup.__init__``'s ``wf_engine`` branch).
     """
-    from . import workflow as workflow_module
-    from .plan import Workflow
-
-    assembled_config = workflow_module.assemble_workflow(config)
-    plan = Workflow.from_config(assembled_config)
-
-    print(plan)
-    for sub_plan in plan.sub_plans.values():
-        print(" ", sub_plan)
-    for cluster in plan.plans.values():
-        print(" ", cluster)
+    print(sub_plan)
+    for step in sub_plan.steps:
+        print(" ", step)
 
     try:
         from IPython import embed
 
         embed(
             header="esm_runscripts --wf-engine=pplan debug session\n"
-            "`plan` is the Workflow snapshot; `config` is the assembled config."
+            "`sub_plan` is the native SubPlan; `config` is its config."
         )
     except ImportError:
         logger.warning("IPython not available, falling back to pdb")

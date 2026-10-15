@@ -5,16 +5,22 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.plan import Plan, SubPlan, Workflow
+from esm_runscripts.plan import Plan, Step, SubPlan, Workflow, run_steps
 
 
 def _assembled_config(workflow_block):
-    """Run a raw ``general.workflow`` block through complete_plans + order_plans."""
+    """Run a raw ``general.workflow`` block through complete_plans + order_plans.
+
+    ``workflow.py``'s legacy functions still read/write
+    ``config["general"]["workflow"]``; ``Workflow.from_config`` reads the
+    top-level ``config["workflow"]`` instead, so copy it up after assembly.
+    """
     gw = {"plans": {}, **copy.deepcopy(workflow_block)}
     config = {"general": {"workflow": gw}}
     workflow.translate_legacy_workflow_keys(config)
     workflow.complete_plans(config)
     workflow.order_plans(config)
+    config["workflow"] = config["general"]["workflow"]
     return config
 
 
@@ -87,3 +93,32 @@ def test_models_are_frozen(shared_datadir):
     except Exception:
         raised = True
     assert raised, "SubPlan should be immutable (frozen)"
+
+
+def test_subplan_defaults_for_new_fields():
+    sub_plan = SubPlan(name="prepare", parent_plan="initialization")
+
+    assert sub_plan.steps == []
+    assert sub_plan.kind == "esm_subplan"
+    assert sub_plan.concurrent is False
+
+
+def test_plan_defaults_for_new_fields():
+    cluster = Plan(name="initialization")
+
+    assert cluster.runs_on is None
+    assert cluster.cycling is None
+
+
+def test_run_steps_logs_each_step_and_does_not_mutate_config():
+    sub_plan = SubPlan(
+        name="prepare",
+        parent_plan="initialization",
+        steps=[Step(name="_read_date_file"), Step(name="check_model_lresume")],
+    )
+    config = {"general": {"setup_name": "awicm3"}}
+
+    result = run_steps(sub_plan, config)
+
+    assert result is config
+    assert result == {"general": {"setup_name": "awicm3"}}

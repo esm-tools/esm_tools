@@ -5,7 +5,8 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.plan import Plan, Step, SubPlan, Workflow, run_steps
+from esm_runscripts.plan import (Plan, Step, SubPlan, Workflow,
+                                  default_workflow, run_steps)
 
 
 def _assembled_config(workflow_block):
@@ -122,3 +123,29 @@ def test_run_steps_logs_each_step_and_does_not_mutate_config():
 
     assert result is config
     assert result == {"general": {"setup_name": "awicm3"}}
+
+
+def test_default_workflow_synthesizes_prepcompute_compute_tidy():
+    config = {
+        "general": {
+            "valid_model_names": ["fesom", "oifs"],
+            "submit_to_batch_system": True,
+        },
+        "fesom": {"nproc": 128},
+        "oifs": {"nproca": 8, "nprocb": 16},
+        "computer": {"partitions": {"compute": {"name": "compute"}}},
+    }
+
+    wf = default_workflow(config)
+
+    assert wf.entry_point == "prepcompute"
+    assert wf.exit_point == "tidy"
+    assert wf.next_iteration_trigger == "tidy"
+    assert set(wf.sub_plans) == {"prepcompute", "compute", "tidy"}
+    assert wf.sub_plans["compute"].nproc == 128 + 8 * 16
+    assert wf.sub_plans["compute"].preceded_by == "prepcompute"
+    assert wf.sub_plans["compute"].run_on_queue == "compute"
+    assert wf.sub_plans["tidy"].preceded_by == "compute"
+    assert wf.parent_plan_of("compute").name == "compute"
+    # Each sub-plan is its own singleton cluster.
+    assert set(wf.plans) == {"prepcompute", "compute", "tidy"}

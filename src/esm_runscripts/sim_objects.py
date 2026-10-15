@@ -124,6 +124,7 @@ class SimulationSetup(object):
             self.plan = plan.SubPlan(
                 name="prepare", parent_plan="initialization", steps=prepare_steps
             )
+            self.workflow = plan.default_workflow(self.config)
             self.config = plan.run_steps(self.plan, self.config)
         else:
             self.config = prepare.run_job(self.config)

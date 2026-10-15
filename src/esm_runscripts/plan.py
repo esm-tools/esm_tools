@@ -174,6 +174,69 @@ def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> d
     return {k: v for k, v in conf.items() if k in known}
 
 
+def default_workflow(config: dict) -> Workflow:
+    """Native equivalent of ``workflow.init_total_workflow``'s default case:
+    synthesizes the ``prepcompute -> compute -> tidy`` chain directly as
+    pydantic objects, for when no custom ``workflow:`` block exists in the
+    runscript.
+
+    Each sub-plan is its own singleton cluster (matching the documented
+    legacy intent -- "subjobs without a cluster should become their own
+    cluster", ``examples/workflows/example_workflow.yaml``). Does not cover
+    per-model workflow merging, ordering/completion validation, or the
+    ``newrun`` self-resubmission wiring that ``workflow.assemble_workflow``
+    also does -- out of scope for this pass.
+    """
+    tasks = 0
+    for model in config["general"]["valid_model_names"]:
+        model_conf = config[model]
+        if "nproc" in model_conf:
+            tasks += model_conf["nproc"]
+        elif "nproca" in model_conf and "nprocb" in model_conf:
+            tasks += model_conf["nproca"] * model_conf["nprocb"]
+            if "nprocar" in model_conf and "nprocbr" in model_conf:
+                if (
+                    model_conf["nprocar"] != "remove_from_namelist"
+                    and model_conf["nprocbr"] != "remove_from_namelist"
+                ):
+                    tasks += model_conf["nprocar"] * model_conf["nprocbr"]
+
+    sub_plans = {
+        "prepcompute": SubPlan(name="prepcompute", parent_plan="prepcompute", nproc=1),
+        "compute": SubPlan(
+            name="compute",
+            parent_plan="compute",
+            nproc=tasks,
+            preceded_by="prepcompute",
+            submit_to_batch_system=config["general"].get(
+                "submit_to_batch_system", True
+            ),
+            run_on_queue=config["computer"]["partitions"]["compute"]["name"],
+        ),
+        "tidy": SubPlan(
+            name="tidy", parent_plan="tidy", nproc=1, preceded_by="compute"
+        ),
+    }
+    plans = {
+        name: Plan(
+            name=name,
+            sub_plan_names=[name],
+            nproc=sub_plan.nproc,
+            preceded_by=sub_plan.preceded_by,
+            submit_to_batch_system=sub_plan.submit_to_batch_system,
+        )
+        for name, sub_plan in sub_plans.items()
+    }
+
+    return Workflow(
+        entry_point="prepcompute",
+        exit_point="tidy",
+        next_iteration_trigger="tidy",
+        plans=plans,
+        sub_plans=sub_plans,
+    )
+
+
 def run_steps(sub_plan: SubPlan, config: dict) -> dict:
     """Stub executor for a :class:`SubPlan`'s :attr:`steps`.
 

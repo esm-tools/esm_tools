@@ -249,7 +249,7 @@ def main():
     setup = SimulationSetup(command_line_config=command_line_config)
 
     if wf_engine == "pplan":
-        drop_into_pplan_debug(setup.plan, setup.config)
+        drop_into_pplan_debug(setup.plan, setup.workflow, setup.config)
         return
 
     # if not Setup.config['general']['submitted']:
@@ -258,25 +258,32 @@ def main():
     setup()
 
 
-def drop_into_pplan_debug(sub_plan, config):
-    """Print the native pplan ``SubPlan`` that ``SimulationSetup`` built for
-    this job type, and drop into a debug session for poking around.
+def drop_into_pplan_debug(sub_plan, workflow, config):
+    """Print the native pplan ``SubPlan`` and resolved ``Workflow`` that
+    ``SimulationSetup`` built for this job type, and drop into a debug
+    session for poking around.
 
     Does not submit or run anything -- this is purely for exploring where
     recipe steps hook into the new ``plan.py`` models. Legacy
     ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
-    ``SimulationSetup.__init__``'s ``wf_engine`` branch).
+    ``SimulationSetup.__init__``'s ``wf_engine`` branch); ``workflow`` is
+    built natively by ``plan.default_workflow`` instead.
     """
     print(sub_plan)
     for step in sub_plan.steps:
         print(" ", step)
+
+    print(workflow)
+    for cluster in workflow.plans.values():
+        print(" ", cluster)
 
     try:
         from IPython import embed
 
         embed(
             header="esm_runscripts --wf-engine=pplan debug session\n"
-            "`sub_plan` is the native SubPlan; `config` is its config."
+            "`sub_plan` is the native SubPlan; `workflow` is the resolved "
+            "Workflow; `config` is its config."
         )
     except ImportError:
         logger.warning("IPython not available, falling back to pdb")

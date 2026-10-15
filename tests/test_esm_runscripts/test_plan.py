@@ -5,8 +5,7 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.plan import (Plan, Step, SubPlan, Workflow,
-                                  default_workflow, run_steps)
+from esm_runscripts.plan import Plan, Step, SubPlan, Workflow, run_steps
 
 
 def _assembled_config(workflow_block):
@@ -125,7 +124,7 @@ def test_run_steps_logs_each_step_and_does_not_mutate_config():
     assert result == {"general": {"setup_name": "awicm3"}}
 
 
-def test_default_workflow_synthesizes_prepcompute_compute_tidy():
+def test_workflow_default_synthesizes_prepcompute_compute_tidy():
     config = {
         "general": {
             "valid_model_names": ["fesom", "oifs"],
@@ -136,7 +135,7 @@ def test_default_workflow_synthesizes_prepcompute_compute_tidy():
         "computer": {"partitions": {"compute": {"name": "compute"}}},
     }
 
-    wf = default_workflow(config)
+    wf = Workflow.default(config)
 
     assert wf.entry_point == "prepcompute"
     assert wf.exit_point == "tidy"

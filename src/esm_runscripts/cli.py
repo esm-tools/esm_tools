@@ -267,7 +267,7 @@ def drop_into_pplan_debug(sub_plan, workflow, config):
     recipe steps hook into the new ``plan.py`` models. Legacy
     ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
     ``SimulationSetup.__init__``'s ``wf_engine`` branch); ``workflow`` is
-    built natively by ``plan.default_workflow`` instead.
+    built natively by ``plan.Workflow.default`` instead.
     """
     print(sub_plan)
     for step in sub_plan.steps:

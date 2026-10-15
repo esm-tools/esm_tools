@@ -148,3 +148,44 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
     assert wf.parent_plan_of("compute").name == "compute"
     # Each sub-plan is its own singleton cluster.
     assert set(wf.plans) == {"prepcompute", "compute", "tidy"}
+
+
+def _no_custom_workflow_config():
+    return {
+        "general": {
+            "valid_model_names": ["fesom"],
+            "submit_to_batch_system": True,
+        },
+        "fesom": {"nproc": 128},
+        "computer": {"partitions": {"compute": {"name": "compute"}}},
+    }
+
+
+def test_workflow_resolve_uses_default_when_no_custom_block():
+    wf = Workflow.resolve(_no_custom_workflow_config())
+
+    assert wf.entry_point == "prepcompute"
+
+
+def test_workflow_resolve_raises_for_custom_general_workflow_block():
+    config = _no_custom_workflow_config()
+    config["general"]["workflow"] = {"sub_plans": {}}
+
+    try:
+        Workflow.resolve(config)
+        raised = False
+    except NotImplementedError:
+        raised = True
+    assert raised, "resolve() should refuse to silently ignore a custom block"
+
+
+def test_workflow_resolve_raises_for_custom_model_workflow_block():
+    config = _no_custom_workflow_config()
+    config["fesom"]["workflow"] = {"sub_plans": {}}
+
+    try:
+        Workflow.resolve(config)
+        raised = False
+    except NotImplementedError:
+        raised = True
+    assert raised, "resolve() should refuse to silently ignore a custom block"

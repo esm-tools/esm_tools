@@ -230,6 +230,43 @@ class Workflow(BaseModel):
             sub_plans=sub_plans,
         )
 
+    @classmethod
+    def resolve(cls, config: dict) -> "Workflow":
+        """Pick the right constructor for ``config``.
+
+        If no section anywhere defines a raw ``workflow:`` block, the
+        common case (e.g. the AWICM3 test runscript), use
+        :meth:`default`. If one exists, fail loudly rather than silently
+        ignoring it -- :meth:`default` would otherwise synthesize the
+        generic chain and discard the user's actual configuration without
+        a word. Resolving a custom block natively isn't implemented yet
+        (that's the rest of ``workflow.assemble_workflow``'s job: per-model
+        merging, ordering/completion validation, ``newrun`` wiring -- out
+        of scope per this pass's agreed scope).
+        """
+        if _has_custom_workflow_block(config):
+            raise NotImplementedError(
+                "A custom 'workflow:' block was found in this runscript, but "
+                "the native pplan engine only supports the default "
+                "prepcompute/compute/tidy synthesis today (Workflow.default). "
+                "Resolving a custom workflow block natively is not "
+                "implemented yet."
+            )
+        return cls.default(config)
+
+
+def _has_custom_workflow_block(config: dict) -> bool:
+    """Whether any section of ``config`` defines a raw ``workflow:`` block.
+
+    Same detection shape as ``workflow.translate_legacy_workflow_keys``'s
+    walk over ``config.values()`` -- a section can be ``general`` or any
+    model name; only ``dict``-valued ``workflow`` keys count.
+    """
+    return any(
+        isinstance(section, dict) and isinstance(section.get("workflow"), dict)
+        for section in config.values()
+    )
+
 
 def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> dict:
     """Filter a raw config dict down to keys ``model`` actually declares.

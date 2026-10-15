@@ -177,6 +177,17 @@ def parse_shargs():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--wf-engine",
+        help="Workflow engine to use. 'legacy' (default) runs the job as usual. "
+        "'pplan' assembles the workflow, snapshots it into the pydantic "
+        "Plan/SubPlan/Workflow view, prints it, and drops into a debug "
+        "session instead of submitting anything.",
+        choices=["legacy", "pplan"],
+        default="legacy",
+        dest="wf_engine",
+    )
+
     return parser.parse_args()
 
 
@@ -192,6 +203,7 @@ def main():
     trace = parsed_args["trace"]
     task_log_files = parsed_args["task_log_files"]
     motd = parsed_args["motd"]
+    wf_engine = parsed_args["wf_engine"]
 
     use_venv = None
     if parsed_args["contained_run"] is not None:
@@ -234,7 +246,45 @@ def main():
     initialize_logging(command_line_config)
 
     setup = SimulationSetup(command_line_config=command_line_config)
+
+    if wf_engine == "pplan":
+        drop_into_pplan_debug(setup.config)
+        return
+
     # if not Setup.config['general']['submitted']:
     if not setup.config["general"]["submitted"] and motd:
         check_all_esm_packages()
     setup()
+
+
+def drop_into_pplan_debug(config):
+    """Assemble the workflow, snapshot it into the pydantic Plan/SubPlan/Workflow
+    view, print it, and drop into a debug session for poking around.
+
+    Does not submit or run anything -- this is purely for exploring where
+    recipe steps will hook into the new ``plan.py`` models.
+    """
+    from . import workflow as workflow_module
+    from .plan import Workflow
+
+    assembled_config = workflow_module.assemble_workflow(config)
+    plan = Workflow.from_config(assembled_config)
+
+    print(plan)
+    for sub_plan in plan.sub_plans.values():
+        print(" ", sub_plan)
+    for cluster in plan.plans.values():
+        print(" ", cluster)
+
+    try:
+        from IPython import embed
+
+        embed(
+            header="esm_runscripts --wf-engine=pplan debug session\n"
+            "`plan` is the Workflow snapshot; `config` is the assembled config."
+        )
+    except ImportError:
+        logger.warning("IPython not available, falling back to pdb")
+        import pdb
+
+        pdb.set_trace()

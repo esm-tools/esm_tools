@@ -1448,7 +1448,8 @@ oifs:
                             ${oifs.time_step}
                             ${oifs.seconds_since_initial}
                             ${oifs.start_ndays}
-                            ${oifs.wam};
+                            ${oifs.wam}
+                            ${oifs.simulation_length_seconds};
                         ${slice_icml}
                         ${append_icmcl}
                         echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"

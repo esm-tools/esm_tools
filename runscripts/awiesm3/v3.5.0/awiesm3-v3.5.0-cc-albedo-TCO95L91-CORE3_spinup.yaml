@@ -99,6 +99,11 @@ oifs:
     mip: cmip7
     scenario: piControl
     cmip7_cmor_output: monthly   # spin-up: monthly means only
+    # Use the CMIP7 stratospheric-aerosol climatology, not historical year 1850.
+    add_namelist_changes:
+        fort.4:
+            NAERAD:
+                LCMIP_STRATAER_BCKGD: true
     time_step: 3600
     nproc: 192
     omp_num_threads: 4

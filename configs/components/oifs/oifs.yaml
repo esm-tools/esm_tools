@@ -129,6 +129,7 @@ oifs:
     - 48r1v4.1
     - 48r1v5
     - 48r1v6
+    - 48r1v7
     - 48r1-develop
     - 48r1-foci5
 
@@ -428,6 +429,23 @@ oifs:
         # mean sea-level pressure coupling to FESOM, the DMS namelist declaration fix and the sea-ice
         # roughness constants in NAMSURFTUNE.
         branch: '48r1v6'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository:  https://git.smhi.se/jan.streffing/oifs48r1.1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+        co2_veg_emis_nml: namcompo_emis_co2_veg_fco2.nml
+      48r1v7:
+        # Release tag in oifs48r1.1 (awiesm3-develop at e65d859), used by awiesm3 v3.5.1: 48r1v6 plus the
+        # consortium's ecearth up to 562ebfd (the CO2 tracer indexing in the radiation interface, the
+        # MACv2-SP year held at NCMIPFIXYR from the module variable, the land-ice coupling of the
+        # ice-sheet variant, the consolidated M7 interface, the upstream form of the sea-level
+        # pressure coupling), and REFVALI honoured on the GRIB cold start for NREQIN = -1, so the CO2
+        # tracer starts at the namelist value instead of zero.
+        branch: '48r1v7'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS

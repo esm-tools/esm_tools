@@ -46,6 +46,14 @@ fesom:
       "2.8.2":
         branch: "2.8.2"
         repo_options: "--recurse-submodules"
+      # main at dbf28153 (2026-10-15): 2.8.2 plus the bug fixes of #1130, among them the surface
+      # currents sent to OpenIFS in geographical coordinates (#1133), the Redi surface coefficient
+      # under cavities (#1136), the quadratic pressure term of the reference density (#1177), the
+      # sea-level pressure kept under ice shelves (#1121) and par_ex aborting on errors (#1190).
+      # The tag of awiesm3 v3.5.1.
+      "2.8.3":
+        branch: "2.8.3"
+        repo_options: "--recurse-submodules"
 
     destination: "fesom-2.8"
     install_bins: bin/fesom.x

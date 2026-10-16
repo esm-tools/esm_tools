@@ -35,6 +35,7 @@ general:
         - 'v3.4.3'
         - 'v3.5'
         - 'v3.5.0'
+        - 'v3.5.1'
         - 'develop'
         - 'frontiers-xios'
 
@@ -173,6 +174,16 @@ general:
             - xios
             oasis_with_yac: False
             xios_interp_order: 1
+          # v3.5.1: v3.5.0 on new tags, those of awiesm3 v3.5.1 without LPJ-GUESS
+          # (FESOM 2.8.3, OpenIFS 48r1v7). FESOM 2.8.3 changes the coupled climate.
+          v3.5.1:
+            major_version: v3.5
+            couplings:
+            - awicm3_v3.5.1
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
           # develop follows v3.5: FESOM main and the OpenIFS branch awiesm3-develop.
           develop:
             major_version: v3.5
@@ -214,7 +225,8 @@ general:
                         # port was tested with, the same as for awiesm3.
                         pool_dir: "/scratch/usr/hbkmpaha/input"
                 albedo:
-                        pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+                        # As awiesm3. Was a test pool in another user's scratch, unreadable for others.
+                        pool_dir: "/albedo/pool/"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -910,6 +922,8 @@ fesom:
                 # fesom-2.8.2 of the coupling in esm_master, so the tag is named here.
                 v3.5.0:
                         branch: "2.8.2"
+                v3.5.1:
+                        branch: "2.8.3"
                 develop:
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
@@ -1030,6 +1044,8 @@ rnfmap:
                         # As awiesm3 v3.5.0; with NumCoupledRegions 0 it maps as v1.1.
                         choose_general.version:
                                 "v3.5.0":
+                                        version: v1.4
+                                "v3.5.1":
                                         version: v1.4
                                 "*":
                                         version: v1.1
@@ -1511,6 +1527,10 @@ computer:
                         compiler_mpi: intel2022_openmpi
                     albedo:
                         mpi_implementation: openmpi_2026
+                        # The OpenIFS bundle runs fypp with PyYAML, which the
+                        # module python has and the system python does not
+                        # (as in awiesm3).
+                        load_python: true
             '*':
                 choose_name:
                     juwels:

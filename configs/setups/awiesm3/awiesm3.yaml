@@ -49,7 +49,7 @@ general:
     # REcoM uses for the air-sea gas exchange instead of a constant atmosphere.
     # Needs with_co2_oce_coupling, an OpenIFS that declares A_MSLP for FESOM, a
     # FESOM with use_atm_mslp, and A_MSLP in the coupler restart rst_co2_ao.nc.
-    # On for every carbon-cycle version (develop-cc, v3.5-cc, v3.5.0-cc); the
+    # On for every carbon-cycle version (develop-cc, v3.5-cc, v3.5.0-cc, v3.5.1-cc); the
     # field exists from OpenIFS 48r1v6 and FESOM 2.8.2.
     with_mslp_oce_coupling: false
 
@@ -96,7 +96,7 @@ general:
     # true in the ice-sheet variants (choose_version below).
     with_pism: false
 
-    # The iceberg module. On by default in v3.5.0 and v3.5.0-cc: choose_version
+    # The iceberg module. On by default in v3.5.0(-cc) and v3.5.1(-cc): choose_version
     # below sets with_icb_default, not with_icb itself, because a value set in a
     # choose_ block cannot be overridden from the runscript. So with_icb: false in
     # a runscript switches the icebergs off (needed for legs shorter than a year).
@@ -158,6 +158,9 @@ general:
         - 'v3.5.0'
         - 'v3.5.0-cc'
         - 'v3.5.0-is'
+        - 'v3.5.1'
+        - 'v3.5.1-cc'
+        - 'v3.5.1-is'
         - 'develop'
         - 'develop-cc'
         - 'develop-is'
@@ -378,6 +381,54 @@ general:
             with_pism: true
             couplings:
                 - awiesm3_v3.5.0-is
+            ism_orog_coupled: true
+            add_include_models:
+                - xios
+            add_other_components:
+                - debm
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            honor_final_date: true
+
+        # ------------------------------------------------------------------
+        # v3.5.1: v3.5.0 on new tags (FESOM 2.8.3, OpenIFS 48r1v7, LPJ-GUESS
+        # 4.1.14; OASIS, XIOS, the runoff mapper and the ice-sheet components as
+        # in v3.5.0). The bug fixes in FESOM 2.8.3 change the coupled climate, so
+        # v3.5.1 does not reproduce v3.5.0. Frozen: a later fix is v3.5.2.
+        # ------------------------------------------------------------------
+        v3.5.1:
+            major_version: v3.5
+            with_icb_default: true
+            couplings:
+                - awiesm3_v3.5.1
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        v3.5.1-cc:
+            major_version: v3.5
+            with_icb_default: true
+            couplings:
+                - awiesm3_v3.5.1
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: true
+            with_co2_oce_coupling: true
+            with_mslp_oce_coupling: true
+            with_co2_veg_coupling: true
+        v3.5.1-is:
+            major_version: v3.5
+            with_pism: true
+            couplings:
+                - awiesm3_v3.5.1-is
             ism_orog_coupled: true
             add_include_models:
                 - xios
@@ -654,6 +705,28 @@ oifs:
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
 
+        v3.5.1:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5.1-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5.1-is:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
@@ -868,8 +941,9 @@ oifs:
                         LECO2TRA: false
                     NAMGFL:
                         # The initial file carries present-day CO2 (about 403 ppm, paramId
-                        # 210061). The tracer is diagnostic in this mode, so start it at
-                        # the 1850 value instead: 4.3144e-4 kg/kg is about 284 ppm.
+                        # 210061). Start the tracer at the 1850 value instead: 4.3144e-4 kg/kg
+                        # is about 284 ppm. On the GRIB cold start this needs OpenIFS 48r1v7
+                        # (sugridug.F90 honours REFVALI); 48r1v6 and older start it at zero.
                         YGHG_NL(1)%NREQIN: -1
                         YGHG_NL(1)%REFVALI: 4.3144e-4
             # proportional mass fixer; the additive one (2) divides by about zero for a
@@ -1528,6 +1602,21 @@ fesom:
             branch: "2.8.2"
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
+        v3.5.1:
+            branch: "2.8.3"
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5.1-cc:
+            branch: "2.8.3"
+            # Double precision, as develop-cc: REcoM hardcodes its own WP = 8.
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5.1-is:
+            branch: "2.8.3"
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
     # PISM<->FESOM dynamic-mesh coupling (general.interactive_mesh). couple_in
     # (ice2fesom) builds the submesh + regenerates OASIS/ICMGG; couple_namcouple
@@ -1967,6 +2056,12 @@ rnfmap:
         v3.5.0-cc:
             version: v1.4
         v3.5.0-is:
+            version: v1.4
+        v3.5.1:
+            version: v1.4
+        v3.5.1-cc:
+            version: v1.4
+        v3.5.1-is:
             version: v1.4
 
     # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its

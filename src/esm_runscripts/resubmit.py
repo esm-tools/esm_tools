@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-from . import chunky_parts, helpers, logfiles, workflow
+from . import chunky_parts, helpers, hold_allocation, logfiles, workflow
 
 
 def submit(config):
@@ -22,6 +22,16 @@ def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
         config, cluster, batch_or_shell
     )
     if not check_if_check(config):
+        # hold_allocation: the next compute leg may run in the allocation this tail
+        # is already in, instead of queueing as a new job (see hold_allocation.py)
+        if (
+            batch_or_shell == "batch"
+            and cluster == "compute"
+            and hold_allocation.try_hold_compute(
+                config, config["general"]["batch"].get_run_filename(config, cluster)
+            )
+        ):
+            return config
         config = submit(config)
     return config
 
@@ -192,6 +202,16 @@ def maybe_resubmit(config):
             else:
                 # config = chunky_parts._update_chunk_date_file(config)
                 return config
+
+        if concurrent and hold_allocation.active(config):
+            # keep the nodes and wait here for the sibling's marker; if it does not
+            # come in time, park_if_needed below parks as without hold_allocation
+            hold_allocation.wait_for_marker(
+                config,
+                concurrent_coupling.required_marker(
+                    config, config["general"]["next_chunk_number"]
+                ),
+            )
 
         if concurrent and concurrent_coupling.park_if_needed(
             config, config["general"]["next_chunk_number"]

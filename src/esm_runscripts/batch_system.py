@@ -726,6 +726,9 @@ class batch_system:
                 if "--task-log-files" in config["general"]["original_command"]:
                     observe_call += " --task-log-files"
 
+                if config["general"].get("computer_name"):
+                    observe_call += f" --computer {config['general']['computer_name']}"
+
                 subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
                     cluster
                 ]["next_submit"]

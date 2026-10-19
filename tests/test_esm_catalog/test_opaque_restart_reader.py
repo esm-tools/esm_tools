@@ -44,6 +44,8 @@ def test_empty_fesom_iceberg_restart_is_catalogued_not_unsupported(tmp_path):
     assert detect(path, "fesom") == FileFormat.opaque_binary
     meta = OpaqueBinaryReader().read(path)
     assert meta.format == str(FileFormat.opaque_binary)
+    assert meta.geometry is not None
+    assert meta.bbox is not None
 
 
 def test_fesom_iceberg_ism_variant_is_catalogued(tmp_path):
@@ -62,6 +64,35 @@ def test_lpjguess_state_dump_is_catalogued_without_being_opened(tmp_path):
     assert meta.format == str(FileFormat.opaque_binary)
     assert meta.variable is None
     assert meta.variables == []
+
+
+def test_opaque_restart_becomes_a_valid_fx_item_not_a_null_geometry(tmp_path):
+    """A no-datetime opaque restart is placed as an fx item (item.py's
+    ``is_fx`` path) -- ``geometry=None`` is spec-legal on a pystac Item but
+    the geoparquet writer's WKB conversion crashes on it (confirmed live:
+    AttributeError: 'NoneType' object has no attribute 'get'), so the fx
+    path specifically must never see a None geometry from this reader.
+    """
+    from datetime import datetime, timezone
+
+    from esm_catalog.item import make_item
+
+    from .helpers import make_exp_metadata
+
+    path = UPath(tmp_path / "0.state")
+    path.write_bytes(b"\x00\x00\x00\xa0RUI\xc0")
+    meta = OpaqueBinaryReader().read(path)
+    meta.component = "lpj_guess"
+    meta.role = "restart"
+
+    exp_metadata = make_exp_metadata(
+        run_start=datetime(1850, 1, 1, tzinfo=timezone.utc),
+        run_end=datetime(1851, 12, 31, tzinfo=timezone.utc),
+    )
+    item = make_item(path, meta, exp_metadata)
+
+    assert item.properties.get("frequency") == "fx"
+    assert item.geometry is not None
 
 
 def test_detect_rejects_without_the_right_component(tmp_path):

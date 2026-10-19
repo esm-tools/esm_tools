@@ -36,7 +36,7 @@ def test_workflow_from_config_default_chain(shared_datadir):
 
     compute = wf.sub_plans["compute"]
     assert isinstance(compute, SubPlan)
-    assert compute.preceded_by == "prepcompute"
+    assert compute.preceded_by == ["prepcompute"]
     assert compute.parent_plan == "compute"
 
     parent = wf.parent_plan_of("compute")
@@ -52,7 +52,7 @@ def test_workflow_from_config_coupled_chain(shared_datadir):
     wf = Workflow.from_config(_assembled_config(block))
 
     assert wf.entry_point == "couple_in"
-    assert wf.exit_point == "couple_out"
+    assert wf.resubmit_triggers == {"couple_out": ["couple_in"]}
     assert wf.sub_plans["compute"].nproc == 1
 
     # Walking the ordering chain via preceded_by should reach every sub-plan.
@@ -62,7 +62,7 @@ def test_workflow_from_config_coupled_chain(shared_datadir):
         nxt = next(
             name
             for name in remaining
-            if wf.sub_plans[name].preceded_by == order[-1]
+            if wf.sub_plans[name].preceded_by == [order[-1]]
         )
         order.append(nxt)
         remaining.remove(nxt)
@@ -76,7 +76,7 @@ def test_workflow_and_plan_repr_are_readable(shared_datadir):
     wf = Workflow.from_config(_assembled_config(block))
 
     assert "first=prepcompute" in repr(wf)
-    assert "last=tidy" in repr(wf)
+    assert "resubmit_triggers={'tidy': ['prepcompute']}" in repr(wf)
     assert "compute" in repr(wf.sub_plans["compute"])
 
 
@@ -137,13 +137,12 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
     wf = Workflow.default(config)
 
     assert wf.entry_point == "prepcompute"
-    assert wf.exit_point == "tidy"
-    assert wf.next_iteration_trigger == "tidy"
+    assert wf.resubmit_triggers == {"tidy": ["prepcompute"]}
     assert set(wf.sub_plans) == {"prepcompute", "compute", "tidy"}
     assert wf.sub_plans["compute"].nproc == 128 + 8 * 16
-    assert wf.sub_plans["compute"].preceded_by == "prepcompute"
+    assert wf.sub_plans["compute"].preceded_by == ["prepcompute"]
     assert wf.sub_plans["compute"].run_on_queue == "compute"
-    assert wf.sub_plans["tidy"].preceded_by == "compute"
+    assert wf.sub_plans["tidy"].preceded_by == ["compute"]
     assert wf.parent_plan_of("compute").name == "compute"
     # Each sub-plan is its own singleton cluster.
     assert set(wf.plans) == {"prepcompute", "compute", "tidy"}

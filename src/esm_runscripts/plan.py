@@ -48,7 +48,7 @@ class SubPlan(BaseModel):
     name: str
     parent_plan: str
     nproc: int = 1
-    preceded_by: Optional[str] = None
+    preceded_by: List[str] = []
     run_only: Optional[str] = None
     submit_to_batch_system: bool = False
     run_on_queue: Optional[str] = None
@@ -59,7 +59,7 @@ class SubPlan(BaseModel):
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         bits = [f"nproc={self.nproc}"]
         if self.preceded_by:
-            bits.append(f"preceded_by={self.preceded_by}")
+            bits.append(f"preceded_by={','.join(self.preceded_by)}")
         if self.submit_to_batch_system:
             bits.append("submit_to_batch_system=True")
         return f"<SubPlan {self.name}  {' '.join(bits)}>"
@@ -80,7 +80,7 @@ class Plan(BaseModel):
 
     name: str
     sub_plan_names: List[str] = []
-    preceded_by: Optional[str] = None
+    preceded_by: List[str] = []
     next_submit: List[str] = []
     nproc: Optional[int] = None
     batch_or_shell: Optional[str] = None
@@ -94,7 +94,7 @@ class Plan(BaseModel):
         if self.nproc is not None:
             bits.append(f"nproc={self.nproc}")
         if self.preceded_by:
-            bits.append(f"preceded_by={self.preceded_by}")
+            bits.append(f"preceded_by={','.join(self.preceded_by)}")
         return f"<Plan {self.name}  {' '.join(bits)}>"
 
 
@@ -112,17 +112,17 @@ class Workflow(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     entry_point: str
-    exit_point: str
-    next_iteration_trigger: Optional[str] = None
+    resubmit_triggers: Dict[str, List[str]] = {}
     plans: Dict[str, Plan]
     sub_plans: Dict[str, SubPlan]
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
-        trigger = f"  next_iteration_trigger={self.next_iteration_trigger}" if self.next_iteration_trigger else ""
-        return (
-            f"<Plan 'workflow'  first={self.entry_point}  "
-            f"last={self.exit_point}{trigger}>"
+        triggers = (
+            f"  resubmit_triggers={self.resubmit_triggers}"
+            if self.resubmit_triggers
+            else ""
         )
+        return f"<Plan 'workflow'  first={self.entry_point}{triggers}>"
 
     def parent_plan_of(self, sub_plan_name: str) -> Plan:
         """The cluster (:class:`Plan`) that a sub-plan is batched into."""
@@ -140,22 +140,35 @@ class Workflow(BaseModel):
         gw_config = config["workflow"]
 
         sub_plans = {
-            name: SubPlan(name=name, **_only_known_fields(SubPlan, conf))
+            name: SubPlan(
+                name=name,
+                **_only_known_fields(
+                    SubPlan, conf, exclude=frozenset({"preceded_by"})
+                ),
+                preceded_by=_as_list(conf.get("preceded_by")),
+            )
             for name, conf in gw_config["sub_plans"].items()
         }
         plans = {
             name: Plan(
                 name=name,
                 sub_plan_names=conf.get("sub_plans", []),
-                **_only_known_fields(Plan, conf, exclude=frozenset({"sub_plans"})),
+                **_only_known_fields(
+                    Plan, conf, exclude=frozenset({"sub_plans", "preceded_by"})
+                ),
+                preceded_by=_as_list(conf.get("preceded_by")),
             )
             for name, conf in gw_config["plans"].items()
         }
 
+        # workflow.py's assembled dict is still single-trigger (exit_point
+        # always resubmits to entry_point); resubmit_triggers generalizes
+        # that shape for the native engine, so wrap it as a one-entry dict
+        # here rather than teaching workflow.py the new vocabulary.
+        exit_point = gw_config["exit_point"]
         return cls(
             entry_point=gw_config["entry_point"],
-            exit_point=gw_config["exit_point"],
-            next_iteration_trigger=gw_config.get("next_iteration_trigger"),
+            resubmit_triggers={exit_point: [gw_config["entry_point"]]},
             plans=plans,
             sub_plans=sub_plans,
         )
@@ -200,14 +213,14 @@ class Workflow(BaseModel):
                 name="compute",
                 parent_plan="compute",
                 nproc=tasks,
-                preceded_by="prepcompute",
+                preceded_by=["prepcompute"],
                 submit_to_batch_system=config["general"].get(
                     "submit_to_batch_system", True
                 ),
                 run_on_queue=config["computer"]["partitions"]["compute"]["name"],
             ),
             "tidy": SubPlan(
-                name="tidy", parent_plan="tidy", nproc=1, preceded_by="compute"
+                name="tidy", parent_plan="tidy", nproc=1, preceded_by=["compute"]
             ),
         }
         plans = {
@@ -223,8 +236,7 @@ class Workflow(BaseModel):
 
         return cls(
             entry_point="prepcompute",
-            exit_point="tidy",
-            next_iteration_trigger="tidy",
+            resubmit_triggers={"tidy": ["prepcompute"]},
             plans=plans,
             sub_plans=sub_plans,
         )
@@ -265,6 +277,18 @@ def _has_custom_workflow_block(config: dict) -> bool:
         isinstance(section, dict) and isinstance(section.get("workflow"), dict)
         for section in config.values()
     )
+
+
+def _as_list(value) -> List[str]:
+    """Normalize a legacy single-string ``preceded_by`` (or ``None``) into
+    the native list shape. ``workflow.py``'s assembled dicts still store a
+    single string per plan; a list is passed through unchanged, so this
+    also tolerates a future caller that already provides one."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
 
 
 def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> dict:

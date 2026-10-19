@@ -34,7 +34,7 @@ from stac_geoparquet.arrow import stac_table_to_items
 from upath import UPath
 
 from esm_catalog.client import CollectionId, StacClient, StacClientError, StacObject
-from esm_catalog.scan.ingest import FAILURES_FILENAME
+from esm_catalog.scan.ingest import FAILURES_FILENAME, UNSUPPORTED_FILENAME
 from esm_catalog.scan.workspace import QUERYABLES_FILENAME, STATE_FILENAME
 from esm_catalog.storage.geoparquet import read_shard
 
@@ -53,6 +53,7 @@ _SKIP_FILES = {
     QUERYABLES_FILENAME,
     QUERYABLES_DELTA_FILENAME,
     FAILURES_FILENAME,
+    UNSUPPORTED_FILENAME,
 }
 
 

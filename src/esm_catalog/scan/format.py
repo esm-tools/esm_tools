@@ -14,6 +14,7 @@ editing this module.
 from __future__ import annotations
 
 from enum import auto
+from typing import Optional
 
 from upath import UPath
 
@@ -26,13 +27,14 @@ class FileFormat(StrEnum):
 
     netcdf = auto()
     grib = auto()
+    lpjguess_table = auto()
 
 
 class UnknownFormatError(ValueError):
     """Raised when a path matches no known format by extension or magic bytes."""
 
 
-def needs_sniff(path: UPath) -> bool:
+def needs_sniff(path: UPath, component: Optional[str] = None) -> bool:
     """Whether :func:`detect` would have to sniff *path*'s magic bytes.
 
     Lets a caller fetch a remote, extension-less file once and reuse those
@@ -41,10 +43,13 @@ def needs_sniff(path: UPath) -> bool:
     ``scan/ingest.py``'s ``_read_output_file``.
     """
     suffix = path.suffix.lower()
-    return get_format_plugin_manager().hook.claim_by_suffix(suffix=suffix) is None
+    claimed = get_format_plugin_manager().hook.claim_by_suffix(
+        suffix=suffix, component=component
+    )
+    return claimed is None
 
 
-def detect(path: UPath) -> FileFormat:
+def detect(path: UPath, component: Optional[str] = None) -> FileFormat:
     """Resolve the :class:`FileFormat` of *path*.
 
     Extension is tried first (cheap, and authoritative when present) via the
@@ -57,6 +62,17 @@ def detect(path: UPath) -> FileFormat:
     ----------
     path : UPath
         The file to identify (local or remote).
+    component : str or None, optional
+        The owning component (e.g. ``'lpj_guess'``), when known -- lets a
+        claimer scope a generic-looking suffix/signature to one model's own
+        convention (e.g. a bare ``.out`` extension, which many unrelated
+        tools also use) instead of claiming it unconditionally for every
+        file sharing that suffix. ``None`` for a context that genuinely has
+        no component yet. Forwarded to both hooks verbatim; an existing
+        claimer that doesn't declare this parameter in its own signature
+        (netcdf, grib) is simply never passed it -- pluggy only passes the
+        subset of a hookspec's parameters each hookimpl actually asks for by
+        name, so this is not a breaking change to either.
 
     Returns
     -------
@@ -69,17 +85,21 @@ def detect(path: UPath) -> FileFormat:
         If neither extension nor magic bytes identify a known format.
     """
     suffix = path.suffix.lower()
-    by_suffix = get_format_plugin_manager().hook.claim_by_suffix(suffix=suffix)
+    by_suffix = get_format_plugin_manager().hook.claim_by_suffix(
+        suffix=suffix, component=component
+    )
     if by_suffix is not None:
         return by_suffix
-    return _sniff(path)
+    return _sniff(path, component)
 
 
-def _sniff(path: UPath) -> FileFormat:
+def _sniff(path: UPath, component: Optional[str] = None) -> FileFormat:
     """Identify *path* by its first four magic bytes."""
     with path.open("rb") as handle:
         head = handle.read(4)
-    by_magic = get_format_plugin_manager().hook.claim_by_magic(head=head)
+    by_magic = get_format_plugin_manager().hook.claim_by_magic(
+        head=head, component=component
+    )
     if by_magic is not None:
         return by_magic
     raise UnknownFormatError(

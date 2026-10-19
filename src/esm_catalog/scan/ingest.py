@@ -177,10 +177,10 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
             # below sees an already-local path afterwards and becomes a
             # no-op, so there is never a double fetch either way.
             detect_path = path
-            if is_remote and needs_sniff(path):
+            if is_remote and needs_sniff(path, output_file.component):
                 detect_path = stack.enter_context(_local_copy(path))
             try:
-                file_format = detect(detect_path)
+                file_format = detect(detect_path, output_file.component)
                 reader = reader_for(file_format)
             except (UnknownFormatError, LookupError, IsADirectoryError):
                 # IsADirectoryError: detect()'s magic-byte sniff opens the

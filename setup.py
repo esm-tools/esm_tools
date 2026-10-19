@@ -113,6 +113,12 @@ setup(
             "fesom=esm_catalog.scan.model_plugins.path_facets.netcdf.fesom",
             "oifs=esm_catalog.scan.model_plugins.path_facets.netcdf.oifs",
         ],
+        "esm_catalog.formats": [
+            "lpj_guess=esm_catalog.scan.model_plugins.readers.lpj_guess",
+        ],
+        "esm_catalog.readers": [
+            "lpj_guess=esm_catalog.scan.model_plugins.readers.lpj_guess",
+        ],
     },
     extras_require={
         "catalog": [

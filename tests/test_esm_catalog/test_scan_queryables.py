@@ -1,4 +1,11 @@
-"""The queryables.json sidecar: bare Item properties + namelist params."""
+"""The queryables.json sidecar: bare Item properties only.
+
+Namelist params are deliberately excluded -- confirmed live, registering one
+per parameter per component flooded the generic stock stac-browser filter
+dropdown with thousands of entries, drowning out "variable". The dedicated
+namelist widget doesn't need this registration at all (it reads parameter
+names from each Collection's own nml:parameters field).
+"""
 
 from __future__ import annotations
 
@@ -22,7 +29,7 @@ def test_variable_is_always_registered_even_with_no_namelists(tmp_path):
     assert properties["variable"] == {"type": "string"}
 
 
-def test_variable_coexists_with_namelist_queryables(tmp_path):
+def test_namelist_params_are_not_registered_as_generic_queryables(tmp_path):
     namelists_by_component = {
         "echam": {"namelist.echam": {"radctl": {"io3": 1}}},
     }
@@ -31,5 +38,5 @@ def test_variable_coexists_with_namelist_queryables(tmp_path):
     )
 
     properties = json.loads((tmp_path / "queryables.json").read_text())["properties"]
-    assert properties["variable"] == {"type": "string"}
-    assert properties["nml__echam__namelist_echam__radctl__io3"] == {"type": "integer"}
+    assert properties == {"variable": {"type": "string"}}
+    assert "nml__echam__namelist_echam__radctl__io3" not in properties

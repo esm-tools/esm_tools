@@ -1402,6 +1402,17 @@ oifs:
             else ${general.run_number}
         ))"
 
+    # The WAM run dates and LAW restart headers only need shifting on the branch-off run
+    # itself (restarts from another experiment). Run 2 after a branch-off also goes
+    # through eternal_run_number=0, but its WAM restarts come from this experiment and
+    # already carry the right dates, so pass the 7th argument of change_rcf_date.sh only
+    # on run 1.
+    choose_general.run_number:
+            1:
+                    wam_branchoff_length_seconds: "${oifs.simulation_length_seconds}"
+            "*":
+                    wam_branchoff_length_seconds: ""
+
     # There are four kinds of runs:
     # eternal_run_number=0 - Restart from another experiment.
     # eternal_run_number=1 - Start from initial conditions
@@ -1449,7 +1460,7 @@ oifs:
                             ${oifs.seconds_since_initial}
                             ${oifs.start_ndays}
                             ${oifs.wam}
-                            ${oifs.simulation_length_seconds};
+                            ${oifs.wam_branchoff_length_seconds};
                         ${slice_icml}
                         ${append_icmcl}
                         echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"

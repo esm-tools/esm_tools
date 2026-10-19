@@ -6,14 +6,23 @@ scan layer itself from the OutputFile, not by a Reader), not extracting
 scientific content that isn't there to extract:
 
 - LPJ-GUESS's per-task state dump (``restart/lpj_guess/lpjg_state_<year>/
-  <n>.state``) -- a raw internal serialization of the model's in-memory
-  patch/individual state, confirmed live (43MB, no text header, no magic
-  bytes) against a real AWI-ESM3 run.
+  <n>.state``) and its ``meta.bin`` sidecar (PFT-name/count metadata for the
+  state dump) -- raw internal serializations, confirmed live (43MB and 850B
+  respectively, no text header, no magic bytes) against a real AWI-ESM3 run.
 - FESOM's iceberg restart (``restart/fesom/iceberg.restart[.ISM]``) --
   confirmed live to be 0 bytes whenever the iceberg module produced nothing
   for the segment; FESOM's real oce/ice/bio restarts are NetCDF files
   inside directories named ``fesom.<date>.<stream>.restart`` and never reach
   this claimer (a directory is excluded before format detection).
+- OIFS's own native restart dump, one chunk per MPI rank, confirmed live
+  across 578 files in one real segment: ``BLS<stamp>.<rank>_<ntasks>`` /
+  ``LAW<stamp>.<rank>_<ntasks>`` (``rank``/``ntasks`` vary per file, so
+  there is no fixed suffix to match literally -- only the *shape*, always
+  pure digits/underscore, which a real OIFS ``.nc`` output never has) and
+  ``srf<stamp>.<rank>`` (zero-padded rank only, same reasoning), plus two
+  bare, suffix-less control files (``rcf``, ``waminfo<stamp>``) -- every
+  real OIFS data output observed in this session carries a ``.nc``
+  extension, so an empty suffix is safe to scope to this component too.
 
 Never reads the file: a 43MB binary with nothing to extract isn't worth a
 network round trip just to confirm it opens.
@@ -21,6 +30,7 @@ network round trip just to confirm it opens.
 
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 from upath import UPath
@@ -57,11 +67,16 @@ class OpaqueBinaryReader:
         )
 
 
+_OIFS_RANK_SUFFIX = re.compile(r"^\.\d+(_\d+)?$")
+
+
 @format_hookimpl
 def claim_by_suffix(suffix: str, component: Optional[str]) -> Optional[FileFormat]:
-    if component == "lpj_guess" and suffix == ".state":
+    if component == "lpj_guess" and suffix in (".state", ".bin"):
         return FileFormat.opaque_binary
     if component == "fesom" and suffix in (".restart", ".ism"):
+        return FileFormat.opaque_binary
+    if component == "oifs" and (suffix == "" or _OIFS_RANK_SUFFIX.match(suffix)):
         return FileFormat.opaque_binary
     return None
 

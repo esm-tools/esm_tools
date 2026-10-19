@@ -70,6 +70,14 @@ from esm_catalog.types import FileMetadata
 FAILURES_FILENAME = "scan-failures.json"
 """Sidecar listing files that failed to read (path + error), for follow-up."""
 
+UNSUPPORTED_FILENAME = "scan-unsupported.json"
+"""Sidecar listing files the scan recognised no format/reader for -- a clean
+skip, not a failure, but previously only ever surfaced as a bare count
+(``unsupported N``) with no way to see which files, confirmed live as a real
+gap: there was no way to tell "914 unsupported" apart from "914 unsupported,
+and I have no idea which ones or why" without re-running with --verbose and
+grepping a scrollback."""
+
 _READ_TIMEOUT_SECONDS = int(os.environ.get("ESM_CATALOG_READ_TIMEOUT", "300"))
 """Per-file read budget (seconds) -- e.g. cfgrib reindexing a huge, unusually
 message-dense GRIB file (confirmed live: an untidied ECHAM tracer-forcing file
@@ -707,10 +715,10 @@ def scan_experiment(
     ts_items = []
     fx_items = []
     failures = []
-    unsupported = 0
+    unsupported_paths: list[str] = []
     for result in results:
         if result.unsupported:
-            unsupported += 1
+            unsupported_paths.append(str(result.output_file.path))
             continue
         if result.failure is not None:
             failures.append(result.failure)
@@ -741,6 +749,7 @@ def scan_experiment(
         exp_metadata.experiment_id,
     )
     _write_failures(catalog, failures)
+    _write_unsupported(catalog, unsupported_paths)
     _write_queryables(catalog, exp_metadata)
     # Persist this run's (re-)established schemas so the *next* scan -- or a
     # single-file `add`/`validate` -- can shortcut a stream from its very
@@ -757,7 +766,7 @@ def scan_experiment(
         scanned=len(todo),
         items=len(ts_items) + len(fx_items),
         skipped=len(files) - len(todo),
-        unsupported=unsupported,
+        unsupported=len(unsupported_paths),
         failures=tuple(failures),
     )
 
@@ -813,6 +822,16 @@ def _write_failures(catalog, failures) -> None:
     path.write_text(
         json.dumps([{"path": f.path, "error": f.error} for f in failures], indent=2)
     )
+
+
+def _write_unsupported(catalog, unsupported_paths: list[str]) -> None:
+    """Write (or clear) the unsupported-files sidecar."""
+    path = catalog / UNSUPPORTED_FILENAME
+    if not unsupported_paths:
+        if path.exists():
+            path.unlink()
+        return
+    path.write_text(json.dumps(sorted(unsupported_paths), indent=2))
 
 
 def _run_stamp(exp_metadata: ExperimentMetadata) -> RunStamp:

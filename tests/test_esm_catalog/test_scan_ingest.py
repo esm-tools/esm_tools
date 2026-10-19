@@ -16,6 +16,7 @@ from upath import UPath
 
 from esm_catalog.scan.format import needs_sniff
 from esm_catalog.scan.ingest import (
+    UNSUPPORTED_FILENAME,
     _fingerprint,
     _local_read_path,
     _read_output_file,
@@ -146,6 +147,26 @@ def test_unsupported_format_is_skipped_not_failed(tmp_path):
     assert report.failures == ()
     # The two NetCDF files are still catalogued; the GRIB file is not.
     assert report.items == 2
+
+    # Not just a bare count -- the unsupported sidecar names which file.
+    import json
+
+    sidecar = catalog_dir(exp_root) / UNSUPPORTED_FILENAME
+    assert json.loads(sidecar.read_text()) == [str(grib)]
+
+
+def test_unsupported_sidecar_cleared_once_the_file_is_gone(tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    grib = exp_root / "outdata" / "echam" / f"{_EXPID}_echam_grib_200001.grb"
+    grib.write_bytes(b"GRIB\x00\x00\x00\x00padding")
+    scan_experiment(exp_root)
+    sidecar = catalog_dir(exp_root) / UNSUPPORTED_FILENAME
+    assert sidecar.exists()
+
+    grib.unlink()
+    scan_experiment(exp_root)
+
+    assert not sidecar.exists()
 
 
 def test_scan_is_incremental(tmp_path):

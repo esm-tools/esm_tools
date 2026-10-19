@@ -477,7 +477,11 @@ def scan(
 
     from upath import UPath
 
-    from esm_catalog.scan.ingest import ScanError, scan_experiment
+    from esm_catalog.scan.ingest import (
+        UNSUPPORTED_FILENAME,
+        ScanError,
+        scan_experiment,
+    )
     from esm_catalog.scan.sourcing import SourcingError
 
     level = _configure_logging(verbose)
@@ -530,6 +534,8 @@ def scan(
         f"skipped {report.skipped}, unsupported {report.unsupported}, "
         f"failed {len(report.failures)}"
     )
+    if report.unsupported:
+        click.echo(f"see {UNSUPPORTED_FILENAME} in --catalog-dir for which files")
 
 
 def _parse_item_id(item_id: str) -> tuple[str, str]:

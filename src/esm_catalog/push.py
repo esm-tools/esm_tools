@@ -206,6 +206,29 @@ def _merge_collection_extent(
     return merged
 
 
+def _merge_collection_summaries(
+    existing: Optional[StacObject], incoming: StacObject
+) -> StacObject:
+    """Union *incoming*'s ``summaries.variable`` with *existing*'s, if any.
+
+    Same reasoning as :func:`_merge_collection_extent`: *incoming*'s own
+    summary only reflects the variables the pushing scan run actually saw
+    locally, so pushing a later run of a long experiment would otherwise
+    narrow the server's variable list down to just that run's variables
+    instead of accumulating it.
+    """
+    existing_variables = (existing or {}).get("summaries", {}).get("variable")
+    incoming_variables = incoming.get("summaries", {}).get("variable")
+    if existing_variables is None or incoming_variables is None:
+        return incoming
+    merged = dict(incoming)
+    merged["summaries"] = {
+        **incoming.get("summaries", {}),
+        "variable": sorted(set(existing_variables) | set(incoming_variables)),
+    }
+    return merged
+
+
 def _merge_bbox(first: list, second: list) -> list:
     """The smallest bbox containing both inputs."""
     return [
@@ -441,7 +464,9 @@ def push_paths(
             if kind == "collection":
                 collection = json.loads(path.read_text())
                 existing = client.get_collection(collection["id"])
-                client.upsert_collection(_merge_collection_extent(existing, collection))
+                collection = _merge_collection_extent(existing, collection)
+                collection = _merge_collection_summaries(existing, collection)
+                client.upsert_collection(collection)
                 summary.collections += 1
                 progress(1, f"collection {path.name}")
             elif kind == "item":

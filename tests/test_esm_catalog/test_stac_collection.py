@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import pytest
 from pystac import Collection, Item
 
-from esm_catalog.collection import make_collection, update_extent
+from esm_catalog.collection import make_collection, update_extent, update_variable_summary
 from esm_catalog.models import Contact
 from esm_catalog.registry import EXTENSION_URLS
 
@@ -180,3 +180,49 @@ def test_collection_wires_contacts_and_registers_extension():
     collection = make_collection(make_exp_metadata(contacts=contacts))
     assert collection.extra_fields["contacts"] == [c.to_stac() for c in contacts]
     assert EXTENSION_URLS["contacts"] in collection.stac_extensions
+
+
+# --------------------------------------------------------------------------- #
+# update_variable_summary — summaries.variable, a plain STAC field stock       #
+# stac-browser already renders as a browse/filter facet                       #
+# --------------------------------------------------------------------------- #
+
+
+def _item_with_variable(variable):
+    return Item(
+        id="test",
+        geometry=None,
+        bbox=None,
+        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+        properties={"variable": variable},
+    )
+
+
+def test_update_variable_summary_adds_first_variable(collection):
+    update_variable_summary(collection, _item_with_variable("temp2"))
+    assert collection.summaries.lists["variable"] == ["temp2"]
+
+
+def test_update_variable_summary_accumulates_distinct_variables_sorted(collection):
+    for variable in ("temp2", "precip", "temp2"):
+        update_variable_summary(collection, _item_with_variable(variable))
+    assert collection.summaries.lists["variable"] == ["precip", "temp2"]
+
+
+def test_update_variable_summary_noop_without_a_variable(collection):
+    update_variable_summary(
+        collection,
+        Item(
+            id="test",
+            geometry=None,
+            bbox=None,
+            datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+            properties={},
+        ),
+    )
+    assert "variable" not in collection.summaries.lists
+
+
+def test_update_variable_summary_appears_in_collection_to_dict(collection):
+    update_variable_summary(collection, _item_with_variable("temp2"))
+    assert collection.to_dict()["summaries"] == {"variable": ["temp2"]}

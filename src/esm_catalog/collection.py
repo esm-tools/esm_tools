@@ -85,6 +85,30 @@ def update_extent(collection: Collection, item: Item) -> None:
         collection.extent.temporal.intervals = [[start, end]]
 
 
+def update_variable_summary(collection: Collection, item: Item) -> None:
+    """Add *item*'s ``variable`` to *collection*'s ``summaries.variable`` list.
+
+    A plain STAC Collection field (not an extension): stock stac-browser
+    already renders ``summaries`` entries as a browse/filter facet, so
+    "search by variable" needs no dedicated widget, unlike the namelist
+    parameters (see :mod:`esm_catalog.namelist`) -- it only needs this list
+    populated.
+
+    Parameters
+    ----------
+    collection : pystac.Collection
+        The collection whose ``summaries.variable`` is widened in place.
+    item : pystac.Item
+        The item whose ``variable`` property joins the summary.
+    """
+    variable = item.properties.get("variable")
+    if not variable:
+        return
+    values = collection.summaries.lists.get("variable", [])
+    if variable not in values:
+        collection.summaries.lists["variable"] = sorted(values + [variable])
+
+
 def _merge_bbox(first: BBox, second: BBox) -> BBox:
     """Return the smallest bbox ([west, south, east, north]) containing both inputs.
 

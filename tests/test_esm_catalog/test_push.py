@@ -637,3 +637,40 @@ def test_merge_item_promote_alternate_is_a_noop_when_the_named_alternate_is_miss
     merged = pushmod.merge_item(existing, [row])
 
     assert merged["assets"]["200001"]["href"] == existing["assets"]["200001"]["href"]
+
+
+# --------------------------------------------------------------------------- #
+# _merge_collection_summaries — summaries.variable accumulates across pushes   #
+# --------------------------------------------------------------------------- #
+
+
+def test_merge_collection_summaries_unions_and_sorts_variables():
+    existing = {"summaries": {"variable": ["precip", "temp2"]}}
+    incoming = {"summaries": {"variable": ["salinity", "temp2"]}}
+
+    merged = pushmod._merge_collection_summaries(existing, incoming)
+
+    assert merged["summaries"]["variable"] == ["precip", "salinity", "temp2"]
+
+
+def test_merge_collection_summaries_no_existing_returns_incoming_unchanged():
+    incoming = {"summaries": {"variable": ["temp2"]}}
+
+    assert pushmod._merge_collection_summaries(None, incoming) is incoming
+
+
+def test_merge_collection_summaries_missing_variable_key_returns_incoming_unchanged():
+    existing = {"summaries": {}}
+    incoming = {"summaries": {}}
+
+    assert pushmod._merge_collection_summaries(existing, incoming) is incoming
+
+
+def test_merge_collection_summaries_preserves_other_summary_keys():
+    existing = {"summaries": {"variable": ["precip"]}}
+    incoming = {"summaries": {"variable": ["temp2"], "other_key": ["x"]}}
+
+    merged = pushmod._merge_collection_summaries(existing, incoming)
+
+    assert merged["summaries"]["other_key"] == ["x"]
+    assert merged["summaries"]["variable"] == ["precip", "temp2"]

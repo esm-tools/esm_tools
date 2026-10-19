@@ -100,7 +100,6 @@ def test_subplan_defaults_for_new_fields():
 
     assert sub_plan.steps == []
     assert sub_plan.kind == "esm_subplan"
-    assert sub_plan.concurrent is False
 
 
 def test_plan_defaults_for_new_fields():

@@ -55,7 +55,6 @@ class SubPlan(BaseModel):
     batch_or_shell: Optional[str] = None
     steps: List[Step] = []
     kind: Literal["esm_subplan", "bash"] = "esm_subplan"
-    concurrent: bool = False
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         bits = [f"nproc={self.nproc}"]

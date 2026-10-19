@@ -13,7 +13,7 @@ authenticated and role-gated. Two granularities:
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, Literal, Optional
+from typing import Any, Iterator, Literal, Optional
 
 import httpx
 
@@ -174,6 +174,36 @@ class StacClient:
         )
         self._check(resp, f"list items in {collection_id!r}")
         return resp.json()
+
+    def iter_items(
+        self,
+        collection_id: CollectionId,
+        cql2_filter: Optional[str] = None,
+        page_size: int = 200,
+    ) -> Iterator[StacObject]:
+        """Yield every Item in *collection_id*, paging through ``rel="next"`` links.
+
+        An Item is ``(component, stream)`` (see :mod:`esm_catalog.item`) -- a
+        growing dataset with many merged assets, not one Item per file, so a
+        collection holds at most a few dozen even for a long experiment;
+        paging is defensive future-proofing, not a real requirement at
+        today's scale.
+        """
+        params: Optional[dict[str, Any]] = {"limit": page_size}
+        if cql2_filter is not None:
+            params["filter"] = cql2_filter
+            params["filter-lang"] = "cql2-text"
+        url: Optional[str] = self._base + f"/collections/{collection_id}/items"
+        while url:
+            resp = self._client.get(url, params=params)
+            self._check(resp, f"list items in {collection_id!r}")
+            body = resp.json()
+            yield from body.get("features", [])
+            url = next(
+                (link["href"] for link in body.get("links", []) if link.get("rel") == "next"),
+                None,
+            )
+            params = None  # the next link already encodes the query params
 
     def delete_item(self, collection_id: CollectionId, item_id: str) -> None:
         """Delete a single Item."""

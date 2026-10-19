@@ -1376,6 +1376,92 @@ def _format_options(fn):
 
 
 @server.group()
+def collection() -> None:
+    """Server-side Collection maintenance."""
+
+
+@collection.command("backfill-variable-summary")
+@click.argument("collection_id", required=False)
+@click.option(
+    "--all", "all_collections", is_flag=True,
+    help="Backfill every collection on the server instead of one COLLECTION_ID.",
+)  # fmt: skip
+@_SERVER_OPTION
+@_INSECURE_OPTION
+@click.option("-y", "--yes", is_flag=True, help="Skip the per-collection confirmation prompt.")
+def collection_backfill_variable_summary(
+    collection_id: Optional[str],
+    all_collections: bool,
+    server: Optional[str],
+    insecure: bool,
+    yes: bool,
+) -> None:
+    """Derive summaries.variable from a collection's own items and write it back.
+
+    For a collection pushed before esm_catalog started populating
+    summaries.variable at scan time (see esm_catalog.collection.
+    update_variable_summary) -- the field is simply missing, and no local
+    rescan is needed to fix that: every Item's 'variable' property this
+    derives from already exists on the server. Fetches COLLECTION_ID's
+    items (or every collection's, with --all), collects the distinct
+    'variable' values, unions them into the collection's existing
+    summaries.variable (never shrinks it), and writes the collection back.
+    """
+    from esm_catalog.client import StacClientError
+
+    if collection_id and all_collections:
+        raise click.ClickException("pass either COLLECTION_ID or --all, not both")
+    if not collection_id and not all_collections:
+        raise click.ClickException("pass COLLECTION_ID or --all")
+
+    settings = _settings_for(server, insecure)
+    with _stac_client(settings) as client:
+        if all_collections:
+            ids = [c["id"] for c in client.list_collections().get("collections", [])]
+        else:
+            assert collection_id is not None
+            ids = [collection_id]
+
+        for cid in ids:
+            try:
+                variables = {
+                    item["properties"]["variable"]
+                    for item in client.iter_items(cid)
+                    if item.get("properties", {}).get("variable")
+                }
+            except StacClientError as exc:
+                raise click.ClickException(str(exc)) from exc
+            if not variables:
+                click.echo(f"{cid}: no 'variable' values found, skipping")
+                continue
+
+            coll = client.get_collection(cid)
+            if coll is None:
+                click.echo(f"{cid}: collection not found, skipping")
+                continue
+            existing = set(coll.get("summaries", {}).get("variable", []))
+            merged = sorted(existing | variables)
+            if merged == sorted(existing):
+                click.echo(f"{cid}: summaries.variable already up to date ({len(merged)})")
+                continue
+
+            click.echo(f"{cid}: summaries.variable {len(existing)} -> {len(merged)}")
+            if not yes:
+                confirmed = questionary.confirm(
+                    f"write updated summaries.variable to {cid!r}?", default=False
+                ).ask()
+                if not confirmed:
+                    click.echo("skipped")
+                    continue
+            coll.setdefault("summaries", {})["variable"] = merged
+            try:
+                client.upsert_collection(coll)
+            except StacClientError as exc:
+                raise click.ClickException(str(exc)) from exc
+            click.secho(f"{cid}: updated", fg="green")
+
+
+@server.group()
 def queryables() -> None:
     """Inspect queryable fields registered on a STAC server."""
 

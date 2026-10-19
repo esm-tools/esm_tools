@@ -117,6 +117,13 @@ def fake_connect(monkeypatch):
         def delete_item(self, cid, iid):
             calls.append(("delete_item", cid, iid))
 
+        def iter_items(self, cid, cql2_filter=None):
+            calls.append(("iter_items", cid, cql2_filter))
+            yield {"id": "i1", "collection": cid, "properties": {"variable": "temp2"}}
+
+        def upsert_collection(self, collection):
+            calls.append(("upsert_collection", collection))
+
     monkeypatch.setattr(cli_mod, "StacClient", FakeClient, raising=False)
     import esm_catalog.client as client_mod
 
@@ -194,6 +201,95 @@ def test_delete_items_yes_flag_skips_confirmation(runner, fake_connect):
     result = runner.invoke(main, ["server", "delete", "items", "c1", "i1", "--yes"])
     assert result.exit_code == 0, result.output
     assert ("delete_item", "c1", "i1") in fake_connect
+
+
+# --------------------------------------------------------------------------- #
+# server collection backfill-variable-summary
+# --------------------------------------------------------------------------- #
+
+
+def test_backfill_variable_summary_requires_id_or_all(runner, fake_connect):
+    result = runner.invoke(main, ["server", "collection", "backfill-variable-summary"])
+    assert result.exit_code != 0
+    assert "pass COLLECTION_ID or" in result.output
+    assert "--all" in result.output
+
+
+def test_backfill_variable_summary_rejects_both_id_and_all(runner, fake_connect):
+    result = runner.invoke(
+        main, ["server", "collection", "backfill-variable-summary", "c1", "--all"]
+    )
+    assert result.exit_code != 0
+    assert "not both" in result.output
+
+
+def test_backfill_variable_summary_writes_merged_summaries(runner, fake_connect):
+    result = runner.invoke(
+        main, ["server", "collection", "backfill-variable-summary", "c1", "--yes"]
+    )
+    assert result.exit_code == 0, result.output
+    upserted = next(c[1] for c in fake_connect if c[0] == "upsert_collection")
+    assert upserted["summaries"]["variable"] == ["temp2"]
+    assert "updated" in result.output
+
+
+def test_backfill_variable_summary_all_flag_covers_every_collection(runner, fake_connect):
+    result = runner.invoke(
+        main, ["server", "collection", "backfill-variable-summary", "--all", "--yes"]
+    )
+    assert result.exit_code == 0, result.output
+    collections_touched = {c[1] for c in fake_connect if c[0] == "iter_items"}
+    assert collections_touched == {"c1", "c2"}
+
+
+def test_backfill_variable_summary_aborts_without_confirmation(runner, fake_connect, monkeypatch):
+    import questionary
+
+    monkeypatch.setattr(questionary, "confirm", lambda *a, **kw: _FakeAsk(False))
+    result = runner.invoke(main, ["server", "collection", "backfill-variable-summary", "c1"])
+    assert result.exit_code == 0, result.output
+    assert not any(c[0] == "upsert_collection" for c in fake_connect)
+    assert "skipped" in result.output.lower()
+
+
+def test_backfill_variable_summary_already_up_to_date_is_a_noop(runner, monkeypatch):
+    import esm_catalog.auth as auth_mod
+    import esm_catalog.cli as cli_mod
+    import esm_catalog.client as client_mod
+
+    monkeypatch.setattr(auth_mod, "get_bearer_token", lambda settings: "tok")
+    monkeypatch.setenv("ESM_CATALOG_SERVER_URL", "https://stac.example.org")
+    calls: list[tuple] = []
+
+    class FakeClient:
+        def __init__(self, *a, **kw):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def iter_items(self, cid, cql2_filter=None):
+            calls.append(("iter_items", cid))
+            yield {"id": "i1", "collection": cid, "properties": {"variable": "temp2"}}
+
+        def get_collection(self, cid):
+            return {"id": cid, "summaries": {"variable": ["temp2"]}}
+
+        def upsert_collection(self, collection):
+            calls.append(("upsert_collection", collection))
+
+    monkeypatch.setattr(cli_mod, "StacClient", FakeClient, raising=False)
+    monkeypatch.setattr(client_mod, "StacClient", FakeClient)
+
+    result = runner.invoke(
+        main, ["server", "collection", "backfill-variable-summary", "c1", "--yes"]
+    )
+    assert result.exit_code == 0, result.output
+    assert not any(c[0] == "upsert_collection" for c in calls)
+    assert "already up to date" in result.output
 
 
 # --------------------------------------------------------------------------- #

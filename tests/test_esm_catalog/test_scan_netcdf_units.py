@@ -133,13 +133,36 @@ def test_time_coord_none_when_absent():
     assert _time_coord(dataset) is None
 
 
-def test_time_coord_none_and_warns_when_ambiguous(monkeypatch):
-    # XIOS output (confirmed live) carries both time_counter and
-    # time_centered; cf_xarray refuses to pick between them and raises --
-    # this must be distinguished from genuine absence (logged, not silent),
-    # even though the returned value is the same None either way. loguru
-    # isn't bridged to stdlib logging here, so caplog can't see it --
-    # monkeypatch the logger directly instead.
+def test_time_coord_resolves_via_axis_t_when_cf_xarray_is_ambiguous():
+    # XIOS output (confirmed live, across several real OIFS files) carries
+    # both time_counter and time_centered with identical values and
+    # standard_name='time'; cf_xarray's own .cf["time"]/.cf.axes["T"] can't
+    # tell them apart (it unions both via its standard_name heuristic
+    # regardless of the literal axis attribute). XIOS itself always stamps
+    # the literal axis='T' attribute on exactly one of the two
+    # (time_counter) -- that CF tie-break resolves it without needing a
+    # model-specific enricher.
+    dataset = xr.Dataset(
+        {"v": (("time_counter",), np.zeros(2, "float32"))},
+        coords={
+            "time_counter": (
+                "time_counter",
+                [0, 1],
+                {"standard_name": "time", "axis": "T"},
+            ),
+            "time_centered": ("time_counter", [0.5, 1.5], {"standard_name": "time"}),
+        },
+    )
+    assert _time_coord(dataset).name == "time_counter"
+
+
+def test_time_coord_none_and_warns_when_genuinely_ambiguous(monkeypatch):
+    # Neither candidate carries the literal axis='T' attribute -- the
+    # axis='T' tie-break can't resolve this one, so it must fall through to
+    # the logged-ambiguous case, distinguished from genuine absence (logged,
+    # not silent) even though the returned value is the same None either
+    # way. loguru isn't bridged to stdlib logging here, so caplog can't see
+    # it -- monkeypatch the logger directly instead.
     from esm_catalog.scan.readers.netcdf import timeaxis as timeaxis_mod
 
     warnings = []
@@ -149,11 +172,7 @@ def test_time_coord_none_and_warns_when_ambiguous(monkeypatch):
     dataset = xr.Dataset(
         {"v": (("time_counter",), np.zeros(2, "float32"))},
         coords={
-            "time_counter": (
-                "time_counter",
-                [0, 1],
-                {"standard_name": "time", "axis": "T"},
-            ),
+            "time_counter": ("time_counter", [0, 1], {"standard_name": "time"}),
             "time_centered": ("time_counter", [0.5, 1.5], {"standard_name": "time"}),
         },
     )

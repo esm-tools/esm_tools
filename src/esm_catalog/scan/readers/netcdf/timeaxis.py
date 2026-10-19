@@ -35,19 +35,30 @@ def _time_coord(dataset: xr.Dataset) -> Optional[xr.DataArray]:
     that must not be treated alike: genuinely no time-like coordinate (the
     real ``fx`` case), and *multiple* candidates it refuses to pick between
     (confirmed live: XIOS output carries both ``time_counter`` and
-    ``time_centered``). Silently falling through to ``None`` for the second
-    case mis-catalogues a real time-varying file as time-invariant with no
-    indication anything went wrong. The ambiguous case is logged -- loud,
-    not silent -- even though the outcome (``None``, same as genuine
-    absence) is unchanged here; a model-specific enricher is the place to
-    actually pick one of the candidates (see
-    ``esm_catalog.scan.enrichers``), not this format-agnostic layer.
+    ``time_centered``, identical values, both ``standard_name='time'``).
+
+    For that second case, CF's own tie-break is the literal ``axis: 'T'``
+    attribute -- confirmed live across several real files: XIOS always
+    stamps it on exactly one of the two (``time_counter``), never the
+    other. ``dataset.cf.axes['T']`` is *not* this check: cf_xarray unions
+    it from its own ``standard_name``-based inference too, so both
+    candidates land in there regardless of which one actually carries the
+    attribute -- the literal attribute has to be read directly off each
+    candidate. When exactly one does, it wins, resolving what would
+    otherwise be ambiguous without needing a model-specific enricher.
+    Only when that still leaves more than one (or none) is it logged as
+    genuinely ambiguous and falls through as time-invariant.
     """
     try:
         return dataset.cf["time"]
     except KeyError:
         candidates = dataset.cf.coordinates.get("time") or dataset.cf.axes.get("T")
         if candidates:
+            axis_t = [
+                name for name in candidates if dataset[name].attrs.get("axis") == "T"
+            ]
+            if len(axis_t) == 1:
+                return dataset[axis_t[0]]
             logger.warning(
                 "Ambiguous time axis in {}: candidates {} -- none picked, "
                 "falling through as if time-invariant; a model-specific "

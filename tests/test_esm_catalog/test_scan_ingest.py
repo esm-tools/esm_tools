@@ -7,6 +7,8 @@ time-varying and a time-invariant NetCDF file — runs the real scan_experiment
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import numpy as np
 import xarray as xr
 from ruamel.yaml import YAML
@@ -17,12 +19,15 @@ from esm_catalog.scan.ingest import (
     _fingerprint,
     _local_read_path,
     _read_output_file,
+    _synthesize_from_template,
     scan_experiment,
 )
 from esm_catalog.scan.sourcing import source_files
 from esm_catalog.scan.types import OutputFile
 from esm_catalog.scan.workspace import catalog_dir
 from esm_catalog.storage.geoparquet import fx_shard_name, read_shard
+
+from .helpers import make_file_metadata
 
 _EXPID = "exp-alpha"
 _COORDS = {"lat": [-45.0, 0.0, 45.0], "lon": [0.0, 90.0, 180.0, 270.0]}
@@ -256,3 +261,49 @@ def test_extensionless_remote_file_sniffed_and_read_with_one_fetch(tmp_path, mon
     assert not result.unsupported
     assert result.file_metadata is not None
     assert len(calls) == 1
+
+
+def test_read_output_file_treats_a_directory_as_unsupported_not_a_crash(tmp_path):
+    # Defensive second line (the sourcing layer already excludes a directory
+    # from a declared target): detect()'s magic-byte sniff raises
+    # IsADirectoryError on one, and that must never escape this function --
+    # it previously did, aborting the whole worker pool.
+    directory = tmp_path / "fesom.2000.oce.restart"
+    directory.mkdir()
+    (directory / "temp.nc").write_bytes(b"")
+
+    output_file = OutputFile(path=UPath(directory), component="fesom", stream="restart")
+    result = _read_output_file(output_file)
+
+    assert result.unsupported
+    assert result.failure is None
+
+
+# --- _synthesize_from_template: explicit end wins over frequency-derived ---
+
+
+def test_synthesize_from_template_uses_explicit_end_when_given(temp_nc):
+    # OIFS/XIOS bundles a whole year of steps per file; frequency alone
+    # (e.g. "1d") would derive an end just one day past start, nowhere near
+    # the file's real span -- the path-facet-supplied end must win outright.
+    output_file = OutputFile(path=temp_nc, component="oifs", stream="10u")
+    template = make_file_metadata(frequency="1d")
+    start = datetime(1900, 1, 1)
+    end = datetime(1900, 12, 31, 23, 59, 59)
+
+    synthesized = _synthesize_from_template(output_file, template, "10u", start, end)
+
+    assert synthesized.datetime_start == start
+    assert synthesized.datetime_end == end
+
+
+def test_synthesize_from_template_derives_end_from_frequency_when_none_given(temp_nc):
+    output_file = OutputFile(path=temp_nc, component="echam", stream="echam")
+    template = make_file_metadata(frequency="mon")
+    start = datetime(2000, 1, 1)
+
+    synthesized = _synthesize_from_template(output_file, template, "echam", start)
+
+    assert synthesized.datetime_start == start
+    assert synthesized.datetime_end > start
+    assert synthesized.datetime_end < datetime(2000, 2, 1)

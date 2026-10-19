@@ -133,6 +133,47 @@ def test_time_coord_none_when_absent():
     assert _time_coord(dataset) is None
 
 
+def test_time_coord_none_and_warns_when_ambiguous(monkeypatch):
+    # XIOS output (confirmed live) carries both time_counter and
+    # time_centered; cf_xarray refuses to pick between them and raises --
+    # this must be distinguished from genuine absence (logged, not silent),
+    # even though the returned value is the same None either way. loguru
+    # isn't bridged to stdlib logging here, so caplog can't see it --
+    # monkeypatch the logger directly instead.
+    from esm_catalog.scan.readers.netcdf import timeaxis as timeaxis_mod
+
+    warnings = []
+    monkeypatch.setattr(
+        timeaxis_mod.logger, "warning", lambda *a, **k: warnings.append((a, k))
+    )
+    dataset = xr.Dataset(
+        {"v": (("time_counter",), np.zeros(2, "float32"))},
+        coords={
+            "time_counter": (
+                "time_counter",
+                [0, 1],
+                {"standard_name": "time", "axis": "T"},
+            ),
+            "time_centered": ("time_counter", [0.5, 1.5], {"standard_name": "time"}),
+        },
+    )
+    assert _time_coord(dataset) is None
+    assert warnings
+    assert "Ambiguous time axis" in warnings[0][0][0]
+
+
+def test_time_coord_none_and_silent_when_genuinely_absent(monkeypatch):
+    from esm_catalog.scan.readers.netcdf import timeaxis as timeaxis_mod
+
+    warnings = []
+    monkeypatch.setattr(
+        timeaxis_mod.logger, "warning", lambda *a, **k: warnings.append((a, k))
+    )
+    dataset = xr.Dataset({"v": (("x",), np.zeros(2, "float32"))})
+    assert _time_coord(dataset) is None
+    assert not warnings
+
+
 # --------------------------------------------------------------------------- #
 # _to_utc_datetime — datetime64 scalar and cftime object                       #
 # --------------------------------------------------------------------------- #

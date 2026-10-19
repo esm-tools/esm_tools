@@ -30,10 +30,32 @@ def _time_coord(dataset: xr.Dataset) -> Optional[xr.DataArray]:
     Uses :mod:`cf_xarray` so an axis is found by its ``standard_name``/``axis``/CF
     ``units`` rather than by being named ``time``. The absence of a time axis is
     meaningful -- it is the time-invariant (``fx``) signal.
+
+    ``dataset.cf["time"]`` raises ``KeyError`` for two different situations
+    that must not be treated alike: genuinely no time-like coordinate (the
+    real ``fx`` case), and *multiple* candidates it refuses to pick between
+    (confirmed live: XIOS output carries both ``time_counter`` and
+    ``time_centered``). Silently falling through to ``None`` for the second
+    case mis-catalogues a real time-varying file as time-invariant with no
+    indication anything went wrong. The ambiguous case is logged -- loud,
+    not silent -- even though the outcome (``None``, same as genuine
+    absence) is unchanged here; a model-specific enricher is the place to
+    actually pick one of the candidates (see
+    ``esm_catalog.scan.enrichers``), not this format-agnostic layer.
     """
     try:
         return dataset.cf["time"]
-    except (KeyError, AttributeError):
+    except KeyError:
+        candidates = dataset.cf.coordinates.get("time") or dataset.cf.axes.get("T")
+        if candidates:
+            logger.warning(
+                "Ambiguous time axis in {}: candidates {} -- none picked, "
+                "falling through as if time-invariant; a model-specific "
+                "enricher can resolve this",
+                dataset.encoding.get("source", dataset),
+                sorted(candidates),
+            )
+    except AttributeError:
         pass
     # GRIB (cfgrib) carries the timestamp as ``valid_time`` (and a reference
     # ``time``) that cf_xarray may not pick as *the* axis; fall back by name.

@@ -6,10 +6,10 @@
 it recognises; ``GRIBReader`` doesn't know which models have one.
 
 A third-party package contributes one by shipping a module that implements
-``try_model_specific_read`` and declaring it under the ``esm_catalog.grib``
+``try_model_specific_read`` and declaring it under the ``esm_catalog.fastpath.grib``
 entry-point group in its own package metadata, e.g. in ``pyproject.toml``::
 
-    [project.entry-points."esm_catalog.grib"]
+    [project.entry-points."esm_catalog.fastpath.grib"]
     my_model = "my_package.grib_fastpath"
 
 See :func:`get_grib_plugin_manager`.
@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     from esm_catalog.scan.format import FileFormat
     from esm_catalog.types import FileMetadata
 
-hookspec = pluggy.HookspecMarker("esm_catalog.grib")
-hookimpl = pluggy.HookimplMarker("esm_catalog.grib")
+hookspec = pluggy.HookspecMarker("esm_catalog.fastpath.grib")
+hookimpl = pluggy.HookimplMarker("esm_catalog.fastpath.grib")
 
 
 class GribFastPathSpec:
@@ -48,15 +48,12 @@ class GribFastPathSpec:
 
 
 def _build_plugin_manager() -> pluggy.PluginManager:
-    pm = pluggy.PluginManager("esm_catalog.grib")
+    pm = pluggy.PluginManager("esm_catalog.fastpath.grib")
     pm.add_hookspecs(GribFastPathSpec)
-    from esm_catalog.scan.readers.grib import echam
-
-    pm.register(echam)
-    # Built-ins are registered directly above (guaranteed, no install-metadata
-    # round-trip needed); this discovers anything a separately-installed
-    # package declared under the group in its own entry_points.
-    pm.load_setuptools_entrypoints("esm_catalog.grib")
+    # echam is discovered via this entry-point group, declared in this
+    # package's own setup.py for now -- the same mechanism a
+    # separately-installed package would use (see esm-tools/esm_tools#1614).
+    pm.load_setuptools_entrypoints("esm_catalog.fastpath.grib")
     return pm
 
 

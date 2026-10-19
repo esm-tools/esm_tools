@@ -1,4 +1,4 @@
-"""The ECHAM GRIB fast path (esm_catalog.scan.readers.grib.echam).
+"""The ECHAM GRIB fast path (esm_catalog.scan.model_plugins.fastpath.grib.echam).
 
 eccodes/cfgrib are optional extras not installed in this dev environment, so
 ``eccodes`` itself is faked here rather than skipped -- these tests exercise
@@ -13,7 +13,7 @@ import types
 
 import pytest
 
-from esm_catalog.scan.readers.grib import echam
+from esm_catalog.scan.model_plugins.fastpath.grib import echam
 
 
 class _FakeEccodesError(Exception):

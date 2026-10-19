@@ -4,10 +4,11 @@ A reader's basic extraction (cfgrib/xarray) is model-agnostic; a model module
 can post-process the result for its own quirks by registering an enricher
 here -- e.g. ECHAM's GRIB1 encoding, where every field is stored under
 ``paramId=0`` and cfgrib collapses them to a single ``unknown`` variable (see
-:mod:`esm_catalog.scan.readers.grib.echam`). The same mechanism works for a
-NetCDF-writing model with its own quirks (a hypothetical FESOM enricher, say)
--- this module isn't GRIB-specific, which is why it lives here rather than
-under ``scan/readers/grib/``.
+:mod:`esm_catalog.scan.model_plugins.enrichers.grib.echam`). The same
+mechanism works for a NetCDF-writing model with its own quirks (see
+:mod:`esm_catalog.scan.model_plugins.enrichers.netcdf.oifs`/``.fesom``) --
+this module isn't format-specific, which is why it lives here rather than
+under ``scan/model_plugins/enrichers/<format>/``.
 
 Enrichers form a pipeline, not independent fan-out: each mutates *metadata*
 in place (it's a plain mutable ``dict`` at runtime even though it's typed as
@@ -65,9 +66,11 @@ class EnricherSpec:
 def _build_plugin_manager() -> pluggy.PluginManager:
     pm = pluggy.PluginManager("esm_catalog.enrichers")
     pm.add_hookspecs(EnricherSpec)
-    from esm_catalog.scan.readers.grib import echam
-
-    pm.register(echam)
+    # echam/oifs/fesom are discovered via the esm_catalog.enrichers
+    # entry-point group, declared in this package's own setup.py for now --
+    # the same mechanism a separately-installed package would use, so none
+    # of them need special-casing here if/when they move to their own
+    # model-specific package (see esm-tools/esm_tools#1614).
     pm.load_setuptools_entrypoints("esm_catalog.enrichers")
     return pm
 

@@ -43,9 +43,9 @@ def test_triage_first_file_always_must_read_rest_shortcut_via_path_facets():
     )
 
     assert triage.must_read == [files[0]]
-    assert [f for f, _, _ in triage.facet_candidates] == files[1:]
-    assert [s for _, s, _ in triage.facet_candidates] == ["echam", "echam"]
-    assert [dt for _, _, dt in triage.facet_candidates] == [
+    assert [f for f, _, _, _ in triage.facet_candidates] == files[1:]
+    assert [s for _, s, _, _ in triage.facet_candidates] == ["echam", "echam"]
+    assert [dt for _, _, dt, _ in triage.facet_candidates] == [
         datetime(2000, 2, 1),
         datetime(2000, 3, 1),
     ]
@@ -60,7 +60,7 @@ def test_triage_revalidate_every_forces_periodic_real_reads():
 
     # occurrence 1 (first, always) + occurrences 2, 4, 6 (checkpoints)
     assert triage.must_read == [files[0], files[1], files[3], files[5]]
-    assert [f for f, _, _ in triage.facet_candidates] == [files[2], files[4]]
+    assert [f for f, _, _, _ in triage.facet_candidates] == [files[2], files[4]]
     assert triage.revalidation_paths == {
         str(files[1].path),
         str(files[3].path),
@@ -115,8 +115,8 @@ def test_triage_recovers_stream_for_walked_undeclared_files():
     )
 
     assert triage.must_read == [files[0]]
-    assert [f for f, _, _ in triage.facet_candidates] == files[1:]
-    assert [s for _, s, _ in triage.facet_candidates] == ["echam", "echam"]
+    assert [f for f, _, _, _ in triage.facet_candidates] == files[1:]
+    assert [s for _, s, _, _ in triage.facet_candidates] == ["echam", "echam"]
     # The grouping key uses the resolved stream, not the (missing) declared one.
     assert list(triage.stream_first_seen.keys()) == [("echam", "echam")]
 
@@ -139,7 +139,7 @@ def test_triage_shortcuts_even_the_very_first_occurrence_when_schema_is_persiste
 
     assert triage.must_read == []
     assert triage.stream_first_seen == {}
-    assert [f for f, _, _ in triage.facet_candidates] == files
+    assert [f for f, _, _, _ in triage.facet_candidates] == files
 
 
 def test_triage_revalidation_counter_persists_and_is_shared_across_calls():

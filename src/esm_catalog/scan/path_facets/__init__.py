@@ -51,8 +51,8 @@ class PathFacetSpec:
     @hookspec(firstresult=True)
     def extract_path_facets(
         path: "UPath", component: str, stream: Optional[str]
-    ) -> "Optional[tuple[str, datetime]]":
-        """Return ``(stream, start)`` recovered from *path* alone, or ``None``.
+    ) -> "Optional[tuple[str, datetime, Optional[datetime]]]":
+        """Return ``(stream, start, end)`` recovered from *path* alone, or ``None``.
 
         *stream* is the caller's own best guess, already known for a
         declared/tidy-log file -- ``None`` for a walked, undeclared one. A
@@ -65,6 +65,17 @@ class PathFacetSpec:
         implementation should never raise; catch its own parsing errors and
         return ``None`` instead, the same contract as the GRIB fast path's
         ``try_model_specific_read``.
+
+        *end* is ``None`` when the path does not independently encode it --
+        the caller then derives it from *start* and the stream's own known
+        frequency (one path-encoded timestamp per file, e.g. ECHAM/FESOM: a
+        single step, or a whole period deducible from frequency alone). A
+        provider whose files bundle many steps into one file under an
+        explicit date *range* (e.g. OIFS/XIOS: a whole year of daily steps
+        per file, filename-stamped ``<start>-<end>``) must return that real
+        *end* explicitly -- frequency alone cannot reconstruct it, and
+        guessing it from *start* and frequency would be wrong (one day's
+        worth of period, not the whole file's real span).
         """
 
 

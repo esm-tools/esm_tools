@@ -182,7 +182,13 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
             try:
                 file_format = detect(detect_path)
                 reader = reader_for(file_format)
-            except (UnknownFormatError, LookupError):
+            except (UnknownFormatError, LookupError, IsADirectoryError):
+                # IsADirectoryError: detect()'s magic-byte sniff opens the
+                # path "rb", which raises for a directory -- the sourcing
+                # layer already excludes a directory from a *declared*
+                # restart/outdata target, but this stays a defensive
+                # second line, not the only one, for any other path that
+                # could still hand a directory to a worker.
                 return _ReadResult(output_file, None, None, unsupported=True)
             read_path = stack.enter_context(_local_read_path(detect_path, reader))
             file_metadata = FileMetadata.model_validate(reader.read(read_path))
@@ -248,8 +254,10 @@ def _on_read_timeout(output_file: OutputFile) -> _ReadResult:
     )
 
 
-def _try_path_facets(output_file: OutputFile) -> Optional[tuple[str, datetime]]:
-    """``(stream, start)`` recovered from *output_file*'s path alone, or ``None``.
+def _try_path_facets(
+    output_file: OutputFile,
+) -> Optional[tuple[str, datetime, Optional[datetime]]]:
+    """``(stream, start, end)`` recovered from *output_file*'s path alone, or ``None``.
 
     Thin wrapper around the path-facet plugin manager -- see
     :mod:`esm_catalog.scan.path_facets`. Pure and cheap (no I/O): safe to call
@@ -278,7 +286,11 @@ def _period_end(start: datetime, frequency: Optional[str]) -> datetime:
 
 
 def _synthesize_from_template(
-    output_file: OutputFile, template: FileMetadata, stream: str, start: datetime
+    output_file: OutputFile,
+    template: FileMetadata,
+    stream: str,
+    start: datetime,
+    end: Optional[datetime] = None,
 ) -> FileMetadata:
     """*output_file*'s metadata, reusing a frozen stream's schema.
 
@@ -287,10 +299,14 @@ def _synthesize_from_template(
     reading each one again just to rediscover the same facts is the actual
     cost this whole mechanism (see :func:`_triage`) exists to cut. Only the
     per-file datetime, taken from the path (:func:`_try_path_facets`), is
-    genuinely new; the period's end is derived from the frozen frequency.
-    *stream* is the path-resolved one (not ``output_file.stream``, which is
-    ``None`` for a walked/undeclared file), matching what the frozen file's
-    own real read was made to agree with -- see :func:`_read_output_file`.
+    genuinely new. *end*, when the path itself encoded one explicitly (e.g.
+    OIFS/XIOS: a whole year of daily steps bundled per file, filename-stamped
+    with its own real end), is used as-is -- the frozen frequency alone
+    cannot reconstruct a multi-step file's real span. Otherwise the period's
+    end is derived from the frozen frequency, as before. *stream* is the
+    path-resolved one (not ``output_file.stream``, which is ``None`` for a
+    walked/undeclared file), matching what the frozen file's own real read
+    was made to agree with -- see :func:`_read_output_file`.
     """
     synthesized = template.model_copy(deep=True)
     synthesized.component = output_file.component
@@ -298,7 +314,9 @@ def _synthesize_from_template(
     synthesized.category = output_file.category
     synthesized.stream = stream
     synthesized.datetime_start = start
-    synthesized.datetime_end = _period_end(start, template.frequency)
+    synthesized.datetime_end = end if end is not None else _period_end(
+        start, template.frequency
+    )
     synthesized.datetime_str = start.strftime("%Y%m")
     return synthesized
 
@@ -312,10 +330,12 @@ class _Triage:
     must_read: list[OutputFile]
     """In original order: first-of-stream files, revalidation checkpoints,
     and any file path-facet extraction could not claim."""
-    facet_candidates: list[tuple[OutputFile, str, datetime]]
-    """Files a path-facet extractor claimed, paired with the resolved stream
-    and extracted start datetime -- finalized only after their stream's
-    first file has actually been read (see ``scan_experiment``)."""
+    facet_candidates: list[tuple[OutputFile, str, datetime, Optional[datetime]]]
+    """Files a path-facet extractor claimed, paired with the resolved stream,
+    extracted start datetime, and an explicit end (when the path itself
+    encoded one -- see the path-facets hookspec) -- finalized only after
+    their stream's first file has actually been read (see
+    ``scan_experiment``)."""
     stream_first_seen: dict[tuple[Optional[str], Optional[str]], OutputFile]
     """``(component, stream)`` -> the file whose real read result becomes
     that stream's frozen schema. *stream* here is the resolved one from
@@ -361,11 +381,14 @@ def _triage(
     stream_first_seen: dict[tuple[Optional[str], Optional[str]], OutputFile] = {}
     seen_this_run: set[tuple[Optional[str], Optional[str]]] = set()
     must_read: list[OutputFile] = []
-    facet_candidates: list[tuple[OutputFile, str, datetime]] = []
+    facet_candidates: list[tuple[OutputFile, str, datetime, Optional[datetime]]] = []
     revalidation_paths: set[str] = set()
     for output_file in todo:
         facets = _try_path_facets(output_file)
-        stream, start = facets if facets is not None else (output_file.stream, None)
+        if facets is not None:
+            stream, start, end = facets
+        else:
+            stream, start, end = output_file.stream, None, None
         key = (output_file.component, stream)
         truly_unknown = key not in seen_this_run and key not in persisted_schema
         seen_this_run.add(key)
@@ -386,7 +409,7 @@ def _triage(
         if start is None:
             must_read.append(output_file)
             continue
-        facet_candidates.append((output_file, stream, start))
+        facet_candidates.append((output_file, stream, start, end))
     return _Triage(must_read, facet_candidates, stream_first_seen, revalidation_paths)
 
 
@@ -432,11 +455,11 @@ def ingest_single_file(
         if template is not None:
             facets = _try_path_facets(output_file)
             if facets is not None and facets[0] == output_file.stream:
-                _, start = facets
+                _, start, end = facets
                 return _ReadResult(
                     output_file,
                     _synthesize_from_template(
-                        output_file, template, output_file.stream, start
+                        output_file, template, output_file.stream, start, end
                     ),
                     None,
                 )
@@ -624,7 +647,7 @@ def scan_experiment(
         on_timeout=_on_read_timeout,
     )
     shortcut_keys = {
-        (of.component, stream) for of, stream, _ in triage.facet_candidates
+        (of.component, stream) for of, stream, _, _ in triage.facet_candidates
     }
     # Drift-check a revalidation checkpoint's fresh read against what was
     # trusted *before* this run touched it (persisted_schema) -- compare
@@ -650,7 +673,7 @@ def scan_experiment(
         state.occurrences_since_check[stream_key(*key)] = 0
 
     synthesized_results = []
-    for output_file, stream, start in triage.facet_candidates:
+    for output_file, stream, start, end in triage.facet_candidates:
         key = (output_file.component, stream)
         template = frozen_schema.get(key)
         if template is None:
@@ -660,7 +683,7 @@ def scan_experiment(
         else:
             result = _ReadResult(
                 output_file,
-                _synthesize_from_template(output_file, template, stream, start),
+                _synthesize_from_template(output_file, template, stream, start, end),
                 None,
             )
         synthesized_results.append(result)

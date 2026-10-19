@@ -179,6 +179,26 @@ def test_restart_files_skips_undeclared_or_missing(tmp_path):
     assert restart_files(exp_root) == []
 
 
+def test_restart_files_skips_a_directory_target_without_crashing(tmp_path):
+    # FESOM/OIFS restarts are real directories in production (e.g.
+    # fesom.<year>.oce.restart/, one NetCDF per field). A declared
+    # restart_out_targets entry resolving to one must not become an
+    # OutputFile -- detect() raises IsADirectoryError on a directory, which
+    # previously escaped the worker and aborted the whole scan.
+    exp_root = UPath(tmp_path)
+    restart_dir_target = exp_root / "restart" / "fesom" / "fesom.2000.oce.restart"
+    _write_finished_config(
+        exp_root, restart_out_targets={"oce_restart": str(restart_dir_target)}
+    )
+    restart_dir_target.unlink()
+    restart_dir_target.mkdir()
+    (restart_dir_target / "temp.nc").write_bytes(b"")
+
+    files = restart_files(exp_root)
+
+    assert all(f.path != restart_dir_target for f in files)
+
+
 def test_restart_files_walks_when_component_declares_no_targets(tmp_path):
     # Confirmed against a real production experiment: fesom manages restarts
     # via wildcard matching and declares no restart_out_targets at all, so

@@ -17,7 +17,7 @@ kinds of model-specific help:
   :mod:`.echam`) -- an alternative, faster read for files it recognises (e.g.
   straight from eccodes headers), tried before cfgrib. First-match dispatch,
   and GRIB-specific: a third-party package contributes one via the
-  ``esm_catalog.grib`` entry-point group (see :mod:`.plugins`).
+  ``esm_catalog.fastpath.grib`` entry-point group (see :mod:`.plugins`).
 - an *enricher* (see :mod:`esm_catalog.scan.enrichers`, implemented here by
   :mod:`.echam`) -- post-processes the metadata cfgrib/the fast path already
   produced (e.g. ECHAM's GRIB1 encoding, where every field is stored under

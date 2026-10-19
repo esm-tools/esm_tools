@@ -33,6 +33,7 @@ def test_matches_real_echam_filename():
     assert _extract("/x/historical_c14_init_185001.01_echam", "echam") == (
         "echam",
         datetime(1850, 1, 1),
+        None,
     )
 
 
@@ -40,6 +41,7 @@ def test_matches_a_different_real_echam_stream():
     assert _extract("/x/historical_c14_init_185001.01_co2", "echam") == (
         "co2",
         datetime(1850, 1, 1),
+        None,
     )
 
 
@@ -47,6 +49,7 @@ def test_echam_expid_with_underscores_does_not_confuse_the_match():
     assert _extract("/x/historical_c14_init_200002.01_echam", "echam") == (
         "echam",
         datetime(2000, 2, 1),
+        None,
     )
 
 
@@ -54,6 +57,18 @@ def test_matches_real_fesom_outdata_filename():
     assert _extract("/x/a_ice.fesom.1850.nc", "fesom") == (
         "a_ice",
         datetime(1850, 1, 1),
+        None,
+    )
+
+
+def test_matches_real_awicm3_fesom_outdata_filename():
+    # Confirmed live against a real AWI-CM3 v3.2 run -- a different filename
+    # shape from the plain year-stamped one above; previously fell through
+    # to a full read for every FESOM file on that run.
+    assert _extract("/x/a_ice.fesom.185001.01.nc", "fesom") == (
+        "a_ice",
+        datetime(1850, 1, 1),
+        None,
     )
 
 
@@ -62,6 +77,7 @@ def test_fesom_stream_containing_an_underscore_is_not_split():
     assert _extract("/x/a_ice.fesom.1850.nc", "fesom") == (
         "a_ice",
         datetime(1850, 1, 1),
+        None,
     )
 
 
@@ -70,6 +86,48 @@ def test_matches_real_jsbach_outdata_filename():
     assert _extract("/x/historical_c14_init_185001.01_yasso", "jsbach") == (
         "yasso",
         datetime(1850, 1, 1),
+        None,
+    )
+
+
+def test_matches_real_oifs_xios_filename_with_explicit_end():
+    # Confirmed live against a real AWI-CM3 (develop-is) run: OIFS/XIOS
+    # bundles a whole year of steps per file, so the end is the filename's
+    # own second year -- not something frequency+start could reconstruct.
+    assert _extract("/x/atm_1d_10u_1d_1900-1900.nc", "oifs") == (
+        "10u",
+        datetime(1900, 1, 1),
+        datetime(1900, 1, 1),
+    )
+
+
+def test_oifs_stream_containing_an_underscore_is_not_split():
+    assert _extract("/x/atm_remapped_1m_lai_hv_1m_1900-1900.nc", "oifs") == (
+        "lai_hv",
+        datetime(1900, 1, 1),
+        datetime(1900, 1, 1),
+    )
+
+
+def test_oifs_variable_name_shaped_like_a_frequency_code_is_not_confused():
+    # "10u" ends in 'u', not a frequency unit (h/d/m/y) -- {{ ignore }} must
+    # not swallow it, even though it shares the digit-run-then-letter shape.
+    assert _extract("/x/atm_1d_10u_1d_1900-1900.nc", "oifs")[0] == "10u"
+
+
+def test_matches_real_oifs_pressure_level_filename():
+    # The "pl" marker brackets the variable name the same way the frequency
+    # code does for 2D fields; tried first so a 2D template cannot swallow
+    # "pl" into the stream name.
+    assert _extract("/x/atm_remapped_1m_pl_q_1m_pl_1900-1900.nc", "oifs") == (
+        "q",
+        datetime(1900, 1, 1),
+        datetime(1900, 1, 1),
+    )
+    assert _extract("/x/atm_remapped_6h_pl_vo_6h_pl_1901-1901.nc", "oifs") == (
+        "vo",
+        datetime(1901, 1, 1),
+        datetime(1901, 1, 1),
     )
 
 
@@ -115,6 +173,7 @@ def test_confirms_an_already_known_stream():
     assert _extract("/x/historical_c14_init_185001.01_echam", "echam", "echam") == (
         "echam",
         datetime(1850, 1, 1),
+        None,
     )
 
 
@@ -135,7 +194,7 @@ def test_registered_in_the_plugin_manager():
     result = pm.hook.extract_path_facets(
         path=UPath("/x/a_ice.fesom.1850.nc"), component="fesom", stream=None
     )
-    assert result == ("a_ice", datetime(1850, 1, 1))
+    assert result == ("a_ice", datetime(1850, 1, 1), None)
 
 
 # --- the generic compiler itself, independent of the shipped table ---

@@ -95,6 +95,24 @@ setup(
             "esm_utilities=esm_utilities.cli:main",
             "esm-catalog=esm_catalog.cli:main",
         ],
+        # Discovered via pluggy's load_setuptools_entrypoints(...) -- declared
+        # here rather than hardcoded in each plugin manager, so none of these
+        # model-specific modules need special-casing in esm_catalog itself if
+        # they move to their own package later (see esm-tools/esm_tools#1614).
+        "esm_catalog.enrichers": [
+            "echam=esm_catalog.scan.model_plugins.enrichers.grib.echam",
+            "oifs=esm_catalog.scan.model_plugins.enrichers.netcdf.oifs",
+            "fesom=esm_catalog.scan.model_plugins.enrichers.netcdf.fesom",
+        ],
+        "esm_catalog.fastpath.grib": [
+            "echam=esm_catalog.scan.model_plugins.fastpath.grib.echam",
+        ],
+        "esm_catalog.path_facet_data": [
+            "echam=esm_catalog.scan.model_plugins.path_facets.grib.echam",
+            "jsbach=esm_catalog.scan.model_plugins.path_facets.grib.jsbach",
+            "fesom=esm_catalog.scan.model_plugins.path_facets.netcdf.fesom",
+            "oifs=esm_catalog.scan.model_plugins.path_facets.netcdf.oifs",
+        ],
     },
     extras_require={
         "catalog": [
@@ -169,7 +187,7 @@ setup(
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
         "esm_tools.couplings": ["../couplings/*"],
-        "esm_catalog": ["distributed/templates/*.j2", "scan/path_facets/*.yaml"],
+        "esm_catalog": ["distributed/templates/*.j2"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",

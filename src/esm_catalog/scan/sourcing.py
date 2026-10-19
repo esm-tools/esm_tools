@@ -527,7 +527,11 @@ def output_files(
         candidates = (
             OutputFile(path=cp.path, component=cp.component, stream=cp.stream, role="data")
             for cp in chain(
-                (cp for cp in deduped_configured if cp.path.exists()),
+                (
+                    cp
+                    for cp in deduped_configured
+                    if cp.path.exists() and not cp.path.is_dir()
+                ),
                 _walk_outdata(exp_root, on_file),
             )
         )
@@ -592,7 +596,14 @@ def restart_files(
         for target in _restart_targets(run_cfg.doc):
             path = _on_exp_fs(exp_root, str(target.path))
             key = str(path)
-            if key in seen or not path.exists():
+            # A declared restart_out_targets entry that is a directory (real
+            # for FESOM/OIFS: per-component restart dirs, e.g.
+            # fesom.<year>.oce.restart/) must not become an OutputFile --
+            # detect() raises IsADirectoryError on one, which previously
+            # escaped the worker and aborted the whole scan (confirmed live).
+            # A directory's own contents are still covered normally, via
+            # _walk_restart below.
+            if key in seen or not path.exists() or path.is_dir():
                 continue
             seen.add(key)
             files.append(

@@ -79,16 +79,18 @@ if [[ "x${WAM}" == "x1" ]] || [[ "x${WAM}" == "xtrue" ]] || [[ "x${WAM}" == "xTr
         }
         for law in ${RESTARTDIR}/LAW*; do
             [[ -f "${law}" ]] || continue
-            # esm_tools links restart files from the parent experiment into the
-            # work dir; never write through the link into the parent's files
-            if [[ -L "${law}" ]]; then
-                cp --remove-destination "$(readlink -f "${law}")" "${law}"
-            fi
             # One read and one write per file: byte-wise dd is very slow on Lustre
             header=$(dd if="${law}" bs=56 count=1 skip=4 iflag=skip_bytes 2>/dev/null)
             if [[ ! "${header}" =~ ^[0-9]{56}$ ]]; then
                 echo "WARNING: ${law}: no date header found, not shifted"
                 continue
+            fi
+            # Already at this leg's start: nothing to shift, leave a link as it is
+            [[ "${header:0:14}" == "${RUN_FROM}" ]] && continue
+            # esm_tools links restart files from the parent experiment into the
+            # work dir; never write through the link into the parent's files
+            if [[ -L "${law}" ]]; then
+                cp --remove-destination "$(readlink -f "${law}")" "${law}"
             fi
             offset=$(( $(to_epoch ${RUN_FROM}) - $(to_epoch ${header:0:14}) ))
             new_header=""

@@ -28,6 +28,7 @@ class FileFormat(StrEnum):
     netcdf = auto()
     grib = auto()
     lpjguess_table = auto()
+    opaque_binary = auto()
 
 
 class UnknownFormatError(ValueError):

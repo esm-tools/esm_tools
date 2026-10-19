@@ -176,6 +176,18 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
             # the sniff and a second time for the read: _local_read_path
             # below sees an already-local path afterwards and becomes a
             # no-op, so there is never a double fetch either way.
+            if path.is_dir():
+                # A suffix-only claim (e.g. opaque.py's component-scoped
+                # ".restart") never opens the path, so it would otherwise
+                # happily "claim" a directory that merely shares a real
+                # restart file's suffix (FESOM's own oce/ice/bio restarts
+                # are directories literally named "fesom.<date>.<stream>
+                # .restart") -- the sourcing layer already excludes a
+                # directory from a *declared* restart/outdata target, but
+                # this stays a defensive second line, not the only one, for
+                # any other path that could still hand a directory to a
+                # worker.
+                return _ReadResult(output_file, None, None, unsupported=True)
             detect_path = path
             if is_remote and needs_sniff(path, output_file.component):
                 detect_path = stack.enter_context(_local_copy(path))
@@ -184,11 +196,9 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
                 reader = reader_for(file_format)
             except (UnknownFormatError, LookupError, IsADirectoryError):
                 # IsADirectoryError: detect()'s magic-byte sniff opens the
-                # path "rb", which raises for a directory -- the sourcing
-                # layer already excludes a directory from a *declared*
-                # restart/outdata target, but this stays a defensive
-                # second line, not the only one, for any other path that
-                # could still hand a directory to a worker.
+                # path "rb", which raises for a directory not already
+                # caught above (e.g. one a magic-byte-only claimer would
+                # need to open to even consider).
                 return _ReadResult(output_file, None, None, unsupported=True)
             read_path = stack.enter_context(_local_read_path(detect_path, reader))
             file_metadata = FileMetadata.model_validate(reader.read(read_path))

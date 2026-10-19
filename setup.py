@@ -115,9 +115,11 @@ setup(
         ],
         "esm_catalog.formats": [
             "lpj_guess=esm_catalog.scan.model_plugins.readers.lpj_guess",
+            "opaque=esm_catalog.scan.model_plugins.readers.opaque",
         ],
         "esm_catalog.readers": [
             "lpj_guess=esm_catalog.scan.model_plugins.readers.lpj_guess",
+            "opaque=esm_catalog.scan.model_plugins.readers.opaque",
         ],
     },
     extras_require={

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace `SimulationSetup` with `Simulation`, extracting its config-building work into `ConfigBuilder`/`SimulationConfig` (shared by both `wf_engine` values) and `RunStateBuilder`/`RunState` (pplan-only, per-invocation facts), with zero behavior change to the `legacy` path and zero regression to the already-landed pplan engine.
+**Goal:** Introduce `Simulation`, extracting config-building work into `ConfigBuilder`/`SimulationConfig` (shared by both `wf_engine` values) and `RunStateBuilder`/`RunState` (pplan-only, per-invocation facts), with zero behavior change to the `legacy` path and zero regression to the already-landed pplan engine. `SimulationSetup` is **not** removed — it becomes a deprecated pass-through shim to `Simulation`, so existing callers need no changes.
 
-**Architecture:** Two new Builder/Product pairs in a new module (`ConfigBuilder`→`SimulationConfig`, `RunStateBuilder`→`RunState`), each method a thin wrapper calling one existing `config_initialization.py`/`prepare.py`/`chunky_parts.py`/`last_minute.py`/`conda_env.py`/`batch_system.py` function in today's exact order. `Simulation.from_config` replaces `SimulationSetup.__init__`'s branching; `Simulation.run` replaces `__call__`. Four call sites updated to match.
+**Architecture:** Two new Builder/Product pairs in a new module (`ConfigBuilder`→`SimulationConfig`, `RunStateBuilder`→`RunState`), each method a thin wrapper calling one existing `config_initialization.py`/`prepare.py`/`chunky_parts.py`/`last_minute.py`/`conda_env.py`/`batch_system.py` function in today's exact order. `Simulation.from_config` replaces `SimulationSetup.__init__`'s branching; `Simulation.run` replaces `__call__`. `SimulationSetup` becomes a thin subclass of `Simulation` that builds a `SimulationConfig` internally and warns on construction (Paul's explicit instruction, scope change from the original spec/plan: keep the old class alive and working, not just documented as removable). Only `cli.py` is updated to call `Simulation`/`ConfigBuilder` directly — `esm_master.py`, `resubmit.py`, and the test fixture are deliberately left untouched, calling the deprecated `SimulationSetup` exactly as today. Paul was explicit: especially not `esm_master.py`, leave it alone unless absolutely necessary.
 
 **Tech Stack:** Python 3.10, pydantic (unrelated to this plan — `plan.py` untouched), pytest.
 
@@ -18,6 +18,8 @@
 - `RunState` is `pplan`-only; nothing in this plan writes `RunState` values back into the shared config dict (spec: no sync method, no dual-write). `RunStateBuilder.from_config` must pass a **copy** of the config data it reads from (`copy.deepcopy`), not the same object `SimulationConfig` holds — the spec's own flagged "sharp edge."
 - Every `ConfigBuilder`/`RunStateBuilder` `.with_*()` method wraps exactly one existing function, called with the same arguments, in the same order as today's `SimulationSetup.__init__`/`prepare.run_job` recipe. No reimplementation of any wrapped function's logic in this plan.
 - This machine's local venv has a broken build toolchain (duplicate `LC_RPATH` after a from-source `psutil` rebuild) that blocks `pytest` from importing `esm_runscripts` at all (triggers on `esm_runscripts/__init__.py`'s `dask_cluster` import). Every task's test step gives a `pytest` command *and* an isolated-module-exec fallback (same pattern used throughout this branch's earlier work: `importlib.util.spec_from_file_location` + `sys.modules` registration, bypassing the package `__init__.py`). Try `pytest` first; if it fails with the known `psutil`/`LC_RPATH` `ImportError`, use the fallback and say so explicitly — never silently skip verification.
+- **`esm_master.py` is not touched in this plan, under any circumstances short of something making the shim provably impossible.** Paul was explicit and repeated it: "especially not esm_master." If a task discovers a reason `esm_master.py` must change, stop and raise it rather than editing the file.
+- `SimulationSetup` keeps working, unmodified in its external contract, for every caller that doesn't migrate to `Simulation` directly (`esm_master.py`, `resubmit.py`, the test fixture). It becomes a thin deprecated subclass of `Simulation`, not a deleted class — see Task 3a.
 
 ## Left-to-the-builder calls made during planning
 
@@ -27,38 +29,40 @@
 - **Job dispatch naming**: `SimulationSetup.__call__` becomes `Simulation.run` (not `.dispatch()`, not a `Job` class) — matches the spec's own placeholder, no reason found to change it.
 - **Tail steps' home** (`add_submission_info`, `initialize_batch_system`, `initialize_coupler`, `set_logfile`, `check_config_for_warnings_errors`): methods on `Simulation` itself, not `RunStateBuilder`. Reasoning: they create live stateful objects (a batch-system handle, a coupler object) — `RunState` is documented as plain per-invocation *facts* (dates, paths), and stuffing live handles into it would violate that definition on its first real use.
 - **Plugin resolution placement**: not implemented in this plan. `pplan`'s step execution is still a logging stub (`plan.run_steps`) with no real plugin calls to resolve; deferred until real step execution exists.
-- **`ConfigBuilder.from_user_config`**: added as a second classmethod, not in the spec's original sketch. The call-site audit (Task 1) found `src/esm_master/esm_master.py:65` constructs `SimulationSetup(user_config=user_config)` — the *other* branch `SimulationSetup.__init__` already supports, which the spec's `from_runscript`-only sketch didn't cover. This completes coverage of both existing entry paths rather than opening a new design question.
+- **`ConfigBuilder.from_user_config`**: added as a second classmethod, not in the spec's original sketch. The call-site audit (Task 1) found `src/esm_master/esm_master.py:65` constructs `SimulationSetup(user_config=user_config)` — the *other* branch `SimulationSetup.__init__` already supports, which the spec's `from_runscript`-only sketch didn't cover. This completes coverage of both existing entry paths rather than opening a new design question. (Needed by the deprecated `SimulationSetup` shim internally, below — not because `esm_master.py` calls `ConfigBuilder` directly, which it doesn't.)
+- **Deprecation mechanism** (Paul's instruction, post-spec-approval scope addition): reuse the existing `deprecation` package + `warnings.warn` pattern already established in `workflow.py`'s `_rename_legacy_key` (`warnings.warn(deprecation.DeprecatedWarning(name, deprecated_since, removed_in, "Use X instead"), stacklevel=2)`), rather than a bare `DeprecationWarning`. Matches an existing convention instead of inventing a new one.
 
 ## Call-site audit (done during planning, not a task)
 
-`grep -rln "SimulationSetup" --include="*.py" .` found 8 files. Four are real references needing updates:
+`grep -rln "SimulationSetup" --include="*.py" .` found 8 files. Four are real references to the class:
 
-| File | Current call | Keeps using |
+| File | Current call | This plan |
 |---|---|---|
-| `src/esm_runscripts/cli.py:248` | `SimulationSetup(command_line_config=command_line_config)` | `.plan`, `.workflow`, `.config`, `setup()` |
-| `src/esm_master/esm_master.py:65` | `SimulationSetup(user_config=user_config)` | `.config` only |
-| `src/esm_runscripts/resubmit.py:47` | `SimulationSetup(command_line_config)` (positional) | `.config`, `setup_obj(kill_after_submit=False)` |
-| `tests/test_esm_catalog/fixtures/fake_experiment/resolver.py:112` | `SimulationSetup(command_line_config=command_line_config).config` | — |
+| `src/esm_runscripts/cli.py:248` | `SimulationSetup(command_line_config=command_line_config)` | **Migrated** to `ConfigBuilder`/`Simulation.from_config` (Task 5) |
+| `src/esm_master/esm_master.py:65` | `SimulationSetup(user_config=user_config)` | **Untouched.** Keeps calling the deprecated `SimulationSetup` shim (Task 3a). Paul: do not edit this file. |
+| `src/esm_runscripts/resubmit.py:47` | `SimulationSetup(command_line_config)` (positional) | **Untouched.** Same shim. |
+| `tests/test_esm_catalog/fixtures/fake_experiment/resolver.py:112` | `SimulationSetup(command_line_config=command_line_config).config` | **Untouched.** Same shim. |
 
 Four are false positives / docs-only, not touched by this plan: `src/esm_runscripts/workflow.py:210,221,377` (the string `"SimulationSetup"` is a `batch_or_shell` tag *value*, unrelated to the class); `src/esm_master/general_stuff.py:61` and `src/esm_runscripts/prev_run.py:16` are docstring prose mentions only.
+
+The three untouched callers must keep working unmodified against the deprecated `SimulationSetup` shim (Task 3a) — that's the entire point of building the shim instead of migrating every call site.
 
 ## File Structure
 
 - Create: `src/esm_runscripts/simulation_config.py` — `ConfigBuilder`, `SimulationConfig`, `RunStateBuilder`, `RunState`.
 - Create: `tests/test_esm_runscripts/test_simulation_config.py` — tests for all four classes above.
-- Modify: `src/esm_runscripts/sim_objects.py` — rename `SimulationSetup` → `Simulation`; replace `__init__` with `Simulation.from_config` classmethod using `simulation_config.py`; rename `__call__` → `run`; everything else (`prepcompute`/`tidy`/`viz`/`observe`/`assembler`/`inspect`/`store_prev_objects`) untouched.
+- Modify: `src/esm_runscripts/sim_objects.py` — add `Simulation` class (new, not a rename: `SimulationSetup` keeps its name and keeps working); add `Simulation.from_config` classmethod and `Simulation.run` method; move `prepcompute`/`tidy`/`viz`/`observe`/`assembler`/`inspect`/`store_prev_objects` from `SimulationSetup` onto `Simulation` (Task 3); replace `SimulationSetup`'s old monolithic `__init__`/`__call__` with a thin `SimulationSetup(Simulation)` deprecated shim that inherits those methods back (Task 3a).
 - Modify: `src/esm_runscripts/cli.py:248-253` — construct via `ConfigBuilder`/`Simulation.from_config`; `setup()` → `.run()`.
-- Modify: `src/esm_master/esm_master.py:63-65` — construct via `ConfigBuilder.from_user_config`/`Simulation.from_config`.
-- Modify: `src/esm_runscripts/resubmit.py:45-75,180-181` — construct via `ConfigBuilder`/`Simulation.from_config`; `setup_obj(...)` → `.run(...)`; `submission_type == "SimulationSetup"` string check stays as-is (it's a `batch_or_shell` tag value, not the class — see audit table).
-- Modify: `tests/test_esm_catalog/fixtures/fake_experiment/resolver.py:96-112` — construct via `ConfigBuilder`/`Simulation.from_config`.
+- **Not modified**: `src/esm_master/esm_master.py`, `src/esm_runscripts/resubmit.py`, `tests/test_esm_catalog/fixtures/fake_experiment/resolver.py` — all three keep calling `SimulationSetup` exactly as today; the deprecated shim (Task 3a) is what makes that safe.
 
 ## Review Focus
 
 - **`ConfigBuilder.from_runscript(path)` called with zero overrides** — must not raise `KeyError` from a missing CLI key; every downstream function it calls must tolerate a one-key `command_line_config` dict (spec Anti-goals explicitly names this).
 - **`esm_master`'s `user_config=` path, which never had a runscript path or most CLI keys at all** — `ConfigBuilder.from_user_config` must not assume any CLI-sourced key exists, since `esm_master` never built one.
 - **`legacy` `wf_engine` with a value *other than* `"legacy"` or `"pplan"`** (e.g. unset, or a typo) — `Simulation.from_config`'s branch must default to `legacy` behavior (today's code does: `(command_line_config or {}).get("wf_engine", "legacy")`), not silently take the `pplan` branch or raise.
-- **`resubmit.py`'s positional-argument call site** (`SimulationSetup(command_line_config)`, no keyword) — the new construction path must support this call shape too, not just the keyword forms used elsewhere.
+- **`resubmit.py`'s positional-argument call site** (`SimulationSetup(command_line_config)`, no keyword) — the deprecated shim's `__init__` must accept this exact call shape unchanged (positional `command_line_config`, no `user_config`), since that file is never edited.
 - **`RunStateBuilder` built from a `SimulationConfig` whose underlying dict gets mutated afterward by other code** — since `RunStateBuilder.from_config` must deepcopy (Global Constraints), a later mutation to the original `SimulationConfig` must not retroactively change an already-built `RunState`. Test this explicitly, since it's exactly the bug the deepcopy requirement exists to prevent.
+- **`esm_master.py`'s `SimulationSetup(user_config=user_config)` call, completely unedited** — must still produce a working object with a working `.config` attribute via the shim, and must not raise just because it's now routed through `Simulation.from_config` internally. This is the single highest-stakes case in this plan: if the shim gets `user_config`-path construction wrong, the failure surfaces in `esm_master`, a file this plan is forbidden from touching to fix.
 
 ---
 
@@ -191,7 +195,7 @@ git commit -m "feat(esm_runscripts): add RunStateBuilder/RunState, pplan-only"
 
 ---
 
-### Task 3: `Simulation` replaces `SimulationSetup`
+### Task 3: Add `Simulation` (new class, `SimulationSetup` untouched until Task 3a)
 
 **Files:**
 - Modify: `src/esm_runscripts/sim_objects.py`
@@ -241,7 +245,7 @@ Expected: FAIL — `Simulation` not defined (still named `SimulationSetup`), no 
 
 - [ ] **Step 3: Implement `Simulation` in `src/esm_runscripts/sim_objects.py`**
 
-Rename the class `SimulationSetup` → `Simulation`. Replace `__init__` (current lines 16-133) with:
+Add the new `Simulation` class **alongside** the existing `SimulationSetup` (do not rename or delete `SimulationSetup` in this step — Task 3a turns it into a shim that uses this new class, it is not replaced):
 
 ```python
 class Simulation(object):
@@ -269,7 +273,7 @@ class Simulation(object):
 
 Note the `wf_engine` default changed from `(command_line_config or {}).get("wf_engine", "legacy")` to `self.config.get("general", {}).get("wf_engine") or "legacy"` — `command_line_config` is no longer available inside `Simulation.from_config` (it's `ConfigBuilder`'s concern now), but `ConfigBuilder.remember_command_line` already stored it at `config["general"]["command_line_config"]`, and `cli.py`/callers set `wf_engine` into the same `command_line_config` dict today (`cli.py:223`) — confirm during implementation that `wf_engine` ends up reachable at `self.config["general"]["wf_engine"]` after `ConfigBuilder`'s chain runs (trace `save_command_line_config`'s exact write path if not obvious), and adjust the lookup path in this step if it lands somewhere else. This is the one place today's exact data shape must be re-confirmed, not assumed.
 
-Leave `prepcompute`/`tidy`/`viz`/`observe`/`assembler`/`inspect`/`store_prev_objects` (current lines 183-262) untouched — only the class name changes for them (inherited, no per-method edit needed).
+Leave `SimulationSetup` and its current `__init__`/`__call__`/`prepcompute`/`tidy`/`viz`/`observe`/`assembler`/`inspect`/`store_prev_objects` completely untouched in this step — `Simulation` is a new, separate class. Move `prepcompute`/`tidy`/`viz`/`observe`/`assembler`/`inspect`/`store_prev_objects` onto `Simulation` only (cut from `SimulationSetup`, paste onto `Simulation` — Task 3a makes `SimulationSetup` inherit them back via subclassing, so they must not be defined twice).
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -280,7 +284,109 @@ Expected: PASS
 
 ```bash
 git add src/esm_runscripts/sim_objects.py tests/test_esm_runscripts/test_simulation.py
-git commit -m "refactor(esm_runscripts): SimulationSetup -> Simulation, builds config via ConfigBuilder/RunStateBuilder"
+git commit -m "feat(esm_runscripts): add Simulation class, builds config via ConfigBuilder/RunStateBuilder"
+```
+
+---
+
+### Task 3a: `SimulationSetup` becomes a deprecated pass-through shim
+
+**Files:**
+- Modify: `src/esm_runscripts/sim_objects.py`
+- Create: `tests/test_esm_runscripts/test_simulation_setup_deprecation.py`
+
+**Interfaces:**
+- Consumes: `Simulation` (Task 3), `simulation_config.ConfigBuilder` (Task 1), the `deprecation` package + `warnings` (both already dependencies, same pattern as `workflow.py`'s `_rename_legacy_key`).
+- Produces: `SimulationSetup(Simulation)` with `__init__(self, command_line_config=None, user_config=None)` matching today's exact signature and both branches, and `__call__(self, kill_after_submit=True)` forwarding to `self.run(kill_after_submit=kill_after_submit)`. External behavior (attributes, callability) must be indistinguishable from today's `SimulationSetup` to the three untouched callers.
+
+- [ ] **Step 1: Write the failing tests**
+
+```python
+# tests/test_esm_runscripts/test_simulation_setup_deprecation.py
+import warnings
+from esm_runscripts.sim_objects import SimulationSetup
+
+def test_simulation_setup_warns_on_construction(tmp_path):
+    runscript = tmp_path / "test.yaml"
+    runscript.write_text("general:\n  setup_name: dummy\n  expid: test\n")
+    command_line_config = {"runscript_abspath": str(runscript)}
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        SimulationSetup(command_line_config=command_line_config)
+    assert any("SimulationSetup" in str(w.message) for w in caught)
+
+def test_simulation_setup_user_config_path_still_works():
+    # mirrors esm_master.py's exact call shape: SimulationSetup(user_config=user_config)
+    user_config = {"general": {"setup_name": "dummy", "expid": "test", "valid_model_names": []}}
+    setup = SimulationSetup(user_config=user_config)
+    assert setup.config["general"]["expid"] == "test"
+
+def test_simulation_setup_positional_command_line_config_still_works(tmp_path):
+    # mirrors resubmit.py's exact call shape: SimulationSetup(command_line_config), positional
+    runscript = tmp_path / "test.yaml"
+    runscript.write_text("general:\n  setup_name: dummy\n  expid: test\n")
+    setup = SimulationSetup({"runscript_abspath": str(runscript)})
+    assert setup.config["general"]["expid"] == "test"
+
+def test_simulation_setup_is_still_callable(tmp_path, monkeypatch):
+    import esm_runscripts.prepare as prepare
+    monkeypatch.setattr(prepare, "run_job", lambda config: config)
+    runscript = tmp_path / "test.yaml"
+    runscript.write_text("general:\n  setup_name: dummy\n  expid: test\n")
+    setup = SimulationSetup(command_line_config={"runscript_abspath": str(runscript)})
+    setup(kill_after_submit=False)  # must not raise AttributeError: object not callable
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `pytest tests/test_esm_runscripts/test_simulation_setup_deprecation.py -v` (or isolated-exec fallback)
+Expected: FAIL — no deprecation warning fires yet (old `__init__` unchanged from Task 3's step 3 onward).
+
+- [ ] **Step 3: Implement the `SimulationSetup` shim in `src/esm_runscripts/sim_objects.py`**
+
+Replace the old `SimulationSetup.__init__`/`__call__` bodies (now redundant with `Simulation`) with:
+
+```python
+class SimulationSetup(Simulation):
+    def __init__(self, command_line_config=None, user_config=None):
+        warnings.warn(
+            deprecation.DeprecatedWarning(
+                "SimulationSetup", __version__, "<next major>",
+                "Use Simulation.from_config(...) instead.",
+            ),
+            stacklevel=2,
+        )
+        if user_config:
+            config = ConfigBuilder.from_user_config(user_config)
+        else:
+            config = ConfigBuilder.from_runscript(
+                command_line_config["runscript_abspath"], **command_line_config
+            )
+        config = (
+            config.with_interactive_info().with_iterative_coupling()
+            .with_execution_mode_default().expand_from_esm_tools_configs()
+            .with_runscript_defaults().validate_account().with_inspect_info()
+            .remember_command_line().build()
+        )
+        sim = Simulation.from_config(config)
+        self.__dict__.update(sim.__dict__)
+
+    def __call__(self, kill_after_submit=True):
+        return self.run(kill_after_submit=kill_after_submit)
+```
+
+Confirm the exact version string for `deprecation.DeprecatedWarning`'s `deprecated_since`/`removed_in` by reading how `workflow.py`'s `_KEYS_DEPRECATED_SINCE`/`_KEYS_REMOVED_IN` are sourced (`workflow_legacy_keys.yaml`) — reuse that same sourcing convention rather than a bare hardcoded string, if a reasonable equivalent exists; otherwise `__version__` (current) and a documented next-major-version guess is an acceptable implementer's call, left here deliberately rather than specified, same as the spec's own "left to the builder" items.
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `pytest tests/test_esm_runscripts/test_simulation_setup_deprecation.py -v` (or isolated-exec fallback)
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/esm_runscripts/sim_objects.py tests/test_esm_runscripts/test_simulation_setup_deprecation.py
+git commit -m "refactor(esm_runscripts): SimulationSetup becomes a deprecated pass-through shim to Simulation"
 ```
 
 ---
@@ -332,16 +438,15 @@ git commit -m "feat(esm_runscripts): wire pplan workflow-setup tail steps into S
 
 ---
 
-### Task 5: Update the four real call sites
+### Task 5: Migrate `cli.py` to `Simulation`/`ConfigBuilder` (the only call site touched)
 
 **Files:**
 - Modify: `src/esm_runscripts/cli.py:248-253`
-- Modify: `src/esm_master/esm_master.py:63-65`
-- Modify: `src/esm_runscripts/resubmit.py:45-75,180-181`
-- Modify: `tests/test_esm_catalog/fixtures/fake_experiment/resolver.py:96-112`
 
 **Interfaces:**
 - Consumes: `simulation_config.ConfigBuilder` (Task 1), `sim_objects.Simulation` (Task 3).
+
+**Not in scope for this task — do not edit:** `src/esm_master/esm_master.py`, `src/esm_runscripts/resubmit.py`, `tests/test_esm_catalog/fixtures/fake_experiment/resolver.py`. All three keep calling the deprecated `SimulationSetup` shim (Task 3a) exactly as today. Paul was explicit and repeated it: especially not `esm_master.py`.
 
 - [ ] **Step 1: Update `cli.py`**
 
@@ -356,41 +461,22 @@ setup = Simulation.from_config(config)
 ```
 Replace `setup()` (current `cli.py:257`) with `setup.run()`. Everything reading `setup.plan`/`setup.workflow`/`setup.config` (the `drop_into_pplan_debug` call, current `cli.py:251-252`) stays as-is — `Simulation` still exposes `.plan`/`.config` (Task 3); confirm whether callers expect `.workflow` too (current code has both `setup.plan` and `setup.workflow` passed to `drop_into_pplan_debug` — Task 3's sketch only names `.plan`; re-check `cli.py`'s exact current call before editing and keep both attributes if both are read).
 
-- [ ] **Step 2: Update `esm_master.py`**
+- [ ] **Step 2: Run the full existing test suite to check for regressions**
 
-Replace `complete_setup = SimulationSetup(user_config=user_config)` with:
-```python
-config = ConfigBuilder.from_user_config(user_config) \
-    .with_interactive_info().with_iterative_coupling().with_execution_mode_default() \
-    .expand_from_esm_tools_configs().with_runscript_defaults().validate_account() \
-    .with_inspect_info().remember_command_line().build()
-complete_setup = Simulation.from_config(config)
-```
-(`complete_config = complete_setup.config` on the next line needs no change.)
+Run: `pytest tests/ -v` (or, if the known `psutil`/`LC_RPATH` `ImportError` blocks collection entirely: isolated-exec each of `tests/test_esm_runscripts/test_plan.py`, `test_simulation_config.py`, `test_simulation.py`, `test_simulation_setup_deprecation.py` individually, same pattern as every earlier step, and say explicitly that the full-suite run was not possible here)
+Expected: PASS, including `tests/test_esm_runscripts/test_plan.py` unchanged (Global Constraints: zero regression), and the deprecation-shim tests (Task 3a) proving `esm_master.py`/`resubmit.py`/the test fixture's exact call shapes still work even though those files themselves aren't edited.
 
-- [ ] **Step 3: Update `resubmit.py`**
-
-Replace `setup_obj = SimulationSetup(command_line_config)` (positional) with the same `ConfigBuilder.from_runscript(...).build()` chain as `cli.py`, then `setup_obj = Simulation.from_config(config)`. Replace `setup_obj(kill_after_submit=False)` with `setup_obj.run(kill_after_submit=False)`.
-
-- [ ] **Step 4: Update the test fixture**
-
-Replace `config = SimulationSetup(command_line_config=command_line_config).config` with the equivalent builder chain, `.build()`, then `Simulation.from_config(...).config`.
-
-- [ ] **Step 5: Run the full existing test suite to check for regressions**
-
-Run: `pytest tests/ -v` (or, if the known `psutil`/`LC_RPATH` `ImportError` blocks collection entirely: isolated-exec each of `tests/test_esm_runscripts/test_plan.py`, `test_simulation_config.py`, `test_simulation.py` individually, same pattern as every earlier step, and say explicitly that the full-suite run was not possible here)
-Expected: PASS, including `tests/test_esm_runscripts/test_plan.py` unchanged (Global Constraints: zero regression).
-
-- [ ] **Step 6: Manual smoke test on a real cluster** (per spec Verification — this machine cannot run `esm_runscripts` end-to-end)
+- [ ] **Step 3: Manual smoke test on a real cluster** (per spec Verification — this machine cannot run `esm_runscripts` end-to-end)
 
 ```bash
 esm_runscripts <runscript> -e <expid>                      # legacy, confirm unchanged behavior
 esm_runscripts <runscript> -e <expid> --wf-engine=pplan     # confirm sim.plan is the resolved Workflow, no SubPlan("prepare")
+esm_master <target>                                         # confirm esm_master still works unmodified via the deprecated shim; expect a DeprecationWarning in output, not an error
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add src/esm_runscripts/cli.py src/esm_master/esm_master.py src/esm_runscripts/resubmit.py tests/test_esm_catalog/fixtures/fake_experiment/resolver.py
-git commit -m "refactor: update all SimulationSetup call sites to ConfigBuilder + Simulation.from_config"
+git add src/esm_runscripts/cli.py
+git commit -m "refactor(esm_runscripts): cli.py uses Simulation/ConfigBuilder directly"
 ```

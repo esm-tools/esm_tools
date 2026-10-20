@@ -17,10 +17,36 @@ covers structural read access.
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional
+from typing import Annotated, Dict, List, Literal, Optional
 
 from loguru import logger
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, BeforeValidator, ConfigDict
+
+
+def _coerce_bool(value):
+    """Coerce esm_parser's ``BoolWithProvenance`` (and similar truthy/falsy
+    wrappers) into a real ``bool``.
+
+    ``BoolWithProvenance`` wraps a bool with YAML-provenance tracking but
+    is not itself a ``bool`` subclass, so pydantic's lax bool validator
+    rejects it outright (``bool_type`` error) even though the value is
+    unambiguously ``True``/``False``. Config values sourced straight from a
+    runscript/setup YAML (e.g. a choose-block's
+    ``submit_to_batch_system: True``) carry this wrapper; literals built in
+    Python (``Workflow.default``'s ``.get(..., True)``) don't -- so this
+    must tolerate both.
+    """
+    # `BoolWithProvenance` makes `isinstance(v, bool)` lie (True) via its own
+    # `__subclasshook__`-style trickery, even though it is not the literal
+    # C-level `bool` type pydantic-core's Rust validator checks against --
+    # an `isinstance` guard here would silently pass the wrapper through
+    # unconverted. `type(value) is bool` is the only reliable check.
+    if type(value) is bool:
+        return value
+    return bool(value)
+
+
+ProvenanceBool = Annotated[bool, BeforeValidator(_coerce_bool)]
 
 
 class Step(BaseModel):
@@ -50,7 +76,7 @@ class SubPlan(BaseModel):
     nproc: int = 1
     preceded_by: List[str] = []
     run_only: Optional[str] = None
-    submit_to_batch_system: bool = False
+    submit_to_batch_system: ProvenanceBool = False
     run_on_queue: Optional[str] = None
     batch_or_shell: Optional[str] = None
     steps: List[Step] = []
@@ -84,7 +110,7 @@ class Plan(BaseModel):
     next_submit: List[str] = []
     nproc: Optional[int] = None
     batch_or_shell: Optional[str] = None
-    submit_to_batch_system: bool = False
+    submit_to_batch_system: ProvenanceBool = False
     order_in_cluster: Optional[str] = None
     runs_on: Optional[Literal["login_node", "sbatch"]] = None
     cycling: Optional[dict] = None

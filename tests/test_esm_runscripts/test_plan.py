@@ -190,6 +190,24 @@ def test_workflow_resolve_does_not_raise_for_an_empty_supplemental_block():
     assert wf.entry_point == "prepcompute"
 
 
+def test_subplan_coerces_bool_with_provenance():
+    # Real cluster crash: esm_parser YAML values aren't plain bool/int/str --
+    # they're wrapped (e.g. BoolWithProvenance) to carry provenance info.
+    # BoolWithProvenance fakes isinstance(v, bool) == True in pure Python
+    # but isn't the literal C-level bool pydantic-core's Rust validator
+    # checks, so an isinstance-based coercion guard silently passes it
+    # through unconverted and pydantic-core rejects it (bool_type error).
+    from esm_parser.provenance import BoolWithProvenance
+
+    sub_plan = SubPlan(
+        name="postprocessing",
+        parent_plan="postprocessing",
+        submit_to_batch_system=BoolWithProvenance(True, provenance=None),
+    )
+    assert sub_plan.submit_to_batch_system is True
+    assert type(sub_plan.submit_to_batch_system) is bool
+
+
 def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
     # The actual bug this test guards against: configs/setups/awicm3/
     # awicm3.yaml's choose_general.postprocessing: True: workflow: {...}

@@ -37,6 +37,9 @@ def main_flow(parsed_args, target):
 
     user_config["computer"] = user_config.get("computer", {})
     user_config["general"]["execution_mode"] = "compile"
+    # Use the machine given via ``--computer`` instead of the hostname detection
+    if parsed_args.get("computer_name"):
+        user_config["general"]["computer_name"] = parsed_args["computer_name"]
 
     # Apply Spack-style ``key=value`` CLI overrides (see ``cli.py``) before
     # SimulationSetup resolves the ``choose_`` blocks, so that e.g.

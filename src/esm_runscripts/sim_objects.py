@@ -11,6 +11,217 @@ from esm_tools import __version__
 
 from . import (config_initialization, helpers, logfiles, plan, prepare,
                prepexp, prev_run, resubmit, workflow)
+from .simulation_config import RunStateBuilder
+
+
+class Simulation(object):
+    @classmethod
+    def from_config(cls, config: "SimulationConfig") -> "Simulation":
+        """
+        Build a ``Simulation`` from an already-built ``SimulationConfig``.
+
+        Takes the baked configuration produced by ``ConfigBuilder``, wires up
+        the ``prev_run`` object, then dispatches on the configured workflow
+        engine:
+
+        - ``pplan`` (native pydantic-plan engine): builds the per-invocation
+          ``RunState`` via ``RunStateBuilder`` (all steps, in the order Task 2
+          fixed), snapshots the resolved ``Workflow``, and runs the pplan tail
+          steps. Legacy ``prepare.run_job`` never runs in this case.
+        - anything else (default ``legacy``): runs ``prepare.run_job`` wholesale,
+          exactly as before.
+
+        Parameters
+        ----------
+        config : SimulationConfig
+            The baked simulation configuration (product of ``ConfigBuilder``).
+
+        Returns
+        -------
+        Simulation
+            A new instance with ``.config`` always set, and ``.run_state`` /
+            ``.plan`` set only for the ``pplan`` engine.
+        """
+        self = cls()
+        self.config = config.data
+        self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
+        self.store_prev_objects()
+
+        # ``wf_engine`` is set by the CLI into ``command_line_config`` (cli.py),
+        # which ``ConfigBuilder.remember_command_line`` nests at
+        # ``config["general"]["command_line_config"]["wf_engine"]`` -- it is NOT
+        # promoted to ``config["general"]["wf_engine"]``. A runscript/user_config
+        # may, however, set ``general.wf_engine`` directly. Check the direct
+        # location first, then the nested command-line location, then default.
+        general = self.config.get("general", {})
+        wf_engine = (
+            general.get("wf_engine")
+            or general.get("command_line_config", {}).get("wf_engine")
+            or "legacy"
+        )
+        if wf_engine == "pplan":
+            self.run_state = (
+                RunStateBuilder.from_config(config)
+                .with_date_file()
+                .with_run_in_chunk_updated()
+                .with_lresume_checked()
+                .with_last_minute_changes()
+                .with_conda_env_recorded()
+                .with_openmp_found()
+                .with_choose_blocks_resolved()
+                .with_calendar()
+                .with_choose_blocks_resolved()
+                .with_folders()
+                .with_prev_date()
+                .with_parent_info()
+                .with_finalized_config()
+                .build()
+            )
+            self.plan = plan.Workflow.resolve(self.config)
+            self.config = self._run_pplan_tail_steps(self.config)
+        else:
+            self.config = prepare.run_job(self.config)
+
+        self.config["general"]["esm_tools_version"] = __version__
+        return self
+
+    def _run_pplan_tail_steps(self, config):
+        # STUB: Task 4 implements the real body (the pplan tail steps that run
+        # after the RunState is built and the Workflow is resolved). For now this
+        # returns config unchanged so Simulation.from_config's pplan branch has
+        # something to call without erroring.
+        return config
+
+    def run(self, kill_after_submit=True):
+        # Trigger inspect functionalities
+        if self.config["general"]["jobtype"] == "inspect":
+            self.inspect()
+            helpers.end_it_all(self.config)
+
+        # Run the preexp recipe
+        self.config = prepexp.run_job(self.config)
+
+        org_jobtype = str(self.config["general"]["jobtype"])
+        logfiles.set_logfile_name(self.config)
+        logger.stdout_sink.def_path(self.config["general"]["logfile_path"])
+
+        if self.config["general"]["jobtype"] == "prepcompute":
+            self.prepcompute()
+        elif self.config["general"]["jobtype"] == "tidy":
+            self.tidy()
+        elif self.config["general"]["jobtype"] == "viz":
+            self.viz()
+        elif self.config["general"]["jobtype"].startswith("observe"):
+            pid = self.config["general"]["command_line_config"].get(
+                "launcher_pid", -666
+            )
+            if not pid == -666:
+                self.observe()
+
+            self.config["general"]["jobtype"] = self.config["general"][
+                "jobtype"
+            ].replace("observe_", "")
+            # that last line is necessary so that maybe_resubmit knows which
+            # cluster to look up in the workflow
+
+        else:
+            self.assembler()
+
+        resubmit.maybe_resubmit(self.config)
+
+        logfiles.finalize_experiment_logfile(self.config, org_jobtype)
+
+        if kill_after_submit:
+            if self.config["general"].get("experiment_over", False):
+                logger.progress("Experiment over")
+            helpers.end_it_all(self.config)
+
+        return self.config["general"].get("experiment_over", False)
+
+    #########################     OBSERVE      #############################################################
+
+    def observe(self):
+        from . import observe
+
+        self.config = observe.run_job(self.config)
+
+    def assembler(self):
+        from . import assembler
+
+        self.config = assembler.run_job(self.config)
+
+    ###################################     TIDY      #############################################################
+    def tidy(self):
+        """
+        Performs steps for tidying up a simulation after a job has finished and
+        submission of following jobs.
+
+        This method uses two lists, ``all_files_to_copy`` and
+        ``all_listed_filetypes`` to sort finished data from the **current run
+        folder** back to the **main experiment folder** and submit new
+        **compute** and **post-process** jobs. Files for ``log``, ``mon``,
+        ``outdata``, and ``restart_out`` are gathered. The program waits until
+        the job completes or an error is found (See ~self.wait_and_observe).
+        Then, if necessary, the coupler cleans up it's files (unless it's a
+        standalone run), and the files in the lists are copied from the **work
+        folder** to the **current run folder**. A check for unknown files is
+        performed (see ~self.check_for_unknown_files), files are
+        moved from the  the **current run folder** to the **main experiment
+        folder**.
+        """
+        from . import tidy
+
+        self.config = tidy.run_job(self.config)
+
+    ###################################     INSPECT      #############################################################
+    def inspect(self):
+        from . import inspect
+
+        logger.info(f"Inspecting {self.config['general']['experiment_dir']}")
+        self.config = inspect.run_job(self.config)
+
+    ###################################     PREPCOMPUTE      #############################################################
+    def prepcompute(self):
+        """
+        All steps needed for a model computation.
+
+        Parameters
+        ----------
+        kill_after_submit : bool
+            Default ``True``. If set, the entire Python instance is killed with
+            a ``sys.exit()`` as the very last after job submission.
+        """
+        from . import prepcompute
+
+        self.config = prepcompute.run_job(self.config)
+
+    ###################################     VIZ     #############################################################
+
+    def viz(self):
+        """
+        Starts the Viz job.
+
+        Parameters
+        ----------
+        kill_after_submit: bool
+            Default ``True``. If set, the entire Python instance is killed with ``sys.exit()``.
+        """
+        # NOTE(PG): Local import, not everyone will have viz yet...
+        import esm_viz as viz
+
+        self.config = viz.run_job(self.config)
+
+    #########################     HELPERS      #############################################################
+
+    def store_prev_objects(self):
+        self.config.prev_objects = ["prev_run"]
+        self.config.prev_objects.extend(
+            self.config["general"].get("prev_chunk_objs", [])
+        )
+        if "prev_chunk_objs" in self.config["general"]:
+            del self.config["general"]["prev_chunk_objs"]
+
+        self.config["general"]["system_components"].extend(self.config.prev_objects)
 
 
 class SimulationSetup(object):
@@ -177,88 +388,3 @@ class SimulationSetup(object):
             helpers.end_it_all(self.config)
 
         return self.config["general"].get("experiment_over", False)
-
-    #########################     OBSERVE      #############################################################
-
-    def observe(self):
-        from . import observe
-
-        self.config = observe.run_job(self.config)
-
-    def assembler(self):
-        from . import assembler
-
-        self.config = assembler.run_job(self.config)
-
-    ###################################     TIDY      #############################################################
-    def tidy(self):
-        """
-        Performs steps for tidying up a simulation after a job has finished and
-        submission of following jobs.
-
-        This method uses two lists, ``all_files_to_copy`` and
-        ``all_listed_filetypes`` to sort finished data from the **current run
-        folder** back to the **main experiment folder** and submit new
-        **compute** and **post-process** jobs. Files for ``log``, ``mon``,
-        ``outdata``, and ``restart_out`` are gathered. The program waits until
-        the job completes or an error is found (See ~self.wait_and_observe).
-        Then, if necessary, the coupler cleans up it's files (unless it's a
-        standalone run), and the files in the lists are copied from the **work
-        folder** to the **current run folder**. A check for unknown files is
-        performed (see ~self.check_for_unknown_files), files are
-        moved from the  the **current run folder** to the **main experiment
-        folder**.
-        """
-        from . import tidy
-
-        self.config = tidy.run_job(self.config)
-
-    ###################################     INSPECT      #############################################################
-    def inspect(self):
-        from . import inspect
-
-        logger.info(f"Inspecting {self.config['general']['experiment_dir']}")
-        self.config = inspect.run_job(self.config)
-
-    ###################################     PREPCOMPUTE      #############################################################
-    def prepcompute(self):
-        """
-        All steps needed for a model computation.
-
-        Parameters
-        ----------
-        kill_after_submit : bool
-            Default ``True``. If set, the entire Python instance is killed with
-            a ``sys.exit()`` as the very last after job submission.
-        """
-        from . import prepcompute
-
-        self.config = prepcompute.run_job(self.config)
-
-    ###################################     VIZ     #############################################################
-
-    def viz(self):
-        """
-        Starts the Viz job.
-
-        Parameters
-        ----------
-        kill_after_submit: bool
-            Default ``True``. If set, the entire Python instance is killed with ``sys.exit()``.
-        """
-        # NOTE(PG): Local import, not everyone will have viz yet...
-        import esm_viz as viz
-
-        self.config = viz.run_job(self.config)
-
-    #########################     HELPERS      #############################################################
-
-    def store_prev_objects(self):
-        self.config.prev_objects = ["prev_run"]
-        self.config.prev_objects.extend(
-            self.config["general"].get("prev_chunk_objs", [])
-        )
-        if "prev_chunk_objs" in self.config["general"]:
-            del self.config["general"]["prev_chunk_objs"]
-
-        self.config["general"]["system_components"].extend(self.config.prev_objects)

@@ -295,4 +295,57 @@
     <field id="expCalc" long_name="Downward flux of calcite (sinking)" unit="mmolC/m2/s"/>
   </field_group>
 
+
+  <!-- Alias streams: second streams on fields that file_def writes at a second
+       cadence, as the surface of a 3D field (_sfc) or as a snapshot (_inst). FESOM
+       defines them in def_xios_aliases (io_meandata.F90) only if a file uses them.
+       Plain definitions, not field_ref: a field_ref field takes its data from the
+       referenced field inside XIOS instead of from the model. -->
+  <field_group id="fesom_alias_2d_nod" grid_ref="grid_2d_nod" prec="4">
+    <field id="CO3_sfc"         long_name="Carbonate ion concentration at the surface" unit="[mol/m3]"/>
+    <field id="CO3satA_sfc" long_name="Carbonate ion concentration at aragonite saturation (MOCSY) at the surface" unit="[mol/m3]"/>
+    <field id="DiaC_sfc"        long_name="DiaC at the surface" unit="[mmol/m3]"/>
+    <field id="DiaChl_sfc"      long_name="DiaChl at the surface" unit="[mg/m3]"/>
+    <field id="NPPd_day"        long_name="Mean NPP diatoms" unit="mmolC/m2/d"/>
+    <field id="NPPn_day"        long_name="Mean NPP nanophytoplankton" unit="mmolC/m2/d"/>
+    <field id="O2_sfc"          long_name="O2 at the surface" unit="[mmol/m3]"/>
+    <field id="O2min_day" long_name="O2 at the shallowest local minimum of the profile" unit="mmolO/m3"/>
+    <field id="PhyC_sfc"        long_name="Intracellular conc of Carbon in small phytoplankton at the surface" unit="[mmol/m3]"/>
+    <field id="PhyChl_sfc"      long_name="Current intracellular ChlA conc. at the surface" unit="[mg/m3]"/>
+    <field id="bflxC_day" long_name="Particulate organic carbon flux into the benthos" unit="mmolC/m2/s"/>
+    <field id="fh_3h"     long_name="surface heat flux"                          unit="W m-2"/>
+    <field id="fw_3h"     long_name="freshwater flux"                            unit="m s-1"/>
+    <field id="intPOC_day" long_name="Column inventory of particulate organic carbon (phytoplankton, zooplankton, detritus)" unit="mmolC/m2"/>
+    <field id="m_ice_day"  long_name="sea-ice mass per area"                      standard_name="sea_ice_thickness"                  unit="m" detect_missing_value="true"/>
+    <field id="pH_sfc"          long_name="pH on total scale (MOCSY) at the surface" unit="total_scale"/>
+    <field id="qsr_3h"              long_name="net shortwave radiation into the ocean"   unit="W m-2"/>
+    <field id="runoff_3h"           long_name="river runoff"                             unit="m s-1"/>
+    <field id="sst_inst"    long_name="sea surface temperature"                    standard_name="sea_surface_temperature"            unit="degC"/>
+    <field id="virtsalt_3h"         long_name="virtual salt flux"                        unit="m s-1 psu"/>
+  </field_group>
+  <field_group id="fesom_alias_3d_elem" grid_ref="grid_3d_elem" prec="4">
+    <field id="utemp_day"   long_name="u*T tracer flux at elements"      unit="m s-1 degC"/>
+    <field id="vtemp_day"   long_name="v*T tracer flux at elements"      unit="m s-1 degC"/>
+  </field_group>
+  <field_group id="fesom_alias_3d_nod" grid_ref="grid_3d_nod" prec="4">
+    <field id="DOC_day"         long_name="Dissolved Organic C in the water" unit="[mmol/m3]"/>
+    <field id="DetC_day"        long_name="Conc of C in Detritus" unit="[mmol/m3]"/>
+    <field id="HetC_day"        long_name="Conc of C in heterotrophs" unit="[mmol/m3]"/>
+    <field id="Zoo2C_day"       long_name="Intracellular conc of Carbon in second zooplankton" unit="[mmol/m3]"/>
+    <field id="Zoo3C_day"       long_name="Zoo3C" unit="[mmol/m3]"/>
+    <field id="idetz2c_day"     long_name="idetz2c" unit="[mmol/m3]"/>
+    <field id="rsdoabsorb_day" long_name="shortwave flux absorbed in ocean layer" unit="W m-2"/>
+    <field id="salt_day"       long_name="sea water salinity"              unit="1e-3" prec="8"/>
+  </field_group>
+  <field_group id="fesom_alias_3d_nod_nz1" grid_ref="grid_3d_nod_nz1" prec="4">
+    <field id="w_day"       long_name="vertical velocity"                unit="m s-1"/>
+  </field_group>
+  <field_group id="fesom_alias_2d_elem" grid_ref="grid_2d_elem" prec="4">
+    <field id="sgm11_inst"        long_name="ice stress sigma11"                      unit="N m-1" detect_missing_value="true"/>
+    <field id="sgm12_inst"        long_name="ice stress sigma12"                      unit="N m-1" detect_missing_value="true"/>
+    <field id="sgm22_inst"        long_name="ice stress sigma22"                      unit="N m-1" detect_missing_value="true"/>
+    <field id="tx_sur_3h"       long_name="zonal surface stress to ocean"           unit="N m-2"/>
+    <field id="ty_sur_3h"       long_name="meridional surface stress to ocean"      unit="N m-2"/>
+  </field_group>
+
 </field_definition>

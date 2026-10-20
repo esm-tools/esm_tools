@@ -31,12 +31,6 @@
     <domain domain_ref="elements"/>
   </grid>
 
-  <!-- uppermost layer of a 3D node field (axis zoom), for surface (ols) output -->
-  <grid id="grid_3d_nod_sfc"  description="uppermost layer of the 3D grid on FESOM nodes">
-    <axis   axis_ref="nz_sfc"/>
-    <domain domain_ref="nodes"/>
-  </grid>
-
   <!-- 3D grids (interface / w-grid vertical axis, nl levels) -->
   <grid id="grid_3d_nod_nz1"  description="3D grid on FESOM nodes, w/interface levels">
     <axis   axis_ref="nz1"/>

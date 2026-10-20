@@ -5,10 +5,6 @@
   <axis_group id="fesom_axes" unit="m" positive="down" axis_type="Z">
     <axis id="nz"     long_name="depth below sea level at layer mid-points" standard_name="depth" />
     <axis id="nz1"    long_name="depth below sea level at layer interfaces" standard_name="depth" />
-    <!-- uppermost layer of nz, for surface (ols) output of 3D fields -->
-    <axis id="nz_sfc" long_name="depth below sea level at the uppermost layer mid-point" standard_name="depth" axis_ref="nz">
-      <zoom_axis index="(0,0)[0]" />
-    </axis>
   </axis_group>
 
   <!-- Density-coordinate axis for dMOC diagnostics.

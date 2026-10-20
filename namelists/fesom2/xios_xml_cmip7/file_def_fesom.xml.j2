@@ -50,6 +50,7 @@
     <file id="f_MLD2"            name="MLD2.fesom.%start_date%" ><field field_ref="MLD2"            freq_op="1mo"/></file>
     <file id="f_fw"              name="fw.fesom.%start_date%" ><field field_ref="fw"              freq_op="1mo"/></file>
     <file id="f_fh"              name="fh.fesom.%start_date%" ><field field_ref="fh"              freq_op="1mo"/></file>
+    <file id="f_alb"             name="alb.fesom.%start_date%" ><field field_ref="alb"             freq_op="1mo"/></file>
     {% if fesom.use_icebergs %}
     <!-- Iceberg melt and heat fluxes; gated like the model's own registration (use_icebergs). -->
     <file id="f_ibfwb"           name="ibfwb.fesom.%start_date%" ><field field_ref="ibfwb"           freq_op="1mo"/></file>
@@ -375,6 +376,42 @@
     <file id="f_HCO3"        name="HCO3.fesom.%start_date%" ><field field_ref="HCO3" freq_op="1mo"/></file>
     <file id="f_CO3"         name="CO3.fesom.%start_date%" ><field field_ref="CO3" freq_op="1mo"/></file>
     <file id="f_OmegaC"      name="OmegaC.fesom.%start_date%" ><field field_ref="OmegaC" freq_op="1mo"/></file>
+    <file id="f_OmegaA"      name="OmegaA.fesom.%start_date%"><field field_ref="OmegaA" freq_op="1mo"/></file>
+    <file id="f_CO3satA"     name="CO3satA.fesom.%start_date%"><field field_ref="CO3satA" freq_op="1mo"/></file>
+    <!-- photosynthesis terms of small phytoplankton and diatoms; REcoM fills them with diags,
+         independent of ltra_diag -->
+    <file id="f_TPhyCO2"     name="TPhyCO2.fesom.%start_date%"><field field_ref="TPhyCO2" freq_op="1mo"/></file>
+    <file id="f_TDiaCO2"     name="TDiaCO2.fesom.%start_date%"><field field_ref="TDiaCO2" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_phyto" name="TCphotLL_phyto.fesom.%start_date%"><field field_ref="TCphotLL_phyto" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_dia" name="TCphotLL_dia.fesom.%start_date%"><field field_ref="TCphotLL_dia" freq_op="1mo"/></file>
+    <file id="f_TCphot_phyto" name="TCphot_phyto.fesom.%start_date%"><field field_ref="TCphot_phyto" freq_op="1mo"/></file>
+    <file id="f_TCphot_diatoms" name="TCphot_diatoms.fesom.%start_date%"><field field_ref="TCphot_diatoms" freq_op="1mo"/></file>
+
+    {% if fesom.recom_cmip7_diags %}
+    <!-- CMIP7 diagnostics: only in a FESOM built from feat/recom-cmip7-output with REcoM
+         feat/cmip7-output (otherwise FESOM never sends them and the files hold fill values only) -->
+    <file id="f_bflxN"       name="bflxN.fesom.%start_date%"><field field_ref="bflxN" freq_op="1mo"/></file>
+    <file id="f_bflxC"       name="bflxC.fesom.%start_date%"><field field_ref="bflxC" freq_op="1mo"/></file>
+    <file id="f_bflxSi"      name="bflxSi.fesom.%start_date%"><field field_ref="bflxSi" freq_op="1mo"/></file>
+    <file id="f_bflxCalc"    name="bflxCalc.fesom.%start_date%"><field field_ref="bflxCalc" freq_op="1mo"/></file>
+    <file id="f_expN"        name="expN.fesom.%start_date%"><field field_ref="expN" freq_op="1mo"/></file>
+    <file id="f_expC"        name="expC.fesom.%start_date%"><field field_ref="expC" freq_op="1mo"/></file>
+    <file id="f_expSi"       name="expSi.fesom.%start_date%"><field field_ref="expSi" freq_op="1mo"/></file>
+    <file id="f_expCalc"     name="expCalc.fesom.%start_date%"><field field_ref="expCalc" freq_op="1mo"/></file>
+    <file id="f_graz"        name="graz.fesom.%start_date%"><field field_ref="graz" freq_op="1mo"/></file>
+    <file id="f_intpbsi"     name="intpbsi.fesom.%start_date%"><field field_ref="intpbsi" freq_op="1mo"/></file>
+    <file id="f_scavFe"      name="scavFe.fesom.%start_date%"><field field_ref="scavFe" freq_op="1mo"/></file>
+    <file id="f_limNn"       name="limNn.fesom.%start_date%"><field field_ref="limNn" freq_op="1mo"/></file>
+    <file id="f_limFen"      name="limFen.fesom.%start_date%"><field field_ref="limFen" freq_op="1mo"/></file>
+    <file id="f_limNd"       name="limNd.fesom.%start_date%"><field field_ref="limNd" freq_op="1mo"/></file>
+    <file id="f_limFed"      name="limFed.fesom.%start_date%"><field field_ref="limFed" freq_op="1mo"/></file>
+    <file id="f_O2sat"       name="O2sat.fesom.%start_date%"><field field_ref="O2sat" freq_op="1mo"/></file>
+    <file id="f_dpO2s"       name="dpO2s.fesom.%start_date%"><field field_ref="dpO2s" freq_op="1mo"/></file>
+    <file id="f_O2min"       name="O2min.fesom.%start_date%"><field field_ref="O2min" freq_op="1mo"/></file>
+    <file id="f_intDIC"      name="intDIC.fesom.%start_date%"><field field_ref="intDIC" freq_op="1mo"/></file>
+    <file id="f_intDOC"      name="intDOC.fesom.%start_date%"><field field_ref="intDOC" freq_op="1mo"/></file>
+    <file id="f_intPOC"      name="intPOC.fesom.%start_date%"><field field_ref="intPOC" freq_op="1mo"/></file>
+    {% endif %}
 
     {% if fesom.recom_enable_3zoo2det %}
     <file id="f_respmacro"   name="respmacro.fesom.%start_date%"><field field_ref="respmacro" freq_op="1mo"/></file>
@@ -409,6 +446,22 @@
     <file id="f_PhaeoN"      name="PhaeoN.fesom.%start_date%" ><field field_ref="PhaeoN" freq_op="1mo"/></file>
     <file id="f_PhaeoC"      name="PhaeoC.fesom.%start_date%" ><field field_ref="PhaeoC" freq_op="1mo"/></file>
     <file id="f_PhaeoChl"    name="PhaeoChl.fesom.%start_date%" ><field field_ref="PhaeoChl" freq_op="1mo"/></file>
+    <!-- photosynthesis terms only filled with enable_coccos -->
+    <file id="f_TCoccoCO2"   name="TCoccoCO2.fesom.%start_date%"><field field_ref="TCoccoCO2" freq_op="1mo"/></file>
+    <file id="f_TPhaeoCO2"   name="TPhaeoCO2.fesom.%start_date%"><field field_ref="TPhaeoCO2" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_cocco" name="TCphotLL_cocco.fesom.%start_date%"><field field_ref="TCphotLL_cocco" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_phaeo" name="TCphotLL_phaeo.fesom.%start_date%"><field field_ref="TCphotLL_phaeo" freq_op="1mo"/></file>
+    <file id="f_TCphot_cocco" name="TCphot_cocco.fesom.%start_date%"><field field_ref="TCphot_cocco" freq_op="1mo"/></file>
+    <file id="f_TCphot_phaeo" name="TCphot_phaeo.fesom.%start_date%"><field field_ref="TCphot_phaeo" freq_op="1mo"/></file>
+    <file id="f_TTemp_cocco" name="TTemp_cocco.fesom.%start_date%"><field field_ref="TTemp_cocco" freq_op="1mo"/></file>
+    <file id="f_TTemp_phaeo" name="TTemp_phaeo.fesom.%start_date%"><field field_ref="TTemp_phaeo" freq_op="1mo"/></file>
+    <file id="f_TqLF_cocco"  name="TqLF_cocco.fesom.%start_date%"><field field_ref="TqLF_cocco" freq_op="1mo"/></file>
+    <file id="f_TqLF_phaeo"  name="TqLF_phaeo.fesom.%start_date%"><field field_ref="TqLF_phaeo" freq_op="1mo"/></file>
+    <file id="f_TTemp_phyto" name="TTemp_phyto.fesom.%start_date%"><field field_ref="TTemp_phyto" freq_op="1mo"/></file>
+    <file id="f_TTemp_diatoms" name="TTemp_diatoms.fesom.%start_date%"><field field_ref="TTemp_diatoms" freq_op="1mo"/></file>
+    <file id="f_TqLF_phyto"  name="TqLF_phyto.fesom.%start_date%"><field field_ref="TqLF_phyto" freq_op="1mo"/></file>
+    <file id="f_TqLF_diatoms" name="TqLF_diatoms.fesom.%start_date%"><field field_ref="TqLF_diatoms" freq_op="1mo"/></file>
+    <file id="f_TSi_assimDia" name="TSi_assimDia.fesom.%start_date%"><field field_ref="TSi_assimDia" freq_op="1mo"/></file>
     {% endif %}
 
     {% if fesom.recom_ltra_diag %}
@@ -419,27 +472,6 @@
     <file id="f_DIC_tra_diff_part_ver_redi_expl" name="DIC_tra_diff_part_ver_redi_expl.fesom.%start_date%"><field field_ref="DIC_tra_diff_part_ver_redi_expl" freq_op="1mo"/></file>
     <file id="f_DIC_tra_diff_part_ver_impl" name="DIC_tra_diff_part_ver_impl.fesom.%start_date%"><field field_ref="DIC_tra_diff_part_ver_impl" freq_op="1mo"/></file>
     <file id="f_DIC_recom_sms" name="DIC_recom_sms.fesom.%start_date%"><field field_ref="DIC_recom_sms" freq_op="1mo"/></file>
-    <file id="f_TCoccoCO2"   name="TCoccoCO2.fesom.%start_date%"><field field_ref="TCoccoCO2" freq_op="1mo"/></file>
-    <file id="f_TCphotLL_cocco" name="TCphotLL_cocco.fesom.%start_date%"><field field_ref="TCphotLL_cocco" freq_op="1mo"/></file>
-    <file id="f_TCphotLL_dia" name="TCphotLL_dia.fesom.%start_date%"><field field_ref="TCphotLL_dia" freq_op="1mo"/></file>
-    <file id="f_TCphotLL_phaeo" name="TCphotLL_phaeo.fesom.%start_date%"><field field_ref="TCphotLL_phaeo" freq_op="1mo"/></file>
-    <file id="f_TCphotLL_phyto" name="TCphotLL_phyto.fesom.%start_date%"><field field_ref="TCphotLL_phyto" freq_op="1mo"/></file>
-    <file id="f_TCphot_cocco" name="TCphot_cocco.fesom.%start_date%"><field field_ref="TCphot_cocco" freq_op="1mo"/></file>
-    <file id="f_TCphot_diatoms" name="TCphot_diatoms.fesom.%start_date%"><field field_ref="TCphot_diatoms" freq_op="1mo"/></file>
-    <file id="f_TCphot_phaeo" name="TCphot_phaeo.fesom.%start_date%"><field field_ref="TCphot_phaeo" freq_op="1mo"/></file>
-    <file id="f_TCphot_phyto" name="TCphot_phyto.fesom.%start_date%"><field field_ref="TCphot_phyto" freq_op="1mo"/></file>
-    <file id="f_TDiaCO2"     name="TDiaCO2.fesom.%start_date%" ><field field_ref="TDiaCO2" freq_op="1mo"/></file>
-    <file id="f_TPhaeoCO2"   name="TPhaeoCO2.fesom.%start_date%"><field field_ref="TPhaeoCO2" freq_op="1mo"/></file>
-    <file id="f_TPhyCO2"     name="TPhyCO2.fesom.%start_date%" ><field field_ref="TPhyCO2" freq_op="1mo"/></file>
-    <file id="f_TSi_assimDia" name="TSi_assimDia.fesom.%start_date%"><field field_ref="TSi_assimDia" freq_op="1mo"/></file>
-    <file id="f_TTemp_cocco" name="TTemp_cocco.fesom.%start_date%"><field field_ref="TTemp_cocco" freq_op="1mo"/></file>
-    <file id="f_TTemp_diatoms" name="TTemp_diatoms.fesom.%start_date%"><field field_ref="TTemp_diatoms" freq_op="1mo"/></file>
-    <file id="f_TTemp_phaeo" name="TTemp_phaeo.fesom.%start_date%"><field field_ref="TTemp_phaeo" freq_op="1mo"/></file>
-    <file id="f_TTemp_phyto" name="TTemp_phyto.fesom.%start_date%"><field field_ref="TTemp_phyto" freq_op="1mo"/></file>
-    <file id="f_TqLF_cocco"  name="TqLF_cocco.fesom.%start_date%"><field field_ref="TqLF_cocco" freq_op="1mo"/></file>
-    <file id="f_TqLF_diatoms" name="TqLF_diatoms.fesom.%start_date%"><field field_ref="TqLF_diatoms" freq_op="1mo"/></file>
-    <file id="f_TqLF_phaeo"  name="TqLF_phaeo.fesom.%start_date%"><field field_ref="TqLF_phaeo" freq_op="1mo"/></file>
-    <file id="f_TqLF_phyto"  name="TqLF_phyto.fesom.%start_date%"><field field_ref="TqLF_phyto" freq_op="1mo"/></file>
     {% endif %}
   </file_group>
   {% endif %}

@@ -55,6 +55,7 @@
     <field id="osaltdiff"        long_name="salinity tendency due to diffusion"       unit="psu m s-1" prec="8"/>
     <field id="unod_sfc"         long_name="zonal surface velocity at nodes"          standard_name="sea_water_x_velocity_at_sea_surface"      unit="m s-1"/>
     <field id="vnod_sfc"         long_name="meridional surface velocity at nodes"     standard_name="sea_water_y_velocity_at_sea_surface"      unit="m s-1"/>
+    <field id="alb"              long_name="ice albedo"                               unit="1"     detect_missing_value="true"/>
     <field id="strength_ice"     long_name="ice strength"                             unit="N m-1" detect_missing_value="true"/>
   </field_group>
 
@@ -169,6 +170,18 @@
     <field id="GPPp"        long_name="Mean GPP phaeocystis" unit="mmolC/(m2*d)"/>
     <field id="NNAp"        long_name="Net N-assimilation phaeocystis" unit="mmolN/(m2*d)"/>
     <field id="ChlDegp"     long_name="Chlorophyll degradation phaeocystis" unit="1/d"/>
+      <!-- CMIP7 REcoM diagnostics (FESOM feat/recom-cmip7-output, REcoM feat/cmip7-output; need diags) -->
+    <field id="bflxN" long_name="Particulate organic nitrogen flux into the benthos" unit="mmolN/m2/s"/>
+    <field id="bflxC" long_name="Particulate organic carbon flux into the benthos" unit="mmolC/m2/s"/>
+    <field id="bflxSi" long_name="Biogenic silica flux into the benthos" unit="mmolSi/m2/s"/>
+    <field id="bflxCalc" long_name="Calcite flux into the benthos" unit="mmolC/m2/s"/>
+    <field id="intpbsi" long_name="Depth-integrated silicate uptake by diatoms" unit="mmolSi/m2/d"/>
+    <field id="scavFe" long_name="Depth-integrated iron scavenging onto particles" unit="umolFe/m2/d"/>
+    <field id="dpO2s" long_name="Surface O2 partial pressure difference ocean minus atmosphere" unit="Pa" detect_missing_value="true"/>
+    <field id="O2min" long_name="O2 at the shallowest local minimum of the profile" unit="mmolO/m3"/>
+    <field id="intDIC" long_name="Column inventory of dissolved inorganic carbon" unit="mmolC/m2"/>
+    <field id="intDOC" long_name="Column inventory of dissolved organic carbon" unit="mmolC/m2"/>
+    <field id="intPOC" long_name="Column inventory of particulate organic carbon (phytoplankton, zooplankton, detritus)" unit="mmolC/m2"/>
   </field_group>
 
   <field_group id="fesom_3d_nod_bgc" grid_ref="grid_3d_nod" prec="4">
@@ -261,6 +274,24 @@
     <field id="TqLF_diatoms" long_name="Nutrient limitation effect of diatoms PS" unit="per day"/>
     <field id="TqLF_phaeo"  long_name="Nutrient limitation effect of diatoms PS" unit="per day"/>
     <field id="TqLF_phyto"  long_name="Nutrient limitation effect of phyto PS" unit="per day"/>
+      <!-- CMIP7 REcoM diagnostics (FESOM feat/recom-cmip7-output, REcoM feat/cmip7-output; need diags) -->
+    <field id="graz" long_name="Grazing on phytoplankton by all zooplankton" unit="mmolC/(m3*d)"/>
+    <field id="limNn" long_name="Nitrogen limitation of photosynthesis of small phytoplankton" unit="1"/>
+    <field id="limFen" long_name="Iron limitation of photosynthesis of small phytoplankton" unit="1"/>
+    <field id="limNd" long_name="Nitrogen limitation of photosynthesis of diatoms" unit="1"/>
+    <field id="limFed" long_name="Iron limitation of photosynthesis of diatoms" unit="1"/>
+    <field id="O2sat" long_name="O2 at saturation (1 atm moist air)" unit="mmolO/m3"/>
+    <field id="OmegaA" long_name="Aragonite saturation state (MOCSY)" unit="none"/>
+    <field id="CO3satA" long_name="Carbonate ion concentration at aragonite saturation (MOCSY)" unit="[mol/m3]"/>
+  </field_group>
+
+  <!-- 3D BGC fields on NODES at the layer interfaces (nl levels) -->
+  <field_group id="fesom_3d_nod_nz1_bgc" grid_ref="grid_3d_nod_nz1" prec="4">
+    <!-- CMIP7 REcoM diagnostics: sinking fluxes, positive downward -->
+    <field id="expN" long_name="Downward flux of particulate organic nitrogen (sinking)" unit="mmolN/m2/s"/>
+    <field id="expC" long_name="Downward flux of particulate organic carbon (sinking)" unit="mmolC/m2/s"/>
+    <field id="expSi" long_name="Downward flux of biogenic silica (sinking)" unit="mmolSi/m2/s"/>
+    <field id="expCalc" long_name="Downward flux of calcite (sinking)" unit="mmolC/m2/s"/>
   </field_group>
 
 </field_definition>

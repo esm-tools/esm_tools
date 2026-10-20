@@ -4,9 +4,16 @@ ConfigBuilder and SimulationConfig for building simulation configurations.
 Extracts config-building logic from SimulationSetup.__init__ into a clean,
 chainable Builder/Product pair. ConfigBuilder provides a fluent interface for
 building configurations step-by-step, while SimulationConfig holds the final result.
+
+Also provides RunStateBuilder and RunState, which wrap the per-invocation,
+pplan-only steps (dates, calendar, folders, prev_date, parent_info) that
+today run inside prepare.py's recipe. The legacy engine never touches this
+code; it keeps calling prepare.run_job wholesale.
 """
 
-from . import config_initialization
+import copy
+
+from . import batch_system, chunky_parts, conda_env, config_initialization, last_minute, prepare
 
 
 class SimulationConfig:
@@ -274,3 +281,259 @@ class ConfigBuilder:
             The final, immutable configuration object.
         """
         return SimulationConfig(self._data)
+
+
+class RunState:
+    """
+    Immutable product of the per-invocation run-state building process.
+
+    Holds the final configuration dictionary produced by RunStateBuilder.
+    Same shape as SimulationConfig: the data property exposes the
+    underlying dict by convention (not enforced).
+    """
+
+    def __init__(self, data):
+        """
+        Initialize a RunState with the final run-state data.
+
+        Parameters
+        ----------
+        data : dict
+            The final run-state configuration dictionary.
+        """
+        self._data = data
+
+    @property
+    def data(self):
+        """Return the underlying configuration dictionary (read-only by convention)."""
+        return self._data
+
+
+class RunStateBuilder:
+    """
+    Mutable builder for per-invocation run state.
+
+    This is the native pplan engine's equivalent of the part of prepare.py's
+    recipe that establishes per-invocation facts: dates, calendar, folders,
+    prev_date, and parent_info. The legacy engine never touches this code;
+    it keeps calling prepare.run_job wholesale.
+
+    Provides a fluent interface with chainable .with_*() methods that wrap
+    individual functions scattered across prepare.py, chunky_parts.py,
+    last_minute.py, conda_env.py, and batch_system.py. Each method mutates
+    self._data in place and returns self for chaining.
+
+    Usage:
+        run_state = (
+            RunStateBuilder.from_config(config)
+            .with_date_file()
+            .with_run_in_chunk_updated()
+            .with_lresume_checked()
+            .with_last_minute_changes()
+            .with_conda_env_recorded()
+            .with_openmp_found()
+            .with_choose_blocks_resolved()
+            .with_calendar()
+            .with_choose_blocks_resolved()
+            .with_folders()
+            .with_prev_date()
+            .with_parent_info()
+            .with_finalized_config()
+            .build()
+        )
+    """
+
+    def __init__(self, data):
+        """
+        Initialize a RunStateBuilder with run-state data.
+
+        Parameters
+        ----------
+        data : dict
+            The configuration dictionary to build run state from.
+        """
+        self._data = data
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Create a RunStateBuilder from a SimulationConfig.
+
+        Deepcopies config's underlying data so that nothing RunStateBuilder
+        does can ever mutate the SimulationConfig it was built from.
+
+        Parameters
+        ----------
+        config : SimulationConfig
+            The simulation configuration to seed the run state from.
+
+        Returns
+        -------
+        RunStateBuilder
+            A new builder instance holding an independent copy of the data.
+        """
+        return cls(copy.deepcopy(config.data))
+
+    def with_date_file(self):
+        """
+        Read the date file to determine run_number and current_date.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare._read_date_file(self._data)
+        return self
+
+    def with_run_in_chunk_updated(self):
+        """
+        Update iterative-coupling chunk bookkeeping for this run.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = chunky_parts._update_run_in_chunk(self._data)
+        return self
+
+    def with_lresume_checked(self):
+        """
+        Check and resolve each model's lresume setting.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare.check_model_lresume(self._data)
+        return self
+
+    def with_last_minute_changes(self):
+        """
+        Apply any last-minute changes from a modify_config file.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = last_minute.apply_last_minute_changes(self._data)
+        return self
+
+    def with_conda_env_recorded(self):
+        """
+        Record whether ESM-Tools was launched from inside a conda environment.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = conda_env.set_launched_with_conda(self._data)
+        return self
+
+    def with_openmp_found(self):
+        """
+        Determine heterogeneous_parallelization from omp_num_threads settings.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = batch_system.batch_system.find_openmp(self._data)
+        return self
+
+    def with_choose_blocks_resolved(self):
+        """
+        Resolve any remaining choose_ blocks in the configuration.
+
+        Called twice in the full build chain (matching prepare.py's own
+        recipe, which resolves choose blocks both before and after the
+        calendar is initialized) -- this method itself is a single,
+        simple wrapper call.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare.resolve_some_choose_blocks(self._data)
+        return self
+
+    def with_calendar(self):
+        """
+        Initialize the overall calendar and the chunk calendar.
+
+        Calls prepare._initialize_calendar followed by
+        chunky_parts.set_chunk_calendar, in that order.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare._initialize_calendar(self._data)
+        self._data = chunky_parts.set_chunk_calendar(self._data)
+        return self
+
+    def with_folders(self):
+        """
+        Add all experiment and run folder paths to the configuration.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare._add_all_folders(self._data)
+        return self
+
+    def with_prev_date(self):
+        """
+        Set each model's prev_date and last_parent_date.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare.set_prev_date(self._data)
+        return self
+
+    def with_parent_info(self):
+        """
+        Set each model's parent_expid, parent_date, and parent_restart_dir.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare.set_parent_info(self._data)
+        return self
+
+    def with_finalized_config(self):
+        """
+        Finalize the configuration.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare.finalize_config(self._data)
+        return self
+
+    def build(self):
+        """
+        Finalize the run state and return a RunState product.
+
+        Returns
+        -------
+        RunState
+            The final, immutable run state object.
+        """
+        return RunState(self._data)

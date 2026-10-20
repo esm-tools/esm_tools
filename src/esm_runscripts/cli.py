@@ -261,16 +261,16 @@ def main():
         .remember_command_line()
         .build()
     )
-    setup = Simulation.from_config(config)
+    sim = Simulation.from_config(config)
 
     if wf_engine == "pplan":
-        drop_into_pplan_debug(setup.plan, setup.config)
+        drop_into_pplan_debug(sim.plan, sim.config)
         return
 
-    # if not Setup.config['general']['submitted']:
-    if not setup.config["general"]["submitted"] and motd:
+    # if not sim.config['general']['submitted']:
+    if not sim.config["general"]["submitted"] and motd:
         check_all_esm_packages()
-    setup.run()
+    sim.run()
 
 
 def drop_into_pplan_debug(workflow, config):

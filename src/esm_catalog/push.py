@@ -206,26 +206,36 @@ def _merge_collection_extent(
     return merged
 
 
+#: summaries.<key> list fields that accumulate across runs rather than being
+#: replaced by whatever the latest pushing scan happened to see locally --
+#: see _merge_collection_summaries.
+_ACCUMULATING_SUMMARY_LIST_KEYS = ("variable", "vcs:revision", "vcs:branch")
+
+
 def _merge_collection_summaries(
     existing: Optional[StacObject], incoming: StacObject
 ) -> StacObject:
-    """Union *incoming*'s ``summaries.variable`` with *existing*'s, if any.
+    """Union each of :data:`_ACCUMULATING_SUMMARY_LIST_KEYS` with *existing*'s, if any.
 
     Same reasoning as :func:`_merge_collection_extent`: *incoming*'s own
-    summary only reflects the variables the pushing scan run actually saw
-    locally, so pushing a later run of a long experiment would otherwise
-    narrow the server's variable list down to just that run's variables
-    instead of accumulating it.
+    summary only reflects what the pushing scan run actually saw locally, so
+    pushing a later run of a long experiment would otherwise narrow the
+    server's stored list down to just that run's values instead of
+    accumulating it.
     """
-    existing_variables = (existing or {}).get("summaries", {}).get("variable")
-    incoming_variables = incoming.get("summaries", {}).get("variable")
-    if existing_variables is None or incoming_variables is None:
+    existing_summaries = (existing or {}).get("summaries", {})
+    incoming_summaries = incoming.get("summaries", {})
+    merged_lists = {}
+    for key in _ACCUMULATING_SUMMARY_LIST_KEYS:
+        existing_values = existing_summaries.get(key)
+        incoming_values = incoming_summaries.get(key)
+        if existing_values is None or incoming_values is None:
+            continue
+        merged_lists[key] = sorted(set(existing_values) | set(incoming_values))
+    if not merged_lists:
         return incoming
     merged = dict(incoming)
-    merged["summaries"] = {
-        **incoming.get("summaries", {}),
-        "variable": sorted(set(existing_variables) | set(incoming_variables)),
-    }
+    merged["summaries"] = {**incoming_summaries, **merged_lists}
     return merged
 
 

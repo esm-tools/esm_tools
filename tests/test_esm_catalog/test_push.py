@@ -674,3 +674,27 @@ def test_merge_collection_summaries_preserves_other_summary_keys():
 
     assert merged["summaries"]["other_key"] == ["x"]
     assert merged["summaries"]["variable"] == ["precip", "temp2"]
+
+
+def test_merge_collection_summaries_unions_vcs_revision_and_branch_too():
+    existing = {
+        "summaries": {"vcs:revision": ["abc123"], "vcs:branch": ["release"]}
+    }
+    incoming = {
+        "summaries": {"vcs:revision": ["def456"], "vcs:branch": ["release", "main"]}
+    }
+
+    merged = pushmod._merge_collection_summaries(existing, incoming)
+
+    assert merged["summaries"]["vcs:revision"] == ["abc123", "def456"]
+    assert merged["summaries"]["vcs:branch"] == ["main", "release"]
+
+
+def test_merge_collection_summaries_merges_variable_and_vcs_independently():
+    existing = {"summaries": {"variable": ["precip"], "vcs:revision": ["abc123"]}}
+    incoming = {"summaries": {"variable": ["temp2"]}}  # no vcs:revision this run
+
+    merged = pushmod._merge_collection_summaries(existing, incoming)
+
+    assert merged["summaries"]["variable"] == ["precip", "temp2"]
+    assert "vcs:revision" not in merged["summaries"]  # neither side agreed on this key

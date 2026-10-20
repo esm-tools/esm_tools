@@ -40,7 +40,12 @@ from loguru import logger
 from pandas.tseries import offsets as pd_offsets
 from upath import UPath
 
-from esm_catalog.collection import make_collection, update_extent, update_variable_summary
+from esm_catalog.collection import (
+    make_collection,
+    update_extent,
+    update_variable_summary,
+    update_vcs_summary,
+)
 from esm_catalog.item import FX_FREQUENCY, make_item
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.scan.format import UnknownFormatError, detect, needs_sniff
@@ -733,6 +738,7 @@ def scan_experiment(
         )
         update_extent(collection, item)
         update_variable_summary(collection, item)
+        update_vcs_summary(collection, item)
         if item.properties.get("frequency") == FX_FREQUENCY:
             fx_items.append(item)
         else:

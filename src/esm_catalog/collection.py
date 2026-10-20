@@ -85,28 +85,58 @@ def update_extent(collection: Collection, item: Item) -> None:
         collection.extent.temporal.intervals = [[start, end]]
 
 
-def update_variable_summary(collection: Collection, item: Item) -> None:
-    """Add *item*'s ``variable`` to *collection*'s ``summaries.variable`` list.
+def update_summary_list(collection: Collection, key: str, value: object) -> None:
+    """Add *value* to *collection*'s ``summaries.<key>`` list, deduped and sorted.
 
     A plain STAC Collection field (not an extension): stock stac-browser
     already renders ``summaries`` entries as a browse/filter facet, so
-    "search by variable" needs no dedicated widget, unlike the namelist
-    parameters (see :mod:`esm_catalog.namelist`) -- it only needs this list
-    populated.
+    searching/browsing by one of these needs no dedicated widget, unlike the
+    namelist parameters (see :mod:`esm_catalog.namelist`) -- it only needs
+    this list populated. Shared by :func:`update_variable_summary` and
+    :func:`update_vcs_summary`.
 
     Parameters
     ----------
     collection : pystac.Collection
-        The collection whose ``summaries.variable`` is widened in place.
-    item : pystac.Item
-        The item whose ``variable`` property joins the summary.
+        The collection whose ``summaries.<key>`` is widened in place.
+    key : str
+        The summary field name, e.g. ``"variable"`` or ``"vcs:revision"``.
+    value : object
+        The value to add; a falsy value (``None``, ``""``) is a no-op.
     """
-    variable = item.properties.get("variable")
-    if not variable:
+    if not value:
         return
-    values = collection.summaries.lists.get("variable", [])
-    if variable not in values:
-        collection.summaries.lists["variable"] = sorted(values + [variable])
+    values = collection.summaries.lists.get(key, [])
+    if value not in values:
+        collection.summaries.lists[key] = sorted(values + [value])
+
+
+def update_variable_summary(collection: Collection, item: Item) -> None:
+    """Add *item*'s ``variable`` to *collection*'s ``summaries.variable`` list."""
+    update_summary_list(collection, "variable", item.properties.get("variable"))
+
+
+def update_vcs_summary(collection: Collection, item: Item) -> None:
+    """Add *item*'s ``vcs:revision``/``vcs:branch`` to the collection's summaries.
+
+    Flat, deduped lists across every component in the experiment -- not the
+    per-component dict an earlier, now-abandoned design put on the
+    Collection (see :mod:`esm_catalog.vcs`'s module docstring for why that
+    was dropped). Coarse by design: this answers "does this experiment
+    include code at revision X anywhere", not "which component is at
+    revision X" -- that detail stays on each Item, where it already lives.
+
+    Parameters
+    ----------
+    collection : pystac.Collection
+        The collection whose ``summaries.vcs:revision``/``vcs:branch`` are
+        widened in place.
+    item : pystac.Item
+        The item whose ``vcs:revision``/``vcs:branch`` properties join the
+        summaries.
+    """
+    update_summary_list(collection, "vcs:revision", item.properties.get("vcs:revision"))
+    update_summary_list(collection, "vcs:branch", item.properties.get("vcs:branch"))
 
 
 def _merge_bbox(first: BBox, second: BBox) -> BBox:

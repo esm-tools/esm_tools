@@ -35,6 +35,7 @@ import subprocess
 from typing import Any, Optional
 
 import yaml
+from loguru import logger
 from upath import UPath
 
 from esm_catalog.models import ExperimentMetadata
@@ -168,6 +169,23 @@ def _vcs_by_component_once(exp_metadata: ExperimentMetadata) -> dict[str, dict]:
     if collection_id in _SOFTWARE_CACHE:
         return _SOFTWARE_CACHE[collection_id]
     software = vcs_by_component(exp_metadata)
+    # vcs_item_props() silently returns {} for a component with no "hash" --
+    # every failure mode (snapshot file missing, model_dir unreachable over
+    # ssh, not a git checkout, component absent from model_dirs) collapsed
+    # into total silence, with no way to tell which one happened for a given
+    # real run (confirmed live: every production collection checked had zero
+    # vcs:revision stamping on every item, with nothing in the logs saying
+    # why). _reconstruct_component_vcs already computes a "note" explaining
+    # the reason in the reconstructed case; this is the one place that both
+    # sees it and runs only once per experiment (not once per Item).
+    for component, component_vcs in software.items():
+        if isinstance(component_vcs, dict) and not component_vcs.get("hash"):
+            logger.warning(
+                "No vcs:* info for component {!r} in {}: {}",
+                component,
+                collection_id,
+                component_vcs.get("note", "no revision hash recorded"),
+            )
     _SOFTWARE_CACHE[collection_id] = software
     return software
 
@@ -207,11 +225,27 @@ def vcs_item_props(component_vcs: dict) -> dict:
     return props
 
 
+#: (collection_id, component) pairs already warned about by
+#: add_vcs_item_extension -- called once per Item, so without this a
+#: component missing from model_dirs/the snapshot entirely would log once
+#: per file instead of once per experiment.
+_MISSING_COMPONENT_WARNED: set[tuple[str, str]] = set()
+
+
 def add_vcs_item_extension(item, component: str, exp_metadata: ExperimentMetadata) -> None:
     """Set ``vcs:*`` on *item* from *component*'s VCS state, if any is known."""
     software = _vcs_by_component_once(exp_metadata)
     component_vcs = software.get(component)
     if not isinstance(component_vcs, dict):
+        key = (exp_metadata.collection_id, component)
+        if key not in _MISSING_COMPONENT_WARNED:
+            _MISSING_COMPONENT_WARNED.add(key)
+            logger.warning(
+                "No vcs:* info for component {!r} in {}: not present in "
+                "the vcs_info_initial snapshot or model_dirs at all.",
+                component,
+                exp_metadata.collection_id,
+            )
         return
     props = vcs_item_props(component_vcs)
     if not props:

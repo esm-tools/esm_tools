@@ -11,6 +11,7 @@ from upath import UPath
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.vcs import (
     _ssh_host,
+    _vcs_by_component_once,
     add_vcs_item_extension,
     read_vcs_info_initial,
     vcs_by_component,
@@ -107,6 +108,51 @@ def test_add_vcs_item_extension_noop_for_unknown_component(tmp_path, item):
     add_vcs_item_extension(item, "fesom", em)  # not in model_dirs
 
     assert "vcs:type" not in item.properties
+
+
+# --- missing-hash/missing-component logging: confirmed live that every real --
+# production collection had zero vcs:revision stamping with nothing in the
+# logs saying why; these pin that the reason is now surfaced, not silent.
+
+
+def test_warns_once_per_component_with_no_hash(tmp_path, monkeypatch):
+    import esm_catalog.vcs as vcs_mod
+
+    warnings = []
+    monkeypatch.setattr(
+        vcs_mod.logger, "warning", lambda *a, **k: warnings.append((a, k))
+    )
+    model_dir = tmp_path / "models" / "xios"
+    model_dir.mkdir(parents=True)  # not a git checkout -> no hash
+    em = _experiment_metadata(tmp_path, model_dirs={"xios": str(model_dir)})
+
+    _vcs_by_component_once(em)
+    _vcs_by_component_once(em)  # cached -- must not warn a second time
+
+    assert len(warnings) == 1
+    args, _kwargs = warnings[0]
+    assert args[1] == "xios"
+    assert "not a git-controlled checkout" in args[3]
+
+
+def test_warns_once_per_missing_component(tmp_path, item, monkeypatch):
+    import esm_catalog.vcs as vcs_mod
+
+    warnings = []
+    monkeypatch.setattr(
+        vcs_mod.logger, "warning", lambda *a, **k: warnings.append((a, k))
+    )
+    model_dir = tmp_path / "models" / "echam"
+    _git_repo(model_dir)
+    em = _experiment_metadata(tmp_path, model_dirs={"echam": str(model_dir)})
+
+    add_vcs_item_extension(item, "fesom", em)
+    add_vcs_item_extension(item, "fesom", em)  # second item, same component
+
+    assert len(warnings) == 1
+    args, _kwargs = warnings[0]
+    assert args[1] == "fesom"
+    assert "not present" in args[0]
 
 
 # --- remote (sftp) scans: model_dir reconstruction must run on the remote host ---

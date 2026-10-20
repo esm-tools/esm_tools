@@ -12,8 +12,8 @@ import esm_parser
 import esm_tools.esm_warnings  # noqa: F401  installs the deprecation visibility filter
 from esm_tools import __version__
 
-from . import (config_initialization, helpers, logfiles, plan, prepare,
-               prepexp, prev_run, resubmit, workflow)
+from . import (config_initialization, helpers, last_minute, logfiles, plan,
+               prepare, prepexp, prev_run, resubmit, workflow)
 from .simulation_config import ConfigBuilder, RunStateBuilder
 
 # SimulationSetup's deprecation schedule. Reuses the same target removal
@@ -100,10 +100,33 @@ class Simulation(object):
         return self
 
     def _run_pplan_tail_steps(self, config):
-        # STUB: Task 4 implements the real body (the pplan tail steps that run
-        # after the RunState is built and the Workflow is resolved). For now this
-        # returns config unchanged so Simulation.from_config's pplan branch has
-        # something to call without erroring.
+        """
+        Run the pplan engine's equivalent of the legacy recipe's steps after
+        ``assemble_workflow`` (``configs/esm_software/esm_runscripts/esm_runscripts.yaml``):
+        ``restore_protected_last_minute_changes``, ``add_submission_info``,
+        ``initialize_batch_system``, ``initialize_coupler``, ``set_logfile``,
+        ``check_config_for_warnings_errors``.
+
+        ``restore_protected_last_minute_changes`` lives in ``last_minute.py``,
+        not ``prepare.py``. It is included here because Task 2's
+        ``RunStateBuilder.with_last_minute_changes()`` only calls
+        ``last_minute.apply_last_minute_changes`` -- it never restores
+        ``config["general"]["modify_config"]`` from the memo, nor deletes the
+        ``modify_config_memo`` object that ``apply_last_minute_changes``
+        attaches to ``config["general"]``. Without this call, that memo object
+        would leak into the pplan path's final config.
+
+        Returns
+        -------
+        dict
+            The configuration after all tail steps have run.
+        """
+        config = last_minute.restore_protected_last_minute_changes(config)
+        config = prepare.add_submission_info(config)
+        config = prepare.initialize_batch_system(config)
+        config = prepare.initialize_coupler(config)
+        config = prepare.set_logfile(config)
+        config = prepare.check_config_for_warnings_errors(config)
         return config
 
     def run(self, kill_after_submit=True):

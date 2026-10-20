@@ -44,6 +44,8 @@ Group of sub-plans or steps and the building blocks of the experiment plan.
 **Child**: sub-plans
 
 * A plan is either written down in a batch script (sbatch, pbs script, etc. with extension `.run`) or executed in the shell (to cover the experiment initialization plan)
+* Multiple plans can be written and executed in a batch script
+* Open question: can plans be executed in parallel in a batch script? Maybe a feature for the future but not needed for now.
 * The plan writes the batch scripts that have direct dependencies to it and submits them
 * The plan is the level in the workflow where cycling happens
 

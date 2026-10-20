@@ -14,7 +14,7 @@ from esm_tools import __version__
 
 from . import (config_initialization, helpers, last_minute, logfiles, plan,
                prepare, prepexp, prev_run, resubmit, workflow)
-from .simulation_config import ConfigBuilder, RunStateBuilder
+from .simulation_config import ConfigBuilder, RunState, RunStateBuilder
 
 # SimulationSetup's deprecation schedule. Reuses the same target removal
 # version as workflow.py's legacy-key deprecations
@@ -91,8 +91,17 @@ class Simulation(object):
                 .with_finalized_config()
                 .build()
             )
-            self.plan = plan.Workflow.resolve(self.config)
-            self.config = self._run_pplan_tail_steps(self.config)
+            # The pplan engine's per-invocation facts (dates, calendar,
+            # folders, modify_config_memo, ...) live only on
+            # ``self.run_state.data`` -- ``RunStateBuilder.from_config``
+            # deepcopies before computing them, and by design never syncs
+            # them back into ``self.config``. The downstream consumers must
+            # therefore read ``self.run_state.data``, not ``self.config``:
+            # e.g. ``restore_protected_last_minute_changes`` (first tail step)
+            # reads ``config["general"]["modify_config_memo"]``, a key only
+            # ``with_last_minute_changes()`` sets, and only on the run_state.
+            self.plan = plan.Workflow.resolve(self.run_state.data)
+            self.run_state = RunState(self._run_pplan_tail_steps(self.run_state.data))
         else:
             self.config = prepare.run_job(self.config)
 

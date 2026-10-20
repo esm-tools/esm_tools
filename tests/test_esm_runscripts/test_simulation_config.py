@@ -1,8 +1,3 @@
-import copy
-from pathlib import Path
-
-import pytest
-
 from esm_runscripts.simulation_config import ConfigBuilder, SimulationConfig
 
 
@@ -40,3 +35,15 @@ def test_build_returns_simulation_config():
 def test_with_methods_return_self_for_chaining():
     builder = ConfigBuilder.from_user_config({"general": {"setup_name": "dummy", "expid": "t"}})
     assert builder.with_execution_mode_default() is builder
+
+
+def test_from_user_config_preserves_none_command_line_config():
+    """
+    Regression test: ConfigBuilder should preserve None command_line_config, not convert to {}.
+
+    This ensures that init_iterative_coupling and other functions receive the exact
+    None value that was passed, matching the original SimulationSetup.__init__ behavior.
+    """
+    user_config = {"general": {"setup_name": "dummy", "expid": "test"}}
+    builder = ConfigBuilder.from_user_config(user_config)
+    assert builder._command_line_config is None

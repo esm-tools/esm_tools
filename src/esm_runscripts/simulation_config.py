@@ -68,10 +68,10 @@ class ConfigBuilder:
         user_config : dict
             The user configuration dictionary (from runscript or passed directly).
         command_line_config : dict, optional
-            Command line configuration dictionary. Defaults to empty dict if not provided.
+            Command line configuration dictionary. Passed through as-is, including None.
         """
         self._data = user_config
-        self._command_line_config = command_line_config or {}
+        self._command_line_config = command_line_config
 
     @classmethod
     def from_runscript(cls, path, **overrides):

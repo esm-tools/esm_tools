@@ -115,14 +115,11 @@ def test_pplan_branch_runs_real_crash_path_without_raising(tmp_path, monkeypatch
     ``esm_parser.ConfigSetup`` (``choose_blocks`` needs ``config._blackdict``,
     ``finalize_config`` needs ``config.finalize()``), real ``esm_calendar``
     date arithmetic (calendar/folders/prev_date/parent_info), or a real HPC
-    environment (the batch-system / coupler tail steps) -- the brief's
-    explicitly-sanctioned "minimum necessary" patches. ``find_openmp`` is
-    stubbed only to route around the pre-existing ``from .batch_system import *``
-    name-shadowing in ``esm_runscripts/__init__.py`` (the ``batch_system``
-    class shadows the ``batch_system`` submodule), which is out of scope here.
+    environment (the batch-system / coupler tail steps, including
+    ``find_openmp``, which needs real model ``omp_num_threads`` sections
+    this minimal fixture doesn't build) -- the brief's explicitly-sanctioned
+    "minimum necessary" patches.
     """
-    import types
-
     import esm_runscripts.prepare as prepare
     import esm_runscripts.simulation_config as simulation_config
 
@@ -146,15 +143,13 @@ def test_pplan_branch_runs_real_crash_path_without_raising(tmp_path, monkeypatch
     ]:
         monkeypatch.setattr(prepare, name, passthrough)
 
-    # Route around the pre-existing batch_system submodule/class name shadow
-    # (esm_runscripts/__init__.py: ``from .batch_system import *``) so the
-    # real RunStateBuilder.with_openmp_found() step still executes.
+    # find_openmp needs real model sections (omp_num_threads) this minimal
+    # fixture doesn't build; stub it the same way as the other real-pipeline
+    # steps above, now that simulation_config.py imports the class directly
+    # (BatchSystem) rather than via the package's shadowed `batch_system`
+    # attribute.
     monkeypatch.setattr(
-        simulation_config,
-        "batch_system",
-        types.SimpleNamespace(
-            batch_system=types.SimpleNamespace(find_openmp=passthrough)
-        ),
+        simulation_config.BatchSystem, "find_openmp", staticmethod(passthrough)
     )
 
     config = _ConfigSetupLike({

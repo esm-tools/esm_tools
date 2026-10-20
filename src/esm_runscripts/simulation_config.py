@@ -13,7 +13,15 @@ code; it keeps calling prepare.run_job wholesale.
 
 import copy
 
-from . import batch_system, chunky_parts, conda_env, config_initialization, last_minute, prepare
+from . import chunky_parts, conda_env, config_initialization, last_minute, prepare
+# Imported directly from the submodule, not via `from . import batch_system`:
+# esm_runscripts/__init__.py's `from .batch_system import *` shadows the
+# package-level `batch_system` attribute with this same class once the real
+# package has loaded, so `batch_system.batch_system.find_openmp(...)` breaks
+# in production (confirmed by CI) even though it works when this module is
+# loaded in isolation. `compute.py`/`prepcompute.py` already use this same
+# direct-import form for the same reason.
+from .batch_system import batch_system as BatchSystem
 
 
 class SimulationConfig:
@@ -443,7 +451,7 @@ class RunStateBuilder:
         self
             For method chaining.
         """
-        self._data = batch_system.batch_system.find_openmp(self._data)
+        self._data = BatchSystem.find_openmp(self._data)
         return self
 
     def with_choose_blocks_resolved(self):

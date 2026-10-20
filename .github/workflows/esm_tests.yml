@@ -1,21 +1,31 @@
 # ESM-Tests in check mode for all computers
 # =========================================
 #
-# Discovers every (computer, model, runscript) combination supported by the
-# model control files under src/esm_tests/resources/runscripts/*/config.yaml,
-# then fans them out as independent matrix jobs. Previously each computer ran
-# every one of its runscripts sequentially inside a single job; now each
-# runscript gets its own job, so wall-clock no longer scales with the total
-# number of runscripts.
+# Discovers every (computer, model, runscript) combination with
+# ``esm_tests --list``, which applies the ``computers``, ``ignore_runscripts`` and
+# ``ignore_scripts`` of the model control files
+# (src/esm_tests/resources/runscripts/*/config.yaml) exactly as in a real run. Each
+# combination runs as an independent matrix job.
 
 name: esm_tests
 
 # Triggers the workflow on a push or a pull
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   discover:
     runs-on: ubuntu-latest
+    env:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      # Computers with a CI runner (names as in configs/machines/<name>.yaml). Any
+      # other computer listed in the model control files is skipped.
+      COMPUTERS: ollie levante juwels aleph albedo
+    container:
+      image: mandresm/ubuntu-miniforge-esm_tests:v1.0
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:
@@ -23,60 +33,30 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: install esm-tools
+        run: |
+          source /opt/conda/etc/profile.d/conda.sh;
+          conda activate esm_tools;
+          ./install.sh;
+          echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
+        shell: bash
 
       - id: discover
-        shell: python3 {0}
+        name: list tests
         run: |
-          import glob
-          import json
-          import os
-
-          import yaml
-
-          # Maps the "computers:" keys used in each model's config.yaml to the
-          # runner name esm_tests expects via choose_computer.name. Only
-          # computers wired up here get scheduled; anything else (e.g.
-          # blogin, which has no CI runner yet) is skipped.
-          COMPUTER_RUNNERS = {
-              "ollie": "ollie1",
-              "levante": "levante1",
-              "juwels": "jwlogin01.juwels",
-              "aleph": "elogin1",
-              "albedo": "albedo1",
-          }
-
-          base = "src/esm_tests/resources/runscripts"
-          entries = []
-          for model in sorted(os.listdir(base)):
-              config_path = os.path.join(base, model, "config.yaml")
-              if not os.path.isfile(config_path):
-                  continue
-              with open(config_path) as f:
-                  config = yaml.safe_load(f) or {}
-              runscripts = sorted(
-                  os.path.basename(p)
-                  for p in glob.glob(os.path.join(base, model, "*.yaml"))
-                  if os.path.basename(p) != "config.yaml"
-              )
-              for computer_key in config.get("computers", []):
-                  runner = COMPUTER_RUNNERS.get(computer_key)
-                  if runner is None:
-                      continue
-                  for runscript in runscripts:
-                      entries.append(
-                          {
-                              "computer_key": computer_key,
-                              "computer": runner,
-                              "model": model,
-                              "runscript": runscript,
-                          }
-                      )
-
-          matrix = {"include": entries}
-          with open(os.environ["GITHUB_OUTPUT"], "a") as gh_out:
-              gh_out.write(f"matrix={json.dumps(matrix)}\n")
-
-          print(f"Discovered {len(entries)} (computer, model, runscript) jobs")
+          git config --global --add safe.directory "$GITHUB_WORKSPACE";
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/src/esm_tests/resources";
+          computer_flags="";
+          for computer in $COMPUTERS; do
+            computer_flags="$computer_flags --computer $computer";
+          done
+          # ``-u`` so that the list matches the resources used by the test jobs
+          tests=$(esm_tests --list --json -u $computer_flags);
+          echo "matrix={\"include\":$tests}" >> "$GITHUB_OUTPUT";
+          echo "Discovered $(echo "$tests" | python -c 'import json,sys; print(len(json.load(sys.stdin)))') (computer, model, runscript) jobs";
+        shell: bash
 
   test:
     needs: discover

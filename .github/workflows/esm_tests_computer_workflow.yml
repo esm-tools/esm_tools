@@ -7,12 +7,14 @@ name: esm_tests_computer_workflow
 on:
   workflow_call:
     inputs:
+      # Name as in configs/machines/<name>.yaml (passed to ``esm_tests --computer``)
       computer:
         required: true
         type: string
       ref:
         type: string
         default: ""
+      # If given, only this model/runscript is tested (``--model``/``--runscript``)
       model:
         type: string
         default: ""
@@ -29,6 +31,9 @@ on:
       ESM_TOOLS_BOT:
         required: false
 
+permissions:
+  contents: read
+
 jobs:
   computer:
     name: ${{ inputs.model != '' && format('{0} / {1} / {2}', inputs.computer, inputs.model, inputs.runscript) || inputs.computer }}
@@ -41,7 +46,6 @@ jobs:
     container:
       # TODO (PG): Change to ghcr hosting at some point in the future.
       image: mandresm/ubuntu-miniforge-esm_tests:v1.0
-      options: --hostname ${{ inputs.computer }}
     strategy:
       fail-fast: false
 
@@ -50,7 +54,7 @@ jobs:
       with:
         submodules: true
         fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
+        persist-credentials: false
         ref: ${{ inputs.ref }}
     - name: install esm-tools
       run: |
@@ -60,21 +64,19 @@ jobs:
         echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
       shell: bash
 
-    - name: scope test_config.yaml to this runscript
-      if: ${{ inputs.model != '' && inputs.runscript != '' }}
-      run: |
-        cat > src/esm_tests/test_config.yaml <<EOF
-        ${{ inputs.model }}:
-          - ${{ inputs.runscript }}
-        EOF
-      shell: bash
-
     - name: run esm_tests
+      env:
+        COMPUTER: ${{ inputs.computer }}
+        MODEL: ${{ inputs.model }}
+        RUNSCRIPT: ${{ inputs.runscript }}
       run: |
         git config --global --add safe.directory /__w/esm_tools/esm_tools;
         git config --global --add safe.directory /__w/esm_tools/esm_tools/src/esm_tests/resources;
         git status;
-        yes Y | esm_tests ${{ inputs.test_flags }}
+        selection="--computer $COMPUTER";
+        if [ -n "$MODEL" ]; then selection="$selection --model $MODEL"; fi
+        if [ -n "$RUNSCRIPT" ]; then selection="$selection --runscript $RUNSCRIPT"; fi
+        yes Y | esm_tests ${{ inputs.test_flags }} $selection
 #    - name: store last tested in a different directory
 #      if: ${{ inputs.update_esm_tests_info }}
 #      run: |
@@ -92,7 +94,7 @@ jobs:
         ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
       run: |
         cd src/esm_tests/resources;
-        git config --unset-all "http.https://github.com/.extraheader";
+        git config --unset-all "http.https://github.com/.extraheader" || true;
         git config user.name esmtools-bot;
         git config user.email esmtools-bot@users.noreply.github.com;
         echo "USER:";

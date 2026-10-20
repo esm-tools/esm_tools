@@ -18,6 +18,7 @@ from esm_tools import user_error
 
 from .logfiles import SmartSink, initialize_logging
 from .sim_objects import *
+from .simulation_config import ConfigBuilder
 
 
 def parse_shargs():
@@ -246,34 +247,51 @@ def main():
 
     initialize_logging(command_line_config)
 
-    setup = SimulationSetup(command_line_config=command_line_config)
+    config = (
+        ConfigBuilder.from_runscript(
+            command_line_config["runscript_abspath"], **command_line_config
+        )
+        .with_interactive_info()
+        .with_iterative_coupling()
+        .with_execution_mode_default()
+        .expand_from_esm_tools_configs()
+        .with_runscript_defaults()
+        .validate_account()
+        .with_inspect_info()
+        .remember_command_line()
+        .build()
+    )
+    setup = Simulation.from_config(config)
 
     if wf_engine == "pplan":
-        drop_into_pplan_debug(setup.plan, setup.workflow, setup.config)
+        drop_into_pplan_debug(setup.plan, setup.config)
         return
 
     # if not Setup.config['general']['submitted']:
     if not setup.config["general"]["submitted"] and motd:
         check_all_esm_packages()
-    setup()
+    setup.run()
 
 
-def drop_into_pplan_debug(sub_plan, workflow, config):
-    """Print the native pplan ``SubPlan`` and resolved ``Workflow`` that
-    ``SimulationSetup`` built for this job type, and drop into a debug
-    session for poking around.
+def drop_into_pplan_debug(workflow, config):
+    """Print the resolved ``Workflow`` that ``Simulation.from_config`` built
+    for this job type, and drop into a debug session for poking around.
 
     Does not submit or run anything -- this is purely for exploring where
     recipe steps hook into the new ``plan.py`` models. Legacy
     ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
-    ``SimulationSetup.__init__``'s ``wf_engine`` branch); ``workflow`` is
-    built natively by ``plan.Workflow.default`` instead.
+    ``Simulation.from_config``'s ``wf_engine`` branch); ``workflow`` is
+    built natively by ``plan.Workflow.resolve`` instead -- there is no
+    separate ``SubPlan("prepare")`` stub anymore, ``workflow.sub_plans``
+    holds every phase (e.g. ``prepcompute``, ``compute``, ``tidy``)
+    directly.
     """
-    print(sub_plan)
-    for step in sub_plan.steps:
-        print(" ", step)
-
     print(workflow)
+    for sub_plan in workflow.sub_plans.values():
+        print(" ", sub_plan)
+        for step in sub_plan.steps:
+            print("   ", step)
+
     for cluster in workflow.plans.values():
         print(" ", cluster)
 
@@ -282,8 +300,7 @@ def drop_into_pplan_debug(sub_plan, workflow, config):
 
         embed(
             header="esm_runscripts --wf-engine=pplan debug session\n"
-            "`sub_plan` is the native SubPlan; `workflow` is the resolved "
-            "Workflow; `config` is its config."
+            "`workflow` is the resolved Workflow; `config` is its config."
         )
     except ImportError:
         logger.warning("IPython not available, falling back to pdb")

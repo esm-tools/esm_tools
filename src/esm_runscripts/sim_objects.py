@@ -16,15 +16,18 @@ from . import (config_initialization, helpers, last_minute, logfiles, plan,
                prepare, prepexp, prev_run, resubmit, workflow)
 from .simulation_config import ConfigBuilder, RunState, RunStateBuilder
 
-# SimulationSetup's deprecation schedule. Reuses the same target removal
-# version as workflow.py's legacy-key deprecations
+# SimulationSetup's deprecation schedule. Reuses the same values as
+# workflow.py's legacy-key deprecations
 # (configs/esm_software/esm_runscripts/workflow_legacy_keys.yaml:
 # deprecated_since/removed_in), since both are deprecations introduced in
-# this same refactor and share the same next-major removal target. There is
-# no equivalent on-disk spec for SimulationSetup itself (it is a class
-# rename, not a data-driven key table), so the version strings are given
-# directly here rather than loaded from a yaml file.
-_SIMULATION_SETUP_DEPRECATED_SINCE = __version__
+# this same refactor. Must be a frozen literal, not `__version__` -- the
+# latter tracks whatever version is currently installed and would silently
+# drift forward on every future release, instead of staying pinned to the
+# version this deprecation actually started in. There is no equivalent
+# on-disk spec for SimulationSetup itself (it is a class rename, not a
+# data-driven key table), so the version strings are given directly here
+# rather than loaded from a yaml file.
+_SIMULATION_SETUP_DEPRECATED_SINCE = "6.67.0"
 _SIMULATION_SETUP_REMOVED_IN = "7.0.0"
 
 

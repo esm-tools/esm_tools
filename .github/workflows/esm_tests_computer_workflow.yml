@@ -76,7 +76,17 @@ jobs:
         selection="--computer $COMPUTER";
         if [ -n "$MODEL" ]; then selection="$selection --model $MODEL"; fi
         if [ -n "$RUNSCRIPT" ]; then selection="$selection --runscript $RUNSCRIPT"; fi
-        yes Y | esm_tests ${{ inputs.test_flags }} $selection
+        yes Y | esm_tests ${{ inputs.test_flags }} $selection --diff-file esm_tests_diffs.json
+
+    # Collected by the ``summary`` job of ``esm_tests.yml``
+    - name: upload differences
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: diffs-${{ inputs.computer }}-${{ inputs.model }}-${{ inputs.runscript }}
+        path: esm_tests_diffs.json
+        if-no-files-found: ignore
+        retention-days: 7
 #    - name: store last tested in a different directory
 #      if: ${{ inputs.update_esm_tests_info }}
 #      run: |

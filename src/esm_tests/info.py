@@ -61,6 +61,9 @@ class Info(dict):
 
     - ``json``: print the ``--list`` output as JSON to stdout (``--json``).
 
+    - ``diff_file``: absolute path of the file to write the differences to
+      (``--diff-file``), or ``None``.
+
     - ``user``: ``esm_tests`` configurations specific to the user, as read from
       ``<PATH>/esm_tools/src/esm_tests/user_config.yaml``.
 
@@ -204,6 +207,11 @@ class Info(dict):
             + "runscript) to stdout",
             action="store_true",
         )
+        parser.add_argument(
+            "--diff-file",
+            default=None,
+            help="write the differences with 'last_tested' to this file (JSON)",
+        )
 
         args = vars(parser.parse_args())
 
@@ -233,6 +241,8 @@ class Info(dict):
         self["runscript"] = args["runscript"]
         self["list"] = args["list"]
         self["json"] = args["json"]
+        # Absolute, because ``esm_tests`` changes directory while testing
+        self["diff_file"] = args["diff_file"] and os.path.abspath(args["diff_file"])
 
         # No ``::group::`` in GitHub either: GitHub collapses groups and they cannot be
         # expanded by default, which hides the differences of each test behind a click

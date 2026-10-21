@@ -72,6 +72,7 @@ The commands syntax is as follows::
 
     esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e] [-r BRANCH]
               [--computer COMPUTER] [--model MODEL] [--runscript RUNSCRIPT] [--list] [--json]
+              [--diff-file DIFF_FILE]
 
 Arguments
 ---------
@@ -94,8 +95,7 @@ Optional arguments                                     Description
   -b, --bulletpoints                                   Bullet points for printing the state and copy/paste as
                                                        markdown text
   -g, --github                                         Use this flag when running in GitHub servers (i.e.
-                                                       adds syntax for collapsing compare sections of the
-                                                       output for GitHub Actions)
+                                                       uses GitHub paths and ignores in the comparisons)
   -e, --system-exit-on-errors                          Trigger a system exit on errors or file differences
                                                        so that GitHub actions can catch that as a failing test
   -r BRANCH, --branch BRANCH                           use the given esm_tests_info branch
@@ -115,6 +115,9 @@ Optional arguments                                     Description
   --json                                               With ``--list``, print the tests as JSON to stdout
                                                        (list of ``computer``, ``model``, ``runscript``). Used
                                                        by the GitHub Actions to build the test matrix
+  --diff-file DIFF_FILE                                Write the differences with ``last_tested`` to this
+                                                       file (JSON). Used by the GitHub Actions to show the
+                                                       differences of all tests in the run summary
 ====================================================== ==========================================================
 
 The ``computers``, ``ignore_runscripts`` and ``ignore_scripts`` of the

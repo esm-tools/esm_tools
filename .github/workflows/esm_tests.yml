@@ -5,7 +5,8 @@
 # ``esm_tests --list``, which applies the ``computers``, ``ignore_runscripts`` and
 # ``ignore_scripts`` of the model control files
 # (src/esm_tests/resources/runscripts/*/config.yaml) exactly as in a real run. Each
-# combination runs as an independent matrix job.
+# combination runs as an independent matrix job. The ``summary`` job collects the
+# differences of all jobs in the run summary.
 
 name: esm_tests
 
@@ -69,3 +70,22 @@ jobs:
         computer: ${{ matrix.computer }}
         model: ${{ matrix.model }}
         runscript: ${{ matrix.runscript }}
+
+  # Differences of all tests in the run summary, one collapsible per computer
+  summary:
+    needs: test
+    if: ${{ !cancelled() && needs.test.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: diffs-*
+          path: diffs
+
+      - name: write summary
+        run: python3 .github/scripts/esm_tests_diff_summary.py diffs >> "$GITHUB_STEP_SUMMARY"

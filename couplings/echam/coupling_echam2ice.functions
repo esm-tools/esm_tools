@@ -87,7 +87,7 @@ iterative_coupling_echam6_ice_make_forcing() {
         fi
         #add_to $(pwd)/atmosphere_file_for_ice.nc atmosphere_file_for_ice.nc couple
         cp $(pwd)/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice.nc
-
+        cp $(pwd)/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice_${END_YEAR_echam}.nc
         echo; echo "                  ...done."; echo
 }
 

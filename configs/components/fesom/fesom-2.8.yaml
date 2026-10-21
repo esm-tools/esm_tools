@@ -623,6 +623,14 @@ fesom:
     # inventories). Only for a FESOM built from feat/recom-cmip7-output with REcoM
     # feat/cmip7-output; other builds never send these fields.
     recom_cmip7_diags: false
+    # CMIP7 sub-daily and daily-3D output in xios_xml_cmip7/file_def_fesom.xml.j2:
+    # cmip7_3h_output: 3-hourly surface fluxes and instantaneous sst (2D, small; sst is then
+    # sent every time step).
+    # cmip7_daily_3d_output: daily 3D utemp/vtemp (daily hfx/hfy, needs ldiag_trflx), salt, w,
+    # rsdoabsorb and, with REcoM, DOC, DetC and zooplankton carbon; about 15 GB per field and
+    # simulated year raw on CORE3.
+    cmip7_3h_output: true
+    cmip7_daily_3d_output: false
     # When true, add regridded (regular lat/lon) output for all 2D fields
     # alongside the native unstructured output. Each regrid file is produced
     # at the same frequency as its native counterpart (daily for fesom_1d

@@ -67,6 +67,11 @@
     <field id="sgm11"        long_name="ice stress sigma11"                      unit="N m-1" detect_missing_value="true"/>
     <field id="sgm12"        long_name="ice stress sigma12"                      unit="N m-1" detect_missing_value="true"/>
     <field id="sgm22"        long_name="ice stress sigma22"                      unit="N m-1" detect_missing_value="true"/>
+    <!-- Column integrals of u*T, v*T from FESOM's CMOR diagnostics (ldiag_cmor, not
+         ldiag_trflx), geographic east/north, for CMIP7 depth-integrated hfx/hfy.
+         Needs FESOM feat/cmip7-heat-transport-int. -->
+    <field id="utemp_int"    long_name="vertical integral of u*T at elements"    unit="m2 s-1 degC"/>
+    <field id="vtemp_int"    long_name="vertical integral of v*T at elements"    unit="m2 s-1 degC"/>
   </field_group>
 
   <!-- 3D fields on NODES, cell-center / nz-1 -->

@@ -47,11 +47,23 @@
          monthly rules read, is untouched. -->
     <file id="f_m_ice_day" name="m_ice_day.fesom.%start_date%"><field field_ref="m_ice_day" freq_op="1d"/></file>
 
+    {% if fesom.cmip7_daily_trflx_int | default(false) %}
+    <!-- Daily column integrals of u*T, v*T (2D on elements, about 0.6 GB per field and
+         simulated year on CORE3) for daily, and averaged monthly, depth-integrated
+         hfx/hfy. Computed in FESOM's CMOR diagnostics (ldiag_cmor), so they replace
+         utemp_day/vtemp_day and do not need ldiag_trflx. -->
+    <file id="f_utemp_int" name="utemp_int.fesom.%start_date%"><field field_ref="utemp_int" freq_op="1d"/></file>
+    <file id="f_vtemp_int" name="vtemp_int.fesom.%start_date%"><field field_ref="vtemp_int" freq_op="1d"/></file>
+    {% endif %}
+
     {% if fesom.cmip7_daily_3d_output %}
     <!-- Daily 3D fields (about 15 GB per field and simulated year raw on CORE3):
-         u*T, v*T for daily hfx/hfy (needs ldiag_trflx), so, wo, rsdo -->
+         u*T, v*T for daily hfx/hfy (needs ldiag_trflx; off with cmip7_daily_trflx_3d
+         once utemp_int/vtemp_int are written), so, wo, rsdo -->
+    {% if fesom.cmip7_daily_trflx_3d | default(true) %}
     <file id="f_utemp_day" name="utemp_day.fesom.%start_date%"><field field_ref="utemp_day" freq_op="1d"/></file>
     <file id="f_vtemp_day" name="vtemp_day.fesom.%start_date%"><field field_ref="vtemp_day" freq_op="1d"/></file>
+    {% endif %}
     <file id="f_salt_day" name="salt_day.fesom.%start_date%"><field field_ref="salt_day" freq_op="1d"/></file>
     <file id="f_w_day" name="w_day.fesom.%start_date%"><field field_ref="w_day" freq_op="1d"/></file>
     <file id="f_rsdoabsorb_day" name="rsdoabsorb_day.fesom.%start_date%"><field field_ref="rsdoabsorb_day" freq_op="1d"/></file>

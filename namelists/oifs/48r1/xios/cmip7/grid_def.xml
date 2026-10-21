@@ -27,9 +27,15 @@
 
   <!-- Definition of pressure levels grids -->
   <grid_group id="pl_grids" >
-    <grid id="reduced_pl" description="3D model grid with pressure levels" >
+    <!-- The grid OpenIFS sends pressure-level fields on (field_def 3D_pl).
+         Not for files: it carries the full FullPos axis, see axis_def.xml. -->
+    <grid id="reduced_pl_fpos" description="3D model grid with all FullPos pressure levels" >
       <domain domain_ref="reduced_gaussian" />
       <axis axis_ref="pressure_levels" />
+    </grid>
+    <grid id="reduced_pl" description="3D model grid with pressure levels (plev19)" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pressure_levels_19" />
     </grid>
     <grid id="reduced_pl3" description="3D model grid with 3 pressure levels (plev3)" >
       <domain domain_ref="reduced_gaussian" />
@@ -43,9 +49,9 @@
       <domain domain_ref="reduced_gaussian" />
       <axis axis_ref="pressure_levels_7h" />
     </grid>
-    <grid id="regular_pl" description="3D interpolated regular grid with pressure levels" >
+    <grid id="regular_pl" description="3D interpolated regular grid with pressure levels (plev19)" >
       <domain domain_ref="regular" />
-      <axis axis_ref="pressure_levels" />
+      <axis axis_ref="pressure_levels_19" />
     </grid>
     <grid id="regular_pl_axis_zoom" >
       <domain domain_ref="regular" />

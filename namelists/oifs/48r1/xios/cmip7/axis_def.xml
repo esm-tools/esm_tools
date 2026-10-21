@@ -9,13 +9,46 @@
 
   <!-- Definition of pressure levels axes -->
   <axis_group id="pl_axes" unit="Pa" positive="up" >
-    <axis id="pressure_levels" long_name="vertical pressure levels" n_glo="19" value="(0,18)[100000.0 92500.0 85000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 15000.0 10000.0 7000.0 5000.0 3000.0 2000.0 1000.0 500.0 100.0]" />    <!--<axis id="pressure_levels" long_name="vertical pressure levels" n_glo="39" value="(0,38)[100000.0 92500.0 85000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 17000.0 15000.0 13000.0 11500.0 10000.0 9000.0 8000.0 7000.0 5000.0 3000.0 2000.0 1500.0 1000.0 700.0 500.0 300.0 200.0 150.0 100.0 70.0 50.0 40.0 30.0 20.0 15.0 10.0 7.0 5.0 3.0]" />-->
-    <axis id="pressure_levels_zoom" long_name="vertical pressure levels zoom" axis_ref="pressure_levels" >
-      <zoom_axis index="(0,2)[10 11 12]" />
+    <!-- FullPos axis. OpenIFS reads the id named by pressure_axis_id in
+         context_ifs.xml.j2 (pressure_levels), interpolates every *_pl field to
+         exactly these values and sends one array on this axis. Nothing else
+         reaches XIOS, so every other pressure axis below has to be derived
+         from this one by an XIOS transformation.
+
+         An axis that only carries its own n_glo/value has no transformation:
+         XIOS writes the first n levels of the FullPos array under the new
+         labels. That is what plev3/plev6/plev7h did up to v3.5.1 (plev3
+         labelled 850/500/250 held 1000/925/850 hPa).
+
+         zoom_axis and extract_axis cannot select single levels in XIOS 2.5:
+         an index list is turned into its min-max range (zoom_axis.cpp,
+         extract_axis.cpp), so too many levels are written. The subsets are
+         therefore linear interpolations from this axis. Every target level is
+         one of its levels, so the weights are exactly 1 and 0 and the result
+         is an exact copy (as in the HR experiments' fix, N. Wieters).
+
+         19 plev19 levels plus the four plev6 levels that plev19 lacks
+         (95000 90000 80000 75000), so plev6 comes out of FullPos rather than
+         from interpolating between pressure levels. Descending, as before. -->
+    <axis id="pressure_levels" long_name="vertical pressure levels (FullPos)" n_glo="23" value="(0,22)[100000.0 95000.0 92500.0 90000.0 85000.0 80000.0 75000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 15000.0 10000.0 7000.0 5000.0 3000.0 2000.0 1000.0 500.0 100.0]" />    <!--<axis id="pressure_levels" long_name="vertical pressure levels" n_glo="39" value="(0,38)[100000.0 92500.0 85000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 17000.0 15000.0 13000.0 11500.0 10000.0 9000.0 8000.0 7000.0 5000.0 3000.0 2000.0 1500.0 1000.0 700.0 500.0 300.0 200.0 150.0 100.0 70.0 50.0 40.0 30.0 20.0 15.0 10.0 7.0 5.0 3.0]" />-->
+    <!-- plev19. name keeps the netCDF dimension "pressure_levels", so the
+         plev19 files look exactly as they did with the 19-level FullPos axis. -->
+    <axis id="pressure_levels_19" name="pressure_levels" long_name="vertical pressure levels" n_glo="19" value="(0,18)[100000.0 92500.0 85000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 15000.0 10000.0 7000.0 5000.0 3000.0 2000.0 1000.0 500.0 100.0]" >
+      <interpolate_axis type="polynomial" order="1" />
     </axis>
-    <axis id="pressure_levels_3" long_name="vertical pressure levels plev3" n_glo="3" value="(0,2)[85000.0 50000.0 25000.0]" />
-    <axis id="pressure_levels_6" long_name="vertical pressure levels plev6 lower troposphere" n_glo="6" value="(0,5)[95000.0 90000.0 85000.0 80000.0 75000.0 70000.0]" />
-    <axis id="pressure_levels_7h" long_name="vertical pressure levels plev7h" n_glo="7" value="(0,6)[92500.0 85000.0 70000.0 60000.0 50000.0 25000.0 5000.0]" />
+    <!-- 15000 10000 7000: contiguous on the FullPos axis, so a zoom is exact -->
+    <axis id="pressure_levels_zoom" long_name="vertical pressure levels zoom" axis_ref="pressure_levels" >
+      <zoom_axis index="(0,2)[14 15 16]" />
+    </axis>
+    <axis id="pressure_levels_3" long_name="vertical pressure levels plev3" n_glo="3" value="(0,2)[85000.0 50000.0 25000.0]" >
+      <interpolate_axis type="polynomial" order="1" />
+    </axis>
+    <axis id="pressure_levels_6" long_name="vertical pressure levels plev6 lower troposphere" n_glo="6" value="(0,5)[95000.0 90000.0 85000.0 80000.0 75000.0 70000.0]" >
+      <interpolate_axis type="polynomial" order="1" />
+    </axis>
+    <axis id="pressure_levels_7h" long_name="vertical pressure levels plev7h" n_glo="7" value="(0,6)[92500.0 85000.0 70000.0 60000.0 50000.0 25000.0 5000.0]" >
+      <interpolate_axis type="polynomial" order="1" />
+    </axis>
   </axis_group>
 
   <!-- Definition of theta levels axes -->

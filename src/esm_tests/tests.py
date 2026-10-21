@@ -500,8 +500,9 @@ def run_test(info):
 def add_error(v, message, out="", pattern=""):
     """
     Stores an error of this test in ``v["errors"]`` (written with ``--results-file``).
-    If ``pattern`` is found in ``out``, an excerpt of ``out`` starting at the line
-    containing it is stored too.
+    If ``pattern`` is found in ``out``, an excerpt of ``out`` is stored too: all the
+    complete tracebacks (up to the exception line) for ``Traceback`` patterns, or 15
+    lines starting at the line containing ``pattern`` otherwise.
 
     Parameters
     ----------
@@ -516,8 +517,22 @@ def add_error(v, message, out="", pattern=""):
     """
     error = {"message": message}
     if pattern and pattern in out:
-        start = out.rfind("\n", 0, out.index(pattern)) + 1
-        error["excerpt"] = "\n".join(out[start:].splitlines()[:15])
+        if pattern.startswith("Traceback"):
+            excerpt = []
+            in_traceback = False
+            for line in out.splitlines():
+                if pattern in line:
+                    in_traceback = True
+                    excerpt.append(line)
+                elif in_traceback:
+                    excerpt.append(line)
+                    # The first not indented line is the exception, end of traceback
+                    if line and not line[0].isspace():
+                        in_traceback = False
+            error["excerpt"] = "\n".join(excerpt[:200])
+        else:
+            start = out.rfind("\n", 0, out.index(pattern)) + 1
+            error["excerpt"] = "\n".join(out[start:].splitlines()[:15])
     v.setdefault("errors", []).append(error)
 
 

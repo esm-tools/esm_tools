@@ -3,8 +3,8 @@
 Writes a Markdown summary of the ``esm_tests`` results to stdout, from the JSON files
 written with ``esm_tests --results-file`` (searched recursively in ``results_dir``):
 
-- Problems: every test with errors, differences or a failed job, with the reason and a
-  link to the job log. Always expanded.
+- Problems: every test with errors or a failed job (not explained by differences),
+  with the reason and a link to the job log. Always expanded.
 - Differences: one collapsible section per computer, one per file with differences.
 
 ``--jobs`` is the output of ``gh api .../actions/runs/<id>/jobs`` (list of jobs with
@@ -85,13 +85,14 @@ def problems_section(tests, jobs):
                 if error.get("excerpt"):
                     reason += "\n\n" + code_block(error["excerpt"], indent="    ")
                 reasons.append(reason)
-            if test["differences"]:
-                n = len(test["differences"])
-                reasons.append(
-                    f"Differences in {n} file{'s' if n > 1 else ''} (see *Differences* "
-                    "below)"
-                )
-            if not reasons and conclusion not in ("success", "skipped", None):
+            # Differences are only reported in the *Differences* section. With ``-e``
+            # they also fail the job, so a failed job is only a problem here if there
+            # are no differences explaining it
+            if (
+                not reasons
+                and not test["differences"]
+                and conclusion not in ("success", "skipped", None)
+            ):
                 reasons.append(f"Job {conclusion}, see the job log")
         if not reasons:
             continue

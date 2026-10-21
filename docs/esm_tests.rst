@@ -71,6 +71,7 @@ enabled via:
 The commands syntax is as follows::
 
     esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e] [-r BRANCH]
+              [--computer COMPUTER] [--model MODEL] [--runscript RUNSCRIPT] [--list] [--json]
 
 Arguments
 ---------
@@ -98,7 +99,34 @@ Optional arguments                                     Description
   -e, --system-exit-on-errors                          Trigger a system exit on errors or file differences
                                                        so that GitHub actions can catch that as a failing test
   -r BRANCH, --branch BRANCH                           use the given esm_tests_info branch
+  --computer COMPUTER                                  Test for this computer (name as in
+                                                       ``configs/machines/<name>.yaml``) instead of detecting it
+                                                       from the hostname. ``esm_master`` and ``esm_runscripts``
+                                                       are then also called with ``--computer``. Can be given
+                                                       several times only together with ``--list``
+  --model MODEL                                        Only test this model (folder name in
+                                                       ``resources/runscripts``). When given,
+                                                       ``test_config.yaml`` is not read
+  --runscript RUNSCRIPT                                Only test this runscript of ``--model`` (e.g.
+                                                       ``pi.yaml``)
+  --list                                               Print the tests that would run (same layout as
+                                                       ``--state``: model, version, runscript, computer) and
+                                                       exit
+  --json                                               With ``--list``, print the tests as JSON to stdout
+                                                       (list of ``computer``, ``model``, ``runscript``). Used
+                                                       by the GitHub Actions to build the test matrix
 ====================================================== ==========================================================
+
+The ``computers``, ``ignore_runscripts`` and ``ignore_scripts`` of the
+:ref:`esm_tests:Model control file (\`\`config.yaml\`\`)` are always applied, also
+when using ``--model``/``--runscript``. For example, to run a single check test for
+`Levante` from any machine::
+
+    esm_tests -c --computer levante --model fesom --runscript fesom2.0-initial-monthly.yaml
+
+and to see which tests would run on `Levante` and `Albedo`::
+
+    esm_tests --list --computer levante --computer albedo
 
 Last-state
 ----------

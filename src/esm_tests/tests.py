@@ -111,6 +111,8 @@ def comp_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     this_computer = info["this_computer"]
+    # Pass the computer to ``esm_master`` if it was given with ``--computer``
+    computer_flag = f" --computer {this_computer}" if info["computer_explicit"] else ""
 
     # Set the regex formats for check compilations
     cd_format = re.compile("         cd (.*)")
@@ -135,9 +137,11 @@ def comp_test(info):
             # Define variables from the runscript
             version = v["version"]
             if v["comp_command"]:
-                comp_command = f"{v['comp_command']} --no-motd -k"
+                comp_command = f"{v['comp_command']} --no-motd -k{computer_flag}"
             else:
-                comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
+                comp_command = (
+                    f"esm_master comp-{model}-{version} --no-motd -k{computer_flag}"
+                )
             general_model_dir = f"{user_info['test_dir']}/comp/{model}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
             title = f"COMPILING ({progress}%) {bs}{model}-{version}{be}"
@@ -193,7 +197,9 @@ def comp_test(info):
                     # If download of the source code is required, run
                     # ``esm_master get-<model>-<version>``
                     else:
-                        get_command = f"esm_master get-{model}-{version} --no-motd"
+                        get_command = (
+                            f"esm_master get-{model}-{version} --no-motd{computer_flag}"
+                        )
                         logger.info("\t\tDownloading")
                         out = sh(get_command)
                         if "Traceback (most recent call last):" in out:
@@ -286,6 +292,10 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
+    # Pass the computer to ``esm_runscripts`` if it was given with ``--computer``
+    computer_flag = (
+        f" --computer {info['this_computer']}" if info["computer_explicit"] else ""
+    )
     run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0
@@ -343,7 +353,7 @@ def run_test(info):
                                 f"echo {'='*10}; echo {imodel}; echo {'='*10}; "
                                 f"esm_runscripts "
                                 f"{os.path.dirname(v['path'])}/{mdata['script']} "
-                                f"-e {script} --open-run {check_flag}"
+                                f"-e {script} --open-run {check_flag}{computer_flag}"
                             )
                 # Export test variables and run the simulation
                 env_vars = [
@@ -353,7 +363,7 @@ def run_test(info):
                 ]
                 run_command = (
                     f"esm_runscripts {v['path']} -e {script} --open-run "
-                    f"{check_flag}{additional_actions}"
+                    f"{check_flag}{computer_flag}{additional_actions}"
                 )
                 out = sh(run_command, env_vars)
 

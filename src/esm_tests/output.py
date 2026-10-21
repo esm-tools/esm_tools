@@ -398,6 +398,60 @@ def print_results(results, info):
     logger.info("")
 
 
+def print_list(tests, info):
+    """
+    Prints the tests that would run (``--list``) with the same structure as
+    ``print_results`` (``model`` > ``version`` > ``runscript`` > ``computer``). The
+    ``bulletpoints`` and ``in_github`` items in ``info`` control the format as in
+    ``print_results``.
+
+    Parameters
+    ----------
+    tests : list
+        List of dictionaries with the keys ``computer``, ``model``, ``version`` and
+        ``runscript``, as returned by ``list_tests``.
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+    """
+    colorama.init(autoreset=True)
+
+    if info.get("bulletpoints", False):
+        bp = "- "
+    else:
+        bp = ""
+
+    if info["in_github"]:
+        first_tab = "|   "
+    else:
+        first_tab = "    "
+
+    # Nest the tests as ``model`` > ``version`` > ``runscript`` > [``computers``]
+    nested = {}
+    for test in tests:
+        script = test["runscript"].replace(".yaml", "")
+        nested.setdefault(test["model"], {}).setdefault(test["version"], {}).setdefault(
+            script, []
+        ).append(test["computer"])
+
+    logger.info("")
+    logger.info("")
+    logger.info(f"{bs}TESTS{be}")
+    logger.info("")
+    for model, versions in sorted(nested.items()):
+        logger.info(f"{bp}{colorama.Fore.CYAN}{model}:")
+        for version, scripts in sorted(versions.items()):
+            logger.info(f"{first_tab}{bp}{colorama.Fore.MAGENTA}{version}:")
+            for script, computers in sorted(scripts.items()):
+                logger.info(f"{first_tab}    {bp}{colorama.Fore.WHITE}{script}:")
+                for computer in computers:
+                    logger.info(
+                        f"{first_tab}        {bp}{colorama.Fore.WHITE}{computer}"
+                    )
+    logger.info(f"{colorama.Fore.WHITE}")
+    logger.info(f"{len(tests)} tests")
+    logger.info("")
+
+
 def format_results(info):
     """
     Takes the info about the tests from ``info`` and builds the ``results`` dictionary,

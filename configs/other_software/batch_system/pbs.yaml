@@ -76,3 +76,18 @@ computer:
                     method: "kill"
                     message: "PBS ERROR: pbs ended with an error, exiting."
                     file: "${output_path}${expid}_${general.setup_name}_execution_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_@jobid@.log"
+
+    nnodes_envvar: "PBS_NUM_NODES"
+    nnodes: "$(( os.getenv('PBS_NUM_NODES', 1) ))"
+
+dask:
+    # One worker task per 4 CPU cores per node, mirroring slurm.yaml's
+    # cyclic ${dask.ntasks} across ${computer.nnodes} nodes.
+    tasks_per_node: "$(( ${computer.partition_cpn} / 4 ))"
+    ntasks: "$(( ${computer.nnodes} * ${computer.partition_cpn} / 4 ))"
+    init_scheduler_cmd: "
+        aprun -n 1 -N 1 -d 1 dask scheduler --scheduler-file ${dask.scheduler_json} --interface ipogif0
+        "
+    init_workers_cmd: "
+        aprun -n ${dask.ntasks} -N ${dask.tasks_per_node} -d 1 dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ipogif0
+        "

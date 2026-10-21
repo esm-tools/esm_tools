@@ -231,6 +231,11 @@ def comp_test(info):
                         logger.warning(
                             f'NOT TESTING {model}{version}: "cd" command not found'
                         )
+                        add_error(
+                            v,
+                            f"Not tested: 'cd' command not found in the "
+                            f"'{comp_command} -c' output",
+                        )
                         continue
 
                     # Make the folders needed to trick esm_master
@@ -492,6 +497,30 @@ def run_test(info):
 #######################################################################################
 # CHECKS
 #######################################################################################
+def add_error(v, message, out="", pattern=""):
+    """
+    Stores an error of this test in ``v["errors"]`` (written with ``--results-file``).
+    If ``pattern`` is found in ``out``, an excerpt of ``out`` starting at the line
+    containing it is stored too.
+
+    Parameters
+    ----------
+    v : dict
+        Dictionary containing script variables such as ``version``, ``comp_command``, ...
+    message : str
+        Description of the error.
+    out : str
+        Output of the shell operation where the error was found.
+    pattern : str
+        Error string found in ``out``.
+    """
+    error = {"message": message}
+    if pattern and pattern in out:
+        start = out.rfind("\n", 0, out.index(pattern)) + 1
+        error["excerpt"] = "\n".join(out[start:].splitlines()[:15])
+    v.setdefault("errors", []).append(error)
+
+
 def check(info, mode, model, version, out, script, v):
     """
     Checks for errors, missing files and compares current files with previous files in
@@ -606,6 +635,7 @@ def check(info, mode, model, version, out, script, v):
         for error in errors:
             if error in out and script not in error_exceptions.get(error, []):
                 logger.error(f"\t\tError during {mode_name[mode]}!\n\n{out}")
+                add_error(v, f"Error during {mode_name[mode]} ('{error}')", out, error)
                 success = False
         if mode != "run":
             v["state"][mode] = success
@@ -623,6 +653,8 @@ def check(info, mode, model, version, out, script, v):
             version,
         )
         v["state"][f"{mode}_files"] = files_checked
+        if not files_checked:
+            add_error(v, f"Missing files after {mode_name[mode]}")
         success = success and files_checked
 
     # Compare scripts with previous, if existing
@@ -649,6 +681,7 @@ def check(info, mode, model, version, out, script, v):
             # Check if the source exists (this simulation file)
             if not os.path.isfile(f"{user_info['test_dir']}/{sp}"):
                 logger.error(f"\t\t'{sp}' file is missing!")
+                add_error(v, f"'{sp}' file is missing")
                 identical = False
             else:
                 # Check if the target exists (in last_tested folder)
@@ -724,6 +757,7 @@ def experiment_state_action(
         logger.info(f"\t\t{message}")
     else:
         logger.error(f"\t\t{message}")
+        add_error(v, f"Run: {message}")
     finished_runs.append(cc)
     subc += 1
     v["state"]["run_finished"] = no_err

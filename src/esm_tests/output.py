@@ -109,12 +109,13 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     return identical, differences
 
 
-def write_diff_file(info):
+def write_results_file(info):
     """
-    Writes the differences found during the tests to ``info["diff_file"]`` as a JSON
-    list with one item per test (``computer``, ``model``, ``runscript`` and
-    ``differences``, a dictionary of file path and unified diff without colors).
-    Used in GitHub to build a summary of the differences of all tests.
+    Writes the errors and differences found during the tests to
+    ``info["results_file"]`` as a JSON list with one item per test: ``computer``,
+    ``model``, ``runscript``, ``errors`` (list of ``message`` and, optionally,
+    ``excerpt`` of the output) and ``differences`` (dictionary of file path and unified
+    diff). Colors are removed. Used in GitHub to build a summary of all tests.
 
     Parameters
     ----------
@@ -131,18 +132,23 @@ def write_diff_file(info):
             for mode_differences in v.get("differences", {}).values():
                 for path, diff in mode_differences.items():
                     differences[path] = ansi_colors.sub("", diff)
+            errors = [
+                {key: ansi_colors.sub("", value) for key, value in error.items()}
+                for error in v.get("errors", [])
+            ]
             tests.append(
                 {
                     "computer": info["this_computer"],
                     "model": model,
                     "runscript": os.path.basename(v["path"]),
+                    "errors": errors,
                     "differences": differences,
                 }
             )
 
-    with open(info["diff_file"], "w") as f:
+    with open(info["results_file"], "w") as f:
         json.dump(tests, f, indent=1)
-    logger.info(f"Differences written to '{info['diff_file']}'")
+    logger.info(f"Results written to '{info['results_file']}'")
 
 
 def del_ignore_dicts(info, yaml_file):

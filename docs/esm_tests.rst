@@ -72,7 +72,7 @@ The commands syntax is as follows::
 
     esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e] [-r BRANCH]
               [--computer COMPUTER] [--model MODEL] [--runscript RUNSCRIPT] [--list] [--json]
-              [--diff-file DIFF_FILE]
+              [--results-file RESULTS_FILE]
 
 Arguments
 ---------
@@ -115,9 +115,10 @@ Optional arguments                                     Description
   --json                                               With ``--list``, print the tests as JSON to stdout
                                                        (list of ``computer``, ``model``, ``runscript``). Used
                                                        by the GitHub Actions to build the test matrix
-  --diff-file DIFF_FILE                                Write the differences with ``last_tested`` to this
-                                                       file (JSON). Used by the GitHub Actions to show the
-                                                       differences of all tests in the run summary
+  --results-file RESULTS_FILE                          Write the errors and the differences with
+                                                       ``last_tested`` of each test to this file (JSON).
+                                                       Used by the GitHub Actions to show the problems of all
+                                                       tests in the run summary
 ====================================================== ==========================================================
 
 The ``computers``, ``ignore_runscripts`` and ``ignore_scripts`` of the

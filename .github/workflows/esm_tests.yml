@@ -6,7 +6,7 @@
 # ``ignore_scripts`` of the model control files
 # (src/esm_tests/resources/runscripts/*/config.yaml) exactly as in a real run. Each
 # combination runs as an independent matrix job. The ``summary`` job collects the
-# differences of all jobs in the run summary.
+# problems (errors, differences, failed jobs) of all jobs in the run summary.
 
 name: esm_tests
 
@@ -71,11 +71,16 @@ jobs:
         model: ${{ matrix.model }}
         runscript: ${{ matrix.runscript }}
 
-  # Differences of all tests in the run summary, one collapsible per computer
+  # Problems (errors, differences, failed jobs) and differences of all tests in the
+  # run summary
   summary:
     needs: test
     if: ${{ !cancelled() && needs.test.result != 'skipped' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # To list the jobs of this run (conclusions and links to the logs)
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -84,8 +89,16 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: diffs-*
-          path: diffs
+          pattern: results-*
+          path: results
+
+      - name: list jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate \
+            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100" \
+            --jq '.jobs[] | {name, conclusion, html_url}' | jq -s . > jobs.json
 
       - name: write summary
-        run: python3 .github/scripts/esm_tests_diff_summary.py diffs >> "$GITHUB_STEP_SUMMARY"
+        run: python3 .github/scripts/esm_tests_summary.py results --jobs jobs.json >> "$GITHUB_STEP_SUMMARY"

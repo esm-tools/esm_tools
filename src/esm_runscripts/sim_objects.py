@@ -3,136 +3,145 @@ Documentation goes here
 """
 
 import sys
+import warnings
 
+import deprecation
 from loguru import logger
 
 import esm_parser
+import esm_tools.esm_warnings  # noqa: F401  installs the deprecation visibility filter
 from esm_tools import __version__
 
-from . import (config_initialization, helpers, logfiles, plan, prepare,
-               prepexp, prev_run, resubmit, workflow)
+from . import (config_initialization, helpers, last_minute, logfiles, plan,
+               prepare, prepexp, prev_run, resubmit, workflow)
+from .simulation_config import ConfigBuilder, RunState, RunStateBuilder
+
+# SimulationSetup's deprecation schedule. Reuses the same values as
+# workflow.py's legacy-key deprecations
+# (configs/esm_software/esm_runscripts/workflow_legacy_keys.yaml:
+# deprecated_since/removed_in), since both are deprecations introduced in
+# this same refactor. Must be a frozen literal, not `__version__` -- the
+# latter tracks whatever version is currently installed and would silently
+# drift forward on every future release, instead of staying pinned to the
+# version this deprecation actually started in. There is no equivalent
+# on-disk spec for SimulationSetup itself (it is a class rename, not a
+# data-driven key table), so the version strings are given directly here
+# rather than loaded from a yaml file.
+_SIMULATION_SETUP_DEPRECATED_SINCE = "6.67.0"
+_SIMULATION_SETUP_REMOVED_IN = "7.0.0"
 
 
-class SimulationSetup(object):
-    def __init__(self, command_line_config=None, user_config=None):
+class Simulation(object):
+    @classmethod
+    def from_config(cls, config: "SimulationConfig") -> "Simulation":
         """
-        Initializes the ``SimulationSetup`` object, and prepares the ``self.config`` by
-        taking the information from the ``command_line_config`` and/or the
-        ``user_config`` and expanding it with the configuration files from `ESM-Tools`
-        (in `esm_tools/configs`), and then running the ``prepare`` recipe. In essence,
-        ``__init__`` takes care of loading and baking all the config information,
-        resolving the ``chooses``, ``add_``, etc. It is used by ``esm_runscripts`` and
-        ``esm_master``. Below, a more detailed description of the steps of the
-        ``__init__``:
+        Build a ``Simulation`` from an already-built ``SimulationConfig``.
 
-        1. Check that at least one input is given
-        2. Initialize user_config (command line arguments + content of the runscript)
-        3. Initialize information about interactive sessions
-        4. Initialize interactive coupling information (offline coupling)
-        5. Set execution action
-        6. Load total config from all the configuration files involved in this
-           simulation. Input: user_config -> returns: self.config
-        7. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
-           to missing key-values in self.config
-        8. Check if the ``account`` is missing in ``general``
-        9. Complete information for inspect
-        10. Store the ``command_line_config`` in ``general``
-        11. Initialize the ``prev_run`` object
-        12. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
-        13. Store the ESM-Tools version in the config for later reference
+        Takes the baked configuration produced by ``ConfigBuilder``, wires up
+        the ``prev_run`` object, then dispatches on the configured workflow
+        engine:
 
-        Input
-        -----
-        command_line_config : dict
-            Dictionary containing the information coming from the command line
-        user_config : dict, DictWithProvenance
-            Dictionary containing the basic user information. Is only an input in
-            ``esm_master``, not in ``esm_runscripts`` (i.e. ``esm_master`` does not need
-            to read a runscript)
+        - ``pplan`` (native pydantic-plan engine): builds the per-invocation
+          ``RunState`` via ``RunStateBuilder`` (all steps, in the order Task 2
+          fixed), snapshots the resolved ``Workflow``, and runs the pplan tail
+          steps. Legacy ``prepare.run_job`` never runs in this case.
+        - anything else (default ``legacy``): runs ``prepare.run_job`` wholesale,
+          exactly as before.
 
-        Raises
-        ------
-        ValueError :
-            If neither ``command_line_config`` nor ``user_config`` are defined
+        Parameters
+        ----------
+        config : SimulationConfig
+            The baked simulation configuration (product of ``ConfigBuilder``).
+
+        Returns
+        -------
+        Simulation
+            A new instance with ``.config`` always set, and ``.run_state`` /
+            ``.plan`` set only for the ``pplan`` engine.
         """
-        # 1. Check that at least one input is given
-        if not command_line_config and not user_config:
-            raise ValueError(
-                "SimulationSetup needs to be initialized with either "
-                "command_line_config or user_config."
-            )
-
-        # 2. Initialize user_config (command line arguments + content of the runscript)
-        if not user_config:
-            user_config = config_initialization.get_user_config_from_command_line(
-                command_line_config
-            )
-
-        # 3. Initialize information about interactive sessions
-        user_config = config_initialization.init_interactive_info(
-            user_config, command_line_config
-        )
-
-        # 4. Initialize iterative coupling information (offline coupling)
-        user_config = config_initialization.init_iterative_coupling(
-            command_line_config, user_config
-        )
-
-        # 5. Set execution action
-        execution_mode = user_config.get("general", {}).get("execution_mode", "run")
-        user_config["general"]["execution_mode"] = execution_mode
-
-        # 6. Load total config from all the configuration files involved in this
-        # simulation
-        self.config = config_initialization.get_total_config_from_user_config(
-            user_config
-        )
-
-        # 7. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
-        # to missing key-values in self.config
-        self.config = config_initialization.add_esm_runscripts_defaults_to_config(
-            self.config
-        )
-
-        # 8. Check if the ``account`` is missing in ``general``
-        self.config = config_initialization.check_account(self.config)
-
-        # 9. Complete information for inspect
-        self.config = config_initialization.complete_config_with_inspect(self.config)
-
-        # 10. Store the ``command_line_config`` in ``general``
-        self.config = config_initialization.save_command_line_config(
-            self.config, command_line_config
-        )
-
-        # 11. Initialize the ``prev_run`` object
+        self = cls()
+        self.config = config.data
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
         self.store_prev_objects()
 
-        # 12. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax), or for
-        # the native pplan engine, run its stub ``prepare`` SubPlan instead
-        # -- legacy prepare (and the ``assemble_workflow`` step buried inside
-        # it) never runs in that case.
-        wf_engine = (command_line_config or {}).get("wf_engine", "legacy")
+        # ``wf_engine`` is set by the CLI into ``command_line_config`` (cli.py),
+        # which ``ConfigBuilder.remember_command_line`` nests at
+        # ``config["general"]["command_line_config"]["wf_engine"]`` -- it is NOT
+        # promoted to ``config["general"]["wf_engine"]``. A runscript/user_config
+        # may, however, set ``general.wf_engine`` directly. Check the direct
+        # location first, then the nested command-line location, then default.
+        general = self.config.get("general", {})
+        wf_engine = (
+            general.get("wf_engine")
+            or general.get("command_line_config", {}).get("wf_engine")
+            or "legacy"
+        )
         if wf_engine == "pplan":
-            prepare_steps = [
-                plan.Step(name=step_name)
-                for step_name in helpers.get_recipe_step_names(
-                    self.config, "prepare", "prepare_recipe"
-                )
-            ]
-            self.plan = plan.SubPlan(
-                name="prepare", parent_plan="initialization", steps=prepare_steps
+            self.run_state = (
+                RunStateBuilder.from_config(config)
+                .with_date_file()
+                .with_run_in_chunk_updated()
+                .with_lresume_checked()
+                .with_last_minute_changes()
+                .with_conda_env_recorded()
+                .with_openmp_found()
+                .with_choose_blocks_resolved()
+                .with_calendar()
+                .with_choose_blocks_resolved()
+                .with_folders()
+                .with_prev_date()
+                .with_parent_info()
+                .with_finalized_config()
+                .build()
             )
-            self.workflow = plan.Workflow.resolve(self.config)
-            self.config = plan.run_steps(self.plan, self.config)
+            # The pplan engine's per-invocation facts (dates, calendar,
+            # folders, modify_config_memo, ...) live only on
+            # ``self.run_state.data`` -- ``RunStateBuilder.from_config``
+            # deepcopies before computing them, and by design never syncs
+            # them back into ``self.config``. The downstream consumers must
+            # therefore read ``self.run_state.data``, not ``self.config``:
+            # e.g. ``restore_protected_last_minute_changes`` (first tail step)
+            # reads ``config["general"]["modify_config_memo"]``, a key only
+            # ``with_last_minute_changes()`` sets, and only on the run_state.
+            self.plan = plan.Workflow.resolve(self.run_state.data)
+            self.run_state = RunState(self._run_pplan_tail_steps(self.run_state.data))
         else:
             self.config = prepare.run_job(self.config)
 
-        # 13. Store the ESM-Tools version in the config for later reference
         self.config["general"]["esm_tools_version"] = __version__
+        return self
 
-    def __call__(self, kill_after_submit=True):
+    def _run_pplan_tail_steps(self, config):
+        """
+        Run the pplan engine's equivalent of the legacy recipe's steps after
+        ``assemble_workflow`` (``configs/esm_software/esm_runscripts/esm_runscripts.yaml``):
+        ``restore_protected_last_minute_changes``, ``add_submission_info``,
+        ``initialize_batch_system``, ``initialize_coupler``, ``set_logfile``,
+        ``check_config_for_warnings_errors``.
+
+        ``restore_protected_last_minute_changes`` lives in ``last_minute.py``,
+        not ``prepare.py``. It is included here because Task 2's
+        ``RunStateBuilder.with_last_minute_changes()`` only calls
+        ``last_minute.apply_last_minute_changes`` -- it never restores
+        ``config["general"]["modify_config"]`` from the memo, nor deletes the
+        ``modify_config_memo`` object that ``apply_last_minute_changes``
+        attaches to ``config["general"]``. Without this call, that memo object
+        would leak into the pplan path's final config.
+
+        Returns
+        -------
+        dict
+            The configuration after all tail steps have run.
+        """
+        config = last_minute.restore_protected_last_minute_changes(config)
+        config = prepare.add_submission_info(config)
+        config = prepare.initialize_batch_system(config)
+        config = prepare.initialize_coupler(config)
+        config = prepare.set_logfile(config)
+        config = prepare.check_config_for_warnings_errors(config)
+        return config
+
+    def run(self, kill_after_submit=True):
         # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
             self.inspect()
@@ -262,3 +271,79 @@ class SimulationSetup(object):
             del self.config["general"]["prev_chunk_objs"]
 
         self.config["general"]["system_components"].extend(self.config.prev_objects)
+
+
+class SimulationSetup(Simulation):
+    """Deprecated. Use :meth:`Simulation.from_config` instead.
+
+    Kept as a thin, behavior-preserving shim for the callers this refactor
+    does not touch (``esm_master.py``, ``resubmit.py``, and the
+    ``fake_experiment`` test fixture's ``resolver.py``): it builds a
+    ``SimulationConfig`` via ``ConfigBuilder`` using the exact same chain
+    ``Simulation.from_config`` itself would receive, then delegates to
+    ``Simulation.from_config`` to do the actual work. ``.config`` and
+    callability (``__call__`` forwarding to ``Simulation.run``) are
+    preserved exactly as before.
+    """
+
+    def __init__(self, command_line_config=None, user_config=None):
+        """
+        Builds ``self.config`` from ``command_line_config`` and/or
+        ``user_config`` via :class:`~.simulation_config.ConfigBuilder`, then
+        constructs the underlying :class:`Simulation` via
+        ``Simulation.from_config`` and adopts its state.
+
+        Input
+        -----
+        command_line_config : dict
+            Dictionary containing the information coming from the command line
+        user_config : dict, DictWithProvenance
+            Dictionary containing the basic user information. Is only an input in
+            ``esm_master``, not in ``esm_runscripts`` (i.e. ``esm_master`` does not need
+            to read a runscript)
+
+        Raises
+        ------
+        ValueError :
+            If neither ``command_line_config`` nor ``user_config`` are defined
+        """
+        warnings.warn(
+            deprecation.DeprecatedWarning(
+                "SimulationSetup",
+                _SIMULATION_SETUP_DEPRECATED_SINCE,
+                _SIMULATION_SETUP_REMOVED_IN,
+                "Use Simulation.from_config(...) instead.",
+            ),
+            stacklevel=2,
+        )
+
+        if not command_line_config and not user_config:
+            raise ValueError(
+                "SimulationSetup needs to be initialized with either "
+                "command_line_config or user_config."
+            )
+
+        if user_config:
+            builder = ConfigBuilder.from_user_config(user_config)
+        else:
+            builder = ConfigBuilder.from_runscript(
+                command_line_config["runscript_abspath"], **command_line_config
+            )
+
+        config = (
+            builder.with_interactive_info()
+            .with_iterative_coupling()
+            .with_execution_mode_default()
+            .expand_from_esm_tools_configs()
+            .with_runscript_defaults()
+            .validate_account()
+            .with_inspect_info()
+            .remember_command_line()
+            .build()
+        )
+
+        sim = Simulation.from_config(config)
+        self.__dict__.update(sim.__dict__)
+
+    def __call__(self, kill_after_submit=True):
+        return self.run(kill_after_submit=kill_after_submit)

@@ -7,10 +7,10 @@ from . import event_handlers
 event_handlers.signal_listener()
 
 # Import from Python Standard Library
-import argparse
 import os
 import sys
 
+import click
 from loguru import logger
 
 from esm_motd import check_all_esm_packages
@@ -21,233 +21,174 @@ from .sim_objects import *
 from .simulation_config import ConfigBuilder
 
 
-def parse_shargs():
-    """The arg parser for interactive use"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("runscript", default=None)
-
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="Print lots of debugging statements",
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--trace",
-        help="Print even more debugging statements (trace level, most of it for esm_parser)",
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--task-log-files",
-        help="Do not write task-specific log files",
-        action="store_true",
-        default=False,
-        dest="task_log_files",
-    )
-
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="Be verbose",
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--contained-run",
-        help="Run in a virtual environment",
-        action="store_true",
-        default=None,
-    )
-
-    parser.add_argument(
-        "--open-run",
-        help="Run in default install (not in virtual environment)",
-        action="store_true",
-        default=None,
-    )
-
-    parser.add_argument(
-        "-e", "--expid", help="The experiment ID to use", default="test"
-    )
-
-    parser.add_argument(
-        "-c",
-        "--check",
-        help="Run in check mode (don't submit job to supercomputer)",
-        default=False,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "-P",
-        "--profile",
-        help="Write profiling information (esm-tools)",
-        default=None,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--modify-config",
-        "-m",
-        dest="modify_config_file",
-        help="[m]odify configuration",
-        default=None,  # kh 15.07.20 "usermods.yaml"
-    )
-
-    parser.add_argument(
-        "-j",
-        "--last-jobtype",
-        help="Write the jobtype this run was called from (esm-tools internal)",
-        default="command_line",
-    )
-
-    parser.add_argument(
-        "-t",
-        "--task",
-        help="The task to run. Choose from: prepcompute, post, couple, tidy",
-        default="unknown",
-    )
-
-    parser.add_argument(
-        "-i",
-        "--inspect",
-        help="Show some information, choose a keyword from 'overview', 'namelists'",
-        default=None,
-    )
-
-    parser.add_argument(
-        "-p",
-        "--pid",
-        help="The PID of the task to observe.",
-        dest="launcher_pid",
-        default=-666,
-    )
-
-    parser.add_argument(
-        "-s",
-        "--start_date",
-        help="The start_date of the run, overwriting settings in the date file.",
-        dest="current_date",
-        default=None,
-    )
-
-    parser.add_argument("-x", "--exclude", help="e[x]clude this step", default=None)
-    parser.add_argument("-o", "--only", help="[o]nly do this step", default=None)
-    parser.add_argument(
-        "-r",
-        "--run_number",
-        help="run_number for this run, overwriting settings in date file",
-        default=None,
-    )
-
-    # PG: Might not work anymore:
-    parser.add_argument(
-        "-U",
-        "--update",
-        help="[U]date the tools from the current version and the runscript",
-        default=False,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--update-filetypes",
-        help="Updates the requested files from external sources in a currently ongoing "
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+@click.argument("runscript")
+@click.option(
+    "-d", "--debug", is_flag=True, default=False,
+    help="Print lots of debugging statements",
+)
+@click.option(
+    "--trace", is_flag=True, default=False,
+    help="Print even more debugging statements (trace level, most of it for esm_parser)",
+)
+@click.option(
+    "--task-log-files", "task_log_files", is_flag=True, default=False,
+    help="Do not write task-specific log files",
+)
+@click.option(
+    "-v", "--verbose", is_flag=True, default=False,
+    help="Be verbose",
+)
+@click.option(
+    "--contained-run", "contained_run", is_flag=True, default=None,
+    help="Run in a virtual environment",
+)
+@click.option(
+    "--open-run", "open_run", is_flag=True, default=None,
+    help="Run in default install (not in virtual environment)",
+)
+@click.option(
+    "-e", "--expid", default="test",
+    help="The experiment ID to use",
+)
+@click.option(
+    "-c", "--check", is_flag=True, default=False,
+    help="Run in check mode (don't submit job to supercomputer)",
+)
+@click.option(
+    "-P", "--profile", is_flag=True, default=None,
+    help="Write profiling information (esm-tools)",
+)
+@click.option(
+    "-m", "--modify-config", "modify_config_file", default=None,  # kh 15.07.20 "usermods.yaml"
+    help="[m]odify configuration",
+)
+@click.option(
+    "-j", "--last-jobtype", "last_jobtype", default="command_line",
+    help="Write the jobtype this run was called from (esm-tools internal)",
+)
+@click.option(
+    "-t", "--task", default="unknown",
+    help="The task to run. Choose from: prepcompute, post, couple, tidy",
+)
+@click.option(
+    "-i", "--inspect", default=None,
+    help="Show some information, choose a keyword from 'overview', 'namelists'",
+)
+@click.option(
+    "-p", "--pid", "launcher_pid", type=int, default=-666,
+    help="The PID of the task to observe.",
+)
+@click.option(
+    "-s", "--start_date", "current_date", default=None,
+    help="The start_date of the run, overwriting settings in the date file.",
+)
+@click.option("-x", "--exclude", default=None, help="e[x]clude this step")
+@click.option("-o", "--only", default=None, help="[o]nly do this step")
+@click.option(
+    "-r", "--run_number", default=None,
+    help="run_number for this run, overwriting settings in date file",
+)
+# PG: Might not work anymore:
+@click.option(
+    "-U", "--update", is_flag=True, default=False,
+    help="[U]date the tools from the current version and the runscript",
+)
+@click.option(
+    "--update-filetypes", "update_filetypes", multiple=True, default=(),
+    help=(
+        "Updates the requested files from external sources in a currently ongoing "
         "simulation. We strongly advise against using this option unless you "
-        "really know what you are doing.",
-        nargs="+",
-        default=[],
-    )
-
-    parser.add_argument(
-        "--no-motd",
-        help="supress the printing of MOTD",
-        default=True,
-        dest="motd",
-        action="store_false",
-    )
-
-    parser.add_argument(
-        "--ignore-config-warnings",
-        help="do not halt in warnings defined in the config files",
-        default=False,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--wf-engine",
-        help="Workflow engine to use. 'legacy' (default) runs the job as usual. "
+        "really know what you are doing."
+    ),
+)
+@click.option(
+    "--no-motd", "no_motd", is_flag=True, default=False,
+    help="supress the printing of MOTD",
+)
+@click.option(
+    "--ignore-config-warnings", "ignore_config_warnings", is_flag=True, default=False,
+    help="do not halt in warnings defined in the config files",
+)
+@click.option(
+    "--wf-engine", "wf_engine",
+    type=click.Choice(["legacy", "pplan"]), default="legacy",
+    help=(
+        "Workflow engine to use. 'legacy' (default) runs the job as usual. "
         "'pplan' assembles the workflow, snapshots it into the pydantic "
         "Plan/SubPlan/Workflow view, prints it, and drops into a debug "
-        "session instead of submitting anything.",
-        choices=["legacy", "pplan"],
-        default="legacy",
-        dest="wf_engine",
-    )
-
-    return parser.parse_args()
-
-
-def main():
+        "session instead of submitting anything."
+    ),
+)
+def main(**command_line_config):
+    """esm_runscripts: build a simulation's config, then run or debug it."""
     logger.add(sys.stdout, level="WARNING", format="{message}")
 
-    ARGS = parse_shargs()
-    parsed_args = vars(ARGS)
+    command_line_config["jobtype"] = command_line_config["task"]
+    command_line_config["use_venv"] = _resolve_use_venv(command_line_config)
+    command_line_config["motd"] = not command_line_config.pop("no_motd")
+    command_line_config["original_command"] = " ".join(sys.argv[1:]).strip()
 
-    jobtype = parsed_args["task"]
-    verbose = parsed_args["verbose"]
-    debug = parsed_args["debug"]
-    trace = parsed_args["trace"]
-    task_log_files = parsed_args["task_log_files"]
-    motd = parsed_args["motd"]
-    wf_engine = parsed_args["wf_engine"]
+    _resolve_runscript_paths(command_line_config)
+    initialize_logging(command_line_config)
 
-    use_venv = None
-    if parsed_args["contained_run"] is not None:
-        use_venv = parsed_args["contained_run"]
-    if parsed_args["open_run"] is not None:
-        use_venv = not parsed_args["open_run"]
+    config = _build_config(command_line_config)
+    sim = Simulation.from_config(config)
 
-    original_command = " ".join(sys.argv[1:])
+    if command_line_config["wf_engine"] == "pplan":
+        drop_into_pplan_debug(sim.plan, sim.config)
+        return
 
-    if parsed_args["contained_run"] and parsed_args["open_run"]:
+    if not sim.config["general"]["submitted"] and command_line_config["motd"]:
+        check_all_esm_packages()
+    sim.run()
+
+
+def _resolve_use_venv(command_line_config):
+    """Reconcile ``--contained-run``/``--open-run`` into a single ``use_venv``
+    flag, or exit if both were given (they contradict each other)."""
+    if command_line_config["contained_run"] and command_line_config["open_run"]:
         logger.error(
             "You have set both --contained-run and --open-run, this makes no sense."
         )
-        logger.error(parsed_args)
+        logger.error(command_line_config)
         sys.exit(1)
 
-    command_line_config = parsed_args
-    command_line_config["jobtype"] = jobtype
-    command_line_config["use_venv"] = use_venv
-    command_line_config["wf_engine"] = wf_engine
+    use_venv = None
+    if command_line_config["contained_run"] is not None:
+        use_venv = command_line_config["contained_run"]
+    if command_line_config["open_run"] is not None:
+        use_venv = not command_line_config["open_run"]
+    return use_venv
 
-    runscript_full_path = os.path.realpath(ARGS.runscript)
+
+def _resolve_runscript_paths(command_line_config):
+    """Resolve the runscript argument to an absolute path, split it into
+    directory/filename, and store both plus the full path back into
+    ``command_line_config`` -- mutates in place, matching every other
+    ``*_config`` builder step in this module."""
+    runscript_full_path = os.path.realpath(command_line_config["runscript"])
     runscript_dir, runscript = os.path.split(runscript_full_path)
     runscript_dir += "/"
     if not os.path.exists(runscript_full_path):
         user_error(
             "runscript not found",
-            f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
+            f"The runscript ``{command_line_config['runscript']}`` does not "
+            f"exists in folder ``{runscript_dir}``. ",
             dsymbols=["``", "'"],
         )
 
     # this might contain the relative path but it will be taken care of later
-    command_line_config["original_command"] = original_command.strip()
     command_line_config["started_from"] = runscript_dir
-
     # only the yaml file, without the path
     command_line_config["scriptname"] = runscript
     # full path including the yaml file: runscript_dir + runscript
     command_line_config["runscript_abspath"] = runscript_full_path
 
-    initialize_logging(command_line_config)
 
-    config = (
+def _build_config(command_line_config):
+    """Run the full ``ConfigBuilder`` chain for a CLI invocation."""
+    return (
         ConfigBuilder.from_runscript(
             command_line_config["runscript_abspath"], **command_line_config
         )
@@ -261,16 +202,6 @@ def main():
         .remember_command_line()
         .build()
     )
-    sim = Simulation.from_config(config)
-
-    if wf_engine == "pplan":
-        drop_into_pplan_debug(sim.plan, sim.config)
-        return
-
-    # if not sim.config['general']['submitted']:
-    if not sim.config["general"]["submitted"] and motd:
-        check_all_esm_packages()
-    sim.run()
 
 
 def drop_into_pplan_debug(workflow, config):

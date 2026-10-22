@@ -1,0 +1,180 @@
+computer:
+   pool_dir: "/mnt/lustre-grete/projects/geomar/foci_input2/"
+   partition: "standard96"
+   # test setting: use together with the daily restart settings below
+   # partition: "standard96:test"
+   launcher: "mpirun"
+   launcher_flags: ""
+   # One MPI rank per core, including ECHAM I/O ranks; round up to whole nodes.
+   # standard96 has 96 cores/node: MOPS = 10 nodes, provisional AGRIF = 11.
+   nnodes: "$(( (${echam.nproca} * ${echam.nprocb} + ${echam.nprocio} + ${nemo.nproc} + ${xios.nproc} + ${computer.partition_cpn} - 1) // ${computer.partition_cpn} ))"
+   # Explicit nodes workaround from the templates after the June 2026 SLURM update.
+   additional_flags:
+      - "--nodes=${computer.nnodes}"
+      - "--qos=2h"
+
+general:
+   use_venv: False
+   verbose: True
+   setup_name: "foci"
+   version: "mops_oasismct5"
+   homedir: !ENV ${HOME}
+
+   # operational settings: yearly restarts
+   compute_time: "01:30:00"
+   initial_date: "2015-01-01T00:00:00"       # Initial exp. date
+   final_date: "2100-01-01T00:00:00"
+   nmonth: 12
+   clean_runs: 2
+   # test settings, daily restarts (replace nmonth, do not enable both)
+   # compute_time: "00:30:00"
+   # initial_date: "2015-01-01T00:00:00"
+   # final_date: "2015-01-03T00:00:00"
+   # nday: 1
+   # Also switch echam.restart_rate/restart_unit below and use standard96:test.
+
+   postprocessing: True
+   # machine specific setup
+   account: shk00066
+   base_dir: ${homedir}/esm/esm-experiments/
+
+   lresume: True
+   # TODO: choose a consistent ECHAM/NEMO/OASIS restart set from FOCI_RESTART.
+   ini_parent_exp_id: "TODO_SELECT_RESTART"
+   ini_parent_date: "20141231"  # TODO: match the actual parent restart date
+   ini_nemo_restart_steps: 0   # TODO: copy the actual NEMO step
+   ini_parent_dir: "${computer.pool_dir}/FOCI_RESTART/${ini_parent_exp_id}"
+   check_error:
+      "check_exit_codes":
+         method: "kill"
+         message: "MPI Init error glogin"
+         file: stdout
+         frequency: 15
+      "lookup table overflow":
+         method: "kill"
+         message: "lookup table overflow"
+         file: stdout
+         frequency: 15
+      "SIGTERM":
+         method: "kill"
+         message: "SIGTERM found in stdout"
+         file: stdout
+         frequency: 15
+      "FINISH called":
+         method: "kill"
+         message: "FINISH called found in stdout; inspect model logs"
+         file: stdout
+         frequency: 15
+      "netcdf error":
+         method: "kill"
+         message: "netcdf error found in stdout"
+         file: stdout
+         frequency: 15
+      "BAD TERMINATION":
+         method: "kill"
+         message: "BAD TERMINATION found in stdout"
+         file: stdout
+         frequency: 15
+      "Usage: ./mpiexec":
+         method: "kill"
+         message: "mpirun failed, check for empty hostfile"
+         file: stdout
+         frequency: 15
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-mops_oasismct4/
+
+oasis3mct:
+   # EXPORTED exchanges fields; EXPOUT additionally writes coupling fields to NetCDF.
+   # Set both options to inspect atmosphere-to-ocean AND ocean-to-atmosphere fields.
+   # export_mode_a2o: "EXPOUT"
+   # export_mode: "EXPOUT"
+   # 0: minimal coupler logging; increase temporarily for diagnosis (larger logs).
+   debug_level: 0
+   interpolation: conserv
+
+echam:
+   postprocessingscript: "echam_postprocessing.sh"
+   # all ssp* scenarios use historical forcing before 2015, i.e. the setting
+   # scenario: "cmip6hist" and scenario: "ssp???" produce the same results
+   # until year 2014
+   # available scenarios: PI-CTRL, 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
+   # technically tested in the original templates: PI-CTRL, cmip6hist, ssp370, ssp585
+   # seb-wahl, 2021-08-11
+   scenario: "ssp370"
+   allow_hist2ssp_transition: True
+   resolution: "T63"
+   # operational settings: yearly restarts
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   # test settings, daily restarts
+   # restart_rate: ${general.nday}
+   # restart_unit: "days"
+   nproca: 12
+   nprocb: 24
+   nprocio: 12
+   # Sets namelist parameters and links the correct carbon_emission.nc file.
+   with_lco2_emis: True
+   namelist_changes:
+      namelist.echam:
+         runctl:
+            lcouple_co2: True
+            default_output: False
+            ltdiag: True
+            nproma: 32
+         radctl:
+            iaero: 8
+            ighg: 1
+            io3: 4
+            isolrad: 1
+            ico2: 1
+            ich4: 4
+            in2o: 4
+            icfc: 4
+         submodelctl:
+            lco2: True
+            lmethox: True
+         parctl:
+            iomode: 2
+            nprocio: ${nprocio}
+         co2ctl:
+            lco2_emis: True
+            lco2_2perc: True
+
+nemo:
+   pre_run_commands: "cp runscripts/foci/srun_hostfile/hostfile_srun_foci_mops ~/srun_hostfile_template"
+   resolution: "ORCA05"
+   # TODO timestep 2160 or 1800s?
+   time_step: 2160
+   version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   jpni: 24
+   jpnj: 24
+   nproc: 576
+   namelist_changes:
+      namelist_top_cfg:
+         namtrc_rad:
+            ln_trcrad: False
+         namtrc:
+            ln_trcdta: False
+            # Optional diagnostic tracer from FOCI2.0-VT007 (special _alktrc build).
+            # Do not rename tracer 12 in an ordinary MOPS binary.
+            # sn_tracer(12)%clsname: 'ALKADD'
+            # sn_tracer(12)%cllname: 'alkadd'
+            # sn_tracer(12)%clunit: 'umol/kg'
+            # sn_tracer(12)%llinit: .true.
+            # sn_tracer(12)%llsave: .true.
+      namelist_cfg:
+         namsbc:
+            ln_alk: True
+   forcing_dir: "/mnt/lustre-grete/projects/geomar/foci_input2/MOPS_OAE/CoastReg_EU/"
+   forcing_sources:
+      alkalinity: "${forcing_dir}/alkalinity_mask_y@YEAR@.nc"
+   forcing_files:
+      alkalinity: alkalinity
+
+xios:
+   nproc: 12
+   # Optional alternative output definition, relative to the setup's xml_dir:
+   # config_sources:
+   #    file_def: ${xml_dir}/project_name/file_def.xml

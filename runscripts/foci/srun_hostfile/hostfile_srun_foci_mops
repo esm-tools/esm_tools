@@ -1,0 +1,1 @@
+ -np 300 ./echam6 : -np 576 ./oceanx : -np 12 ./xios.x

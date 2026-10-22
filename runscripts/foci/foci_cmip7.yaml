@@ -1,0 +1,91 @@
+# CMIP7 forcing for FOCI (ECHAM6/JSBACH3, T63)
+#
+# Usage: keep this file in the same directory as the runscript and add to the runscript
+#
+#     general:
+#         further_reading: "foci_cmip7.yaml"
+#     echam:
+#         scenario: "cmip7hist"     # or "PI-CTRL"
+#
+# (esm_parser looks for further_reading files next to the runscript; the file must not be
+# placed in configs/setups/foci, where it would conflict with foci.yaml.)
+#
+# The CMIP7 input has the same structure as the CMIP6 input in foci_input2 and is
+# located in ${computer.pool_directories.focipool}/{ECHAM6_CMIP7,JSBACH_CMIP7}
+# (generated with https://git.geomar.de/foci/foci_input2/CMIP7_ECHAM6).
+#
+# Scenarios
+#   cmip7hist  CMIP7 historical, 1850-2021 (final_date 2022-01-01). Defined here only:
+#              uses scenario_type cmip6, i.e. the same ECHAM/JSBACH namelist templates as
+#              cmip6hist, and the CMIP7 forcing below (no switch to SSP files after 2014).
+#              Data ends: ozone/Ndepo/GHG 2022, volcanic/solar/LU transitions 2023, LU maps
+#              2024; ECHAM needs year+1 for ozone/volcanic/solar.
+#   PI-CTRL    CMIP7 piControl: CMIP7 ozone/Ndepo climatologies, 1850 harvest, no LU
+#              transitions (all other files keep their CMIP6 names, only the pool changes).
+# Tested with esm_runscripts -c (cmip7hist starting 1850, 2014, 2015, 2020; PI-CTRL 1850).
+# Settings in this file override the same settings in the runscript.
+
+echam:
+    pool_dir: "${computer.pool_directories.focipool}/ECHAM6_CMIP7"
+    add_forcing_sources:
+        greenhouse_cmip7: "${input_dir}/greenhouse_historical.nc"
+        MAC-SP_cmip7: "${input_dir}/MAC-SP.nc"
+        ozone_cmip7:
+            "${forcing_dir}/ozone/${resolution}_ozone_historical_1850.nc":
+                to: 1850
+            "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
+                from: 1851
+                to: 2022
+        carbon_emissions_cmip7: "${forcing_dir}/carbon_emissions/${resolution}_carbon_emissions_historical.nc"
+    choose_scenario:
+        cmip7hist:
+            # same namelist templates (and forcing structure) as cmip6hist
+            scenario_type: cmip6
+            add_forcing_files:
+                greenhouse: greenhouse_cmip7
+                MAC-SP: MAC-SP_cmip7
+                ozone: ozone_cmip7
+    choose_with_lco2_emis:
+        True:
+            add_choose_scenario:
+                cmip7hist:
+                    add_forcing_files:
+                        carbon_emissions: carbon_emissions_cmip7
+
+jsbach:
+    pool_dir: "${computer.pool_directories.focipool}/JSBACH_CMIP7"
+    add_forcing_sources:
+        # piControl climatology (CMIP7 name)
+        Ndepo_1850: "${input_dir}/${echam.resolution}/${echam.resolution}_ndepo_CMIP_FZJ-CMIP-nitrogen-2-0_gn_185001-185012-clim.nc"
+        Ndepo_cmip7:
+            "${input_dir}/${echam.resolution}/ndepo/Ndepo.1850.nc":
+                to: 1850
+            "${input_dir}/${echam.resolution}/ndepo/Ndepo.@YEAR@.nc":
+                from: 1851
+                to: 2022
+        LU_cmip7:
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
+                to: 1850
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+                from: 1851
+                to: 2023
+        LU_trans_cmip7:
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_1850.nc":
+                to: 1850
+            "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
+                from: 1851
+                to: 2023
+        cover_fract_cmip7:
+            "${cover_fract_dir}/cover_fract_${tiles}tiles_1850.nc":
+                to: 1850
+            "${cover_fract_dir}/cover_fract_${tiles}tiles_@YEAR@.nc":
+                from: 1851
+                to: 2024
+    choose_echam.scenario:
+        cmip7hist:
+            scenario_type: cmip6
+            add_forcing_files:
+                Ndepo: Ndepo_cmip7
+                LU: LU_cmip7
+                LU_trans: LU_trans_cmip7
+                cover_fract: cover_fract_cmip7

@@ -294,6 +294,7 @@ def _launch_coupling_chain(base_command, chain, expid, driver):
     # and the restart remap, which together take 20-30 min on four nodes.
     walltime = general.get("coupling_launcher_time", "01:30:00")
     nodes = general.get("coupling_launcher_nodes", 4)
+    qos = general.get("coupling_launcher_qos", "")
     logfile = os.path.join(rs_dir, f"{expid}_{chain}_launch_%j.log")
 
     script = (
@@ -301,7 +302,8 @@ def _launch_coupling_chain(base_command, chain, expid, driver):
         f"#SBATCH --job-name={expid}_{chain}_launch\n"
         + (f"#SBATCH --account={account}\n" if account else "")
         + f"#SBATCH --partition={partition}\n"
-        f"#SBATCH --nodes={nodes}\n"
+        + (f"#SBATCH --qos={qos}\n" if qos else "")
+        + f"#SBATCH --nodes={nodes}\n"
         "#SBATCH --exclusive\n"
         f"#SBATCH --time={walltime}\n"
         f"#SBATCH --output={logfile}\n"

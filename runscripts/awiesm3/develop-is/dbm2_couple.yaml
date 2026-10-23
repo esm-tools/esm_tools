@@ -38,6 +38,9 @@
 #   esm_runscripts antg065_couple.yaml -e antg065 --coupling-chain pism
 general:
         coupling_mode: concurrent
+        # dbm2: launcher jobs on cap7's devel QoS too
+        coupling_launcher_time: "00:30:00"
+        coupling_launcher_qos: devel
         add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
                 - model1
                 - model2

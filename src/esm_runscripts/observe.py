@@ -87,8 +87,58 @@ def wait_and_observe(config):
         thistime = thistime + 100000000
         config["general"]["next_test_time"] = thistime
         config = check_for_errors(config)
+    config = check_compute_failure(config)
     config = check_coupling_failure(config)
     return config
+
+
+def check_compute_failure(config):
+    """Stop the workflow when the compute launcher failed.
+
+    The launcher (srun ...) is backgrounded by the compute job script, so this
+    observe job cannot see its exit status. The job script therefore writes
+    ``running`` to ``.esm_compute_exit_status`` in the run's work dir before the
+    launch and srun's exit status after it (batch_system.get_run_commands). Here:
+
+      0              -> fine
+      other number   -> the run failed (e.g. 127 when a binary cannot load its
+                        libraries); refuse to tidy and advance
+      ``running``    -> the launcher never returned (killed); refuse as well
+      empty          -> killed while writing the status; refuse as well
+      no file        -> a job script written before this check existed; warn only
+    """
+    if config["general"].get("jobtype", "") != "observe_compute":
+        return config
+    from .batch_system import compute_status_file
+
+    status_file = compute_status_file(config)
+    if not os.path.isfile(status_file):
+        logger.warning(
+            f"no {os.path.basename(status_file)} in the work dir: cannot tell whether "
+            "the compute launcher succeeded (job script predates the check)"
+        )
+        return config
+    try:
+        with open(status_file) as fid:
+            status = fid.read().strip()
+    except OSError as error:
+        status = f"(unreadable: {error})"
+    if status == "0":
+        logger.info("compute launcher finished with exit status 0")
+        return config
+    reason = (
+        "the launcher did not return (killed?)"
+        if status in ("running", "")
+        else f"the launcher exited with status {status}"
+    )
+    logger.error("=" * 78)
+    logger.error(f"COMPUTE STEP FAILED: {reason}")
+    logger.error(
+        f"(observe_compute, {config['general']['run_datestamp']}) -- refusing to tidy "
+        "and advance the workflow. See the compute log for the cause."
+    )
+    logger.error("=" * 78)
+    sys.exit(1)
 
 
 def check_coupling_failure(config):

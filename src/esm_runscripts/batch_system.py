@@ -10,7 +10,7 @@ import esm_environment
 from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
-from . import dataprocess, helpers, placement, prepare
+from . import dataprocess, helpers, hold_allocation, placement, prepare
 from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
@@ -567,10 +567,20 @@ class batch_system:
             if config["general"].get("submit_to_batch_system", True):
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
+                    # The launcher runs in the background and observe_compute is not
+                    # its parent, so the exit status would be lost and a failed run
+                    # tidied and advanced like a good one (levante 2026-10-13: fesom
+                    # and rnfma died at start with "libiomp5.so: cannot open shared
+                    # object file", srun exit 127 / task failure, and the workflow
+                    # moved on). Record it for observe.check_compute_failure: "running"
+                    # before the launch, srun's exit status after it.
+                    status = compute_status_file(config)
+                    commands.append(f"echo running > {status}")
                     commands.append(
-                        "time "
+                        "{ time "
                         + batch_system["execution_command"]
-                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
+                        + f" 2>&1{config['computer'].get('write_execution_log', '')}"
+                        + f"; echo $? > {status}; }} &"
                     )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
@@ -661,6 +671,10 @@ class batch_system:
                 for line in header:
                     runfile.write(line + "\n")
                 runfile.write("\n")
+                if cluster == "compute" and hold_allocation.requested(config):
+                    for line in hold_allocation.job_script_head_lines(config):
+                        runfile.write(line + "\n")
+                    runfile.write("\n")
 
             else:
                 header = batch_system.get_shell_header(config, cluster)
@@ -785,6 +799,14 @@ class batch_system:
 
             runfile.write("\n")
             runfile.write("wait\n")
+            if (
+                batch_or_shell == "batch"
+                and cluster == "compute"
+                and hold_allocation.requested(config)
+            ):
+                runfile.write("\n")
+                for line in hold_allocation.job_script_tail_lines(config):
+                    runfile.write(line + "\n")
 
         config["general"]["submit_command"] = batch_system.get_submit_command(
             config, batch_or_shell, runfilename
@@ -1069,6 +1091,11 @@ class batch_system:
         launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
+
+
+def compute_status_file(config):
+    """Where the compute job script leaves the launcher's exit status."""
+    return os.path.join(config["general"]["thisrun_work_dir"], ".esm_compute_exit_status")
 
 
 def submits_another_job(config, cluster):

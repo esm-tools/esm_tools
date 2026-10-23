@@ -18,6 +18,7 @@ def prepare_environment(config):
             "HARVEST_PARALLEL_INI": int(bool(general.get("harvest_parallel_ini", False))),
             "HARVEST_POOL_DIR": general.get("harvest_pool_dir") or general.get("pool_dir", ""),
             "SMB_COUPLED": int(bool(general.get("smb_coupled", False))),
+            "DEBM_COUPLED": int(bool(general.get("debm_coupled", False))),
             "ISM_PREFIX": config.get("ismm", {}).get("ice_prefix", "antar"),
             "ISM_OUTDATA_DIR": os.path.join(
                 general["experiment_dir"], "outdata", "ismm"

@@ -93,6 +93,14 @@ atmosphere_units_temperature_below_firn=K
 atmosphere_name_sst=${_prefix}_SST
 atmosphere_units_sst=K
 EOF
+    # dEBM2's surface mass balance, from the ISM-mapper (general.debm_coupled),
+    # for PISM's ablation_method DEBM2. Already kg m-2 s-1.
+    if [ "${DEBM_COUPLED:-0}" = "1" ]; then
+        cat >> ${COUPLE_DIR}/atmosphere_names_for_ice.dat <<EOF
+atmosphere_name_debm_smb=${_prefix}_dEBM_SMB
+atmosphere_units_debm_smb=kg m-2 s-1
+EOF
+    fi
 
     cdo -s infon ${_out} 2>/dev/null | head -20
 

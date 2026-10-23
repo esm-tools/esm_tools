@@ -163,12 +163,16 @@ atmosphere2pism() {
             ic_atm2pism_ablation_direct
             latest_atmo_file=${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
             ;;
+        "DEBM2")
+            ic_atm2pism_ablation_debm2
+            latest_atmo_file=${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
+            ;;
         "EBM")
             ic_atm2pism_ablation_ebm
             ;;
         *)
             echo "Unknown mass balance selected!"
-            echo "Known options: PDD, DEBM, DIRECT, EBM"
+            echo "Known options: PDD, DEBM, DIRECT, DEBM2, EBM"
             exit 2
             ;;
     esac
@@ -418,24 +422,49 @@ ic_atm2pism_ablation_direct() {
 }
 
 
+## @fn ic_atm2pism_ablation_debm2()
+## @brief The ISM-mapper's dEBM2 surface mass balance, as computed there
+##
+## Same surface temperature, ocean mask and file as DIRECT; only the SMB is
+## dEBM2's (<prefix>_dEBM_SMB, already kg m-2 s-1) instead of P - E - R.
+## Needs general.debm_coupled in the AWI-ESM3 chain, which puts the variable
+## into atmosphere_file_for_ice.nc and its name into the names file.
+ic_atm2pism_ablation_debm2() {
+    echo; echo -e "\t\tSetting up SMB scheme DEBM2 (the ISM-mapper's dEBM2)..."
+    if [ -z "${atmosphere_name_debm_smb}" ]; then
+        echo " DEBM2 needs atmosphere_name_debm_smb in atmosphere_names_for_ice.dat:"
+        echo " is general.debm_coupled on in the AWI-ESM3 runscript?"
+        exit 9
+    fi
+    ic_atm2pism_ablation_direct_make_surface_forcing \
+        "climatic_mass_balance=${atmosphere_name_debm_smb}" "${atmosphere_name_debm_smb}"
+    ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
+    ic_debm2pism_ablation_debm_set_options_surface_given
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+## Builds the surface_given file from atmosphere_file_for_ice.nc. $1, the
+## cdo expression for climatic_mass_balance, and $2, the variables it reads,
+## default to DIRECT's P - E - R; DEBM2 passes dEBM2's SMB instead.
 ic_atm2pism_ablation_direct_make_surface_forcing() {
     _dir_in=${COUPLE_DIR}/atmosphere_file_for_ice.nc
     _dir_out=${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
+    # Precipitation and runoff arrive as m/s of liquid water, evaporation as
+    # kg m-2 s-1 already. PISM wants kg m-2 s-1.
+    _smb_expr=${1:-"climatic_mass_balance=(${atmosphere_name_precipitation_liquid}+${atmosphere_name_precipitation_solid}-${atmosphere_name_runoff})*1000.0-${atmosphere_name_evaporation}"}
+    _smb_vars=${2:-"${atmosphere_name_precipitation_liquid} ${atmosphere_name_precipitation_solid} ${atmosphere_name_evaporation} ${atmosphere_name_runoff}"}
 
-    for _v in ${atmosphere_name_precipitation_liquid} ${atmosphere_name_precipitation_solid} \
-              ${atmosphere_name_evaporation} ${atmosphere_name_runoff} \
-              ${atmosphere_name_temperature_below_firn} ; do
+    for _v in ${_smb_vars} ${atmosphere_name_temperature_below_firn} ; do
         if ! cdo -s showname ${_dir_in} 2>/dev/null | tr ' ' '\n' | grep -qx "${_v}"; then
-            echo " Missing >>${_v}<< in ${_dir_in}, DIRECT needs P, E, R and a firn temperature"
+            echo " Missing >>${_v}<< in ${_dir_in}, the SMB needs ${_smb_vars} and a firn temperature"
             exit 9
         fi
     done
 
-    # Precipitation and runoff arrive as m/s of liquid water, evaporation as
-    # kg m-2 s-1 already. PISM wants kg m-2 s-1.
-    echo -e "\t\t- climatic_mass_balance = (P_liq + P_sol - R) * rho_w - E"
+    echo -e "\t\t- ${_smb_expr}"
     cdo -s -O -setattribute,climatic_mass_balance@units="kg m-2 s-1" \
-        -expr,"climatic_mass_balance=(${atmosphere_name_precipitation_liquid}+${atmosphere_name_precipitation_solid}-${atmosphere_name_runoff})*1000.0-${atmosphere_name_evaporation}" \
+        -expr,"${_smb_expr}" \
         ${_dir_in} ${COUPLE_DIR}/smb_direct.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 
     cdo -s -O -setattribute,ice_surface_temp@units="K" \
@@ -458,7 +487,7 @@ ic_atm2pism_ablation_direct_make_surface_forcing() {
     cdo -s -O merge ${COUPLE_DIR}/smb_direct.nc ${COUPLE_DIR}/tsurf_direct.nc ${_dir_out} \
         2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 
-    unset _dir_in _dir_out _v
+    unset _dir_in _dir_out _v _smb_expr _smb_vars
 }
 
 

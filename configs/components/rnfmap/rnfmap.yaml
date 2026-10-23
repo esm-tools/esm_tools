@@ -89,8 +89,11 @@ rnfmap:
       # discharge, and can drop the atmosphere's calving per drainage basin.
       # Needs NumCoupledRegions and the NAMRNFMAPARRAYS group, so it comes with
       # its own namelist.
+      # debm2-runoff is ismm-freshwater plus R_Runoff_<prefix> (the ISM-mapper's
+      # dEBM2 runoff) and IgnoreAtmRunoffBasins; with neither set it maps as
+      # ismm-freshwater does.
       v1.4-ismm:
-        branch: ismm-freshwater
+        branch: debm2-runoff
         further_reading:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap

@@ -1,0 +1,35 @@
+debm2:
+    model: debm2
+    type: surface mass balance
+
+    # dEBM v2 (Krebs-Kanzow), the Python diurnal energy balance model with a
+    # monthly stepper, built as libdebm2.so: dEBM2 behind a C interface with the
+    # Python interpreter embedded (cffi). The ISM-mapper links it and calls it
+    # once a month (ismm-ece4, DEBM2_DIR). Build-only: it has no executable and
+    # is not launched. The interpreter embedded is the python3 this build runs
+    # with, so it must be the one the run will have (the python3 module).
+    #
+    # The repository is private; it is cloned over ssh so that the key of the
+    # user building it is enough.
+
+    available_versions:
+    - "capi"
+
+    version: "capi"
+    git-repository: git@github.com:JanStreffing/dEBM2.git
+    branch: capi
+    destination: debm2
+
+    comp_command: "python3 capi/build_libdebm2.py"
+    clean_command: "rm -rf capi/lib"
+
+    contact: "jan.streffing(at)awi.de"
+
+    metadata:
+        Institute: AWI
+        Description:
+            dEBM2, the diurnal energy balance surface mass balance model, version 2,
+            with a monthly stepper and a C interface for coupling.
+        Authors: Uta Krebs-Kanzow
+        Publications:
+            "Krebs-Kanzow, U., Gierz, P., Rodehacke, C. B., Xu, S., Yang, H., and Lohmann, G.: The diurnal Energy Balance Model (dEBM): a convenient surface mass balance solution for ice sheets in Earth system modeling, The Cryosphere, 15, 2295-2313, <https://doi.org/10.5194/tc-15-2295-2021>, 2021."

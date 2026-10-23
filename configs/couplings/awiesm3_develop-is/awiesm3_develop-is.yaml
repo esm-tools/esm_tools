@@ -17,6 +17,8 @@ components:
 - lpj_guess-4.1.2
 - pism-github1.2.1
 - debm-esm_tools
+# before ismm-ece4, which links its libdebm2.so
+- debm2-capi
 - ismm-ece4
 coupling_changes:
 - sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml

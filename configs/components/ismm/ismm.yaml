@@ -29,9 +29,15 @@ ismm:
     # 4.1.8-awi.1 is the release tag of that branch (94511fb): EC-Earth 4.1.8 plus
     # our ISM-mapper changes. Used by awiesm3 v3.5.0-is; it keeps the build
     # directory ismm-ece4.
+    #
+    # ece4 is cissembel-levante-intel plus the dEBM2 region mode (branch debm2),
+    # linked against libdebm2.so from the debm2 component in the same setup
+    # directory, which therefore has to be built first. A region without
+    # DEBMBoolList runs exactly as before.
     choose_version:
         "ece4":
-            branch: cissembel-levante-intel
+            branch: debm2
+            comp_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make coupling && cd ${model_dir}/sources/ism-mapper/src && make FC=mpif90 LD=mpif90 OASIS_BASE_DIR=${model_dir}/../oasis/arch_ecearth OASIS_LIBS="-lpsmile -lmct -lmpeu -lscrip" EBMWORLD_DIR=${model_dir}/sources/ism-mapper/src/CISSEMBEL/src NETCDF_INC_DIR="-I$NETCDFFROOT/include -I$NETCDFROOT/include" NETCDF_LIB_DIR="-L$NETCDFFROOT/lib -L$NETCDFROOT/lib" DEBM2_DIR=${model_dir}/../debm2'
         "4.1.8-awi.1":
             branch: "4.1.8-awi.1"
             destination: ismm-ece4

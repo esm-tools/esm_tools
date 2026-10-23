@@ -68,6 +68,19 @@ general:
     # it smb2ice falls back to a fixed paleo SMB file.
     smb_coupled: false
 
+    # dEBM2 in the ISM-mapper (needs smb_coupled). Once a month the mapper runs
+    # dEBM2 on its monthly means of the OIFS forcing, writes the result next to
+    # the direct fields in <prefix>_smb_<year>.nc (<prefix>_dEBM_*), and sends
+    # dEBM2's runoff to the runoff mapper, which then drops the atmosphere's
+    # own runoff south of 60S in its place. Which SMB forces the ice sheet is a
+    # PISM choice (pism ablation_method DIRECT or DEBM2). Set it in the ocean
+    # runscript, like smb_coupled.
+    debm_coupled: false
+    # The PISM state (thk, topg) the ice sheet starts from. dEBM2's chunk-1
+    # surface comes from it when the chunk-1 bundle's geometry has no usurf
+    # (bundles made before pism2esm wrote it). The PISM chain's spinup_file.
+    debm2_ice_initial_state: ""
+
     # PISM's surface height as the OIFS orography (ECE_ISM_OROG, and pism2esm
     # writing usurf_oifs every leg). Only acts with interactive_mesh and the
     # PISM chain; develop-is and v3.5-is turn it on. The PISM chain does not
@@ -277,6 +290,7 @@ general:
             # sections nothing declares; esm-tools >=6.54 rejects those.
             add_other_components:
                 - debm
+                - debm2
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -337,6 +351,7 @@ general:
                 - xios
             add_other_components:
                 - debm
+                - debm2
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -854,6 +869,15 @@ oifs:
                         fort.4:
                             NAMECECFG:
                                 ECE_ISM_OROG: ".true."
+            # The dEBM2 forcing (A_T2m/SWd/LWd/TCC/SWdTOA/Orog_ISM). Needs an
+            # OpenIFS with ISMRGNDEBM (awiesm3-develop c6f9df9, pr13); an older
+            # binary stops at the NAMECECFG read.
+            choose_general.debm_coupled:
+                true:
+                    add_add_add_add_add_add_add_add_add_add_namelist_changes:
+                        fort.4:
+                            NAMECECFG:
+                                "ISMRGNDEBM(1)": ".true."
 
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
@@ -903,6 +927,22 @@ oifs:
                     grid: atma
                 PLIT_${ismm.ice_prefix}:
                     grid: atma
+    # dEBM2's forcing, all over land, so on atmr like the other land fields
+    choose_general.debm_coupled:
+        true:
+            add_coupling_fields:
+                A_T2m_ISM:
+                    grid: atmr
+                A_SWd_ISM:
+                    grid: atmr
+                A_LWd_ISM:
+                    grid: atmr
+                A_TCC_ISM:
+                    grid: atmr
+                A_SWdTOA_ISM:
+                    grid: atmr
+                A_Orog_ISM:
+                    grid: atmr
 
     choose_general.with_co2_oce_coupling:
         true:
@@ -2088,6 +2128,26 @@ rnfmap:
                     NAMRNFMAP:
                         IgnoreCalvingBasins: 66
 
+    # dEBM2's runoff from the ISM-mapper replaces the atmosphere's own runoff in
+    # basin 66 (south of 60S): IgnoreAtmRunoffBasins drops only the atmosphere's
+    # part when it is gathered, the ice sheet's goes into the basin sum. The
+    # region sends no basal melt or discharge (those go to FESOM directly), so
+    # RecvISMFreshwater is off: a declared field nobody sends would add -HUGE.
+    choose_general.debm_coupled:
+        true:
+            add_add_namelist_changes:
+                namelist.runoffmapper:
+                    NAMRNFMAP:
+                        NumCoupledRegions: 1
+                        IgnoreAtmRunoffBasins: 66
+                    NAMRNFMAPARRAYS:
+                        PrefixListISM: "${ismm.ice_prefix}"
+                        RecvISMFreshwater: ".false."
+                        RecvISMRunoff: ".true."
+            add_coupling_fields:
+                R_Runoff_${ismm.ice_prefix}:
+                    grid: rnfa
+
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
     time_step: ${oasis3mct.coupling_time_step}
@@ -2156,6 +2216,111 @@ ismm:
             grid: ${ice_grid}
         "[[ism_send_fields-->FIELD]]":
             grid: ${ice_grid}
+
+    # The first leg's first sample from the atmosphere comes from the chunk-1
+    # bundle's rstism.nc (all fields are lagged), which may not carry it, and
+    # then reads 0. The mapper leaves it out of the means. Inside smb_coupled
+    # (the mapper only runs with it), where esm_master, which has no chunk
+    # number, never resolves it.
+    choose_general.smb_coupled:
+        true:
+            choose_general.chunk_number:
+                1:
+                    add_add_add_namelist_changes:
+                        namelist.ismm:
+                            NAMISMM:
+                                LColdStart: ".true."
+
+    # dEBM2 (general.debm_coupled). The mapper runs it once a month through
+    # libdebm2.so; couplings/ismm/debm2_prepare.py writes what it reads into
+    # work/ every leg (the preprocess step below): the parameter file, the
+    # static file rebuilt from the ice sheet's current geometry, and on the
+    # first leg the initial firn column ('AA').
+    debm2_dir: ${general.model_dir}/debm2
+    # dEBM2's settings. biascorr none is the lapse-rate correction alone (the
+    # others need climatologies on the ice-sheet grid); atm_subl 2 includes the
+    # net sublimation, -E, about 10 % of the Antarctic snowfall in this model.
+    debm2_biascorr: none
+    debm2_atm_subl: 2
+    debm2_firnmax: 10000.0
+    # The orbit OIFS runs with (NAMORB ORBMODE fixed_year, ORBIY 1850), from
+    # Berger (1978) for 1850, longitude of perihelion in dEBM2's convention
+    # (present day 282.9). dEBM2 takes the declination and the irradiance of
+    # its melt period from these, so they have to follow ORBIY.
+    debm2_orbit_ecc: 0.016764
+    debm2_orbit_obl: 23.459
+    debm2_orbit_lonp: 280.33
+    debm2_orbit_s0: 1361.0
+
+    choose_general.debm_coupled:
+        true:
+            add_ism_recv_fields: ["${ice_prefix}_T2m", "${ice_prefix}_SWd", "${ice_prefix}_LWd",
+                "${ice_prefix}_TCC", "${ice_prefix}_SWdTOA", "${ice_prefix}_Orog"]
+            add_ism_send_fields: ["${ice_prefix}_debm_runoff"]
+            add_namelist_changes:
+                namelist.ismm:
+                    NAMISMM:
+                        LSendDEBMRunoff: ".true."
+                    NAMISMARR:
+                        DEBMBoolList: ".true."
+                        DEBMConfigList: "debm2_param.py"
+                        DEBMStaticList: "debm2_static.nc"
+                        DEBMRestartList: "${ice_prefix}_debm_restart.nc"
+            # copy_files_to_thisrun has already put the inputs straight into
+            # work/ when this runs (general.intermediate_movements), so grids.nc
+            # is read there.
+            preprocess:
+                debm2_prepare:
+                    method: "python3 ${general.esm_couplings_dir}/ismm/debm2_prepare.py
+                        --debm2-dir ${debm2_dir}
+                        --geometry ${debm2_geometry} ${debm2_surface_from}
+                        --param ${general.thisrun_work_dir}/debm2_param.py
+                        --static ${general.thisrun_work_dir}/debm2_static.nc
+                        --year ${start_date!syear} ${debm2_cold_start}
+                        --check-grid ${general.thisrun_work_dir}/grids.nc --grid-name ${ice_grid}
+                        --exp ${general.expid} --biascorr ${debm2_biascorr} --subl ${debm2_atm_subl}
+                        --firnmax ${debm2_firnmax}
+                        --orbit-ecc ${debm2_orbit_ecc} --orbit-obl ${debm2_orbit_obl}
+                        --orbit-lonp ${debm2_orbit_lonp} --orbit-s0 ${debm2_orbit_s0}"
+                    type: shell
+            # Both dEBM2 restarts: the surface state, and the runoff of the last
+            # month, which the mapper sends during the month after it.
+            restart_out_files:
+                debm_restart: debm_restart
+                debm_runoff_restart: debm_runoff_restart
+            restart_out_in_work:
+                debm_restart: ${ice_prefix}_debm_restart.nc
+                debm_runoff_restart: ${ice_prefix}_debm_runoff_restart.nc
+            restart_out_sources:
+                debm_restart: ${ice_prefix}_debm_restart.nc
+                debm_runoff_restart: ${ice_prefix}_debm_runoff_restart.nc
+            # Later chunks read the geometry ice2fesom restaged from PISM's last
+            # chunk, and restart. Chunk 1 starts dEBM2 cold, on the chunk-1
+            # bundle's geometry (made before pism2esm wrote usurf, so the surface
+            # comes from the PISM state the ice sheet starts from,
+            # general.debm2_ice_initial_state).
+            debm2_geometry: "${general.experiment_couple_dir}/latest_ice_geometry.nc"
+            debm2_surface_from: ""
+            debm2_cold_start: ""
+            choose_general.chunk_number:
+                1:
+                    debm2_geometry: "${general.pism_cavity_ini_dir}/latest_ice_geometry.nc"
+                    debm2_surface_from: "--surface-from=${general.debm2_ice_initial_state}"
+                    debm2_cold_start: "--init-restart ${general.thisrun_work_dir}/${ice_prefix}_debm_restart.nc"
+                "*":
+                    add_add_namelist_changes:
+                        namelist.ismm:
+                            NAMISMARR:
+                                DEBMRunoffRestartList: "${ice_prefix}_debm_runoff_restart.nc"
+                    restart_in_files:
+                        debm_restart: debm_restart
+                        debm_runoff_restart: debm_runoff_restart
+                    restart_in_in_work:
+                        debm_restart: ${ice_prefix}_debm_restart.nc
+                        debm_runoff_restart: ${ice_prefix}_debm_runoff_restart.nc
+                    restart_in_sources:
+                        debm_restart: ${ice_prefix}_debm_restart.nc
+                        debm_runoff_restart: ${ice_prefix}_debm_runoff_restart.nc
 
 
 #########################################################################################
@@ -2419,6 +2584,31 @@ oasis3mct:
             add_process_ordering:
                 - ismm
 
+    # dEBM2: its forcing from OIFS on the same link as the direct fields, and
+    # its runoff to the runoff mapper. The rstism.nc list is restated
+    # (add_coupling_target_fields replaces a file's list) with the new entries
+    # LAST, because OASIS keys the LOCTRANS accumulators by entry index. The
+    # runoff link is EC-Earth4's ISM-mapper -> runoff-mapper treatment (local
+    # average, bilinear, no conservation step). Its weights are not in the
+    # ocp-tool set, so OASIS computes them at start-up.
+    choose_general.debm_coupled:
+        true:
+            add_coupling_directions:
+                '${ismm.ice_grid}->rnfa':
+                    lag: ${i2a_lag}
+                    seq: ${i2a_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
+            add_add_coupling_target_fields:
+                rstism.nc:
+                    - '${ismm.ice_prefix}_Precip_liquid:${ismm.ice_prefix}_Precip_solid:${ismm.ice_prefix}_Evaporation:${ismm.ice_prefix}_Soil4T:${ismm.ice_prefix}_Runoff
+                      <--gauswgt_avg-- A_Precip_liquid@atmr:A_Precip_solid@atmr:A_Evap_ISM:A_Soil4T_ISM:A_Runoff'
+                    - '${ismm.ice_prefix}_SST <--gauswgt_avg-- A_SST_ISM'
+                    - 'PLIT_${ismm.ice_prefix} <--gauswgt_i-- ${ismm.ice_prefix}_plit'
+                    - '${ismm.ice_prefix}_T2m:${ismm.ice_prefix}_SWd:${ismm.ice_prefix}_LWd:${ismm.ice_prefix}_TCC:${ismm.ice_prefix}_SWdTOA:${ismm.ice_prefix}_Orog
+                      <--gauswgt_avg-- A_T2m_ISM:A_SWd_ISM:A_LWd_ISM:A_TCC_ISM:A_SWdTOA_ISM:A_Orog_ISM'
+                    - 'R_Runoff_${ismm.ice_prefix} <--bilinear_avg-- ${ismm.ice_prefix}_debm_runoff'
+
 
     coupling_methods:
         bicubic:
@@ -2522,6 +2712,14 @@ oasis3mct:
                     nb_of_search_bins: 1
                     nb_of_neighbours: 25
                     weight: "0.1"
+        # EC-Earth4's ISM-mapper -> runoff-mapper remap (LOCTRANS AVERAGE,
+        # SCRIPR BILINEAR LR SCALAR LATITUDE 1)
+        bilinear_avg:
+            time_transformation: average
+            remapping:
+                bilinear:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
         gauswgt_glo:
             time_transformation: conserv
             remapping:

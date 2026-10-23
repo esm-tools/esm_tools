@@ -96,9 +96,21 @@ function ice2fesom {
         couple_timer "ice2fesom: build_submesh"
         build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
         # Bergs go in here, after the submesh exists and before anything reads
-        # the berg files.
+        # the berg files. With ICB_PREP_BACKGROUND (general.icb_prep_background)
+        # they are made in the background while the restart remap and the OASIS
+        # weights are rebuilt: those need only latest_submesh and write nothing
+        # the berg generator reads, and the berg generator writes nothing they
+        # read. It is waited for before ice2fesom is done. A failure there still
+        # stops the chain: couple_fail writes the sentinel before it exits, and
+        # the exit status is checked after the wait.
+        _icb_pid=""
         if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
             echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
+        elif [[ "x${ICB_PREP_BACKGROUND:-0}" == "x1" ]]; then
+            echo " *   prepare_iceberg_forcing in the background"
+            _icb_log=${COUPLE_DIR}/prepare_iceberg_forcing.bg.log
+            iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing > "${_icb_log}" 2>&1 &
+            _icb_pid=$!
         else
             couple_timer "ice2fesom: prepare_iceberg_forcing"
             iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
@@ -169,6 +181,15 @@ function ice2fesom {
             couple_timer "ice2fesom: remap_fesom_restart"
             remap_fesom_restart  || couple_fail "ice2fesom FAILED: remap_fesom_restart"
         fi
+        if [ -n "${_icb_pid}" ]; then
+            couple_timer "ice2fesom: wait for prepare_iceberg_forcing"
+            wait ${_icb_pid} ; _icb_rc=$?
+            echo "----- prepare_iceberg_forcing output (ran in the background) -----"
+            cat "${_icb_log}" 2>/dev/null
+            echo "----- end prepare_iceberg_forcing output (rc=${_icb_rc}) -----"
+            [ ${_icb_rc} -eq 0 ] || couple_fail "ice2fesom FAILED: prepare_iceberg_forcing (rc=${_icb_rc})"
+        fi
+        unset _icb_pid _icb_log _icb_rc
     fi
     couple_timer "ice2fesom: DONE"
 

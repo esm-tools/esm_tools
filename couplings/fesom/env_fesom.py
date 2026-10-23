@@ -212,6 +212,10 @@ def prepare_environment(config):
                 str(x) for x in fesom.get("scaling_factor", [1, 1, 1, 1, 1, 1])),
             "ICB_RESTART_ISM": (
                 config["fesom"].get("restart_in_sources", {}).get("icb_restart_ISM", "")),
+            # Run the berg generation in the background of the restart remap
+            # and the OASIS weight regeneration, which do not need it (see
+            # ice2fesom). Off by default.
+            "ICB_PREP_BACKGROUND": int(bool(general.get("icb_prep_background", False))),
             "CURRENT_YEAR_fesom": general["current_date"].syear,
             # FESOM install bin/ -- holds the native mesh partitioner
             # (fesom_meshpart, built for the -is variant via

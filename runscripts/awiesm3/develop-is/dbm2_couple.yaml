@@ -1,0 +1,95 @@
+# dbm2 (2026-10-24): dbm1 with the speed-ups stacked, on cap7's 30-min devel QoS, as a riskier
+# companion to dbm1 (which runs the same coupling on 46 nodes, 2 h, normal QoS):
+#   - rnfmap and xios interleaved into the oifs nodes (taskset placement)
+#   - FESOM 1800 s instead of 1200 s
+#   - the berg generation in the background of couple_in (general.icb_prep_background)
+#   - AWI-ESM3 and PISM both on the devel QoS, 30 min
+# Changes against dbm1 are marked "dbm2:".
+#   esm_runscripts dbm2_couple.yaml -e dbm2 --coupling-chain all
+# dbm1 (2026-10-23): END-TO-END TEST of dEBM2 in the ISM-mapper (general.debm_coupled).
+# antg065 (a270234's latest coupling) on a270092's awiesm3-develop-is tree, 2 cycles:
+# ocean 1900-1901 (1-yr legs), ice 62370-62389 (10-yr legs, cap7 devel QoS). AWI on cap7 normal. Reads a270234's antg065 inputs (antfill_root), writes
+# to a270092's runtime. dEBM2 starts cold on chunk 1; PISM chunk 2 is forced with dEBM2's
+# SMB (ablation_method DEBM2). Changes against antg065 are marked "dbm1:".
+#   esm_runscripts dbm1_couple.yaml -e dbm1 --coupling-chain awiesm3
+#   esm_runscripts dbm1_couple.yaml -e dbm1 --coupling-chain pism
+# LEVANTE DRIVER of antg065 (2026-10-13, for albedo's maintenance 2026-10-19..23). Identical to
+# antg065_couple.yaml except the three init-time literals (account, base_dir, ism_orog_python),
+# as antfill_couple_levante.yaml is to antfill_couple.yaml. Model runscripts are shared unchanged.
+#   esm_runscripts antg065_couple_levante.yaml -e antg065 --coupling-chain awiesm3
+#
+# antg065 (2026-10-12): antfill1's coupling with FESOM cavity_gamma_scale 0.65, PISM sia_e 1.3,
+# run-9 tillphi (thickness-only inversion under model climate) and 50-yr PISM legs per ocean year.
+# TEST: 2 cycles (ocean 1900-1901, ice 62370-62469) passed 2026-10-12; extended to 20 cycles
+# (ocean 1900-1919, ice 62370-63369). Derived from antfill_couple.yaml, unchanged
+# except the runscript names and model2.chunk_size; the antfill notes below still apply.
+#
+# antfill1 was: 20 cycles of AWIESM 1 yr + PISM 10 yr, i.e. 20 climate years and 200 ice years.
+# Derived from ism44 (levante) -- same coupling design, different machine, mesh, initial
+# condition and ice physics. What changed is listed in antfill_pism.yaml and antfill_ocean.yaml.
+#
+# FIRST albedo run of this coupling. The chunk-1 bundle was built here
+# (input/fesom2/pism_cavity_ini_antfill_newpar, see its README.md); couple_in repeats steps
+# 06-09 of that build every leg, so the albedo fixes recorded in the bundle README are wired
+# into this configuration.
+#
+# Launch one chain per model:
+#   esm_runscripts antg065_couple.yaml -e antg065 --coupling-chain awiesm3
+#   esm_runscripts antg065_couple.yaml -e antg065 --coupling-chain pism
+general:
+        coupling_mode: concurrent
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        ism_orog_coupled: True
+        use_venv: False
+        user: !ENV ${USER}
+        # Literals for the init-time checks: esm_tools reads general.account (and builds
+        # the experiment dir from base_dir) during "Initializing iterative coupling",
+        # BEFORE any choose_ block is resolved, and the experiment dir keeps this literal
+        # base_dir (the machine block below does NOT override it in time: the first levante
+        # launch died with "Permission denied: '/albedo'"). On levante launch
+        # antfill_couple_levante.yaml instead, which carries levante's literals.
+        account: bb1469   # dbm1: cap7
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+        # MACHINE BLOCK. Unlike antfill_ocean.yaml and antfill_pism.yaml, this file is
+        # the ITERATIVE-COUPLING DRIVER and its general section is resolved before the
+        # rest: a ${general.<var>} that points at a variable defined inside this very
+        # block sends esm_parser's find_variable into infinite recursion. So the driver
+        # sets the three final values directly instead of going through work_dir etc.
+        choose_computer.name:
+                albedo:
+                        account: paleodyn.paleodyn
+                        base_dir: "/albedo/work/user/${general.user}/runtime/awiesm3-develop-is/"
+                        ism_orog_python: "/albedo/home/xihao001/.conda/envs/ocp-tool2/bin/python"
+                levante:
+                        account: bb1469   # dbm1: cap7
+                        base_dir: "/work/ab0246/${general.user}/runtime/awiesm3-develop-is/"
+                        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+        with_recom: False
+        with_icb: True
+
+model1:
+        setup_name: awiesm3
+        runscript: dbm2_ocean.yaml     # dbm2:
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: dbm2_pism.yaml      # dbm2:
+        # 10-yr PISM legs: the ice sheet advances 10 years per ocean year.
+        # Must be a multiple of general.nyear in antfill_pism.yaml.
+        #
+        # Why 10 and not ism44's 25: the ocean only ever sees ONE year per leg, so the sea-ice
+        # and iceberg fluxes it receives are a single year's worth however long the ice leg is,
+        # and the ice front moves further per mesh change the longer the leg. On ism44's 25-yr
+        # legs the restart remap had to carry newly-opened nodes a median 17 km but up to 78 km
+        # from the nearest open water; at 10 yr that tail is shorter.
+        # antg065: 50-yr legs. Must be a multiple of general.nyear in antg065_pism.yaml (now 50).
+        # The front moves ~5x further per mesh change than at 10 yr; the restart remap is the
+        # step to watch in cycle 2 (see the 10-vs-25-yr note above).
+        chunk_size: 10   # dbm1: 10-yr PISM legs
+        chunk_unit: "years"

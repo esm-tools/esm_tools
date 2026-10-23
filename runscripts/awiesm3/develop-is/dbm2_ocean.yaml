@@ -1,0 +1,390 @@
+# dbm2 (2026-10-24): dbm1 with the speed-ups stacked, on cap7's 30-min devel QoS, as a riskier
+# companion to dbm1 (which runs the same coupling on 46 nodes, 2 h, normal QoS):
+#   - rnfmap and xios interleaved into the oifs nodes (taskset placement)
+#   - FESOM 1800 s instead of 1200 s
+#   - the berg generation in the background of couple_in (general.icb_prep_background)
+#   - AWI-ESM3 and PISM both on the devel QoS, 30 min
+# Changes against dbm1 are marked "dbm2:".
+#   esm_runscripts dbm2_couple.yaml -e dbm2 --coupling-chain all
+# dbm1 (2026-10-23): END-TO-END TEST of dEBM2 in the ISM-mapper (general.debm_coupled).
+# antg065 (a270234's latest coupling) on a270092's awiesm3-develop-is tree, 2 cycles:
+# ocean 1900-1901 (1-yr legs), ice 62370-62389 (10-yr legs, cap7 devel QoS). AWI on cap7 normal. Reads a270234's antg065 inputs (antfill_root), writes
+# to a270092's runtime. dEBM2 starts cold on chunk 1; PISM chunk 2 is forced with dEBM2's
+# SMB (ablation_method DEBM2). Changes against antg065 are marked "dbm1:".
+#   esm_runscripts dbm1_couple.yaml -e dbm1 --coupling-chain awiesm3
+#   esm_runscripts dbm1_couple.yaml -e dbm1 --coupling-chain pism
+# antg065 (2026-10-12): as antfill_ocean.yaml but cavity_gamma_scale 0.65, final_date 1902-01-01 (2-cycle test).
+# AWI-ESM3 chain of the antfill coupling (albedo). Paired with antfill_pism.yaml through
+# antfill_couple.yaml. Derived from ism44's fast_ocean.yaml (levante).
+general:
+    user: !ENV ${USER}
+    use_venv: False
+    setup_name: "awiesm3"
+    version: "develop-is"
+    # account must ALSO be a literal here, outside the machine block: esm_tools checks
+    # general.account during "Initializing iterative coupling", BEFORE any choose_ block
+    # is resolved, and aborts with "Missing account info" if it is only in the block.
+    # The block below then overrides it per machine. If that override ever failed to
+    # apply, levante would reject the albedo account at submit -- a loud failure.
+    account: "bb1469"   # dbm1: cap7
+    # MACHINE BLOCK. NOTE antfill_root, not work_dir: general.work_dir is RESERVED by
+    # esm_tools for <rundir>/work/, and a variable of that name is silently clobbered --
+    # every ${general.work_dir} path resolved under the run directory instead.
+    # Everything that differs between albedo and levante is reduced to
+    # these variables so a fix lands on both machines at once. The levante values are
+    # orogrun's -- the last configuration that actually ran there; the albedo values are
+    # what antftest1-7 ran with. ${general.user} is $USER: xihao001 / a270234.
+    choose_computer.name:
+        albedo:
+            account: "paleodyn.paleodyn"
+            antfill_root: "/albedo/work/user/${general.user}"
+            model_code_dir: "/albedo/work/user/${general.user}/model_code/awiesm3-develop-is"
+            conda_env_dir: "/albedo/home/xihao001/.conda/envs"
+            # a270092's and a270234's levante directories, rsynced to albedo.
+            shared_a270092: "/albedo/work/user/${general.user}/levante_shared/a270092"
+            shared_a270234: "/albedo/work/user/${general.user}/levante_shared/a270234"
+            # PRIVATE COPY. The pool's forcing_idemix_final_bin is a symlink into
+            # p_pool_fesom1, which this account cannot read: FESOM stops with "status 13,
+            # Permission denied" and then hangs to the wall clock (antftest2, 2026-10-06).
+            # Byte-identical to the levante original (md5 08887ab2...), which is why
+            # levante below reads that original directly.
+            idemix_bot_forcing: "/albedo/work/user/${general.user}/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
+        levante:
+            account: "bb1469"   # dbm1: cap7
+            antfill_root: "/work/ab0246/a270234"   # dbm1: a270234's antg065 inputs
+            # NOTE "model_codes", plural, on levante; "model_code" on albedo.
+            model_code_dir: "/work/ab0246/a270092/model_codes/awiesm3-develop-is"   # dbm1: a270092's tree
+            conda_env_dir: "/work/ab0246/a270234/conda/envs"
+            shared_a270092: "/work/ab0246/a270092"
+            shared_a270234: "/work/ab0246/a270234"
+            idemix_bot_forcing: "/work/ab0246/a270092/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
+    # ism44 ran 1-yr awiesm3 legs in ~26-33 min on levante. Not measured on albedo; 02:00:00
+    # is ism44's value and leaves room for the first-run overhead.
+    compute_time: "00:30:00"   # dbm2: devel QoS
+    initial_date: "1900-01-01"
+    # FULL RUN: 20 cycles, 1900-1919 inclusive (10 ice years per cycle: PISM 62370-62569).
+    # Must end on the same cycle as antfill_pism.yaml's "62569-12-31".
+    #
+    # The two staged tests that preceded it both passed, on albedo:
+    #   stage 1, one cycle   (antftest5)  -- FESOM and OIFS each completed 1900, the SMB and
+    #                                       cavity handoffs went both ways, chunk_1 markers written.
+    #   stage 2, two cycles  (antftest10) -- cycle 2 is the first MESH CHANGE, so it is the one
+    #                                       that exercises the core3_ant_fill mother mesh, the
+    #                                       cavity-dig patch ported to FESOM 2.8, the
+    #                                       enclosed-hole rule in the restart remap, and the
+    #                                       OASIS weight regeneration. couple_in took 112 s;
+    #                                       213792 nodes unchanged, 2436 vertically extended,
+    #                                       328 new, 808 dropped; FESOM then ran 1901 on the
+    #                                       changed mesh to completion.
+    # TO GO BACK TO THE TWO-CYCLE TEST: "1902-01-01" here AND "62389-12-31" in antfill_pism.yaml.
+    # EXTENDED 2026-10-09: the 20 cycles finished on albedo (1919 / 62569); 10 more cycles,
+    # 1920-1929 / 62570-62669. Must end on the same cycle as antfill_pism.yaml's "62669-12-31".
+    # antg065: 2-cycle test (1900, 1901) passed 2026-10-12; EXTENDED to 20 cycles (1900-1919),
+    # paired with antg065_pism.yaml "63369-12-31".
+    final_date: "1902-01-01"   # dbm1: 2 cycles
+    # No 6-hourly pressure-level 3D atmosphere (z t u v q w vo r): ~39 GB of the ~100 GB a
+    # cycle writes, and 831 GB over the first 20. Off from 1921 on (1920 was already prepared).
+    oifs_6h_pl_output: false
+    base_dir: "/work/ab0246/a270092/runtime/awiesm3-develop-is/"   # dbm1: a270092's runtime
+    interactive_mesh: true
+    ism_freshwater_return: true
+    smb_coupled: true
+    # dbm2: berg generation in the background of the restart remap and weight regeneration
+    icb_prep_background: true
+    # dbm1: dEBM2 in the ISM-mapper. Its chunk-1 surface comes from the PISM state the ice
+    # sheet starts from (the bundle's geometry has no usurf): antg065_pism.yaml's spinup_file.
+    debm_coupled: true
+    debm2_ice_initial_state: "${general.antfill_root}/pism_repro/antg065/ic_X_nofrag_phi9.nc"
+    # The chunk-1 bundle built on albedo for this mesh + initial condition; see its README.md.
+    pism_cavity_ini_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    force_overwrite_in_file_movements: True
+
+computer:
+    taskset: true
+    # dbm2: cap7's devel QoS (30 min, high priority)
+    additional_flags: [ --qos=devel ]
+
+awiesm3:
+    postprocessing: false
+    model_dir: "${general.model_code_dir}/"
+
+fesom:
+    ini_iceberg_dir: "${general.pism_cavity_ini_dir}/icebergs"
+    ini_disch_file: "${general.pism_cavity_ini_dir}/icebergs/ini_discharge.nc"
+    basin_file: "${general.shared_a270092}/input/pism/basins/antarct_cr.08km.nc"
+    chunk1_mesh: "${general.pism_cavity_ini_dir}/submesh"
+    oce2ice_method: "DIRECT"
+    resolution: "CORE3"
+    with_cavity: true
+    # The node griddes lives INSIDE the mother mesh dir: build_submesh resolves it as
+    # ${MAX_MESH}/${MESH_GRIDDES_fesom}.
+    griddes_nodes: "core3_ant_fill_griddes_nodes.nc"
+    ice2fesom_remap: "masked"
+    gl_rule: "element_majority"
+    cavity_dig: true
+    cavity_icemean: true
+    # MOTHER MESH: CORE3 with all of Antarctica meshed, bed dug to FESOM's minimum water column.
+    # NOTE its node numbering is NOT CORE3's (Hilbert order over the whole mesh), so "the first
+    # 220509 nodes are CORE3's" does not hold; node_map_to_core3.txt is the map. See its
+    # PROVENANCE.md.
+    mesh_dir: "${general.antfill_root}/mesh/core3_ant_fill_bedmap2/"
+    # MUST equal the mother mesh node count. fix_namcouple_feom_dim seds this value to the
+    # submesh count in the namcouple and PRINTS SUCCESS UNCONDITIONALLY, so a stale nx fails
+    # silently and only surfaces as an OASIS "av gsize nx ny mismatch" at the LAST exchange of
+    # the year -- a whole leg lost. (That is what killed ism40 cycle 1 on 2026-09-09.)
+    nx: 292256
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    # Chunk-1 COLD START: no FESOM restart exists for this submesh, and remapping a full-mesh
+    # CORE3 restart onto a PISM cavity is the observed->PISM swap the old pism_cavity_ini README
+    # records as "always crashes FESOM around day 4". A cold start on such a submesh is stable
+    # at the full 1200 s timestep. awiesm3.yaml sets lresume true inside chunk_number 1, which
+    # the choose-block at the end of this section overrides.
+    lresume: false
+    time_step: 1800   # dbm2: was 1200
+    nproc: 1792
+    omp_num_threads: 2
+    tar_binary_restarts: true
+    cmip7_cmor_output: false
+    change_ocean: 1
+
+    # ocp-tool: ocp_tool_dir and the conda envs come from awiesm3.yaml's albedo machine block.
+    # The TEMPLATE does not: the albedo default TCO95_CORE3_albedo.yaml has no `ice:` section,
+    # so ocp-tool writes no PISM grid and the weight generation stops with
+    #   KeyError: grid 'ismp' not found in .../grids.nc
+    # (seen building this bundle, 2026-10-06). This variant is that file plus the ice section of
+    # levante's TCO95_CORE3_ICE.yaml, pointing at the albedo copy of antarct_cr.initial_08km.nc.
+    # ONE choose_computer.name per section: YAML keeps only the last key of a
+    # duplicated mapping, so a second block here silently deletes this one.
+    choose_computer.name:
+        albedo:
+            ocp_template_config: "${general.antfill_root}/tools/ocp-tool/configs/TCO95_CORE3_ICE_albedo.yaml"
+            # albedo has no "compute" partition. The levante name was inherited from
+            # ism44 and stayed latent for 15 cycles, because regenerate_oasis_weights
+            # only reaches its sbatch path when it runs OUTSIDE an allocation; inside
+            # the chain's own batch job it runs inline. Resuming a chain from the
+            # login node is what exposed it, with
+            #   sbatch: error: invalid partition specified: compute
+            ocp_weightgen_partition: "mpp"
+        levante:
+            # Our own checkout, as ism45 ran on levante. awiesm3.yaml's levante default is
+            # a270092's checkout, and ocp-tool writes its output INSIDE ocp_tool_dir, so the
+            # first antg065 regen there died with PermissionError on
+            # .../a270092/software/ocp-tool/output/TCO95_feomdyn/... (2026-10-13). Same commit
+            # (83d2545) and byte-identical input/ as albedo's tools/ocp-tool; the template is
+            # identical to a270092's TCO95_CORE3_ICE.yaml.
+            ocp_tool_dir: "${general.antfill_root}/ocp-tool"
+            ocp_template_config: "${general.antfill_root}/ocp-tool/configs/TCO95_CORE3_ICE.yaml"
+            ocp_weightgen_partition: "compute"
+    # BOTH machines, not just levante. env_fesom.py:190 reads these keys first and only
+    # falls back to _conda_env_python(), which returns "" whenever conda is not on PATH --
+    # and it is not, in either batch environment. OCP_WEIGHTGEN_DRIVER_PY then arrives
+    # empty and ${OCP_WEIGHTGEN_DRIVER_PY:-python} in build_submesh runs the bare system
+    # python, which has no pyfesom2:
+    #     FileNotFoundError: .../python3.9/site-packages/pyfesom2/ascii_to_netcdf.py
+    # That killed antftest7's cycle-2 couple_in at fesom_mesh_to_cdo.py, after the mesh
+    # reduction and the 1792-way partition had both succeeded, and regenerate_oasis_weights
+    # would have stopped on its own ":?OCP_WEIGHTGEN_DRIVER_PY not set" immediately after.
+    # Only cycle 2 reaches this code, which is why antftest5 passed. orogrun hit the same
+    # thing on levante on 2026-08-25 and fixed it the same way.
+    # The two envs are not interchangeable: ocp-tool2 carries pyfesom2 + eccodes (driver),
+    # ocp-worker carries mpi4py built against the run's own OpenMPI (srun worker).
+    ocp_weightgen_driver_py: "${general.conda_env_dir}/ocp-tool2/bin/python"
+    ocp_weightgen_worker_py: "${general.conda_env_dir}/ocp-worker/bin/python"
+    # Only the mesh-independent rmp_R096_to_RnfA is taken from here.
+    oasis_rmp_template_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/1792"
+
+    # Ocean settings pinned to what ism44 ran: the v3.5 CORE3 defaults were tuned on develop,
+    # which has no ice sheet and no moving cavity, and three of them act exactly where the
+    # mesh-change legs blew up (orog3). Keep the two-model comparison about the ice, not about
+    # ocean retuning.
+    add_namelist_changes:
+        namelist.config:
+            run_config:
+                # 1.0 is the FESOM default and what ism44 ran. ism45 ran 0.6 and the pair was
+                # never conclusive; start from the default here.
+                # antg065: 0.65. antfill1 at 0.75 gave 0.78x the gamma-1 cavity melt (1926-1928);
+                # 0.65 extrapolates to ~0.69x, ~790 Gt/yr.
+                cavity_gamma_scale: 0.65
+        namelist.oce:
+            oce_dyn:
+                redi_kmax: 0.0
+                k_gm_max: 1000.0
+        namelist.cvmix:
+            # IDEMIX bottom forcing from our own copy. awiesm3.yaml builds both IDEMIX paths
+            # from ${fesom.pool_dir}/forcing/idemix/, which on albedo is
+            # /albedo/pool/fesom2/forcing/idemix/. The surface file is a real file there and
+            # reads fine, but forcing_idemix_final_bin is a symlink on to
+            # /albedo/pool/FESOM/fesom2.0/... = the p_pool_fesom1 project, which this account
+            # cannot read: FESOM stops with "ERROR: File not found ... status 13, Permission
+            # denied" and then hangs until the wall clock (antftest2, 2026-10-06).
+            # This copy is byte-identical to levante a270092/input/fesom2/forcing/idemix
+            # (md5 08887ab2...). IDEMIX is a FESOM 2.8 default, which is why 2.7 never hit it.
+            param_idemix:
+                idemix_botforc_file: "${general.idemix_bot_forcing}"
+            param_kpp:
+                kpp_av0: 0.005
+                kpp_kv0: 0.005
+                kpp_avbckg: 0.0001
+                kpp_kvbckg: 1e-05
+
+    choose_general.chunk_number:
+        1:
+            lresume: false
+
+lpj_guess:
+    slt_dir: "${general.antfill_root}/input/lpj-guess/slt/"
+    nproc: 64
+    omp_num_threads: 4
+    mip: "cmip7"
+    lresume: false
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mpi: cmip7
+    scenario: piControl
+    cmip7_cmor_output: false
+    choose_general.chunk_number:
+        1:
+            add_input_files:
+                pism2ece_antar: pism2ece_antar
+            add_input_sources:
+                ICMGG_INIT: "${general.pism_cavity_ini_dir}/oasis/ICMGGab45INIT_feomdyn"
+                # The _orog file, not antar_pism2ece.nc: ECE_ISM_OROG below makes suorog read
+                # usurf_oifs from it at leg initialisation, and only this one carries that field.
+                pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece_orog.nc"
+                wam_grid_tables: "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+            add_input_in_work:
+                pism2ece_antar: antar_pism2ece.nc
+            add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_LANDICE: ".true."
+                        ECE_LANDICE_THRESH: 0.5
+                        NISMRGNS: 1
+                        "ISMRGNPFX(1)": "antar"
+                        "ISMRGNCIS(1)": ".false."
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".true."
+        "*":
+            add_input_files:
+                pism2ece_antar: pism2ece_antar
+            add_input_sources:
+                ICMGG_INIT: "${general.experiment_couple_dir}/oasis_regen/ICMGGab45INIT_feomdyn"
+                pism2ece_antar: "${general.experiment_couple_dir}/antar_pism2ece.nc"
+                wam_grid_tables: "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "${general.shared_a270092}/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+            add_input_in_work:
+                pism2ece_antar: antar_pism2ece.nc
+            add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_LANDICE: ".true."
+                        ECE_LANDICE_THRESH: 0.5
+                        NISMRGNS: 1
+                        "ISMRGNPFX(1)": "antar"
+                        "ISMRGNCIS(1)": ".false."
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".true."
+    namelist_changes:
+        fort.4:
+            NAMECECFG:
+                ECE_CPL_NEMO_WEIGHTED_ICE: ".true."
+            NAMMCC:
+                LNEMOLIMTEMP: ".false."
+                LNEMOLIMTHK: ".true."
+                LNEMOSICOUP: ".false."
+            NAMECECMIP:
+                LCMIP6: False
+                LCMIP7: True
+                # CMIP7DATADIR is NOT set here. oifs48.cmip.yaml derives it, with
+                # CO3DATADIR and CCMIP_STRAT_FULL*, from ${input_dir}/cmip7-data =
+                # /albedo/pool/oifs-48r1/cmip7-data, which holds the complete CMIP7
+                # set (727 files). Pointing it at the levante_shared copy instead
+                # left the three siblings on the pool and this one on a directory
+                # that holds nothing but dust/, so OIFS aborted on the first
+                # UPDRGAS call: "ECE_CMIP_GHG: No such file or directory" for
+                # ghg/co2_input4MIPs_...nc (antftest4, 2026-10-07).
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+            NAMDDH:
+                LHDGLB: ".false."
+                LHDPRG: ".false."
+                LHDHKS: ".false."
+
+rnfmap:
+    runoff_file: "${general.pool_dir}/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
+    # dbm2: 4 threads inside an oifs node instead of a node of its own (antg065e10, v3.5.0)
+    omp_num_threads: 4
+    interleave_into: [oifs]
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600
+    norestart: T
+    debug_level: 1
+    input_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/"
+    ini_restart_dir: "${general.shared_a270092}/input/oasis/cy48r1/TCO95-CORE3/"
+    choose_general.chunk_number:
+        1:
+            input_sources:
+                grids: "${general.pism_cavity_ini_dir}/oasis/grids.nc"
+                masks: "${general.pism_cavity_ini_dir}/oasis/masks.nc"
+                areas: "${general.pism_cavity_ini_dir}/oasis/areas.nc"
+                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+            restart_in_sources:
+                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+                rstas.nc: "${general.pism_cavity_ini_dir}/rstas.nc"
+                rstos.nc: "${general.pism_cavity_ini_dir}/rstos.nc"
+                vegin.nc: vegin.nc
+                rstism.nc: "${general.pism_cavity_ini_dir}/oasis/rstism.nc"
+        "*":
+            input_sources:
+                grids: "${general.experiment_couple_dir}/oasis_regen/grids.nc"
+                masks: "${general.experiment_couple_dir}/oasis_regen/masks.nc"
+                areas: "${general.experiment_couple_dir}/oasis_regen/areas.nc"
+                rmp: "${general.experiment_couple_dir}/oasis_regen/rmp_*.nc"
+            restart_in_sources:
+                rmp: "${general.experiment_couple_dir}/oasis_regen/rmp_*.nc"
+                rstas.nc: "${general.experiment_couple_dir}/restart_remapped/rstas.nc"
+                rstos.nc: "${general.experiment_couple_dir}/restart_remapped/rstos.nc"
+                vegin.nc: vegin.nc
+                rstism.nc: "${experiment_restart_in_dir}/rstism.nc"
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 32
+    # dbm2: three xios ranks at the end of each oifs node instead of nodes of their own;
+    # 4 threads per rank as in the v3.5.0 spinup
+    omp_num_threads: 4
+    interleave_into: [oifs]
+    ranks_per_node: 3

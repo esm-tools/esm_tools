@@ -1588,6 +1588,36 @@ def movement(func):
 @movement
 def actually_copy(source_path, target_path):
     shutil.copy2(source_path, target_path)
+    check_copy_size(source_path, target_path)
+
+
+def check_copy_size(source_path, target_path):
+    """
+    Make sure a copy is complete. ``shutil.copy2`` can end early without raising:
+    on Linux it copies with ``os.sendfile`` and stops as soon as that returns 0.
+    On Lustre, with many copies running in parallel, this left a 22.9 MB copy of a
+    92.9 MB OASIS weight file in the work folder (antg065e10, 1923). copy2 then set
+    the source's time stamp, and the model died in OASIS initialisation. Compare
+    the sizes and copy again without sendfile if they differ. If the sizes still
+    differ, raise an error so the run stops before the model starts.
+    """
+    size_source = os.path.getsize(source_path)
+    size_target = os.path.getsize(target_path)
+    if size_source == size_target:
+        return
+    logger.warning(
+        f"Incomplete copy of {source_path} to {target_path} "
+        f"({size_target} of {size_source} bytes), copying again"
+    )
+    with open(source_path, "rb") as fsrc, open(target_path, "wb") as fdst:
+        shutil.copyfileobj(fsrc, fdst, 16 * 1024 * 1024)
+    shutil.copystat(source_path, target_path)
+    size_target = os.path.getsize(target_path)
+    if size_target != size_source:
+        raise RuntimeError(
+            f"Copy of {source_path} to {target_path} is still incomplete after a "
+            f"second try ({size_target} of {size_source} bytes)"
+        )
 
 
 @movement

@@ -90,6 +90,69 @@ oifs:
                             NAERAD:
                                 LCMIP_STRATAER_CMIP7: True
                                 LCMIP_STRATAER_BCKGD: False
+                # ScenarioMIP. The scenario key is the short name the CMIP7 forcing files
+                # carry (vl, ln, l, ml, m, hl, h): OpenIFS builds the names of the greenhouse
+                # gas, ozone and MACv2-SP plume files for model years from 2023 from
+                # SCENARIONAME. Before 2023 the historical files are read, so a run can
+                # start in the historical period and cross into the scenario.
+                # Inputs in the albedo pool on 2026-10-08: complete for h and vl; the other
+                # five have greenhouse gases only (no ozone, no plume file).
+                "vl":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "vl"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "ln":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "ln"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "l":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "l"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "ml":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "ml"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "m":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "m"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "hl":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "hl"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "h":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "h"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
             add_namelist_changes:
                 fort.4:
                     NAMECECMIP:

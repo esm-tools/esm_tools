@@ -7,6 +7,12 @@
        output frequency (3h / 1d / 1mo). All files split yearly. Filenames
        are "<var>.fesom" + XIOS split suffix. -->
 
+  <!-- freq_op: FESOM accumulates every field each step and sends the mean since its last
+       send whenever XIOS asks for it (xios_field_is_active), i.e. at the finest freq_op of
+       all files that use the field. All files of a field therefore use that finest freq_op;
+       a coarser one would sample the last short mean only (e.g. the last day of a month).
+       Where the finer file is behind a switch, freq_op follows that switch. -->
+
   <!-- ================= Daily ================= -->
   <!-- freq_op="1d" (matching output_freq) makes XIOS request samples once per day
        via xios_field_is_active. FESOM sends daily; XIOS averages over 1 sample
@@ -14,7 +20,7 @@
        Replaces the prior pattern where FESOM's hardcoded freq_unit='s' override
        fired write_mean every model step (558k calls/rank/month → ~430). -->
   <file_group id="fesom_1d" output_freq="1d" split_freq="1y" split_freq_format="%y" enabled="true">
-    <file id="f_sst"    name="sst.fesom.%start_date%" ><field field_ref="sst"      freq_op="1d"/></file>
+    <file id="f_sst"    name="sst.fesom.%start_date%" ><field field_ref="sst"      freq_op="{{ '1ts' if fesom.cmip7_3h_output else '1d' }}"/></file>
     <file id="f_sss"    name="sss.fesom.%start_date%" ><field field_ref="sss"      freq_op="1d"/></file>
     <file id="f_ssh"    name="ssh.fesom.%start_date%" ><field field_ref="ssh"      freq_op="1d"/></file>
     <file id="f_uice"   name="uice.fesom.%start_date%" ><field field_ref="uice"     freq_op="1d"/></file>
@@ -37,7 +43,35 @@
          Separate file id and name so the monthly m_ice stream, which several
          monthly rules read, is untouched. -->
     <file id="f_m_ice_day" name="m_ice_day.fesom.%start_date%"><field field_ref="m_ice" freq_op="1d"/></file>
+
+    {% if fesom.cmip7_daily_3d_output %}
+    <!-- Daily 3D fields (about 15 GB per field and simulated year raw on CORE3):
+         u*T, v*T for daily hfx/hfy (needs ldiag_trflx), so, wo, rsdo -->
+    <file id="f_utemp_day" name="utemp_day.fesom.%start_date%"><field field_ref="utemp" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_vtemp_day" name="vtemp_day.fesom.%start_date%"><field field_ref="vtemp" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_salt_day" name="salt_day.fesom.%start_date%"><field field_ref="salt" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_w_day" name="w_day.fesom.%start_date%"><field field_ref="w" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_rsdoabsorb_day" name="rsdoabsorb_day.fesom.%start_date%"><field field_ref="rsdoabsorb" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    {% endif %}
   </file_group>
+
+  <!-- ================= 3-hourly ================= -->
+  <!-- Surface fluxes for CMIP 3hr hfds, wfo, tauuo/tauvo, rsntds, friver, sfdsi, and
+       instantaneous tos (tpt): sst is sampled every time step (freq_op=1ts) and the
+       value of the last step of each 3 h interval is written. -->
+  {% if fesom.cmip7_3h_output %}
+  <file_group id="fesom_3h" output_freq="3h" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="f_sst_3h_inst" name="sst_3h_inst.fesom.%start_date%"><field field_ref="sst" operation="instant" freq_op="{{ '1ts' if fesom.cmip7_3h_output else '1d' }}"/></file>
+    <file id="f_fh_3h" name="fh_3h.fesom.%start_date%"><field field_ref="fh" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_fw_3h" name="fw_3h.fesom.%start_date%"><field field_ref="fw" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_tx_sur_3h" name="tx_sur_3h.fesom.%start_date%"><field field_ref="tx_sur" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_ty_sur_3h" name="ty_sur_3h.fesom.%start_date%"><field field_ref="ty_sur" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_qsr_3h" name="qsr_3h.fesom.%start_date%"><field field_ref="qsr" freq_op="3h"/></file>
+    <file id="f_runoff_3h" name="runoff_3h.fesom.%start_date%"><field field_ref="runoff" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_virtsalt_3h" name="virtsalt_3h.fesom.%start_date%"><field field_ref="virtsalt" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_realsalt_3h" name="realsalt_3h.fesom.%start_date%"><field field_ref="realsalt" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+  </file_group>
+  {% endif %}
 
   <!-- ================= Monthly ================= -->
   <!-- freq_op="1mo" (matching output_freq) → XIOS asks once per month, FESOM sends
@@ -45,11 +79,20 @@
   <file_group id="fesom_1mo" output_freq="1mo" split_freq="1y" split_freq_format="%y" enabled="true">
 
     <!-- 2D nodes -->
-    <file id="f_m_ice"           name="m_ice.fesom.%start_date%" ><field field_ref="m_ice"           freq_op="1mo"/></file>
+    <file id="f_m_ice"           name="m_ice.fesom.%start_date%" ><field field_ref="m_ice"           freq_op="1d"/></file>
     <file id="f_MLD1"            name="MLD1.fesom.%start_date%" ><field field_ref="MLD1"            freq_op="1mo"/></file>
     <file id="f_MLD2"            name="MLD2.fesom.%start_date%" ><field field_ref="MLD2"            freq_op="1mo"/></file>
-    <file id="f_fw"              name="fw.fesom.%start_date%" ><field field_ref="fw"              freq_op="1mo"/></file>
-    <file id="f_fh"              name="fh.fesom.%start_date%" ><field field_ref="fh"              freq_op="1mo"/></file>
+    <file id="f_fw"              name="fw.fesom.%start_date%" ><field field_ref="fw"              freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_fh"              name="fh.fesom.%start_date%" ><field field_ref="fh"              freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_alb"             name="alb.fesom.%start_date%" ><field field_ref="alb"             freq_op="1mo"/></file>
+    {% if fesom.use_icebergs %}
+    <!-- Iceberg melt and heat fluxes; gated like the model's own registration (use_icebergs). -->
+    <file id="f_ibfwb"           name="ibfwb.fesom.%start_date%" ><field field_ref="ibfwb"           freq_op="1mo"/></file>
+    <file id="f_ibfwbv"          name="ibfwbv.fesom.%start_date%"><field field_ref="ibfwbv"          freq_op="1mo"/></file>
+    <file id="f_ibfwl"           name="ibfwl.fesom.%start_date%" ><field field_ref="ibfwl"           freq_op="1mo"/></file>
+    <file id="f_ibfwe"           name="ibfwe.fesom.%start_date%" ><field field_ref="ibfwe"           freq_op="1mo"/></file>
+    <file id="f_ibhf"            name="ibhf.fesom.%start_date%" ><field field_ref="ibhf"            freq_op="1mo"/></file>
+    {% endif %}
     <file id="f_thdgrarea"       name="thdgrarea.fesom.%start_date%" ><field field_ref="thdgrarea"       freq_op="1mo"/></file>
     <file id="f_dyngrarea"       name="dyngrarea.fesom.%start_date%" ><field field_ref="dyngrarea"       freq_op="1mo"/></file>
     <file id="f_thdgrice"        name="thdgrice.fesom.%start_date%" ><field field_ref="thdgrice"        freq_op="1mo"/></file>
@@ -61,9 +104,9 @@
     <file id="f_iceoce_y"        name="iceoce_y.fesom.%start_date%" ><field field_ref="iceoce_y"        freq_op="1mo"/></file>
     <file id="f_fw_ice"          name="fw_ice.fesom.%start_date%" ><field field_ref="fw_ice"          freq_op="1mo"/></file>
     <file id="f_fw_snw"          name="fw_snw.fesom.%start_date%" ><field field_ref="fw_snw"          freq_op="1mo"/></file>
-    <file id="f_virtsalt"        name="virtsalt.fesom.%start_date%" ><field field_ref="virtsalt"        freq_op="1mo"/></file>
+    <file id="f_virtsalt"        name="virtsalt.fesom.%start_date%" ><field field_ref="virtsalt"        freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <!-- f_realsalt disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs -->
-    <!-- <file id="f_realsalt"        name="realsalt.fesom.%start_date%" ><field field_ref="realsalt"        freq_op="1mo"/></file> -->
+    <!-- <file id="f_realsalt"        name="realsalt.fesom.%start_date%" ><field field_ref="realsalt"        freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file> -->
     <!-- f_relaxsalt: enabled. Output is identically 0 in coupled HR (no SSS restoring active);
          CMIP vsfcorr correctly reports the absence of any virtual salt flux correction. The
          zero field IS the right answer — it's a positive demonstration that no flux
@@ -76,7 +119,7 @@
     <file id="f_evap"            name="evap.fesom.%start_date%" ><field field_ref="evap"            freq_op="1mo"/></file>
     <file id="f_prec"            name="prec.fesom.%start_date%" ><field field_ref="prec"            freq_op="1mo"/></file>
     <file id="f_snow"            name="snow.fesom.%start_date%" ><field field_ref="snow"            freq_op="1mo"/></file>
-    <file id="f_runoff"          name="runoff.fesom.%start_date%" ><field field_ref="runoff"          freq_op="1mo"/></file>
+    <file id="f_runoff"          name="runoff.fesom.%start_date%" ><field field_ref="runoff"          freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <file id="f_pbo"             name="pbo.fesom.%start_date%" ><field field_ref="pbo"             freq_op="1mo"/></file>
     <file id="f_opottemptend"    name="opottemptend.fesom.%start_date%" ><field field_ref="opottemptend"    freq_op="1mo"/></file>
     <file id="f_opottemprmadvect" name="opottemprmadvect.fesom.%start_date%"><field field_ref="opottemprmadvect" freq_op="1mo"/></file>
@@ -86,8 +129,8 @@
     <file id="f_osaltdiff"       name="osaltdiff.fesom.%start_date%" ><field field_ref="osaltdiff"       freq_op="1mo"/></file>
 
     <!-- 2D elements -->
-    <file id="f_tx_sur"       name="tx_sur.fesom.%start_date%" ><field field_ref="tx_sur"       freq_op="1mo"/></file>
-    <file id="f_ty_sur"       name="ty_sur.fesom.%start_date%" ><field field_ref="ty_sur"       freq_op="1mo"/></file>
+    <file id="f_tx_sur"       name="tx_sur.fesom.%start_date%" ><field field_ref="tx_sur"       freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_ty_sur"       name="ty_sur.fesom.%start_date%" ><field field_ref="ty_sur"       freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <!-- f_strength_ice: enabled. NOTE: at the time of writing, mEVP (whichEVP=1) and aEVP
          (whichEVP=2) in ice_maEVP.F90 use a local 'pressure' / 'pressure_fac' variable and
          leave the shared ice%work%ice_strength array at the zero init from MOD_ICE.F90:828.
@@ -96,9 +139,9 @@
          ice%work%ice_strength alongside its local pressure variable (TODO, separately),
          CMIP sicompstren produces correct values with no XML/namelist change required. -->
     <file id="f_strength_ice" name="strength_ice.fesom.%start_date%"><field field_ref="strength_ice" freq_op="1mo"/></file>
-    <file id="f_sgm11"        name="sgm11.fesom.%start_date%" ><field field_ref="sgm11"        freq_op="1mo"/></file>
-    <file id="f_sgm12"        name="sgm12.fesom.%start_date%" ><field field_ref="sgm12"        freq_op="1mo"/></file>
-    <file id="f_sgm22"        name="sgm22.fesom.%start_date%" ><field field_ref="sgm22"        freq_op="1mo"/></file>
+    <file id="f_sgm11"        name="sgm11.fesom.%start_date%" ><field field_ref="sgm11"        freq_op="1ts"/></file>
+    <file id="f_sgm12"        name="sgm12.fesom.%start_date%" ><field field_ref="sgm12"        freq_op="1ts"/></file>
+    <file id="f_sgm22"        name="sgm22.fesom.%start_date%" ><field field_ref="sgm22"        freq_op="1ts"/></file>
 
     <!-- Instantaneous stress tensor, for CMIP sistressave / sistressmax.
          Both DReq entries are branded tpt-u-hxy-si and ask for an instantaneous
@@ -111,9 +154,9 @@
          streams above, so nothing that wants the mean silently gets a snapshot.
          Note the sample lands at the end of the output interval, not the 15th
          as the DReq text prefers, but it is a genuine instantaneous value. -->
-    <file id="f_sgm11_inst"   name="sgm11_inst.fesom.%start_date%" ><field field_ref="sgm11"        freq_op="1mo" operation="instant"/></file>
-    <file id="f_sgm12_inst"   name="sgm12_inst.fesom.%start_date%" ><field field_ref="sgm12"        freq_op="1mo" operation="instant"/></file>
-    <file id="f_sgm22_inst"   name="sgm22_inst.fesom.%start_date%" ><field field_ref="sgm22"        freq_op="1mo" operation="instant"/></file>
+    <file id="f_sgm11_inst"   name="sgm11_inst.fesom.%start_date%" ><field field_ref="sgm11"        freq_op="1ts" operation="instant"/></file>
+    <file id="f_sgm12_inst"   name="sgm12_inst.fesom.%start_date%" ><field field_ref="sgm12"        freq_op="1ts" operation="instant"/></file>
+    <file id="f_sgm22_inst"   name="sgm22_inst.fesom.%start_date%" ><field field_ref="sgm22"        freq_op="1ts" operation="instant"/></file>
 
     <!-- 0D scalars routed through XIOS at file_def cadence -->
     <file id="f_volo"      name="volo.fesom.%start_date%" ><field field_ref="volo"      freq_op="1mo"/></file>
@@ -128,14 +171,14 @@
 
     <!-- 3D nodes, cell-center -->
     <file id="f_temp"       name="temp.fesom.%start_date%" ><field field_ref="temp"       freq_op="1mo"/></file>
-    <file id="f_salt"       name="salt.fesom.%start_date%" ><field field_ref="salt"       freq_op="1mo"/></file>
+    <file id="f_salt"       name="salt.fesom.%start_date%" ><field field_ref="salt"       freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_unod"       name="unod.fesom.%start_date%" ><field field_ref="unod"       freq_op="1mo"/></file>
     <file id="f_vnod"       name="vnod.fesom.%start_date%" ><field field_ref="vnod"       freq_op="1mo"/></file>
     <file id="f_hnode"      name="hnode.fesom.%start_date%" ><field field_ref="hnode"      freq_op="1mo"/></file>
-    <file id="f_rsdoabsorb" name="rsdoabsorb.fesom.%start_date%"><field field_ref="rsdoabsorb"  freq_op="1mo"/></file>
+    <file id="f_rsdoabsorb" name="rsdoabsorb.fesom.%start_date%"><field field_ref="rsdoabsorb"  freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
 
     <!-- 3D nodes, interface levels -->
-    <file id="f_w"       name="w.fesom.%start_date%" ><field field_ref="w"        freq_op="1mo"/></file>
+    <file id="f_w"       name="w.fesom.%start_date%" ><field field_ref="w"        freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_bolus_w" name="bolus_w.fesom.%start_date%"><field field_ref="bolus_w"  freq_op="1mo"/></file>
     <file id="f_N2"      name="N2.fesom.%start_date%" ><field field_ref="N2"       freq_op="1mo"/></file>
     <file id="f_Kv"      name="Kv.fesom.%start_date%" ><field field_ref="Kv"       freq_op="1mo"/></file>
@@ -145,8 +188,8 @@
     <file id="f_v"       name="v.fesom.%start_date%" ><field field_ref="v"        freq_op="1mo"/></file>
     <file id="f_bolus_u" name="bolus_u.fesom.%start_date%"><field field_ref="bolus_u"  freq_op="1mo"/></file>
     <file id="f_bolus_v" name="bolus_v.fesom.%start_date%"><field field_ref="bolus_v"  freq_op="1mo"/></file>
-    <file id="f_utemp"   name="utemp.fesom.%start_date%" ><field field_ref="utemp"    freq_op="1mo"/></file>
-    <file id="f_vtemp"   name="vtemp.fesom.%start_date%" ><field field_ref="vtemp"    freq_op="1mo"/></file>
+    <file id="f_utemp"   name="utemp.fesom.%start_date%" ><field field_ref="utemp"    freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_vtemp"   name="vtemp.fesom.%start_date%" ><field field_ref="vtemp"    freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_usalt"   name="usalt.fesom.%start_date%" ><field field_ref="usalt"    freq_op="1mo"/></file>
     <file id="f_vsalt"   name="vsalt.fesom.%start_date%" ><field field_ref="vsalt"    freq_op="1mo"/></file>
 
@@ -182,7 +225,7 @@
 
   <!-- Daily regridded 2D — mirrors fesom_1d -->
   <file_group id="fesom_1d_reg" output_freq="1d" split_freq="1y" split_freq_format="%y" enabled="true">
-    <file id="f_sst_reg"      name="sst.fesom.gr.%start_date%" ><field field_ref="sst"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_sst_reg"      name="sst.fesom.gr.%start_date%" ><field field_ref="sst"      grid_ref="grid_2d_nod_reg" freq_op="{{ '1ts' if fesom.cmip7_3h_output else '1d' }}"/></file>
     <file id="f_sss_reg"      name="sss.fesom.gr.%start_date%" ><field field_ref="sss"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
     <file id="f_ssh_reg"      name="ssh.fesom.gr.%start_date%" ><field field_ref="ssh"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
     <file id="f_uice_reg"     name="uice.fesom.gr.%start_date%" ><field field_ref="uice"     grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
@@ -201,11 +244,11 @@
   <file_group id="fesom_1mo_reg" output_freq="1mo" split_freq="1y" split_freq_format="%y" enabled="true">
 
     <!-- 2D nodes -->
-    <file id="f_m_ice_reg"            name="m_ice.fesom.gr.%start_date%" ><field field_ref="m_ice"            grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_m_ice_reg"            name="m_ice.fesom.gr.%start_date%" ><field field_ref="m_ice"            grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
     <file id="f_MLD1_reg"             name="MLD1.fesom.gr.%start_date%" ><field field_ref="MLD1"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_MLD2_reg"             name="MLD2.fesom.gr.%start_date%" ><field field_ref="MLD2"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
-    <file id="f_fw_reg"               name="fw.fesom.gr.%start_date%" ><field field_ref="fw"               grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
-    <file id="f_fh_reg"               name="fh.fesom.gr.%start_date%" ><field field_ref="fh"               grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_fw_reg"               name="fw.fesom.gr.%start_date%" ><field field_ref="fw"               grid_ref="grid_2d_nod_reg" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_fh_reg"               name="fh.fesom.gr.%start_date%" ><field field_ref="fh"               grid_ref="grid_2d_nod_reg" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <file id="f_thdgrarea_reg"        name="thdgrarea.fesom.gr.%start_date%" ><field field_ref="thdgrarea"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_dyngrarea_reg"        name="dyngrarea.fesom.gr.%start_date%" ><field field_ref="dyngrarea"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_thdgrice_reg"         name="thdgrice.fesom.gr.%start_date%" ><field field_ref="thdgrice"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
@@ -217,7 +260,7 @@
     <file id="f_iceoce_y_reg"         name="iceoce_y.fesom.gr.%start_date%" ><field field_ref="iceoce_y"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_fw_ice_reg"           name="fw_ice.fesom.gr.%start_date%" ><field field_ref="fw_ice"           grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_fw_snw_reg"           name="fw_snw.fesom.gr.%start_date%" ><field field_ref="fw_snw"           grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
-    <file id="f_virtsalt_reg"         name="virtsalt.fesom.gr.%start_date%" ><field field_ref="virtsalt"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_virtsalt_reg"         name="virtsalt.fesom.gr.%start_date%" ><field field_ref="virtsalt"         grid_ref="grid_2d_nod_reg" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <file id="f_relaxsalt_reg"        name="relaxsalt.fesom.gr.%start_date%" ><field field_ref="relaxsalt"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_qcon_reg"             name="qcon.fesom.gr.%start_date%" ><field field_ref="qcon"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_apnd_reg"             name="apnd.fesom.gr.%start_date%" ><field field_ref="apnd"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
@@ -226,7 +269,7 @@
     <file id="f_evap_reg"             name="evap.fesom.gr.%start_date%" ><field field_ref="evap"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_prec_reg"             name="prec.fesom.gr.%start_date%" ><field field_ref="prec"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_snow_reg"             name="snow.fesom.gr.%start_date%" ><field field_ref="snow"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
-    <file id="f_runoff_reg"           name="runoff.fesom.gr.%start_date%" ><field field_ref="runoff"           grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_runoff_reg"           name="runoff.fesom.gr.%start_date%" ><field field_ref="runoff"           grid_ref="grid_2d_nod_reg" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <file id="f_pbo_reg"              name="pbo.fesom.gr.%start_date%" ><field field_ref="pbo"              grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_opottemptend_reg"     name="opottemptend.fesom.gr.%start_date%" ><field field_ref="opottemptend"     grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_opottemprmadvect_reg" name="opottemprmadvect.fesom.gr.%start_date%"><field field_ref="opottemprmadvect" grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
@@ -236,12 +279,12 @@
     <file id="f_osaltdiff_reg"        name="osaltdiff.fesom.gr.%start_date%" ><field field_ref="osaltdiff"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
 
     <!-- 2D elements -->
-    <file id="f_tx_sur_reg"           name="tx_sur.fesom.gr.%start_date%" ><field field_ref="tx_sur"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_ty_sur_reg"           name="ty_sur.fesom.gr.%start_date%" ><field field_ref="ty_sur"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_tx_sur_reg"           name="tx_sur.fesom.gr.%start_date%" ><field field_ref="tx_sur"           grid_ref="grid_2d_elem_reg" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
+    <file id="f_ty_sur_reg"           name="ty_sur.fesom.gr.%start_date%" ><field field_ref="ty_sur"           grid_ref="grid_2d_elem_reg" freq_op="{{ '3h' if fesom.cmip7_3h_output else '1mo' }}"/></file>
     <file id="f_strength_ice_reg"     name="strength_ice.fesom.gr.%start_date%" ><field field_ref="strength_ice"     grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_sgm11_reg"            name="sgm11.fesom.gr.%start_date%" ><field field_ref="sgm11"            grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_sgm12_reg"            name="sgm12.fesom.gr.%start_date%" ><field field_ref="sgm12"            grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_sgm22_reg"            name="sgm22.fesom.gr.%start_date%" ><field field_ref="sgm22"            grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_sgm11_reg"            name="sgm11.fesom.gr.%start_date%" ><field field_ref="sgm11"            grid_ref="grid_2d_elem_reg" freq_op="1ts"/></file>
+    <file id="f_sgm12_reg"            name="sgm12.fesom.gr.%start_date%" ><field field_ref="sgm12"            grid_ref="grid_2d_elem_reg" freq_op="1ts"/></file>
+    <file id="f_sgm22_reg"            name="sgm22.fesom.gr.%start_date%" ><field field_ref="sgm22"            grid_ref="grid_2d_elem_reg" freq_op="1ts"/></file>
 
   </file_group>
   {% endif %}
@@ -255,14 +298,14 @@
 
     <!-- 3D nodes, cell-center -->
     <file id="f_temp_reg"       name="temp.fesom.gr.%start_date%" ><field field_ref="temp"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
-    <file id="f_salt_reg"       name="salt.fesom.gr.%start_date%" ><field field_ref="salt"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_salt_reg"       name="salt.fesom.gr.%start_date%" ><field field_ref="salt"       grid_ref="grid_3d_nod_reg"     freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_unod_reg"       name="unod.fesom.gr.%start_date%" ><field field_ref="unod"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
     <file id="f_vnod_reg"       name="vnod.fesom.gr.%start_date%" ><field field_ref="vnod"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
     <file id="f_hnode_reg"      name="hnode.fesom.gr.%start_date%" ><field field_ref="hnode"      grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
-    <file id="f_rsdoabsorb_reg" name="rsdoabsorb.fesom.gr.%start_date%"><field field_ref="rsdoabsorb" grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_rsdoabsorb_reg" name="rsdoabsorb.fesom.gr.%start_date%"><field field_ref="rsdoabsorb" grid_ref="grid_3d_nod_reg"     freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
 
     <!-- 3D nodes, interface levels -->
-    <file id="f_w_reg"       name="w.fesom.gr.%start_date%" ><field field_ref="w"       grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
+    <file id="f_w_reg"       name="w.fesom.gr.%start_date%" ><field field_ref="w"       grid_ref="grid_3d_nod_reg_nz1" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_bolus_w_reg" name="bolus_w.fesom.gr.%start_date%"><field field_ref="bolus_w" grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
     <file id="f_N2_reg"      name="N2.fesom.gr.%start_date%" ><field field_ref="N2"      grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
     <file id="f_Kv_reg"      name="Kv.fesom.gr.%start_date%" ><field field_ref="Kv"      grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
@@ -272,8 +315,8 @@
     <file id="f_v_reg"       name="v.fesom.gr.%start_date%" ><field field_ref="v"       grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
     <file id="f_bolus_u_reg" name="bolus_u.fesom.gr.%start_date%"><field field_ref="bolus_u" grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
     <file id="f_bolus_v_reg" name="bolus_v.fesom.gr.%start_date%"><field field_ref="bolus_v" grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
-    <file id="f_utemp_reg"   name="utemp.fesom.gr.%start_date%" ><field field_ref="utemp"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
-    <file id="f_vtemp_reg"   name="vtemp.fesom.gr.%start_date%" ><field field_ref="vtemp"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_utemp_reg"   name="utemp.fesom.gr.%start_date%" ><field field_ref="utemp"   grid_ref="grid_3d_elem_reg"     freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_vtemp_reg"   name="vtemp.fesom.gr.%start_date%" ><field field_ref="vtemp"   grid_ref="grid_3d_elem_reg"     freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_usalt_reg"   name="usalt.fesom.gr.%start_date%" ><field field_ref="usalt"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
     <file id="f_vsalt_reg"   name="vsalt.fesom.gr.%start_date%" ><field field_ref="vsalt"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
 
@@ -297,6 +340,206 @@
     <!-- dMOC sigma-2 density on z-levels -->
     <file id="f_density_dMOC_reg"      name="density_dMOC.fesom.gr.%start_date%" ><field field_ref="density_dMOC"      grid_ref="grid_3d_nod_reg"  freq_op="1mo"/></file>
 
+  </file_group>
+  {% endif %}
+
+  <!-- ===== REcoM / carbon-cycle BGC output (monthly, native mesh) =====
+       Only with fesom.recom_xios_output, which awiesm3 sets when the ocean carbon cycle is
+       coupled; the inner gates follow &parecomsetup and ltra_diag as in xios_xml/. FESOM sends
+       a field only if it has a stream for it, so every field here needs its entry in the
+       io_list of namelist.io.recom (tracers come through 'otracers'). -->
+  {% if fesom.recom_xios_output %}
+  <file_group id="fesom_1mo_bgc" output_freq="1mo" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="f_dpCO2s"      name="dpCO2s.fesom.%start_date%" ><field field_ref="dpCO2s" freq_op="1mo"/></file>
+    <file id="f_pCO2s"       name="pCO2s.fesom.%start_date%" ><field field_ref="pCO2s" freq_op="1mo"/></file>
+    <file id="f_CO2f"        name="CO2f.fesom.%start_date%" ><field field_ref="CO2f" freq_op="1mo"/></file>
+    <file id="f_O2f"         name="O2f.fesom.%start_date%" ><field field_ref="O2f" freq_op="1mo"/></file>
+    <file id="f_Hp"          name="Hp.fesom.%start_date%" ><field field_ref="Hp" freq_op="1mo"/></file>
+    <file id="f_aFe"         name="aFe.fesom.%start_date%" ><field field_ref="aFe" freq_op="1mo"/></file>
+    <file id="f_aN"          name="aN.fesom.%start_date%" ><field field_ref="aN" freq_op="1mo"/></file>
+    <file id="f_benN"        name="benN.fesom.%start_date%" ><field field_ref="benN" freq_op="1mo"/></file>
+    <file id="f_benC"        name="benC.fesom.%start_date%" ><field field_ref="benC" freq_op="1mo"/></file>
+    <file id="f_benSi"       name="benSi.fesom.%start_date%" ><field field_ref="benSi" freq_op="1mo"/></file>
+    <file id="f_benCalc"     name="benCalc.fesom.%start_date%" ><field field_ref="benCalc" freq_op="1mo"/></file>
+    <file id="f_NPPn"        name="NPPn.fesom.%start_date%" ><field field_ref="NPPn" freq_op="1d"/></file>
+    <file id="f_NPPd"        name="NPPd.fesom.%start_date%" ><field field_ref="NPPd" freq_op="1d"/></file>
+    <file id="f_GPPn"        name="GPPn.fesom.%start_date%" ><field field_ref="GPPn" freq_op="1mo"/></file>
+    <file id="f_GPPd"        name="GPPd.fesom.%start_date%" ><field field_ref="GPPd" freq_op="1mo"/></file>
+    <file id="f_NNAn"        name="NNAn.fesom.%start_date%" ><field field_ref="NNAn" freq_op="1mo"/></file>
+    <file id="f_NNAd"        name="NNAd.fesom.%start_date%" ><field field_ref="NNAd" freq_op="1mo"/></file>
+    <file id="f_ChlDegn"     name="ChlDegn.fesom.%start_date%" ><field field_ref="ChlDegn" freq_op="1mo"/></file>
+    <file id="f_ChlDegd"     name="ChlDegd.fesom.%start_date%" ><field field_ref="ChlDegd" freq_op="1mo"/></file>
+    <file id="f_xCO2atm"     name="xCO2atm.fesom.%start_date%" ><field field_ref="xCO2atm" freq_op="1mo"/></file>
+    <file id="f_PAR"         name="PAR.fesom.%start_date%" ><field field_ref="PAR" freq_op="1mo"/></file>
+    <file id="f_respmeso"    name="respmeso.fesom.%start_date%" ><field field_ref="respmeso" freq_op="1mo"/></file>
+    <file id="f_calcdiss"    name="calcdiss.fesom.%start_date%" ><field field_ref="calcdiss" freq_op="1mo"/></file>
+    <file id="f_calcif"      name="calcif.fesom.%start_date%" ><field field_ref="calcif" freq_op="1mo"/></file>
+    <file id="f_aggn"        name="aggn.fesom.%start_date%" ><field field_ref="aggn" freq_op="1mo"/></file>
+    <file id="f_aggd"        name="aggd.fesom.%start_date%" ><field field_ref="aggd" freq_op="1mo"/></file>
+    <file id="f_docexn"      name="docexn.fesom.%start_date%" ><field field_ref="docexn" freq_op="1mo"/></file>
+    <file id="f_docexd"      name="docexd.fesom.%start_date%" ><field field_ref="docexd" freq_op="1mo"/></file>
+    <file id="f_respn"       name="respn.fesom.%start_date%" ><field field_ref="respn" freq_op="1mo"/></file>
+    <file id="f_respd"       name="respd.fesom.%start_date%" ><field field_ref="respd" freq_op="1mo"/></file>
+    <file id="f_NPPn3D"      name="NPPn3D.fesom.%start_date%" ><field field_ref="NPPn3D" freq_op="1mo"/></file>
+    <file id="f_NPPd3D"      name="NPPd3D.fesom.%start_date%" ><field field_ref="NPPd3D" freq_op="1mo"/></file>
+    <file id="f_DIN"         name="DIN.fesom.%start_date%" ><field field_ref="DIN" freq_op="1mo"/></file>
+    <file id="f_DIC"         name="DIC.fesom.%start_date%" ><field field_ref="DIC" freq_op="1mo"/></file>
+    <file id="f_Alk"         name="Alk.fesom.%start_date%" ><field field_ref="Alk" freq_op="1mo"/></file>
+    <file id="f_PhyN"        name="PhyN.fesom.%start_date%" ><field field_ref="PhyN" freq_op="1mo"/></file>
+    <file id="f_PhyC"        name="PhyC.fesom.%start_date%" ><field field_ref="PhyC" freq_op="1d"/></file>
+    <file id="f_PhyChl"      name="PhyChl.fesom.%start_date%" ><field field_ref="PhyChl" freq_op="1d"/></file>
+    <file id="f_DetN"        name="DetN.fesom.%start_date%" ><field field_ref="DetN" freq_op="1mo"/></file>
+    <file id="f_DetC"        name="DetC.fesom.%start_date%" ><field field_ref="DetC" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_HetN"        name="HetN.fesom.%start_date%" ><field field_ref="HetN" freq_op="1mo"/></file>
+    <file id="f_HetC"        name="HetC.fesom.%start_date%" ><field field_ref="HetC" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_DON"         name="DON.fesom.%start_date%" ><field field_ref="DON" freq_op="1mo"/></file>
+    <file id="f_DOC"         name="DOC.fesom.%start_date%" ><field field_ref="DOC" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_DiaN"        name="DiaN.fesom.%start_date%" ><field field_ref="DiaN" freq_op="1mo"/></file>
+    <file id="f_DiaC"        name="DiaC.fesom.%start_date%" ><field field_ref="DiaC" freq_op="1d"/></file>
+    <file id="f_DiaChl"      name="DiaChl.fesom.%start_date%" ><field field_ref="DiaChl" freq_op="1d"/></file>
+    <file id="f_DiaSi"       name="DiaSi.fesom.%start_date%" ><field field_ref="DiaSi" freq_op="1mo"/></file>
+    <file id="f_DetSi"       name="DetSi.fesom.%start_date%" ><field field_ref="DetSi" freq_op="1mo"/></file>
+    <file id="f_DSi"         name="DSi.fesom.%start_date%" ><field field_ref="DSi" freq_op="1mo"/></file>
+    <file id="f_DFe"         name="DFe.fesom.%start_date%" ><field field_ref="DFe" freq_op="1mo"/></file>
+    <file id="f_PhyCalc"     name="PhyCalc.fesom.%start_date%" ><field field_ref="PhyCalc" freq_op="1mo"/></file>
+    <file id="f_DetCalc"     name="DetCalc.fesom.%start_date%" ><field field_ref="DetCalc" freq_op="1mo"/></file>
+    <file id="f_O2"          name="O2.fesom.%start_date%" ><field field_ref="O2" freq_op="1d"/></file>
+    <file id="f_CO2_aq"      name="CO2_aq.fesom.%start_date%" ><field field_ref="CO2_aq" freq_op="1mo"/></file>
+    <file id="f_pH"          name="pH.fesom.%start_date%" ><field field_ref="pH" freq_op="1d"/></file>
+    <file id="f_pCO2"        name="pCO2.fesom.%start_date%" ><field field_ref="pCO2" freq_op="1mo"/></file>
+    <file id="f_HCO3"        name="HCO3.fesom.%start_date%" ><field field_ref="HCO3" freq_op="1mo"/></file>
+    <file id="f_CO3"         name="CO3.fesom.%start_date%" ><field field_ref="CO3" freq_op="1d"/></file>
+    <file id="f_OmegaC"      name="OmegaC.fesom.%start_date%" ><field field_ref="OmegaC" freq_op="1mo"/></file>
+    <file id="f_OmegaA"      name="OmegaA.fesom.%start_date%"><field field_ref="OmegaA" freq_op="1mo"/></file>
+    <file id="f_CO3satA"     name="CO3satA.fesom.%start_date%"><field field_ref="CO3satA" freq_op="1d"/></file>
+    <!-- photosynthesis terms of small phytoplankton and diatoms; REcoM fills them with diags,
+         independent of ltra_diag -->
+    <file id="f_TPhyCO2"     name="TPhyCO2.fesom.%start_date%"><field field_ref="TPhyCO2" freq_op="1mo"/></file>
+    <file id="f_TDiaCO2"     name="TDiaCO2.fesom.%start_date%"><field field_ref="TDiaCO2" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_phyto" name="TCphotLL_phyto.fesom.%start_date%"><field field_ref="TCphotLL_phyto" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_dia" name="TCphotLL_dia.fesom.%start_date%"><field field_ref="TCphotLL_dia" freq_op="1mo"/></file>
+    <file id="f_TCphot_phyto" name="TCphot_phyto.fesom.%start_date%"><field field_ref="TCphot_phyto" freq_op="1mo"/></file>
+    <file id="f_TCphot_diatoms" name="TCphot_diatoms.fesom.%start_date%"><field field_ref="TCphot_diatoms" freq_op="1mo"/></file>
+
+    {% if fesom.recom_cmip7_diags %}
+    <!-- CMIP7 diagnostics: only in a FESOM built from feat/recom-cmip7-output with REcoM
+         feat/cmip7-output (otherwise FESOM never sends them and the files hold fill values only) -->
+    <file id="f_bflxN"       name="bflxN.fesom.%start_date%"><field field_ref="bflxN" freq_op="1mo"/></file>
+    <file id="f_bflxC"       name="bflxC.fesom.%start_date%"><field field_ref="bflxC" freq_op="1d"/></file>
+    <file id="f_bflxSi"      name="bflxSi.fesom.%start_date%"><field field_ref="bflxSi" freq_op="1mo"/></file>
+    <file id="f_bflxCalc"    name="bflxCalc.fesom.%start_date%"><field field_ref="bflxCalc" freq_op="1mo"/></file>
+    <file id="f_expN"        name="expN.fesom.%start_date%"><field field_ref="expN" freq_op="1mo"/></file>
+    <file id="f_expC"        name="expC.fesom.%start_date%"><field field_ref="expC" freq_op="1mo"/></file>
+    <file id="f_expSi"       name="expSi.fesom.%start_date%"><field field_ref="expSi" freq_op="1mo"/></file>
+    <file id="f_expCalc"     name="expCalc.fesom.%start_date%"><field field_ref="expCalc" freq_op="1mo"/></file>
+    <file id="f_graz"        name="graz.fesom.%start_date%"><field field_ref="graz" freq_op="1mo"/></file>
+    <file id="f_intpbsi"     name="intpbsi.fesom.%start_date%"><field field_ref="intpbsi" freq_op="1mo"/></file>
+    <file id="f_scavFe"      name="scavFe.fesom.%start_date%"><field field_ref="scavFe" freq_op="1mo"/></file>
+    <file id="f_limNn"       name="limNn.fesom.%start_date%"><field field_ref="limNn" freq_op="1mo"/></file>
+    <file id="f_limFen"      name="limFen.fesom.%start_date%"><field field_ref="limFen" freq_op="1mo"/></file>
+    <file id="f_limNd"       name="limNd.fesom.%start_date%"><field field_ref="limNd" freq_op="1mo"/></file>
+    <file id="f_limFed"      name="limFed.fesom.%start_date%"><field field_ref="limFed" freq_op="1mo"/></file>
+    <file id="f_O2sat"       name="O2sat.fesom.%start_date%"><field field_ref="O2sat" freq_op="1mo"/></file>
+    <file id="f_dpO2s"       name="dpO2s.fesom.%start_date%"><field field_ref="dpO2s" freq_op="1mo"/></file>
+    <file id="f_O2min"       name="O2min.fesom.%start_date%"><field field_ref="O2min" freq_op="1d"/></file>
+    <file id="f_intDIC"      name="intDIC.fesom.%start_date%"><field field_ref="intDIC" freq_op="1mo"/></file>
+    <file id="f_intDOC"      name="intDOC.fesom.%start_date%"><field field_ref="intDOC" freq_op="1mo"/></file>
+    <file id="f_intPOC"      name="intPOC.fesom.%start_date%"><field field_ref="intPOC" freq_op="1d"/></file>
+    {% endif %}
+
+    {% if fesom.recom_enable_3zoo2det %}
+    <file id="f_respmacro"   name="respmacro.fesom.%start_date%"><field field_ref="respmacro" freq_op="1mo"/></file>
+    <file id="f_respmicro"   name="respmicro.fesom.%start_date%"><field field_ref="respmicro" freq_op="1mo"/></file>
+    <file id="f_Zoo2N"       name="Zoo2N.fesom.%start_date%" ><field field_ref="Zoo2N" freq_op="1mo"/></file>
+    <file id="f_Zoo2C"       name="Zoo2C.fesom.%start_date%" ><field field_ref="Zoo2C" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_idetz2n"     name="idetz2n.fesom.%start_date%" ><field field_ref="idetz2n" freq_op="1mo"/></file>
+    <file id="f_idetz2c"     name="idetz2c.fesom.%start_date%" ><field field_ref="idetz2c" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_idetz2si"    name="idetz2si.fesom.%start_date%" ><field field_ref="idetz2si" freq_op="1mo"/></file>
+    <file id="f_idetz2calc"  name="idetz2calc.fesom.%start_date%"><field field_ref="idetz2calc" freq_op="1mo"/></file>
+    <file id="f_Zoo3N"       name="Zoo3N.fesom.%start_date%" ><field field_ref="Zoo3N" freq_op="1mo"/></file>
+    <file id="f_Zoo3C"       name="Zoo3C.fesom.%start_date%" ><field field_ref="Zoo3C" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    {% endif %}
+
+    {% if fesom.recom_enable_coccos %}
+    <file id="f_NPPc"        name="NPPc.fesom.%start_date%" ><field field_ref="NPPc" freq_op="1mo"/></file>
+    <file id="f_GPPc"        name="GPPc.fesom.%start_date%" ><field field_ref="GPPc" freq_op="1mo"/></file>
+    <file id="f_NNAc"        name="NNAc.fesom.%start_date%" ><field field_ref="NNAc" freq_op="1mo"/></file>
+    <file id="f_ChlDegc"     name="ChlDegc.fesom.%start_date%" ><field field_ref="ChlDegc" freq_op="1mo"/></file>
+    <file id="f_NPPp"        name="NPPp.fesom.%start_date%" ><field field_ref="NPPp" freq_op="1mo"/></file>
+    <file id="f_GPPp"        name="GPPp.fesom.%start_date%" ><field field_ref="GPPp" freq_op="1mo"/></file>
+    <file id="f_NNAp"        name="NNAp.fesom.%start_date%" ><field field_ref="NNAp" freq_op="1mo"/></file>
+    <file id="f_ChlDegp"     name="ChlDegp.fesom.%start_date%" ><field field_ref="ChlDegp" freq_op="1mo"/></file>
+    <file id="f_aggc"        name="aggc.fesom.%start_date%" ><field field_ref="aggc" freq_op="1mo"/></file>
+    <file id="f_docexc"      name="docexc.fesom.%start_date%" ><field field_ref="docexc" freq_op="1mo"/></file>
+    <file id="f_respc"       name="respc.fesom.%start_date%" ><field field_ref="respc" freq_op="1mo"/></file>
+    <file id="f_NPPc3D"      name="NPPc3D.fesom.%start_date%" ><field field_ref="NPPc3D" freq_op="1mo"/></file>
+    <file id="f_NPPp3D"      name="NPPp3D.fesom.%start_date%" ><field field_ref="NPPp3D" freq_op="1mo"/></file>
+    <file id="f_CoccoN"      name="CoccoN.fesom.%start_date%" ><field field_ref="CoccoN" freq_op="1mo"/></file>
+    <file id="f_CoccoC"      name="CoccoC.fesom.%start_date%" ><field field_ref="CoccoC" freq_op="1mo"/></file>
+    <file id="f_CoccoChl"    name="CoccoChl.fesom.%start_date%" ><field field_ref="CoccoChl" freq_op="1mo"/></file>
+    <file id="f_PhaeoN"      name="PhaeoN.fesom.%start_date%" ><field field_ref="PhaeoN" freq_op="1mo"/></file>
+    <file id="f_PhaeoC"      name="PhaeoC.fesom.%start_date%" ><field field_ref="PhaeoC" freq_op="1mo"/></file>
+    <file id="f_PhaeoChl"    name="PhaeoChl.fesom.%start_date%" ><field field_ref="PhaeoChl" freq_op="1mo"/></file>
+    <!-- photosynthesis terms only filled with enable_coccos -->
+    <file id="f_TCoccoCO2"   name="TCoccoCO2.fesom.%start_date%"><field field_ref="TCoccoCO2" freq_op="1mo"/></file>
+    <file id="f_TPhaeoCO2"   name="TPhaeoCO2.fesom.%start_date%"><field field_ref="TPhaeoCO2" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_cocco" name="TCphotLL_cocco.fesom.%start_date%"><field field_ref="TCphotLL_cocco" freq_op="1mo"/></file>
+    <file id="f_TCphotLL_phaeo" name="TCphotLL_phaeo.fesom.%start_date%"><field field_ref="TCphotLL_phaeo" freq_op="1mo"/></file>
+    <file id="f_TCphot_cocco" name="TCphot_cocco.fesom.%start_date%"><field field_ref="TCphot_cocco" freq_op="1mo"/></file>
+    <file id="f_TCphot_phaeo" name="TCphot_phaeo.fesom.%start_date%"><field field_ref="TCphot_phaeo" freq_op="1mo"/></file>
+    <file id="f_TTemp_cocco" name="TTemp_cocco.fesom.%start_date%"><field field_ref="TTemp_cocco" freq_op="1mo"/></file>
+    <file id="f_TTemp_phaeo" name="TTemp_phaeo.fesom.%start_date%"><field field_ref="TTemp_phaeo" freq_op="1mo"/></file>
+    <file id="f_TqLF_cocco"  name="TqLF_cocco.fesom.%start_date%"><field field_ref="TqLF_cocco" freq_op="1mo"/></file>
+    <file id="f_TqLF_phaeo"  name="TqLF_phaeo.fesom.%start_date%"><field field_ref="TqLF_phaeo" freq_op="1mo"/></file>
+    <file id="f_TTemp_phyto" name="TTemp_phyto.fesom.%start_date%"><field field_ref="TTemp_phyto" freq_op="1mo"/></file>
+    <file id="f_TTemp_diatoms" name="TTemp_diatoms.fesom.%start_date%"><field field_ref="TTemp_diatoms" freq_op="1mo"/></file>
+    <file id="f_TqLF_phyto"  name="TqLF_phyto.fesom.%start_date%"><field field_ref="TqLF_phyto" freq_op="1mo"/></file>
+    <file id="f_TqLF_diatoms" name="TqLF_diatoms.fesom.%start_date%"><field field_ref="TqLF_diatoms" freq_op="1mo"/></file>
+    <file id="f_TSi_assimDia" name="TSi_assimDia.fesom.%start_date%"><field field_ref="TSi_assimDia" freq_op="1mo"/></file>
+    {% endif %}
+
+    {% if fesom.recom_ltra_diag %}
+    <file id="f_DIC_hor_adv" name="DIC_hor_adv.fesom.%start_date%"><field field_ref="DIC_hor_adv" freq_op="1mo"/></file>
+    <file id="f_DIC_ver_adv" name="DIC_ver_adv.fesom.%start_date%"><field field_ref="DIC_ver_adv" freq_op="1mo"/></file>
+    <file id="f_DIC_tra_diff_part_hor_redi" name="DIC_tra_diff_part_hor_redi.fesom.%start_date%"><field field_ref="DIC_tra_diff_part_hor_redi" freq_op="1mo"/></file>
+    <file id="f_DIC_tra_diff_part_ver_expl" name="DIC_tra_diff_part_ver_expl.fesom.%start_date%"><field field_ref="DIC_tra_diff_part_ver_expl" freq_op="1mo"/></file>
+    <file id="f_DIC_tra_diff_part_ver_redi_expl" name="DIC_tra_diff_part_ver_redi_expl.fesom.%start_date%"><field field_ref="DIC_tra_diff_part_ver_redi_expl" freq_op="1mo"/></file>
+    <file id="f_DIC_tra_diff_part_ver_impl" name="DIC_tra_diff_part_ver_impl.fesom.%start_date%"><field field_ref="DIC_tra_diff_part_ver_impl" freq_op="1mo"/></file>
+    <file id="f_DIC_recom_sms" name="DIC_recom_sms.fesom.%start_date%"><field field_ref="DIC_recom_sms" freq_op="1mo"/></file>
+    {% endif %}
+  </file_group>
+
+  <!-- Daily BGC output for the CMIP day requests: surface (ols) values of 3D fields
+       via the axis zoom grid_3d_nod_sfc (chl, o2, ph, co3, co3satarag, phyc, phydiat,
+       phymisc), depth-integrated production (intpp) and, with the CMIP7 diagnostics,
+       intpoc, expcob, o2min. Daily 3D tracers (detoc, dissoc, zooc, zmeso, zmicro) only
+       with cmip7_daily_3d_output. -->
+  <file_group id="fesom_1d_bgc" output_freq="1d" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="f_O2_sfc" name="O2_sfc.fesom.%start_date%"><field field_ref="O2" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_pH_sfc" name="pH_sfc.fesom.%start_date%"><field field_ref="pH" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_CO3_sfc" name="CO3_sfc.fesom.%start_date%"><field field_ref="CO3" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_CO3satA_sfc" name="CO3satA_sfc.fesom.%start_date%"><field field_ref="CO3satA" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_PhyC_sfc" name="PhyC_sfc.fesom.%start_date%"><field field_ref="PhyC" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_DiaC_sfc" name="DiaC_sfc.fesom.%start_date%"><field field_ref="DiaC" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_PhyChl_sfc" name="PhyChl_sfc.fesom.%start_date%"><field field_ref="PhyChl" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_DiaChl_sfc" name="DiaChl_sfc.fesom.%start_date%"><field field_ref="DiaChl" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
+    <file id="f_NPPn_day" name="NPPn_day.fesom.%start_date%"><field field_ref="NPPn" freq_op="1d"/></file>
+    <file id="f_NPPd_day" name="NPPd_day.fesom.%start_date%"><field field_ref="NPPd" freq_op="1d"/></file>
+    {% if fesom.recom_cmip7_diags %}
+    <file id="f_intPOC_day" name="intPOC_day.fesom.%start_date%"><field field_ref="intPOC" freq_op="1d"/></file>
+    <file id="f_bflxC_day" name="bflxC_day.fesom.%start_date%"><field field_ref="bflxC" freq_op="1d"/></file>
+    <file id="f_O2min_day" name="O2min_day.fesom.%start_date%"><field field_ref="O2min" freq_op="1d"/></file>
+    {% endif %}
+    {% if fesom.cmip7_daily_3d_output %}
+    <file id="f_DOC_day" name="DOC_day.fesom.%start_date%"><field field_ref="DOC" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_DetC_day" name="DetC_day.fesom.%start_date%"><field field_ref="DetC" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_HetC_day" name="HetC_day.fesom.%start_date%"><field field_ref="HetC" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    {% if fesom.recom_enable_3zoo2det %}
+    <file id="f_idetz2c_day" name="idetz2c_day.fesom.%start_date%"><field field_ref="idetz2c" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_Zoo2C_day" name="Zoo2C_day.fesom.%start_date%"><field field_ref="Zoo2C" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    <file id="f_Zoo3C_day" name="Zoo3C_day.fesom.%start_date%"><field field_ref="Zoo3C" freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+    {% endif %}
+    {% endif %}
   </file_group>
   {% endif %}
 

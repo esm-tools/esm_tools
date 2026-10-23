@@ -418,7 +418,9 @@
     <field id="co2"    long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
-  <field_group id="3D_pl" grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" >
+  <!-- Sent on all FullPos pressure levels; files subset them through the
+       zoomed axes in axis_def.xml (reduced_pl / regular_pl are plev19). -->
+  <field_group id="3D_pl" grid_ref="reduced_pl_fpos" freq_op="{{ oifs.output_step_freq }}ts" >
     <field id="pt_pl"     long_name="potential temperature"                     standard_name="air_potential_temperature"                 unit="K" />
     <!-- WARNING: FullPos doesn't process 'mont', don't use it -->
     <field id="mont_pl"   long_name="Montgomery geopotential"                                                                             unit="m2 s-2" />

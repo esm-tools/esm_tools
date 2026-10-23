@@ -48,6 +48,7 @@ xios:
     - 2.5.1
     - 2.5.2
     - 2.5.3
+    - 2.5.4
     - 3.0_trunk
 
     branch: esm-tools
@@ -120,6 +121,8 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         archfile: ESMTOOLS_generic_oasis_intel
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: master
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
@@ -160,6 +163,8 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: main
         # After XIOS itself is built, inline-clone and compile the hdf5-blosc
@@ -211,6 +216,8 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5.1
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
@@ -247,6 +254,8 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5.2
         comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
@@ -288,8 +297,53 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5.3
+        # XIOS_EXTRA_CFLAGS, XIOS_EXTRA_FFLAGS and XIOS_BLOSC_OUTBUF_FIX come from
+        # xios.env.yaml and are only set on blogin; elsewhere they are empty and
+        # the build is unchanged. The arch file takes its compilers from $CC and
+        # $MPIFC, so the extra flags go in through those.
+        comp_command: 'export CC="$CC $XIOS_EXTRA_CFLAGS"; export MPIFC="$MPIFC $XIOS_EXTRA_FFLAGS"; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && if [ -n "$XIOS_BLOSC_OUTBUF_FIX" ]; then sed -i -e "s/outbuf_size = nbytes;/outbuf_size = nbytes + BLOSC_MAX_OVERHEAD;/" -e "s/outbuf = malloc(nbytes);/outbuf = malloc(outbuf_size);/" -e "s/buf, outbuf, nbytes);/buf, outbuf, outbuf_size);/" -e "s/assert((size_t)status <= nbytes);/assert((size_t)status <= outbuf_size);/" src/src/blosc_filter.c; fi && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # Release tag (main at 9c33506d), used by awiesm3 v3.5.0. Builds as 2.5-ece.
+      2.5.4:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.4
         comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
       # XIOS with oasis dependencies and oasis support
       "2.5-yac":

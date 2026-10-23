@@ -1,5 +1,5 @@
 # awiesm3 + interactive ice sheet (PISM) coupling: same component set as
-# fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2, but additionally builds PISM,
+# awiesm3_develop, but additionally builds PISM,
 # dEBM and the ISM-mapper so the awiesm3<->PISM dynamic-ocean coupling and the
 # OIFS->PISM surface mass balance can be built and reproduced from a single
 # esm_master target (comp-awiesm3-v3.5-is). The runtime ice<->ocean coupling
@@ -11,7 +11,7 @@
 components:
 - xios-2.5-ece
 - rnfmap-v1.4-ismm
-- oifs-48r1v5
+- oifs-48r1-develop
 - fesom-2.8
 - oasis3mct-5.0-smhi
 - lpj_guess-4.1.2

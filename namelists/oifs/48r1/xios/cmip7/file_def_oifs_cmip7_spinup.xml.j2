@@ -145,6 +145,10 @@
                 <field field_ref="sp" name="sp" long_name="Surface pressure"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
                 <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <!-- ts 3hrPt (atmos.ts.tpt-u-hxy-u.3hr.glb). The only 1h/3h ts
+                     source used to be atmos_1h_ts, an average, which smooths the
+                     diurnal peak the time-point entry is there to keep. -->
+                <field field_ref="surface_temperature__ts"/>
             </field_group>
         </file>
 
@@ -202,9 +206,12 @@
 
         <!-- ========== VEG additional output sections ========== -->
 
-        <!-- 3hr instantaneous plev6 fields (lower troposphere: 950-700 hPa) -->
+        <!-- 3hr instantaneous plev6 fields (lower troposphere: 950-700 hPa).
+             On at TCO95 only (LR, veg_atm *_3hrPt_plev6), off at TCO319 (HR)
+             for volume. The four levels plev19 lacks are on the FullPos axis,
+             see axis_def.xml. -->
         <file
-            enabled="false"
+            enabled="{{ 'true' if oifs.resolution == 'TCO95' else 'false' }}"
             timeseries="only"
             output_freq="3h"
             name="atmos_3h_pl6"
@@ -452,6 +459,9 @@
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
                 <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
                 <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+                <!-- ps 1hrPt south of 30S (atmos.ps.tpt-u-hxy-u.1hr.30S-90S).
+                     atmos_1h_sfc_sp is an hourly mean, not a snapshot. -->
+                <field field_ref="sp" name="sp" long_name="Surface pressure"/>
             </field_group>
         </file>
 
@@ -483,9 +493,10 @@
             </field_group>
         </file>
 
-        <!-- 6hr instantaneous model-level fields (cap7_atm) -->
+        <!-- 6hr instantaneous model-level fields (cap7_atm *_6hr_ml).
+             On at TCO95 only (LR), off at TCO319 (HR) for volume. -->
         <file
-            enabled="false"
+            enabled="{{ 'true' if oifs.resolution == 'TCO95' else 'false' }}"
             timeseries="only"
             output_freq="6h"
             name="atmos_6h_ml"
@@ -500,7 +511,8 @@
             </field_group>
         </file>
 
-        <!-- 6hr instantaneous plev7h fields (cap7_atm) -->
+        <!-- 6hr instantaneous plev7h fields (cap7_atm). Correct levels only
+             since pressure_levels_7h became a zoom of the FullPos axis. -->
         <file
             enabled="true"
             timeseries="only"
@@ -589,7 +601,6 @@
                 <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
                 <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
                 <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
-                <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
 {% endif %}
             </field_group>
         </file>
@@ -674,7 +685,6 @@
               <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
               <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
               <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
-              <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
 {% endif %}
               <field field_ref="macv2sp_taod550" name="macv2sp_taod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP"/>
               <field field_ref="tco3" name="tco3" long_name="Total column ozone"/>

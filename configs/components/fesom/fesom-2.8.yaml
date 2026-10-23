@@ -36,6 +36,24 @@ fesom:
         # TODO: -> "2.8.0" once the tag is cut.
         branch: "main"
         repo_options: "--recurse-submodules"
+      # Release tag, used by awiesm3 v3.5.0. For awiesm3 the tag is selected in
+      # the fesom section of awiesm3.yaml (choose_general.version), because the
+      # setup pins version "2.8" there and that pin wins over the coupling.
+      "2.8.1":
+        branch: "2.8.1"
+        repo_options: "--recurse-submodules"
+      # 2.8.1 plus PR #1115: mean sea-level pressure from OpenIFS for REcoM. The tag of awiesm3 v3.5.0.
+      "2.8.2":
+        branch: "2.8.2"
+        repo_options: "--recurse-submodules"
+      # main at dbf28153 (2026-10-15): 2.8.2 plus the bug fixes of #1130, among them the surface
+      # currents sent to OpenIFS in geographical coordinates (#1133), the Redi surface coefficient
+      # under cavities (#1136), the quadratic pressure term of the reference density (#1177), the
+      # sea-level pressure kept under ice shelves (#1121) and par_ex aborting on errors (#1190).
+      # The tag of awiesm3 v3.5.1.
+      "2.8.3":
+        branch: "2.8.3"
+        repo_options: "--recurse-submodules"
 
     destination: "fesom-2.8"
     install_bins: bin/fesom.x
@@ -126,7 +144,7 @@ fesom:
                     # CORE3 with use_cavity=.false.: same nodes and elements, the
                     # ice-shelf cavities are open ocean. Partitions under
                     # core3_nocav/dist_*; ocp-tool products in the pool as CORE3_nocav.
-                    nx: 220509
+                    nx: 211726
                     mesh_dir: "${fesom.mesh_base_dir}/core3_nocav/"
                     nproc: 128
                     whichEVP: 1
@@ -596,6 +614,23 @@ fesom:
     recom_enable_3zoo2det: false
     recom_enable_coccos: false
     recom_ltra_diag: false
+    # Master switch for the REcoM <file_group> of xios_xml_cmip7/file_def_fesom.xml.j2.
+    # awiesm3 turns it on with the ocean carbon cycle; off, a physics-only run with
+    # cmip7_cmor_output defines no BGC files.
+    recom_xios_output: false
+    # CMIP7 REcoM diagnostics in xios_xml_cmip7/file_def_fesom.xml.j2 (export and benthic fluxes,
+    # grazing, Si uptake, Fe scavenging, N/Fe limitation, O2 saturation and minimum, carbon
+    # inventories). Only for a FESOM built from feat/recom-cmip7-output with REcoM
+    # feat/cmip7-output; other builds never send these fields.
+    recom_cmip7_diags: false
+    # CMIP7 sub-daily and daily-3D output in xios_xml_cmip7/file_def_fesom.xml.j2:
+    # cmip7_3h_output: 3-hourly surface fluxes and instantaneous sst (2D, small; sst is then
+    # sent every time step).
+    # cmip7_daily_3d_output: daily 3D utemp/vtemp (daily hfx/hfy, needs ldiag_trflx), salt, w,
+    # rsdoabsorb and, with REcoM, DOC, DetC and zooplankton carbon; about 15 GB per field and
+    # simulated year raw on CORE3.
+    cmip7_3h_output: true
+    cmip7_daily_3d_output: false
     # When true, add regridded (regular lat/lon) output for all 2D fields
     # alongside the native unstructured output. Each regrid file is produced
     # at the same frequency as its native counterpart (daily for fesom_1d
@@ -788,6 +823,8 @@ fesom:
             heat_ico:
                     grid: feom
             tsk_ico:
+                    grid: feom
+            mslp_oce:
                     grid: feom
             heat_swo:
                     grid: feom

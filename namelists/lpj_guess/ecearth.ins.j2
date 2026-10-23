@@ -182,6 +182,12 @@ ifinundationstress 1		! Whether to reduce daily GPP if there's inundation on pea
 wetland_runon 0			! Extra daily water input to (>0), or output from (<0), wetlands (mm/day). 
 				! 0 by default, non-zero for site specific studies.
 ifmethane 1			! Whether to run the methane model and calculate methane fluxes
+{% if lpj_guess.ch4_to_coupled_co2 | default(false) %}
+ifch4tocpl 1			! Hand the wetland CH4-C to the atmosphere with the coupled CO2 flux (needs an LPJ-GUESS with ifch4tocpl)
+{% endif %}
+{% if lpj_guess.split_fire_coupled | default(false) %}
+ifsplitfirecpl 1		! Coupled CO2 fields as natural net exchange, land use and fire (needs an LPJ-GUESS with ifsplitfirecpl)
+{% endif %}
 ifsaturatewetlands 1		! Whether to take water from runoff in association with the (default) 
 				! saturation of low latitude wetlands (1), or not (0)
 
@@ -264,7 +270,9 @@ group "common" (
 	has_aerenchyma 0		! PFTs do not have aerenchyma for gas transport by default
 	stem_frac 1
 	twig_frac 0
+{% if lpj_guess.set_ltos | default(true) %}
 	ltos 0.1
+{% endif %}
 )
 
 group "tree" (
@@ -372,7 +380,9 @@ group "grass" (
 	turnover_harv_prod 1 	! Turnover rate for long-lived harvested products (wood): 
 				! 1-year turnover time for GRASS
 	harvest_slow_frac 0
+{% if lpj_guess.set_ltos | default(true) %}
 	ltos 0.05
+{% endif %}
 )
 
 group "broadleaved" (

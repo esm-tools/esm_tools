@@ -1,0 +1,53 @@
+# oifsamip cy48 on albedo, TCO95L91. Port of oifsamip-cy48-levante-TCO95L91.yaml (2026-10-05).
+#
+# Inputs come from albedo's pool: the PCMDI-AMIP SST / sea-ice forcing from
+# /albedo/pool/oifs-48r1/amip-forcing/ and the OASIS files from
+# /albedo/pool/oasis/cy48r1/TCO95-AMIP/, both the levante set. The OpenIFS initial
+# files in /albedo/pool/oifs-48r1/TCO95L91 are byte-identical to levante's.
+general:
+    user: !ENV ${USER}
+    setup_name: "oifsamip"
+    version: "cy48"
+    compute_time: "00:45:00"
+    initial_date: "1990-01-01"
+    final_date: "1991-01-01"   # one-year port test; the levante runs go to 2015
+    base_dir: "/albedo/work/projects/p_awiesm3_cmip7/jstreffi/runtime/${general.setup_name}-${general.version}/"
+    account: "paleodyn.paleodyn"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    # false for the port test: the experiment uses the local esm_tools checkout, which
+    # carries the albedo arms before they are pushed. Set to true with
+    # install_esm_tools_branch once they are on the remote.
+    use_venv: false
+
+computer:
+    taskset: true
+
+oifsamip:
+    postprocessing: false
+    model_dir: "/albedo/scratch/user/jstreffi/model_codes_v350/${general.setup_name}-${general.version}/"
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    add_namelist_changes:
+        fort.4:
+            NAMECETUNING:
+                TMPRALBSEAD: 0.075
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 84600
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

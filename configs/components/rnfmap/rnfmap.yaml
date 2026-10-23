@@ -32,6 +32,7 @@ rnfmap:
     - v1.2
     - v1.3
     - v1.4-ismm
+    - v1.4
 
     runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -90,6 +91,23 @@ rnfmap:
       # its own namelist.
       v1.4-ismm:
         branch: ismm-freshwater
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+        # Versioned directory, not a suffixed filename: the staged name in work/
+        # comes from the source basename, so a namelist.runoffmapper.ismm lands
+        # under that name and the model dies looking for namelist.runoffmapper.
+        config_sources:
+                namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
+        add_namelist_changes:
+                namelist.runoffmapper:
+                        NAMRNFMAP:
+                                NumCoupledRegions: 0
+      # Release tag (ismm-freshwater at 36c888f), used by all three awiesm3 v3.5.0
+      # variants. Same as v1.4-ismm: it behaves as v1.3 while NumCoupledRegions is 0.
+      v1.4:
+        branch: '1.4'
         further_reading:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap

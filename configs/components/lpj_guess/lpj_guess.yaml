@@ -60,6 +60,13 @@ lpj_guess:
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
     proc_list: $(( ${proc_list_entry} ))
 
+    # Whether ecearth.ins.j2 writes the ltos PFT parameter (stem area index).
+    # Only lpj_guess_awiesm3 and the tags from 4.1.13 know it; older sources stop
+    # with "ltos: Undefined identifier". awiesm3.yaml switches it off for v3.4,
+    # by setup version because lpj_guess.version stays 4.1.2 at run time whatever
+    # tag the coupling built.
+    set_ltos: true
+
     choose_version:
         4.1.1:
             runscript_name: run_trunk_4_1.ins
@@ -115,6 +122,41 @@ lpj_guess:
             branch: 4.1.6
             install_bins: build/guess
             executable: guess
+        # Used by awiesm3 v3.4.3. lpj_guess_awiesm3_cmip7 at d670d66 (4.1.12 plus the
+        # fixed-land-use restart, LUH3 crop fraction and nitrogen roundoff fixes), the
+        # state the v3.4.2 CMIP7 production runs were rebuilt with on 2026-09-28, plus
+        # one commit that initialises Climate::temp so a cold start works.
+        4.1.12.1:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.12.1
+            install_bins: build/guess
+            executable: guess
+        # Release tag in lpjg-4.1 (lpj_guess_awiesm3 at 179fb0d), used by awiesm3 v3.5.0.
+        4.1.13:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.13
+            install_bins: build/guess
+            executable: guess
+        # Release tag in lpjg-4.1 (lpj_guess_awiesm3 at a52c128), used by awiesm3 v3.5.1: 4.1.13 plus TQ grids and the switch
+        # ifch4tocpl, which hands the wetland CH4-C to the atmosphere with the coupled CO2 flux
+        # (lpj_guess.ch4_to_coupled_co2 in a runscript), and ifsplitfirecpl, which sends the coupled
+        # CO2 as natural net exchange, land use and fire (lpj_guess.split_fire_coupled); both off by
+        # default.
+        4.1.14:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.14
+            install_bins: build/guess
+            executable: guess
+        # Release tag (lpj_guess_awiesm3 at cb41d15), used by awiesm3 v3.5.1: 4.1.14 plus the BLAZE RH fix.
+        4.1.15:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.15
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating
@@ -157,6 +199,11 @@ lpj_guess:
     # collect_txt: combile into one run1 folder for ec2cmor2 few files, fast
     # convert_netcdf (future)
     output_mode: collect_txt
+    # collect_txt: script of the Combine_LPJG subjob. Set your own in the runscript or a
+    # further_reading yaml (e.g. to change the lpjg2nc options), e.g.
+    #   lpj_guess:
+    #       combine_script: /abs/path/to/my_subjob_combine.sh
+    combine_script: "${esm_configs_dir}/components/lpj_guess/subjob_combine.sh"
     choose_output_mode:
         esm_tools_copy:
             # Define files to ignore
@@ -258,7 +305,7 @@ lpj_guess:
             scripts_files:
                 combine1: combine1
             scripts_sources:
-                combine1: "${esm_configs_dir}/components/lpj_guess/subjob_combine.sh"
+                combine1: "${lpj_guess.combine_script}"
             scripts_targets:
                 combine1: "${general.experiment_scripts_dir}/${model}/subjob_combine.sh"
 

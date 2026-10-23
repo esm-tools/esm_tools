@@ -79,9 +79,27 @@ lpj_guess:
     fesom_resolution: CORE2
     openifsspinup: true
     daily_output: false
+
+    # Peat and LUH3 as in the coupled awiesm3 v3.5 setup, so that the state this spin-up
+    # writes loads in the coupled run.
+    # Peat capped at the smallest natural fraction LUH3 has in the cell over 0850-2024,
+    # so the peat area always fits inside natural land. LPJ-GUESS checks the map against
+    # the peat stands in the state, and a state built with the uncapped map does not load
+    # with the capped one.
+    peat_map: ${input_dir}/peat/${resolution}_peat_frac_Lund_corrected_0850-2024.txt
+    choose_resolution:
+        TCO95:
+            # Cells on the CORE3 coastline that LUH3 never covers, authorised as natural.
+            file_luh3_natural_override: ${input_dir}/land_use/TCO95/luh3_natural_override_TCO95_CORE3.txt
     
-    # Disable CMIP N-Dep file reading for spinup - use pre-industrial constant values instead
-    ndep_cmip_dir: ""
+    # N deposition from the same CMIP files as the coupled run; the spin-up uses their
+    # first year (1850). With an empty ndep_cmip_dir LPJ-GUESS falls back to one constant
+    # pre-industrial value for every cell, which is not what the coupled model then sees.
+    # Reading was once switched off here because it made the spin-up 10x slower. The
+    # reader fetches single values, which is cheap on the uncompressed TCO95 and TCO319
+    # files; the TL255 file is still chunked and deflated and should be rewritten
+    # contiguous before a TL255 spin-up.
+    ndep_cmip_dir: "../ndep/"
 
     nproc: 128
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'

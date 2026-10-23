@@ -36,6 +36,8 @@ general:
     # PISM's discharge reaches FESOM as icebergs, and the runoff mapper stops
     # passing the atmosphere's Antarctic snow-cap calving that it replaces.
     ism_freshwater_return: true
+    # OIFS's own SMB to PISM through the ISM-mapper. Must be set here: it adds
+    # ismm to the launch, which a setup default resolves too late for.
     smb_coupled: true
     # pism_cavity_ini_dir: the setup default, the 220509 bundle with usurf_oifs.
     nday: 0

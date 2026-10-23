@@ -2594,11 +2594,11 @@ oasis3mct:
     debm2_rnfa_rmp: rmp_${ismm.ice_grid}_to_RnfA_BILINEAR.nc
     choose_general.debm_coupled:
         true:
-            add_restart_in_files:
+            add_input_files:
                 debm2_rnfa_rmp: debm2_rnfa_rmp
-            add_restart_in_in_work:
+            add_input_in_work:
                 debm2_rnfa_rmp: ${debm2_rnfa_rmp}
-            add_restart_in_sources:
+            add_input_sources:
                 debm2_rnfa_rmp: ${input_dir}/${fesom.nproc}/${debm2_rnfa_rmp}
             add_allowed_missing_files:
                 - ${debm2_rnfa_rmp}

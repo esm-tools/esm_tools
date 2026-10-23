@@ -86,7 +86,14 @@ pism:
         debm_path: "${general.model_code_dir}/bin/debm"
         debm_beta: 10
         lapse_rate: -0.005
-        ablation_method: "DEBM2"   # dbm1: dEBM2's SMB from the ISM-mapper
+        ablation_method: "DIRECT"
+        # dbm1: dEBM2's SMB from the ISM-mapper from chunk 2 on. Chunk 1 is forced from the
+        # bootstrap (antfill1's direct-path fields), which has no dEBM2 SMB.
+        choose_general.chunk_number:
+                1:
+                        ablation_method: "DIRECT"
+                "*":
+                        ablation_method: "DEBM2"
         regrid_method: "NONE"
         iceberg_coupling: 1
         thk_threshold: 5.0

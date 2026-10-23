@@ -433,7 +433,14 @@ ic_atm2pism_ablation_debm2() {
     echo; echo -e "\t\tSetting up SMB scheme DEBM2 (the ISM-mapper's dEBM2)..."
     if [ -z "${atmosphere_name_debm_smb}" ]; then
         echo " DEBM2 needs atmosphere_name_debm_smb in atmosphere_names_for_ice.dat:"
-        echo " is general.debm_coupled on in the AWI-ESM3 runscript?"
+        echo " is general.debm_coupled on in the AWI-ESM3 runscript? (A chunk-1 bootstrap"
+        echo " forcing has no dEBM2 SMB: use DIRECT for that chunk.)"
+        # Leave the sentinel observe.py reads, so the chain stops here instead of
+        # starting PISM without a surface forcing.
+        if [ -n "${COUPLE_DIR:-}" ]; then
+            echo "atmosphere2pism: DEBM2 but no dEBM2 SMB in the forcing" \
+                > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        fi
         exit 9
     fi
     ic_atm2pism_ablation_direct_make_surface_forcing \

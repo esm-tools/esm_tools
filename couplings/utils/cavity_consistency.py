@@ -88,6 +88,40 @@ SECONDS_PER_YEAR = 365 * 86400.0
 TF_A, TF_B, TF_C = -0.0575, 0.0901, 7.61e-4
 RHO_ICE, RHO_SEAWATER = 910.0, 1028.0
 
+# Sectors for the optional per-sector renormalisation (fix --per-sector).  The global renormalisation
+# conserves the Antarctic total but not where the melt goes: the remap spreads each cavity's melt over PISM's floating
+# cells and one global factor then rescales all of them alike, so a sector whose PISM shelf is smaller than its FESOM
+# cavity (the cavity extends under ice PISM calls grounded) hands part of its melt to the others.  Measured on
+# antg065e10 legs 3-45 (FESOM 1901-1943): MBL coast 0.78 of its FESOM melt, Dronning Maud 0.87, while Amery and
+# Wilkes received 1.24 and 1.14.
+# The sectors follow the ice-shelf systems (2026-10-22). Longitude alone cannot separate the Ronne Ice Shelf from the
+# Peninsula shelves at the same longitudes, so a sector may carry a latitude range; the first matching entry wins.
+# (name, lon_west, lon_east, lat_south, lat_north), degrees east -180..180 (west > east wraps through 180)
+SECTORS = [("FilchnerRonne", -90, -30, -90, -74.5),        # Ronne, Filchner, Berkner
+           ("PeninsulaBellingshausen", -104, -55, -73.8, -60),   # Abbot, Wilkins, George VI, Larsen
+           ("Amundsen", -115, -90, -90, -60),              # Pine Island, Thwaites, Crosson, Dotson
+           ("Getz", -136, -115, -90, -60),                 # the whole Getz cavity (130.1-118.7 W, pieces to 134.7 W)
+           ("MBL", -150, -136, -90, -60),                  # Sulzberger, Nickerson, Land
+           ("Ross", 158, -150, -90, -60),                  # Ross Ice Shelf and the Victoria Land tongues
+           ("DronningMaud", -30, 45, -90, -60),            # Brunt, Stancomb-Wills, Riiser-Larsen to Shirase
+           ("AmeryWest", 45, 90, -90, -60),                # Amery, West
+           ("ShackletonDenman", 90, 110, -90, -60),
+           ("TottenMoscow", 110, 125, -90, -60),           # Totten, Moscow University, Vanderford
+           ("WilkesAdelie", 125, 158, -90, -60),           # Mertz, Ninnis, Cook
+           ("PeninsulaBellingshausen", -90, -30, -90, -60)]   # what is left between the Weddell and the Amundsen
+SECTOR_NAMES = list(dict.fromkeys(name for name, *_ in SECTORS))
+
+
+def sector_index(lon, lat):
+    """Index into SECTOR_NAMES for every point (degrees, any longitude range); -1 outside all sectors."""
+    lon = ((np.asarray(lon, dtype="f8") + 180.0) % 360.0) - 180.0
+    lat = np.asarray(lat, dtype="f8")
+    out = np.full(lon.shape, -1, dtype=int)
+    for name, a, b, s, n in SECTORS:
+        inlon = ((lon >= a) & (lon < b)) if a < b else ((lon >= a) | (lon < b))
+        out[(out < 0) & inlon & (lat >= s) & (lat < n)] = SECTOR_NAMES.index(name)
+    return out
+
 
 def node_areas(submesh):
     """Cluster area per node: a third of each triangle it belongs to."""
@@ -273,6 +307,17 @@ def stage_mask(args):
 
     with open(args.total_file, "w") as handle:
         handle.write(f"{cavity_total:.6f}\n")
+    # per-sector cavity totals, read by `fix --per-sector`; the total file itself keeps its one-number format
+    # (never fatal: without it `fix` falls back to the global factor)
+    try:
+        ll = np.loadtxt(os.path.join(submesh, "nod2d.out"), skiprows=1, usecols=(1, 2))
+        sec = sector_index(ll[:, 0], ll[:, 1])
+        with open(args.total_file + ".sectors", "w") as handle:
+            for k, name in enumerate(SECTOR_NAMES):
+                sel = cav & (sec == k)
+                handle.write(f"{name} {(flat[0][sel] * area[sel]).sum() * SECONDS_PER_YEAR / 1e12:.6f}\n")
+    except Exception as err:                                  # noqa: BLE001
+        print(f"     ! per-sector totals not written: {err}")
     print(f"     - cavity nodes {int(cav.sum())} of {len(cav)}, "
           f"area {area[cav].sum()/1e9:.0f} x10^3 km2")
     print(f"     - FESOM cavity melt {cavity_total:+.0f} Gt/yr -> {args.total_file}")
@@ -413,7 +458,39 @@ def stage_fix(args):
                  f"melt -- shelfbmassflux looks sign-inverted (fw convention?), "
                  f"refusing to scale it")
     scale = abs(cavity_total) / abs(current)
-    values *= scale
+    sectors_file = args.total_file + ".sectors"
+    if args.per_sector and os.path.isfile(sectors_file):
+        # every sector's melt over PISM's floating cells in that sector is scaled to that sector's FESOM cavity total;
+        # a sector where one side has no melt (no cavity, or no PISM shelf) is left to the global factor, applied to
+        # what remains, so the Antarctic total is still conserved exactly
+        have_ll = "lon" in ds.variables and "lat" in ds.variables
+        lonp = np.squeeze(np.ma.filled(ds.variables["lon"][:], 0.0)) if have_ll else None
+        latp = np.squeeze(np.ma.filled(ds.variables["lat"][:], 0.0)) if have_ll else None
+        if lonp is None or lonp.shape != floating.shape or latp.shape != floating.shape:
+            ds.close()
+            sys.exit(f"cavity_consistency: --per-sector needs lon and lat{floating.shape} in {args.ice_file}")
+        sec = sector_index(lonp, latp)
+        target = dict(line.split() for line in open(sectors_file) if line.strip())
+        factor = np.full(floating.shape, np.nan)
+        done_fesom = done_pism = 0.0
+        lines = []
+        for k, name in enumerate(SECTOR_NAMES):
+            sel = floating & (sec == k)
+            have = (shaped[0][sel] * cell_area).sum() * SECONDS_PER_YEAR / 1e12
+            want = abs(float(target.get(name, 0.0)))
+            if have > 1e-6 and want > 1e-6:
+                factor[sec == k] = want / have
+                done_fesom += want; done_pism += have
+            lines.append(f"{name} {want:.0f}/{have:.0f}")
+        rest_pism = abs(current) - done_pism
+        rest = (abs(cavity_total) - done_fesom) / rest_pism if rest_pism > 1e-6 else 1.0
+        factor = np.where(np.isnan(factor), rest, factor)
+        values = (values.reshape(-1, *floating.shape) * factor).reshape(values.shape)
+        print(f"     - per sector (FESOM/remapped Gt/yr): {', '.join(lines)}; rest factor {rest:.3f}")
+        scale = float(((values.reshape(-1, *floating.shape)[0][floating]) * cell_area).sum()
+                      * SECONDS_PER_YEAR / 1e12 / abs(current))
+    else:
+        values *= scale
     melt[:] = values
     melt.setncattr("renormalised_to_Gt_per_year", np.float64(cavity_total))
     melt.setncattr("renormalisation_factor", np.float64(scale))
@@ -473,6 +550,9 @@ def main():
     # freezing point by 0.005 degC, so a constant keeps the field out of the
     # coupling for no measurable cost
     f.add_argument("--salinity", type=float, default=34.4)
+    # renormalise per ice-shelf sector (SECTORS) instead of with one Antarctic factor; needs the .sectors file the
+    # mask stage writes next to the total file.  Off by default: running chains keep the global factor.
+    f.add_argument("--per-sector", action="store_true")
     f.set_defaults(func=stage_fix)
 
     args = p.parse_args()

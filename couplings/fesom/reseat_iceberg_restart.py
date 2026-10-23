@@ -64,6 +64,19 @@ W_INT = 8
 COL_FIE = N_REALS * W_REAL + W_INT + 1   # 279, the find_iceberg_elem character
 COL_ELEM = N_REALS * W_REAL              # 270, the iceberg_elem I8
 COL_LON, COL_LAT = 3 * W_REAL, 4 * W_REAL  # 45, 60: byte offsets of lon/lat
+COL_RHO_ICB, COL_RHO_H2O = 10 * W_REAL, 13 * W_REAL  # 150, 195: the densities
+
+
+def _e15_7(x):
+    """x as Fortran writes it with E15.7, e.g. '  0.2367940E+03'."""
+    if x == 0.0:
+        return "  0.0000000E+00"
+    exp = int(np.floor(np.log10(abs(x)))) + 1
+    mant = round(abs(x) / 10.0 ** exp, 7)
+    if mant >= 1.0:
+        mant, exp = mant / 10.0, exp + 1
+    s = "%s0.%07dE%+03d" % ("-" if x < 0 else "", round(mant * 1e7), exp)
+    return s.rjust(W_REAL)
 
 # iceberg.restart stores ROTATED coordinates: FESOM converts lon_deg/lat_deg in
 # place with g2r on the first step (icb_step.F90:403) and writes them back that
@@ -101,7 +114,8 @@ def main(argv=None):
     mesh_dir, targets = argv[0], argv[1:]
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from filter_icebergs_fesom_rule import _unit_vectors, _containing_element
+    from filter_icebergs_fesom_rule import (_unit_vectors, _containing_element,
+                                            DeepWater, _shift_summary)
     from scipy.spatial import cKDTree
 
     nod = np.loadtxt(os.path.join(mesh_dir, "nod2d.out"), skiprows=1)
@@ -121,6 +135,7 @@ def main(argv=None):
     centroids = verts[elems].mean(axis=1)
     centroids /= np.linalg.norm(centroids, axis=1, keepdims=True)
     tree = cKDTree(centroids)
+    deep = DeepWater(mesh_dir, nod, elems, cavity, nod[:, 3] != 0.0, verts)
 
     for path in targets:
         if not os.path.isfile(path):
@@ -130,6 +145,7 @@ def main(argv=None):
             lines = [l.rstrip("\n") for l in fh if l.strip()]
 
         kept, dropped, reindexed = [], 0, 0
+        moved_km, stuck = [], 0
         for line in lines:
             # A record we cannot read is a record FESOM cannot read either.
             if len(line) <= COL_FIE:
@@ -153,6 +169,28 @@ def main(argv=None):
             if e < 0 or rejected[e]:
                 dropped += 1
                 continue
+            draft = DeepWater.draft(
+                float(line[0:W_REAL]),
+                rho_icb=float(line[COL_RHO_ICB:COL_RHO_ICB + W_REAL]),
+                rho_h2o=float(line[COL_RHO_H2O:COL_RHO_H2O + W_REAL]))
+            if not deep.fits(e, draft):
+                hit = deep.nearest(p, draft)
+                if hit is None:
+                    stuck += 1
+                else:
+                    # Moved, so it is placed afresh: geographic coordinates and
+                    # find_iceberg_elem true, the state of a newly calved berg.
+                    # FESOM rotates them once, finds the element itself and
+                    # re-seeds the velocity from the ocean, which is right for a
+                    # berg that was standing still on the bottom.
+                    e_new, lon_new, lat_new, km = hit
+                    line = (line[:COL_LON] + _e15_7(lon_new) + _e15_7(lat_new)
+                            + line[COL_LAT + W_REAL:COL_ELEM]
+                            + "%*d" % (W_INT, e_new + 1) + line[COL_ELEM + W_INT]
+                            + "T" + line[COL_FIE + 1:])
+                    moved_km.append(km)
+                    kept.append(line)
+                    continue
             if placed:
                 # The element it is in on the new mesh, and nothing else: same
                 # coordinates in the same frame, same velocity, flag still false
@@ -167,6 +205,7 @@ def main(argv=None):
         print(f" *   reseat_icebergs: {os.path.basename(path)}: {len(kept)} "
               f"kept ({reindexed} re-indexed), {dropped} dropped as unplaceable "
               f"on the new mesh")
+        _shift_summary("reseat_icebergs", moved_km, stuck)
 
     # num_non_melted_icb_file has to agree with the ISM restart it counts.
     # The file is iceberg.restart.ISM; matching only "_ISM" never fired, so the

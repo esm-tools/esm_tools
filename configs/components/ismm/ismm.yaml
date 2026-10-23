@@ -50,7 +50,10 @@ ismm:
     # libpsmile.a where theirs is libpsmile.MPI1.a.
     comp_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make coupling && cd ${model_dir}/sources/ism-mapper/src && make FC=mpif90 LD=mpif90 OASIS_BASE_DIR=${model_dir}/../oasis/arch_ecearth OASIS_LIBS="-lpsmile -lmct -lmpeu -lscrip" EBMWORLD_DIR=${model_dir}/sources/ism-mapper/src/CISSEMBEL/src NETCDF_INC_DIR="-I$NETCDFFROOT/include -I$NETCDFROOT/include" NETCDF_LIB_DIR="-L$NETCDFFROOT/lib -L$NETCDFROOT/lib"'
 
-    clean_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make clean; cd ${model_dir}/sources/ism-mapper/src && make clean'
+    # ";" only, no "&&": esm_master runs clean commands itself, split at ";",
+    # and a piece that starts with cd only changes directory, so in
+    # "cd X && make clean" the make clean never runs.
+    clean_command: 'cd sources/ism-mapper/src/CISSEMBEL/src; make clean; cd ${model_dir}/sources/ism-mapper/src; make clean'
 
     install_bins: sources/ism-mapper/bin/ism-mapper.exe
 

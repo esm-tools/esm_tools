@@ -5,12 +5,25 @@ It is meant to be use for starting developing and help us lock into a final desi
 
 From https://github.com/esm-tools/esm_tools/issues/1613
 
-ESM-Tools’ workflow manager is designed for HPC systems where no daemon can run on a login node or server. Instead, an initial plan sets up the workflow, prepares the first job script (sbatch/PBS) and submits it to the scheduler. Each job script contains a `plan`: a local daemon (an `esm_runscripts` call running in the background) that monitors the special inline `compute` subplan, writes batch scripts for the following plans and launches them. When the cluster finishes, the daemon submits the next cluster_plan, so the workflow resubmits itself.
+ESM-Tools’ workflow manager is designed for HPC systems where no daemon can run on a
+login node or server. Instead, an initial plan sets up the workflow, prepares the first
+job script (sbatch/PBS) and submits it to the scheduler. Each job script contains at least
+one `plan`: a local daemon (an `esm_runscripts` call running in the background) that
+monitors the special inline `compute` subplan, launches subplans and writes batch scripts
+and launches them. When the plan finishes, the next esm_runscripts call from the script
+(representing taking care of the next plan) is called.
+
+The DAG is never really built and stored, but instead the different workflow manager
+objects can compute their dependencies and the next plan to run on the fly, just using
+the information on the workflow configuration.
 
 This design follows two main requirements:
 
 * No persistent daemon: the scheduler drives the workflow through self-submission.
-* Close to a plain runscript: modelers care about how the simulation runs (environment, launch command, etc.), not about ESM-Tools. The compute block reads like a hand-written job script, so the ESM-Tools parts can be commented out and the simulation run as-is, which is useful for debugging.
+* Close to a plain runscript: modelers care about how the simulation runs (environment,
+  launch command, etc.), not about ESM-Tools. The compute block reads like a hand-written
+  job script, so the ESM-Tools parts can be commented out and the simulation run as-is,
+  which is useful for debugging.
 
 ## Common workflow vocabulary and WF elements hierarchy
 
@@ -38,16 +51,22 @@ Group of plans and their dependencies that once run leads to a finished experime
 
 ### Plans
 
-Group of sub-plans or steps and the building blocks of the experiment plan.
+Group of sub-plans and the building blocks of the experiment plan. Cycling happens at this
+level.
 
 **Parent**: Experiment plan
 **Child**: sub-plans
 
-* A plan is either written down in a batch script (sbatch, pbs script, etc. with extension `.run`) or executed in the shell (to cover the experiment initialization plan)
+* A plan is either written down in a batch script (sbatch, pbs script, etc. with extension
+  `.run`) or executed in the shell (to cover the experiment initialization plan)
 * Multiple plans can be written and executed in a batch script
-* Open question: can plans be executed in parallel in a batch script? Maybe a feature for the future but not needed for now.
+* Plans cannot be executed inside a batch script, at least in the first iteration. Maybe a
+  feature for the future but not needed for now.
 * The plan writes the batch scripts that have direct dependencies to it and submits them
 * The plan is the level in the workflow where cycling happens
+* Can write batch scripts and submit them to the scheduler at the end of the plan.
+
+**Equivalent in the old workflow manager**: ~clusters
 
 ### Sub-plans
 
@@ -56,8 +75,19 @@ Group of steps and their ordering.
 **Parent**: sub-plans
 **Child**: steps
 
-* The compute subplan is a special sub-plan in the sense that it only has the compute step that is actually run directly from the batch script, and not triggered by the local daemon. It could also have another step that is observe, that could run concurrently, to observe and trigger the killing of jobs when the simulation fails and it detects it in the logs.
-* We could consider making the sub-plans be possible to run concurrently, but this will complicate things a lot. The only use for concurrent sub-plans that we have is that observe-compute subplan needs to run in parallel to the compute, but we can also rethink that completely and make the compute subplan a special one where the observing part is included, so that concurrency is not a requirement, but something that can happen only internally. The parallelization can maybe happen at the slurm level (plans) and at dask level (steps)
+* The compute subplan is a special sub-plan in the sense that it only has the compute step
+  that is actually run directly from the batch script, and not triggered by the local daemon.
+  It could also have another step that is observe, that could run concurrently, to observe
+  and trigger the killing of jobs when the simulation fails and it detects it in the logs.
+* We could consider making the sub-plans be possible to run concurrently, but this will complicate
+  things a lot. The only use for concurrent sub-plans that we have is that observe-compute subplan
+  needs to run in parallel to the compute, but we can also rethink that completely and make the
+  compute subplan a special one where the observing part is included, so that concurrency is not
+  a requirement, but something that can happen only internally. The parallelization can maybe happen
+  at the slurm level (plans) and at dask level (steps)
+* Can write batch scripts and submit them to the scheduler at the end of the sub-plan.
+
+**Equivalent in the old workflow manager**: phases/jobs
 
 ### Steps
 
@@ -67,7 +97,24 @@ Python functions or bash scripts that make a subplan.
 
 **Parent**: sub-plans
 
+**Equivalent in the old workflow manager**: recipe steps
+
+### Batch scripts
+
+Normally plans are represented by a single batch script. But it might be convenient that some times
+batch scripts include more than one single plan to avoid unneceassary waiting times in the queue.
+This adds an additional logic to the execution layer that also needs to take into consideration
+the cycling of the plans. More discussion is needed on this topic.
+
+## Cycling
+
+Cycling is the process of running a plan multiple times with different parameters. This is typically
+done in simulation workflows where the same set of steps needs to be executed for different configurations
+or input data.
+
 ## Classes
+
+Description of the workflow manager classes and their methods. To be written later on.
 
 ### Cluster plans
 

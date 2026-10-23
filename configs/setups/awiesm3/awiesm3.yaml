@@ -395,7 +395,7 @@ general:
 
         # ------------------------------------------------------------------
         # v3.5.1: v3.5.0 on new tags (FESOM 2.8.3, OpenIFS 48r1v7, LPJ-GUESS
-        # 4.1.14; OASIS, XIOS, the runoff mapper and the ice-sheet components as
+        # 4.1.15; OASIS, XIOS, the runoff mapper and the ice-sheet components as
         # in v3.5.0). The bug fixes in FESOM 2.8.3 change the coupled climate, so
         # v3.5.1 does not reproduce v3.5.0. Frozen: a later fix is v3.5.2.
         # ------------------------------------------------------------------

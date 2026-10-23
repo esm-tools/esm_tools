@@ -368,28 +368,37 @@ How to approve changes on a GitHub Pull-Request
 
 1. In the pull-request, if all the tests passed you don't need to approve any
    changes, you can jump directly to step 4.
-2. If any of the tests labelled as ``esm_tests`` failed (click on the triangles to
-   expand screen captures):
+2. If any of the tests labelled as ``esm_tests`` failed, review the results of all
+   tests in the summary of the workflow run (click on the triangles to expand screen
+   captures). Each ``esm_tests`` job tests one runscript on one computer, and the
+   ``summary`` job collects the results of all of them in a single page:
 
-   .. collapse:: Click on Details
+   .. collapse:: Click on any of the esm_tests checks
 
       .. image:: images/esm_tests1.png
 
-   .. collapse:: Find the names of the runscripts with differences (in yellow)
+   .. collapse:: Click on Summary, at the top of the left sidebar
 
-      .. image:: images/esm_tests2.png
+      .. image:: images/esm_tests_summary1.png
 
-   .. collapse:: Scroll up and expand the lines starting with COMPILE/SUBMITTING (for
-      compilation and runtime checks respectively) followed by the script with
-      differences
+   .. collapse:: Scroll down below the jobs graph to the esm_tests results
 
-      .. image:: images/esm_tests3.png
+      .. image:: images/esm_tests_summary2.png
 
-   .. collapse:: Review the differences with special attention to namelists and
-      namcouple files
+   The ``esm_tests results`` section contains:
 
-      .. image:: images/esm_tests4.png
+   - **Problems**: tests with errors (e.g. a ``Traceback`` during the submission, with
+     the traceback itself) or with a failed job without an explanation (e.g.
+     ``esm_tests`` crashed), each with a link to its job log. These are not caused by
+     differences in the files and always need to be fixed before approving.
+   - **Differences**: one collapsible section per computer with the differences
+     between the files of the PR and the ``last_tested`` ones (``-`` last tested,
+     ``+`` this PR). Review them with special attention to namelists and namcouple
+     files. Compilation files shared by several runscripts are only shown once.
 
+   The full output of a test, including its differences, is also in the log of its
+   job (``run esm_tests`` step). If the summary is too large for GitHub (1 MiB), it is
+   truncated and the remaining differences are only in the job logs.
 
 
 3. If there are no problematic differences, and the pull-request has been already

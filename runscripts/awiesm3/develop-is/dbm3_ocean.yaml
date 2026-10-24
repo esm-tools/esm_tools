@@ -175,14 +175,9 @@ fesom:
             #   sbatch: error: invalid partition specified: compute
             ocp_weightgen_partition: "mpp"
         levante:
-            # Our own checkout, as ism45 ran on levante. awiesm3.yaml's levante default is
-            # a270092's checkout, and ocp-tool writes its output INSIDE ocp_tool_dir, so the
-            # first antg065 regen there died with PermissionError on
-            # .../a270092/software/ocp-tool/output/TCO95_feomdyn/... (2026-10-13). Same commit
-            # (83d2545) and byte-identical input/ as albedo's tools/ocp-tool; the template is
-            # identical to a270092's TCO95_CORE3_ICE.yaml.
-            ocp_tool_dir: "${general.antfill_root}/ocp-tool"
-            ocp_template_config: "${general.antfill_root}/ocp-tool/configs/TCO95_CORE3_ICE.yaml"
+            # dbm3: the plugin-installed ocp-tool (awiesm3.yaml default), not antg065's
+            # a270234 copy: ocp-tool writes into its own tree.
+            ocp_template_config: "${ocp_tool_dir}/configs/TCO95_CORE3_ICE.yaml"
             ocp_weightgen_partition: "compute"
     # BOTH machines, not just levante. env_fesom.py:190 reads these keys first and only
     # falls back to _conda_env_python(), which returns "" whenever conda is not on PATH --

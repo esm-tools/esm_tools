@@ -199,20 +199,20 @@ def prepare_environment(config):
             "CHANGE_OCEAN": int(config["fesom"].get("change_ocean", False).__bool__()),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
-            # Iceberg generation. The berg set is rebuilt per leg from the ice
+            # Iceberg generation. The iceberg set is rebuilt per leg from the ice
             # sheet's discharge and this leg's mesh, by a subprocess under the
             # ocp-tool python (see couplings/fesom/make_icebergs.py).
             "ICB_BASIN_FILE": fesom.get("basin_file", ""),
             "ICB_USE_CAVITIES": int(bool(fesom.get("use_cav", False))),
             # One entry per size bin ([0.1, 1, 10, 100, 1000] km2): how many real
-            # bergs of that class one model berg stands for. The small classes
+            # icebergs of that class one model iceberg stands for. The small classes
             # dominate the count and carry little mass, so compressing them cuts
-            # the advection cost without losing the bergs that matter.
+            # the advection cost without losing the icebergs that matter.
             "ICB_SCALING": ",".join(
                 str(x) for x in fesom.get("scaling_factor", [1, 1, 1, 1, 1, 1])),
             "ICB_RESTART_ISM": (
                 config["fesom"].get("restart_in_sources", {}).get("icb_restart_ISM", "")),
-            # Run the berg generation in the background of the restart remap
+            # Run the iceberg generation in the background of the restart remap
             # and the OASIS weight regeneration, which do not need it (see
             # ice2fesom). Off by default.
             "ICB_PREP_BACKGROUND": int(bool(general.get("icb_prep_background", False))),

@@ -6,7 +6,7 @@
 # companion to dbm1 (which runs the same coupling on 46 nodes, 2 h, normal QoS):
 #   - rnfmap and xios interleaved into the oifs nodes (taskset placement)
 #   - FESOM 1800 s instead of 1200 s
-#   - the berg generation in the background of couple_in (general.icb_prep_background)
+#   - the iceberg generation in the background of couple_in (general.icb_prep_background)
 #   - AWI-ESM3 and PISM both on the devel QoS, 30 min
 # Changes against dbm1 are marked "dbm2:".
 #   esm_runscripts dbm2_couple.yaml -e dbm2 --coupling-chain all

@@ -117,7 +117,7 @@ general:
     with_icb_default: false
     with_icb: "$(( ${general.with_icb_default} ))"
 
-    # Counting the generated bergs into icebergs%ib_num. It has to go in the
+    # Counting the generated icebergs into icebergs%ib_num. It has to go in the
     # general recipe: the prepcompute_recipe under fesom's choose_with_icb is
     # never read, which is also why that block's two fesom_icb_pism steps have
     # never run. Before modify_namelists, which loads, modifies and writes the
@@ -1043,20 +1043,20 @@ fesom:
 
     # Icebergs carry PISM's discharge into the ocean. The plugin builds them per
     # leg from the discharge and the mesh that leg runs on, so nothing is seeded
-    # from a file: a fixed berg set would be wrong the first time the mesh moves.
+    # from a file: a fixed iceberg set would be wrong the first time the mesh moves.
     with_icb: ${general.with_icb}
     choose_general.ism_freshwater_return:
         true:
-            # Cavities are open, so the berg generator has to know not to place
-            # bergs under the shelves.
+            # Cavities are open, so the iceberg generator has to know not to place
+            # icebergs under the shelves.
             use_cav: true
-            # Per size bin ([0.1, 1, 10, 100, 1000] km2): how many real bergs one
-            # model berg stands for. The awiesm-2.1 values, which have been run.
-            # 63015 -> 1174 bergs here.
+            # Per size bin ([0.1, 1, 10, 100, 1000] km2): how many real icebergs one
+            # model iceberg stands for. The awiesm-2.1 values, which have been run.
+            # 63015 -> 1174 icebergs here.
             #
             # Not a free cost knob. icb_thermo scales the fluxes to the ocean by
-            # scaling(ib) but deliberately not the melt: a model berg decays at
-            # the rate of a berg of its chunk's MEAN size. Melt is non-linear in
+            # scaling(ib) but deliberately not the melt: a model iceberg decays at
+            # the rate of a iceberg of its chunk's MEAN size. Melt is non-linear in
             # size, so the factors change the answer, and these are the ones that
             # come with a run behind them.
             #
@@ -1064,7 +1064,7 @@ fesom:
             # ib_num=0 (0.0948 vs 0.0754 s/step measured), so sampling more is
             # affordable here if it is ever worth testing against this baseline.
             # The CAV-ICB reference goes further the other way, [250,100,30,2,1,1]
-            # for 485 bergs, on a finer mesh where advection bites harder.
+            # for 485 icebergs, on a finer mesh where advection bites harder.
             scaling_factor: [100, 50, 10, 1, 1, 1]
 
             # basin_file says which PISM drainage basin each discharge cell

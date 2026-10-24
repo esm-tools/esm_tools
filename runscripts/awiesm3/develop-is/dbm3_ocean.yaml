@@ -6,7 +6,7 @@
 # companion to dbm1 (which runs the same coupling on 46 nodes, 2 h, normal QoS):
 #   - rnfmap and xios interleaved into the oifs nodes (taskset placement)
 #   - FESOM 1800 s instead of 1200 s
-#   - the berg generation in the background of couple_in (general.icb_prep_background)
+#   - the iceberg generation in the background of couple_in (general.icb_prep_background)
 #   - AWI-ESM3 and PISM both on the devel QoS, 30 min
 # Changes against dbm1 are marked "dbm2:".
 #   esm_runscripts dbm2_couple.yaml -e dbm2 --coupling-chain all
@@ -93,7 +93,7 @@ general:
     interactive_mesh: true
     ism_freshwater_return: true
     smb_coupled: true
-    # dbm2: berg generation in the background of the restart remap and weight regeneration
+    # dbm2: iceberg generation in the background of the restart remap and weight regeneration
     icb_prep_background: true
     # dbm1: dEBM2 in the ISM-mapper. Its chunk-1 surface comes from the PISM state the ice
     # sheet starts from (the bundle's geometry has no usurf): antg065_pism.yaml's spinup_file.

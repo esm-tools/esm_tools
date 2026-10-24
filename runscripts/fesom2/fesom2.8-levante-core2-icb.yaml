@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------------
-# CORE2 iceberg test (2026-10-24): FESOM standalone with 4000 bergs seeded along the
+# CORE2 iceberg test (2026-10-24): FESOM standalone with 4000 icebergs seeded along the
 # Antarctic coast (input/fesom2/icbtest_core2, seed 1, sizes resampled from dbm3's
 # 1902 set), the iceberg settings of awiesm3-develop-is (dbm3). Before/after test of
 # the iceberg element search at partition boundaries: run once with main and once

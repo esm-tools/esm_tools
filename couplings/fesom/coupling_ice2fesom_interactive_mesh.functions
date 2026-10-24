@@ -65,7 +65,7 @@ function ice2fesom {
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
 
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
-    # Iceberg generation moved BELOW build_submesh: the bergs must be placed in
+    # Iceberg generation moved BELOW build_submesh: the icebergs must be placed in
     # the ocean this leg actually has, not the one the previous leg had.
 
     # Concurrent coupling: this leg consumes the sibling's chunk-(N-1) products.
@@ -82,7 +82,7 @@ function ice2fesom {
         unset _i2f_tag
     fi
 
-    # With a static ocean there is no submesh to wait for, so the bergs are
+    # With a static ocean there is no submesh to wait for, so the icebergs are
     # generated here against the mesh FESOM runs on unchanged.
     if [[ "x${CHANGE_OCEAN:-0}" != "x1" ]] && [[ "x${ICE_TO_FESOM:-0}" != "x0" ]]; then
         iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
@@ -96,10 +96,10 @@ function ice2fesom {
         couple_timer "ice2fesom: build_submesh"
         build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
         # Bergs go in here, after the submesh exists and before anything reads
-        # the berg files. With ICB_PREP_BACKGROUND (general.icb_prep_background)
+        # the iceberg files. With ICB_PREP_BACKGROUND (general.icb_prep_background)
         # they are made in the background while the restart remap and the OASIS
         # weights are rebuilt: those need only latest_submesh and write nothing
-        # the berg generator reads, and the berg generator writes nothing they
+        # the iceberg generator reads, and the iceberg generator writes nothing they
         # read. It is waited for before ice2fesom is done. A failure there still
         # stops the chain: couple_fail writes the sentinel before it exits, and
         # the exit status is checked after the wait.
@@ -1275,12 +1275,12 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${icb_disch}
 
-    # Turn that discharge into the berg set for THIS leg's mesh. A subprocess
+    # Turn that discharge into the iceberg set for THIS leg's mesh. A subprocess
     # under the ocp-tool python, like the weight regeneration: the generator
     # needs pyfesom2, which does not import in the python esm_runscripts runs.
     # icb_felem indexes the mesh, so the set is only valid for the mesh it was
     # built on, which is why it is rebuilt here rather than staged from a pool.
-    # The generator reads lon_bnds/lat_bnds to place bergs inside a discharge
+    # The generator reads lon_bnds/lat_bnds to place icebergs inside a discharge
     # cell, and cdo cannot put them there: the PISM griddes carries centres only.
     local bounds_py=${FUNCTION_PATH}/../pism/add_cell_bounds.py
     # PYTHONPATH: add_cell_bounds imports ocp_tool for the projection, and the
@@ -1292,19 +1292,19 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         couple_fail "ice2fesom FAILED: add_cell_bounds"
     fi
 
-    # Re-seat the carried bergs first. Their iceberg_elem is a global index on
+    # Re-seat the carried icebergs first. Their iceberg_elem is a global index on
     # the mesh that wrote the restart, and a mesh-change leg renumbers the
     # elements, so each one silently points at a different element and dumps its
     # meltwater there, divided by that element's node area. Setting
     # find_iceberg_elem back to true would make FESOM re-derive the element the
-    # way it does for a newly calved berg, but that flag also declares the frame
-    # -- true means "geographic", and a carried berg's coordinates are rotated --
+    # way it does for a newly calved iceberg, but that flag also declares the frame
+    # -- true means "geographic", and a carried iceberg's coordinates are rotated --
     # so it made FESOM rotate the position a second time and stop on the first
-    # berg it could not place, hanging the whole coupled job until the
-    # wall-clock limit. It also discards the berg's velocity. The script instead
-    # writes the element the berg is in on the new mesh and leaves the record
+    # iceberg it could not place, hanging the whole coupled job until the
+    # wall-clock limit. It also discards the iceberg's velocity. The script instead
+    # writes the element the iceberg is in on the new mesh and leaves the record
     # otherwise untouched.
-    # Must run before make_icebergs, which counts the carried bergs.
+    # Must run before make_icebergs, which counts the carried icebergs.
     local reseat_py=${FUNCTION_PATH}/reseat_iceberg_restart.py
     if [ -f "${reseat_py}" ] && [ -n "${ICB_RESTART_ISM:-}" ] \
             && [ -f "${ICB_RESTART_ISM}" ] && [ -d "${COUPLE_DIR}/latest_submesh" ]; then
@@ -1316,11 +1316,11 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
 
     local icb_py=${FUNCTION_PATH}/make_icebergs.py
     if [ -z "${ICB_BASIN_FILE:-}" ]; then
-        couple_fail "ice2fesom FAILED: fesom.basin_file unset, the berg generator needs the ice sheet drainage basins"
+        couple_fail "ice2fesom FAILED: fesom.basin_file unset, the iceberg generator needs the ice sheet drainage basins"
     fi
     # The submesh, not MESH_DIR_fesom. The mother mesh is the maximum extent and
-    # includes cells presently under grounded ice, so placing bergs in it puts
-    # them tens of km inland of this leg's coastline: on chunk 2, 89 bergs at a
+    # includes cells presently under grounded ice, so placing icebergs in it puts
+    # them tens of km inland of this leg's coastline: on chunk 2, 89 icebergs at a
     # median 29 km and up to 89 km from the nearest ocean element, 285 Gt of
     # discharge, concentrated in Wilkes/Adelie and the Peninsula where the
     # coastline is finest.
@@ -1328,7 +1328,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     if [ -d "${COUPLE_DIR}/latest_submesh" ]; then
         icb_mesh=${COUPLE_DIR}/latest_submesh
     else
-        echo " *   note: no latest_submesh, placing bergs on ${MESH_DIR_fesom}"
+        echo " *   note: no latest_submesh, placing icebergs on ${MESH_DIR_fesom}"
     fi
     if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${icb_py}" \
             "${icb_disch}" \

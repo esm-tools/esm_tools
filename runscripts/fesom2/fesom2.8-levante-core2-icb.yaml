@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------------
+# CORE2 iceberg test (2026-10-24): FESOM standalone with 4000 bergs seeded along the
+# Antarctic coast (input/fesom2/icbtest_core2, seed 1, sizes resampled from dbm3's
+# 1902 set), the iceberg settings of awiesm3-develop-is (dbm3). Before/after test of
+# the iceberg element search at partition boundaries: run once with main and once
+# with the fix, otherwise identical.
+#   esm_runscripts fesom2.8-levante-core2-icb.yaml -e icbbase
+# ---------------------------------------------------------------------------------
+general:
+        user: !ENV ${USER}
+        account: "ab0246"
+        setup_name: fesom
+        compute_time: "00:30:00"
+        initial_date: '1958-01-01'
+        final_date: '1958-04-01'
+        base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+        nyear: 0
+        nmonth: 3
+        use_venv: False
+
+fesom:
+        version: 2.8
+        model_dir: "/work/ab0246/${user}/model_codes/fesom-2.8/"
+        pool_dir: "/work/ab0246/a270092/input/"
+        mesh_dir: "/work/ab0246/a270092/input/fesom2/core2/"
+        resolution: "CORE2"
+        lresume: false
+        time_step: 1800
+        nproc: 384
+        restart_rate: 3
+        restart_first: 3
+        restart_unit: 'm'
+        with_icb: True
+        use_icesheet_coupling: False
+        ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icbtest_core2"
+        add_namelist_changes:
+            namelist.config:
+                icebergs:
+                    use_icesheet_coupling: ".false."
+                    steps_per_ib_step: 8
+                    ib_async_mode: 0
+                    l_allowgrounding: 2

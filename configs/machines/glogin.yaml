@@ -76,22 +76,6 @@ computer:
     # but I (Joakim) see no reason to use them
     # The performance difference between Cascade Lake and Sapphire Rapids is to be tested
     choose_partition:
-            # 2 x 48-core Intel Cascade-Lake 9242. 2,3 GHz base clock.
-            standard96:
-                    partition_name: standard96
-                    partition_cpn: 96
-            # 2 x 48-core Intel Cascade-Lake 9242 (Cent OS 7)
-            'standard96:el7':
-                    partition_name: 'standard96:el8'
-                    partition_cpn: 96
-            # 2 x 48-core Intel Cascade-Lake 9242
-            'standard96:el8':
-                    partition_name: 'standard96:el8'
-                    partition_cpn: 96
-            # 2 x 48-core Intel Cascade-Lake 9242. For short tests (< 1hr walltime)
-            'standard96:test':
-                    partition_name: 'standard96:test'
-                    partition_cpn: 96
             # 2 x Sapphire Rapids 8468. 514 Gb memory per node. 2,1 GHz base clock.
             'standard96s':
                     partition_name: 'standard96s'
@@ -104,6 +88,10 @@ computer:
                     partition_cpn: 96
             'medium96s:test':
                     partition_name: 'medium96s:test'
+                    partition_cpn: 96
+            # same as medium96s, but upgraded to AlmaLinux 10 (testing phase)
+            'medium96s:el10':
+                    partition_name: 'medium96s:el10'
                     partition_cpn: 96
 
     # Choose partition for different kinds of jobs
@@ -182,6 +170,38 @@ computer:
         - "load cmake"
 
     choose_compiler_mpi:
+       #
+       # EMMY P4 / AlmaLinux 10 environments
+       #
+       # Testing FOCIOIFS5 (OpenIFS48-r1 with NEMO5) with gcc14 + OpenMPI 4.x 
+       gcc15_ompi5:
+
+          # Use system modules
+          iolibraries: system_libs
+
+          # Here we load compiler and MPI
+          # netCDF etc is done later
+          add_module_actions:
+             - "load gcc/15.3.0"
+             - "load openmpi/5.0.10"
+             # MKL needed for OpenIFS
+             # Intel MKL works with GCC. Not specific to Intel Fortran
+             - "load intel-oneapi-mkl/2026.1.0"
+             # Load FFTW (yes it really does stand for Fastest Fourier Transform in the West)
+             - "load fftw/3.3.11"
+             - "load cmake"
+
+          add_export_vars:
+             FC: mpifort 
+             F77: mpifort 
+             MPIFC: mpifort 
+             FCFLAGS: -free
+             CC: mpicc 
+             CXX: mpic++ 
+             MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+             MKLROOT: $INTEL_ONEAPI_MKL_MODULE_INSTALL_PREFIX
+             FFTWROOT: $FFTW_MODULE_INSTALL_PREFIX
        # the oldest possible compiler suite on the glogin 
        # same as intel2021_impi2021 but for thew new P4 / AlmaLinux 10 nodes
        intel2021_impi2021_p4:
@@ -193,8 +213,10 @@ computer:
           # netCDF etc is done later
           add_module_actions:
              - "load intel-oneapi-compilers-classic/2021.10.0"
-             -  "load intel-oneapi-mpi/2021.17.2-external-libfabric" # 2021.14.2 is also available 
-             # MKL needed for OpenIFS
+             - "load intel-oneapi-mpi/2021.17.2-external-libfabric" # 2021.14.2 is also available 
+             # MKL needed for OpenIFS and ECHAM6 when compiled with cmake
+             # since the module is not exposed in the classic env we use the 
+             # full path below (works)
              # - "load intel-oneapi-mkl/2024.2.2"
 
           add_export_vars:
@@ -207,7 +229,12 @@ computer:
              CXX: mpiicpc
              MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
              MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+             MKLROOT: /sw/rev/26.07/sapphirerapids_opx_almalinux10/linux-sapphirerapids/intel-oneapi-mkl-2025.3.1-ywb7xfjmxay2cgtuyzve7aolgkcukdnt/mkl/2025.3   
+             LIBRARY_PATH: $MKLROOT/lib:$LIBRARY_PATH
 
+       #
+       # EMMY P3 / Rocky Linux 8.10 environments (roughly until end of 2026)
+       #
        # build locally for myself using spack
        # Anyone else can do this too using the following commands:
        # module load spack # load spack module
@@ -516,11 +543,50 @@ computer:
              MKLROOT: $INTEL_ONEAPI_MKL_MODULE_INSTALL_PREFIX
              FFTWROOT: $FFTW_MODULE_INSTALL_PREFIX
 
-
     choose_iolibraries:
 
         system_libs:
             choose_compiler_mpi:
+                gcc15_ompi5:
+                    # Modules to load
+                    add_module_actions:
+                        # Parallel HDF5
+                        - "load hdf5/1.14.6"
+                        - "load netcdf-c/4.9.3"
+                        - "load netcdf-fortran/4.6.2"
+                        # ecCodes required by OpenIFS
+                        - "load eccodes/2.47.0"
+                        # cdo and nco required for pre- and post processing of OpenIFS and NEMO
+                        - "load cdo/2.5.4"
+                        - "load nco/5.3.4"
+
+                    add_export_vars:
+                        # Run module show on the modules to see how
+                        # each module changes or sets env variables
+                        # Module load usually sets <libname>_INSTALL_PREFIX
+                        # so we just use that to find the libraries and includes.
+                        HDF5_ROOT: $HDF5_MODULE_INSTALL_PREFIX
+                        HDF5ROOT: $HDF5_ROOT
+                        NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
+                        NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
+                        NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
+                        ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX
+                        # Add NETCDF to LD_LIBRARY_PATH
+                        # Gottingen support recommended to also add LD_RUN_PATH
+                        LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_RUN_PATH:$LD_LIBRARY_PATH
+                        NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+
+                        # For OASIS
+                        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+                        # For OASIS3-MCT5 from CERFACS
+                        OASIS_NETCDF: $NETCDFROOT
+                        OASIS_NETCDFF: $NETCDFFROOT
+
                 intel2021_impi2021_p4:
                     add_module_actions:
                         # Parallel HDF5
@@ -555,7 +621,7 @@ computer:
                         # Add everything to LD_LIBRARY_PATH
                         # Gottingen support recommended to also add LD_RUN_PATH
                         # Add both lib and lib64 for ecCodes since it varies
-                        LD_LIBRARY_PATH: $ECCODESROOT/lib/:$ECCODESROOT/lib64/:$NETCDFROOT/lib/:$NETCDFFROOT/lib/:$HDF5ROOT/lib/:$LD_LIBRARY_PATH
+                        LD_LIBRARY_PATH: $ECCODESROOT/lib/:$ECCODESROOT/lib64/:$NETCDFROOT/lib/:$NETCDFFROOT/lib/:$HDF5ROOT/lib/:$MKLROOT/lib:$LD_LIBRARY_PATH
 
                         # For OASIS
                         NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib

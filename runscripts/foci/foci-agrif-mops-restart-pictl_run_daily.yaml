@@ -1,6 +1,13 @@
 computer:
    pool_dir: "/mnt/lustre-mdc/projects/geomar/foci_input2/" 
-   partition: "standard96:test"
+   #pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/" 
+   partition: "medium96s:el10"
+   #launcher: "srun"
+   additional_flags:
+             - --nodes=11 
+   #compiler_mpi: intel2021_impi2021_p4
+   compiler_mpi: gcc15_ompi5 
+
 general:
    use_venv: False
    verbose: True 
@@ -18,13 +25,13 @@ general:
    # test settings, daily restarts
    compute_time: "00:15:00"
    initial_date: "1900-01-01T00:00:00"       # Initial exp. date
-   final_date: "1900-01-04T00:00:00"         # Final date of the experiment
+   final_date: "1900-01-03T00:00:00"         # Final date of the experiment
    nday: 1 
    postprocessing: 0
    
    # machine specific setup 
    account: shk00060
-   base_dir: ${homedir}/esm/esm-experiments-ssd/
+   base_dir: ${homedir}/esm/esm-experiments-rzg/
 
    lresume: True
    # test data provided by Tronje Kemena 
@@ -35,7 +42,7 @@ general:
    ini_parent_dir: "${computer.pool_directories.focipool}/FOCI_RESTART/${ini_parent_exp_id}/"
 
 foci:
-   model_dir: ${general.homedir}/esm/models/foci-agrif_mops_oasismct4/
+   model_dir: ${general.homedir}/esm/models/alma10/gcc15/foci-agrif_mops_oasismct4/
 
 # set input_dir for oasis grids, masks and areas
 # only required as long as we generate the remapping files on the fly 

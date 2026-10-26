@@ -653,6 +653,10 @@ nemo:
         clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${version} clean
         #archfile: ESMTOOLS_generic_oasis_gnu
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -921,6 +925,10 @@ nemo:
                       cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
         clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r eORCA_SI3_AGRIF_COUPLED_NEMO5 clean
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -1476,6 +1484,10 @@ nemo:
         clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${version} clean
         #archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -1601,6 +1613,10 @@ nemo:
         git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
         #archfile: ESMTOOLS_generic_oasis_intel_agrif
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15_agrif
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -1727,6 +1743,10 @@ nemo:
         git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
         #archfile: ESMTOOLS_generic_oasis_intel_agrif
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15_agrif
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -1850,6 +1870,10 @@ nemo:
         destination: nemo-${nemo.version}/CONFIG/${nemo.version}
         git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15_agrif
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -2004,6 +2028,10 @@ nemo:
         destination: nemo-${nemo.version}/CONFIG/${nemo.version}
         git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15_agrif
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -2153,6 +2181,10 @@ nemo:
         destination: nemo-${nemo.version}/CONFIG/${nemo.version}
         #archfile: ESMTOOLS_generic_oasis_intel_agrif
         choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15_agrif
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
            gcc11_ompi417:
               archfile: ESMTOOLS_generic_oasis_gnu
            gcc14_ompi417:
@@ -2556,6 +2588,19 @@ nemo:
         branch: esm-tools-oasismct4
         destination: nemo-${nemo.version}/CONFIG/${nemo.version}
         git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_FOCI_MOPS.git
+        choose_computer.compiler_mpi:
+           gcc15_ompi5:
+              archfile: ESMTOOLS_generic_oasis_gnu15
+           gcc13_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu
+           gcc11_ompi417:
+              archfile: ESMTOOLS_generic_oasis_gnu
+           gcc14_ompi417:
+              archfile: ESMTOOLS_generic_oasis_gnu
+           gnu11_ompi4:
+              archfile: ESMTOOLS_generic_oasis_gnu 
+           "*":
+              archfile: ESMTOOLS_generic_oasis_intel
 
         # tracers are used by default
         free_surface: nonlinear

@@ -193,6 +193,30 @@ xios:
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5_r1910
       2.5_r2497:
+        choose_computer.name:
+          levante:
+            choose_computer.compiler_mpi:
+              gnu11_ompi4:
+                archfile: ESMTOOLS_generic_oasis_gnu
+              '*':
+                archfile: ESMTOOLS_generic_oasis_intel
+          glogin:
+            choose_computer.compiler_mpi:
+              # gloginp4 gnu15 environment
+              gcc15_ompi5:
+                archfile: ESMTOOLS_generic_oasis_gnu15
+              # gloginp4 gnu13 environment
+              gcc13_ompi4:
+                archfile: ESMTOOLS_generic_oasis_gnu
+              # glogin's gcc14 environent
+              gcc14_ompi417:
+                archfile: ESMTOOLS_generic_oasis_gnu
+              gcc11_ompi417:
+                archfile: ESMTOOLS_generic_oasis_gnu
+              '*':
+                archfile: ESMTOOLS_generic_oasis_intel
+          '*':
+            archfile: ESMTOOLS_generic_oasis_intel
         archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5_r2497
@@ -207,6 +231,12 @@ xios:
                 archfile: ESMTOOLS_generic_oasis_intel
           glogin:
             choose_computer.compiler_mpi:
+              # gloginp4 gnu15 environment
+              gcc15_ompi5:
+                archfile: ESMTOOLS_generic_oasis_gnu15
+              # gloginp4 gnu13 environment
+              gcc13_ompi4:
+                archfile: ESMTOOLS_generic_oasis_gnu
               # glogin's gcc14 environent
               gcc14_ompi417:
                 archfile: ESMTOOLS_generic_oasis_gnu

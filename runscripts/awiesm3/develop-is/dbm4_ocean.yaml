@@ -251,12 +251,13 @@ lpj_guess:
     ini_parent_exp_id: "dbm3"
     ini_parent_date: "${prev_date}"
     ini_restart_dir: "/work/ab0246/a270092/runtime/awiesm3-develop-is/dbm3/restart/lpj_guess"
+    # The state written at the end of the leg keeps the component's own name
+    # (lpjg_state_<end year>); the cookbook's restart_out_in_work line would save
+    # the input state instead and leave the next leg without one.
     choose_general.run_number:
         1:
             restart_in_sources:
                 state: /${ini_restart_dir}/lpjg_state_1905/*
-            restart_out_in_work:
-                state: /${work_dir}/lpjg_state_$(date -u -d "${initial_date}" +%Y)/*
 
 oifs:
     resolution: TCO95

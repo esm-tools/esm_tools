@@ -1,7 +1,7 @@
-# dbm4 (2026-10-26): dbm3 continued from its 1904 end state (chunk 6: ocean 1905, ice
-# 62430) on bb1469 (ab0246 is over quota), with 60-min ESM legs on normal QoS and the
-# ice sheet albedo raised in OIFS (NAMSURFTUNE: firn 0.83, fresh snow 0.89). Changes
-# against dbm3 are marked "dbm4:".
+# dbm4 (2026-10-26): a branch of dbm3 at ocean 1905 / ice 62420, on bb1469. PISM restarts
+# from dbm3's end of 62419 and reruns 62420-62429 with dbm3's 1904 forcing (bundle
+# coupled_bootstrap/branch_dbm3_1904, see its README.md), which keeps the one-chunk lag.
+# Changes against dbm3 are marked "dbm4:".
 #   esm_runscripts dbm4_couple.yaml -e dbm4 --coupling-chain all
 # dbm3 (2026-10-24): dbm2 with the dEBM2 runoff weights from the pool, 10 cycles:
 # ocean 1900-1909 (1-yr legs), ice 62370-62469 (10-yr legs). Changes against dbm2 are marked "dbm3:".
@@ -35,7 +35,7 @@ general:
         # dbm1: devel QoS on cap7 (30 min): a 10-yr leg is ~3 min, the next awiesm3 chunk's
         # couple_in, which runs in this allocation, ~2 min.
         compute_time: "00:30:00"
-        initial_date: "62370-01-01"
+        initial_date: "62420-01-01"   # dbm4: branch point
         # FULL RUN: 20 legs of 10 yr, 62370 + 20*10 - 1. Must end on the same cycle as
         # antfill_ocean.yaml's "1920-01-01".
         # TO GO BACK TO THE TWO-CYCLE TEST: "62389-12-31" here AND "1902-01-01" in
@@ -72,18 +72,15 @@ general:
         use_venv: False
 
 pism:
-        # dbm4: pismr from the model tree every leg; the experiment's bin/ starts
-        # empty (copied from dbm3 without it) and a revived chain gets no
-        # --update-filetypes
-        reusable_filetypes: [input, src]
         python_binary: "${general.conda_env_dir}/ocp-tool2/bin/python"
-        fesom_mesh_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar/submesh"
+        fesom_mesh_dir: "/work/bb1469/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/submesh_1904-12-31T00:00:00"   # dbm4: mesh of the chunk-1 ocean forcing
         # Chunk 1 conserves the cavity melt over PISM's OWN floating mask, read from the FIRST
         # record of this file -- the initial geometry. It must come from a run bootstrapped from
         # the same spinup_file, which this is: the first decade run from ic_X_nofrag.nc with the
         # parameters below. With a flotation test instead, only 0.87 of the cavity total arrives;
         # with this, 1.01 (ism43 measurement, coupling_ocean2pism.functions).
-        initial_mask_file: "${general.antfill_root}/runtime/awiesm3-develop-is/newic_newpar/decade1/ex_decade1.nc"
+        # dbm4: PISM's own mask at the branch point, the one dbm3's 62420 leg used
+        initial_mask_file: "/work/bb1469/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/initial_mask_62419.nc"
         version: "github1.2.1"
         resolution: "08km"
         domain: "antarct_cr"
@@ -93,7 +90,7 @@ pism:
         # a FESOM carrying the 3-equation cavity melt fix (integrated basal melt 1280-1430 Gt/yr
         # against 250 in the older sets). Copied from levante a270234 with its submesh.
         # antg065: antfill1's own harvest, see its README.md (1919-1928 SMB, 1928 melt scaled to ~790).
-        bootstrap_forcing_dir: "${general.antfill_root}/input/pism/coupled_bootstrap/antfill1_1928_g065"
+        bootstrap_forcing_dir: "/work/bb1469/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904"   # dbm4: dbm3's 1904 harvest
 
         nx: 761
         ny: 761
@@ -107,14 +104,7 @@ pism:
         debm_path: "${general.model_code_dir}/bin/debm"
         debm_beta: 10
         lapse_rate: -0.005
-        ablation_method: "DIRECT"
-        # dbm1: dEBM2's SMB from the ISM-mapper from chunk 2 on. Chunk 1 is forced from the
-        # bootstrap (antfill1's direct-path fields), which has no dEBM2 SMB.
-        choose_general.chunk_number:
-                1:
-                        ablation_method: "DIRECT"
-                "*":
-                        ablation_method: "DEBM2"
+        ablation_method: "DEBM2"   # dbm4: the chunk-1 forcing carries dEBM2's SMB too
         regrid_method: "NONE"
         iceberg_coupling: 1
         thk_threshold: 5.0
@@ -138,7 +128,8 @@ pism:
         # rebuilding the bundle.
         # antg065: ic_X_nofrag.nc with tillphi from inv_albedo_run9_thkonly/ic_014.nc; geometry identical,
         # so the antfill chunk-1 bundle still applies.
-        spinup_file: "${general.antfill_root}/pism_repro/antg065/ic_X_nofrag_phi9.nc"
+        # dbm4: dbm3's restart at the end of 62419, read as a full state (no bootstrap)
+        spinup_file: "/work/ab0246/a270092/runtime/awiesm3-develop-is/dbm3/restart/pism/dbm3_pismr_restart_624100101-624191231.nc"
         pool_dir: "${general.shared_a270092}/input/pism/"
         ts_interval: "1"
         ex_interval: "yearly"

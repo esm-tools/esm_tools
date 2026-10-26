@@ -1,7 +1,9 @@
-# dbm4 (2026-10-26): dbm3 continued from its 1904 end state (chunk 6: ocean 1905, ice
-# 62430) on bb1469 (ab0246 is over quota), with 60-min ESM legs on normal QoS and the
-# ice sheet albedo raised in OIFS (NAMSURFTUNE: firn 0.83, fresh snow 0.89). Changes
-# against dbm3 are marked "dbm4:".
+# dbm4 (2026-10-26): a branch of dbm3 at ocean 1905 / ice 62420, on bb1469, with 60-min
+# ESM legs on normal QoS and the ice sheet albedo raised in OIFS (NAMSURFTUNE: firn 0.83,
+# fresh snow 0.89). Chunk 1 restarts every component from dbm3 instead of cold-starting:
+# the coupling state comes from the bundle pism_cavity_ini_branch_dbm3_1905 (see its
+# README.md), OIFS and LPJ-GUESS branch off dbm3 with the cookbook keys. Changes against
+# dbm3 are marked "dbm4:".
 #   esm_runscripts dbm4_couple.yaml -e dbm4 --coupling-chain all
 # dbm3 (2026-10-24): dbm2 with the dEBM2 runoff weights from the pool, 10 cycles:
 # ocean 1900-1909 (1-yr legs), ice 62370-62469 (10-yr legs). Changes against dbm2 are marked "dbm3:".
@@ -70,7 +72,7 @@ general:
     # ism44 ran 1-yr awiesm3 legs in ~26-33 min on levante. Not measured on albedo; 02:00:00
     # is ism44's value and leaves room for the first-run overhead.
     compute_time: "01:00:00"   # dbm4: normal QoS, room for the next couple_in
-    initial_date: "1900-01-01"
+    initial_date: "1905-01-01"   # dbm4: branch point
     # FULL RUN: 20 cycles, 1900-1919 inclusive (10 ice years per cycle: PISM 62370-62569).
     # Must end on the same cycle as antfill_pism.yaml's "62569-12-31".
     #
@@ -105,7 +107,8 @@ general:
     debm_coupled: true
     debm2_ice_initial_state: "${general.antfill_root}/pism_repro/antg065/ic_X_nofrag_phi9.nc"
     # The chunk-1 bundle built on albedo for this mesh + initial condition; see its README.md.
-    pism_cavity_ini_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar"
+    # dbm4: dbm3's state after the 1905 couple_in, instead of the cold-start bundle
+    pism_cavity_ini_dir: "/work/bb1469/a270092/input/fesom2/pism_cavity_ini_branch_dbm3_1905"
     nday: 0
     nmonth: 0
     nyear: 1
@@ -151,7 +154,11 @@ fesom:
     # records as "always crashes FESOM around day 4". A cold start on such a submesh is stable
     # at the full 1200 s timestep. awiesm3.yaml sets lresume true inside chunk_number 1, which
     # the choose-block at the end of this section overrides.
-    lresume: false
+    # dbm4: restart from dbm3's end of 1904, remapped onto the 1905 submesh (bundle)
+    lresume: true
+    ini_parent_exp_id: "dbm3"
+    ini_parent_date: "1904-12-31"
+    ini_restart_dir: "${general.pism_cavity_ini_dir}/fesom_restart/"
     time_step: 1800   # dbm2: was 1200
     nproc: 1792
     omp_num_threads: 2
@@ -234,16 +241,22 @@ fesom:
                 kpp_avbckg: 0.0001
                 kpp_kvbckg: 1e-05
 
-    choose_general.chunk_number:
-        1:
-            lresume: false
-
 lpj_guess:
     slt_dir: "${general.antfill_root}/input/lpj-guess/slt/"
     nproc: 64
     omp_num_threads: 4
     mip: "cmip7"
-    lresume: false
+    # dbm4: branch off dbm3's state at the start of 1905
+    lresume: true
+    ini_parent_exp_id: "dbm3"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/ab0246/a270092/runtime/awiesm3-develop-is/dbm3/restart/lpj_guess"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_1905/*
+            restart_out_in_work:
+                state: /${work_dir}/lpjg_state_$(date -u -d "${initial_date}" +%Y)/*
 
 oifs:
     resolution: TCO95
@@ -251,7 +264,13 @@ oifs:
     prepifs_expid: ab45
     input_expid: awi3
     wam: true
-    lresume: false
+    # dbm4: branch off dbm3's end of 1904
+    lresume: true
+    ini_restart_dir: "/work/ab0246/a270092/runtime/awiesm3-develop-is/dbm3/restart/oifs/"
+    ini_restart_exp_id: "dbm3"
+    ini_restart_date: "1904-12-31T23:00:00"
+    ini_pseudo_initial_date: "1904-01-01"
+    prev_run_config_file: "/work/ab0246/a270092/runtime/awiesm3-develop-is/dbm3/config/dbm3_awiesm3_finished_config.yaml_19040101-19041231"
     time_step: 3600
     nproc: 384
     omp_num_threads: 4
@@ -344,6 +363,31 @@ oifs:
                 LHDPRG: ".false."
                 LHDHKS: ".false."
 
+
+ismm:
+    # dbm4: chunk 1 continues dbm3's dEBM2 state (1904-12) instead of starting it cold.
+    # Overrides awiesm3.yaml's chunk-1 values, as the fesom block above does for lresume.
+    # Inputs, not restarts: the mapper has no lresume.
+    choose_general.chunk_number:
+        1:
+            debm2_surface_from: ""
+            debm2_cold_start: ""
+            add_namelist_changes:
+                namelist.ismm:
+                    NAMISMM:
+                        LColdStart: ".false."
+                    NAMISMARR:
+                        DEBMRunoffRestartList: "${ice_prefix}_debm_runoff_restart.nc"
+            add_input_files:
+                debm_restart: debm_restart
+                debm_runoff_restart: debm_runoff_restart
+            add_input_in_work:
+                debm_restart: ${ice_prefix}_debm_restart.nc
+                debm_runoff_restart: ${ice_prefix}_debm_runoff_restart.nc
+            add_input_sources:
+                debm_restart: ${general.pism_cavity_ini_dir}/debm/${ice_prefix}_debm_restart.nc
+                debm_runoff_restart: ${general.pism_cavity_ini_dir}/debm/${ice_prefix}_debm_runoff_restart.nc
+
 rnfmap:
     runoff_file: "${general.pool_dir}/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
     # dbm2: 4 threads inside an oifs node instead of a node of its own (antg065e10, v3.5.0)
@@ -369,7 +413,7 @@ oasis3mct:
                 rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
                 rstas.nc: "${general.pism_cavity_ini_dir}/rstas.nc"
                 rstos.nc: "${general.pism_cavity_ini_dir}/rstos.nc"
-                vegin.nc: vegin.nc
+                vegin.nc: "${general.pism_cavity_ini_dir}/oasis/vegin.nc"   # dbm4: dbm3's 1904
                 rstism.nc: "${general.pism_cavity_ini_dir}/oasis/rstism.nc"
         "*":
             input_sources:

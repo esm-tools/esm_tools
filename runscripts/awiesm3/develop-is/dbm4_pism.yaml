@@ -72,6 +72,10 @@ general:
         use_venv: False
 
 pism:
+        # dbm4: pismr from the model tree every leg; the experiment's bin/ starts
+        # empty (copied from dbm3 without it) and a revived chain gets no
+        # --update-filetypes
+        reusable_filetypes: [input, src]
         python_binary: "${general.conda_env_dir}/ocp-tool2/bin/python"
         fesom_mesh_dir: "${general.antfill_root}/input/fesom2/pism_cavity_ini_antfill_newpar/submesh"
         # Chunk 1 conserves the cavity melt over PISM's OWN floating mask, read from the FIRST

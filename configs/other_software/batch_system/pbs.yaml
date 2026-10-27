@@ -86,8 +86,8 @@ dask:
     tasks_per_node: "$(( ${computer.partition_cpn} / 4 ))"
     ntasks: "$(( ${computer.nnodes} * ${computer.partition_cpn} / 4 ))"
     init_scheduler_cmd: "
-        aprun -n 1 -N 1 -d 1 dask scheduler --scheduler-file ${dask.scheduler_json} --interface ipogif0
+        aprun -n 1 -N 1 -d 1 env GIT_PYTHON_REFRESH=quiet GIT_PYTHON_GIT_EXECUTABLE=/opt/ibs/git/2.40.0/GNU/48/bin/git dask scheduler --scheduler-file ${dask.scheduler_json} --interface ipogif0
         "
     init_workers_cmd: "
-        aprun -n ${dask.ntasks} -N ${dask.tasks_per_node} -d 1 dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ipogif0
+        aprun -n ${dask.ntasks} -N ${dask.tasks_per_node} -d 1 env GIT_PYTHON_REFRESH=quiet GIT_PYTHON_GIT_EXECUTABLE=/opt/ibs/git/2.40.0/GNU/48/bin/git dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ipogif0
         "

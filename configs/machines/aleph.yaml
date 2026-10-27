@@ -71,6 +71,7 @@ computer:
             - "load nco/4.9.4"
             - "load proj4/5.1.0"
             - "load python/3.9.1"
+            - "load git/2.40.0"
             - "list"
 
     export_vars:
@@ -106,6 +107,8 @@ computer:
 
             # for the fesom cmake setup
             ENABLE_ALEPH_CRAYMPICH_WORKAROUNDS: ''
+            GIT_PYTHON_REFRESH: quiet
+
             FC: ${fc}
             CC: ${cc}
             CXX: ${cxx}

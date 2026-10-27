@@ -7,6 +7,7 @@ components:
 - fesom-2.8.3
 - oasis3mct-5.3
 - lpj_guess-4.1.15
+- emissions_reader-v1.0
 coupling_changes:
 - sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml
 - sed -i 's/xios-3.0/xios/g' oifs-48r1/bundle.yml

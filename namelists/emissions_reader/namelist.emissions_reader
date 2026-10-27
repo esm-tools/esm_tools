@@ -1,0 +1,11 @@
+&NAMEMISREADER
+    RunLengthSec = 86400
+    TimeStepSec  = 86400
+    StartYear    = 1850
+    StartMonth   = 1
+    StartDay     = 1
+    FixYear      = 0
+    LDebug       = .true.
+    GridName     = 'EM05'
+    NStreams     = 2
+/

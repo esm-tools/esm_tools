@@ -12,6 +12,14 @@ general:
         with_co2_oce_coupling: False
         with_co2_veg_coupling: False
 
+        # CO2 tracer, and CMIP7 emissions into it from the emissions reader
+        with_co2_tracer: False
+        with_co2_emissions: False
+        choose_general.with_co2_emissions:
+                true:
+                        add_include_models:
+                                - emissions_reader
+
         # Promote the OIFS prepcompute recipe to the setup level so the OIFS
         # `preprocess` step actually runs (change_icm_date.sh re-dates ICMGG/ICMSH/
         # wave init files to the run's initial_date). Without this, the coupled
@@ -150,6 +158,73 @@ oifs:
                                                 #NALBEDOSCHEME: 3
 
 
+        # emission namelists of the v3.5 coupled setup
+        co2_namelist_dir: ${general.esm_namelist_dir}/oifs/48r1/awicm3/v3.5
+        oasis_grid_name_f: "F${oasis_grid_name}"
+        co2_emi_nml: namcompo_emis_co2_none.nml
+        atm_emi_fields: [FCO2FF, FCO2AIR.L001, FCO2AIR.L002, FCO2AIR.L003, FCO2AIR.L004, FCO2AIR.L005,
+            FCO2AIR.L006, FCO2AIR.L007, FCO2AIR.L008, FCO2AIR.L009, FCO2AIR.L010,
+            FCO2AIR.L011, FCO2AIR.L012, FCO2AIR.L013, FCO2AIR.L014, FCO2AIR.L015,
+            FCO2AIR.L016, FCO2AIR.L017, FCO2AIR.L018, FCO2AIR.L019, FCO2AIR.L020,
+            FCO2AIR.L021, FCO2AIR.L022, FCO2AIR.L023, FCO2AIR.L024, FCO2AIR.L025]
+        choose_general.with_co2_tracer:
+                true:
+                        add_add_namelist_changes:
+                                fort.4:
+                                        NAMGFL:
+                                                NGHG: 1
+                                                YGHG_NL(1)%CNAME: "CO2_GHG"
+                                                YGHG_NL(1)%IGRBCODE: 210061
+                                                YGHG_NL(1)%LADV: TRUE
+                                                YGHG_NL(1)%LADV5: TRUE
+                                                YGHG_NL(1)%LREQOUT: TRUE
+                                                YGHG_NL(1)%LMASSFIX: TRUE
+                                                YGHG_NL(1)%LQM: FALSE
+                                                YGHG_NL(1)%LQM3D: TRUE
+                                                YGHG_NL(1)%LNEGFIX: FALSE
+                                                YGHG_NL(1)%BETAMFBC: 2
+                                                YGHG_NL(1)%LASSIM: TRUE
+                                                NMFDIAGLEV: 2
+                                                NOPTVFE: 1
+                                        NAMCOMPO:
+                                                LCHEM_DIA: .false.
+                                                LCHEM_DDFLX: .false.
+                                                LCOMPO_DDFLX_DIR: .false.
+                                                LCHEM_TROPO: .false.
+                                                LCOMPO_DCDD: .false.
+                                        NAEPHY:
+                                                LNEEONLINE: False
+                                                LWETONLINE: False
+                                                LBFASCO2: False
+                        # emission sectors of the tracer (none unless with_co2_emissions), then
+                        # the terminator of the NAMCOMPO_EMIS list
+                        append_to_namelist_method: "
+                                  ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                                    ${co2_namelist_dir}/${co2_emi_nml}
+                                    ${thisrun_config_dir}/fort.4;
+                                  ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                                    ${co2_namelist_dir}/namcompo_emis_co2_terminator.nml
+                                    ${thisrun_config_dir}/fort.4"
+        choose_general.with_co2_emissions:
+                true:
+                        add_grids:
+                                atmf:
+                                        name: ${oasis_grid_name_f}
+                                        nx: "${nx}"
+                                        ny: "${ny}"
+                                        oasis_grid_type: "D"
+                                        oyac_grid_type: "LL"
+                                        oyac_io_per_node: 4
+                        add_coupling_fields:
+                                "[[atm_emi_fields-->FIELD]]":
+                                        grid: atmf
+                        add_add_add_namelist_changes:
+                                fort.4:
+                                        NAMECECFG:
+                                                ECE_CPL_EMIS_CO2: true
+                                                ECE_EMIS_CO2_NLEV: 25
+                        co2_emi_nml: namcompo_emis_co2_emi.nml
+
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
@@ -227,6 +302,12 @@ amip:
 
 #########################################################################################
 
+emissions_reader:
+        # built with every cy48 setup; launched only with general.with_co2_emissions
+        nproc: 1
+
+#########################################################################################
+
 xios:
         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
         regular_res_lat: 192
@@ -284,8 +365,38 @@ oasis3mct:
                         lag: 0
                         seq: 1
 
+        # Emissions reader -> OpenIFS: no lag, the atmosphere waits for the day's field.
+        choose_general.with_co2_emissions:
+                true:
+                        add_coupling_directions:
+                                'EM05->atmf':
+                                        lag: 0
+                                        seq: 1
+                                        coupling_time_step: ${emissions_reader.time_step}
+                                        lag_overwrite: true
+                        add_coupling_target_fields:
+                                rst_co2_em.nc:
+                                        - 'FCO2FF <--conserv_dest-- EM_CO2FF'
+                                        - 'FCO2AIR.L001:FCO2AIR.L002:FCO2AIR.L003:FCO2AIR.L004:FCO2AIR.L005 <--conserv_dest-- EM_CO2AIR01:EM_CO2AIR02:EM_CO2AIR03:EM_CO2AIR04:EM_CO2AIR05'
+                                        - 'FCO2AIR.L006:FCO2AIR.L007:FCO2AIR.L008:FCO2AIR.L009:FCO2AIR.L010 <--conserv_dest-- EM_CO2AIR06:EM_CO2AIR07:EM_CO2AIR08:EM_CO2AIR09:EM_CO2AIR10'
+                                        - 'FCO2AIR.L011:FCO2AIR.L012:FCO2AIR.L013:FCO2AIR.L014:FCO2AIR.L015 <--conserv_dest-- EM_CO2AIR11:EM_CO2AIR12:EM_CO2AIR13:EM_CO2AIR14:EM_CO2AIR15'
+                                        - 'FCO2AIR.L016:FCO2AIR.L017:FCO2AIR.L018:FCO2AIR.L019:FCO2AIR.L020 <--conserv_dest-- EM_CO2AIR16:EM_CO2AIR17:EM_CO2AIR18:EM_CO2AIR19:EM_CO2AIR20'
+                                        - 'FCO2AIR.L021:FCO2AIR.L022:FCO2AIR.L023:FCO2AIR.L024:FCO2AIR.L025 <--conserv_dest-- EM_CO2AIR21:EM_CO2AIR22:EM_CO2AIR23:EM_CO2AIR24:EM_CO2AIR25'
+                        add_process_ordering:
+                                - emissions_reader
+
 
         coupling_methods:
+                # First-order conservative remapping, normalised by the destination cell
+                # area: with no mask on either grid the global integral of a flux is kept.
+                conserv_dest:
+                        time_transformation: instant
+                        remapping:
+                                conserv:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: destarea
+                                        order: first
                 gauswgt_i:
                         time_transformation: instant
                         remapping:

@@ -129,6 +129,14 @@ general:
             add_include_models:
                 - ismm
 
+    # CMIP7 CO2 emissions into the OpenIFS tracer via the emissions reader (-cc only).
+    # Set in the runscript: it adds a model to the launch.
+    with_co2_emissions: false
+    choose_general.with_co2_emissions:
+        true:
+            add_include_models:
+                - emissions_reader
+
     choose_general.with_icb:
         true:
             prepcompute_recipe:
@@ -958,6 +966,46 @@ oifs:
                     NAMECECFG:
                         ECE_CPL_LPJG_CO2: true
 
+    # emissions arrive on atmf, the unmasked atmosphere grid (land and ocean)
+    oasis_grid_name_f: "F${oasis_grid_name}"
+    atm_emi_fields: [FCO2FF, FCO2AIR.L001, FCO2AIR.L002, FCO2AIR.L003, FCO2AIR.L004, FCO2AIR.L005,
+        FCO2AIR.L006, FCO2AIR.L007, FCO2AIR.L008, FCO2AIR.L009, FCO2AIR.L010,
+        FCO2AIR.L011, FCO2AIR.L012, FCO2AIR.L013, FCO2AIR.L014, FCO2AIR.L015,
+        FCO2AIR.L016, FCO2AIR.L017, FCO2AIR.L018, FCO2AIR.L019, FCO2AIR.L020,
+        FCO2AIR.L021, FCO2AIR.L022, FCO2AIR.L023, FCO2AIR.L024, FCO2AIR.L025]
+    choose_general.with_co2_emissions:
+        true:
+            add_grids:
+                atmf:
+                    name: ${oasis_grid_name_f}
+                    nx: "${nx}"
+                    ny: "${ny}"
+                    oasis_grid_type: "D"
+                    oyac_grid_type: "LL"
+                    oyac_io_per_node: 4
+            add_coupling_fields:
+                "[[atm_emi_fields-->FIELD]]":
+                    grid: atmf
+            add_add_add_add_add_add_add_add_add_add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_CPL_EMIS_CO2: true
+                        ECE_EMIS_CO2_NLEV: 25
+            # ocean, land and emission sectors of the CO2 tracer, then the terminator
+            append_to_namelist_method: "
+                      ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                        ${namelist_dir}/namcompo_emis_co2_oce.nml
+                        ${thisrun_config_dir}/fort.4;
+                      ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                        ${namelist_dir}/${co2_veg_emis_nml}
+                        ${thisrun_config_dir}/fort.4;
+                      ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                        ${namelist_dir}/namcompo_emis_co2_emi.nml
+                        ${thisrun_config_dir}/fort.4;
+                      ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                        ${namelist_dir}/namcompo_emis_co2_terminator.nml
+                        ${thisrun_config_dir}/fort.4"
+
     choose_general.with_mslp_oce_coupling:
         true:
             add_add_add_add_add_add_add_add_add_namelist_changes:
@@ -971,6 +1019,8 @@ oifs:
     # radiation (LECO2TRA=.false.). Needs with_co2_oce_coupling (RECOM) and
     # with_co2_tracer (NGHG=1), both on for develop-cc.
     co2_massfix_beta: 2
+    # tracer at a cold start, kg/kg (284 ppm); branches set the parent's mean
+    co2_init_mmr: 4.3144e-4
     choose_general.with_co2_concdriven:
         true:
             add_add_add_add_add_add_add_namelist_changes:
@@ -979,13 +1029,6 @@ oifs:
                         ECE_CPL_FESOM_RECOM_CONCDRIVEN: true
                     NAERAD:
                         LECO2TRA: false
-                    NAMGFL:
-                        # The initial file carries present-day CO2 (about 403 ppm, paramId
-                        # 210061). Start the tracer at the 1850 value instead: 4.3144e-4 kg/kg
-                        # is about 284 ppm. On the GRIB cold start this needs OpenIFS 48r1v7
-                        # (sugridug.F90 honours REFVALI); 48r1v6 and older start it at zero.
-                        YGHG_NL(1)%NREQIN: -1
-                        YGHG_NL(1)%REFVALI: 4.3144e-4
             # proportional mass fixer; the additive one (2) divides by about zero for a
             # nearly uniform field. Read by the NAMGFL block of with_co2_tracer below.
             co2_massfix_beta: -1
@@ -1006,6 +1049,9 @@ oifs:
                         YGHG_NL(1)%LQM3D: TRUE
                         YGHG_NL(1)%LNEGFIX: FALSE
                         YGHG_NL(1)%BETAMFBC: "${oifs.co2_massfix_beta}"
+                        # cold start from co2_init_mmr; restarts keep the tracer
+                        YGHG_NL(1)%NREQIN: -1
+                        YGHG_NL(1)%REFVALI: "${oifs.co2_init_mmr}"
                         YGHG_NL(1)%LASSIM: TRUE
                         NMFDIAGLEV: 2
                         NOPTVFE: 1
@@ -2026,6 +2072,10 @@ lpj_guess:
     choose_general.with_co2_veg_coupling:
         true:
             co2_coupling: 1
+            # emission-driven: use the tracer CO2, not a fixed year
+            choose_general.with_co2_concdriven:
+                false:
+                    fixed_CO2: -1
 
 
 xios:
@@ -2326,6 +2376,10 @@ ismm:
 #########################################################################################
 
 # Settings for OASIS
+emissions_reader:
+    # built with every awiesm3; launched only with general.with_co2_emissions
+    nproc: 1
+
 oasis3mct:
     model_dir: ${general.model_dir}/oasis
     pool_dir: ${general.pool_dir}/oasis/
@@ -2619,7 +2673,36 @@ oasis3mct:
                     - 'R_Runoff_${ismm.ice_prefix} <--bilinear_avg-- ${ismm.ice_prefix}_debm_runoff'
 
 
+    # emissions reader -> OpenIFS, no lag
+    choose_general.with_co2_emissions:
+        true:
+            add_coupling_directions:
+                'EM05->atmf':
+                    lag: 0
+                    seq: 1
+                    coupling_time_step: ${emissions_reader.time_step}
+                    lag_overwrite: true
+            add_coupling_target_fields:
+                rst_co2_em.nc:
+                    - 'FCO2FF <--conserv_dest-- EM_CO2FF'
+                    - 'FCO2AIR.L001:FCO2AIR.L002:FCO2AIR.L003:FCO2AIR.L004:FCO2AIR.L005 <--conserv_dest-- EM_CO2AIR01:EM_CO2AIR02:EM_CO2AIR03:EM_CO2AIR04:EM_CO2AIR05'
+                    - 'FCO2AIR.L006:FCO2AIR.L007:FCO2AIR.L008:FCO2AIR.L009:FCO2AIR.L010 <--conserv_dest-- EM_CO2AIR06:EM_CO2AIR07:EM_CO2AIR08:EM_CO2AIR09:EM_CO2AIR10'
+                    - 'FCO2AIR.L011:FCO2AIR.L012:FCO2AIR.L013:FCO2AIR.L014:FCO2AIR.L015 <--conserv_dest-- EM_CO2AIR11:EM_CO2AIR12:EM_CO2AIR13:EM_CO2AIR14:EM_CO2AIR15'
+                    - 'FCO2AIR.L016:FCO2AIR.L017:FCO2AIR.L018:FCO2AIR.L019:FCO2AIR.L020 <--conserv_dest-- EM_CO2AIR16:EM_CO2AIR17:EM_CO2AIR18:EM_CO2AIR19:EM_CO2AIR20'
+                    - 'FCO2AIR.L021:FCO2AIR.L022:FCO2AIR.L023:FCO2AIR.L024:FCO2AIR.L025 <--conserv_dest-- EM_CO2AIR21:EM_CO2AIR22:EM_CO2AIR23:EM_CO2AIR24:EM_CO2AIR25'
+            add_process_ordering:
+                - emissions_reader
+
     coupling_methods:
+        # conservative, keeps the global integral
+        conserv_dest:
+            time_transformation: instant
+            remapping:
+                conserv:
+                    search_bin: latitude
+                    nb_of_search_bins: 40
+                    normalization: destarea
+                    order: first
         bicubic:
             time_transformation: average
             remapping:

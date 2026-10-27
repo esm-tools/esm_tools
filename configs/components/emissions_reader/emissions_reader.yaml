@@ -1,0 +1,129 @@
+#
+# Emissions reader: sends prescribed gridded data (CMIP7 CO2 emissions) through OASIS.
+#
+
+emissions_reader:
+    model: emissions_reader
+    executable: emissions_reader
+    execution_command: emissions_reader
+
+    description: |
+            Emissions reader: prescribed gridded data through OASIS (CO2 emissions)
+    version: v1.0
+    destination: emissions_reader
+
+    ##
+    ## Compile information
+    ##
+    available_versions:
+    - v1.0
+    choose_version:
+        v1.0:
+            branch: v1.0
+    clean_command: rm -rf bin; cd src; make clean; cd ..
+    comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/emissions_reader.exe ./bin/emissions_reader
+    git-repository: "https://git.smhi.se/jan.streffing/emissions_reader.git"
+    install_bins: bin/emissions_reader
+
+    ##
+    ## Directories
+    ##
+    model_dir: ${general.model_dir}/${destination}
+    bin_dir: ${general.model_dir}/bin
+    namelist_dir: ${general.esm_namelist_dir}/emissions_reader/
+
+    nproc: 1
+    omp_num_threads: 1
+    time_step: 86400
+
+    runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+
+    lresume: false
+
+    bin_sources:
+            bin: ${bin_dir}/${executable}
+
+    namelists:
+            - "namelist.emissions_reader"
+
+    config_files:
+            namelist.emissions_reader: namelist.emissions_reader
+    config_sources:
+            namelist.emissions_reader: "${namelist_dir}/namelist.emissions_reader"
+    config_in_work:
+            namelist.emissions_reader: "namelist.emissions_reader"
+
+    # 0: the data follow the model year; a year: every model year reads that data year
+    fix_year: 0
+
+    # CMIP7 CO2 emissions as published; a scenario file takes over from 2022
+    pool_dir: "${computer.pool_directories.pool}"
+    emissions_dir: "${pool_dir}/oifs-48r1/cmip7-data/emissions"
+    ceds: "${emissions_dir}/CEDS-CMIP-2025-04-18"
+    ceds_sfc: "${ceds}/CO2-em-anthro_input4MIPs_emissions_CMIP_CEDS-CMIP-2025-04-18_gn"
+    ceds_air: "${ceds}/CO2-em-AIR-anthro_input4MIPs_emissions_CMIP_CEDS-CMIP-2025-04-18_gn"
+    # '' for historical only, or a CMIP7 scenario short name (h, vl)
+    scenario: ""
+    scen_sfc: ""
+    scen_air: ""
+    choose_scenario:
+            h:
+                    scen_sfc: "${emissions_dir}/IIASA-IAMC-h/CO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IIASA-IAMC-h-1-1-1_gn_202201-210012.nc"
+                    scen_air: "${emissions_dir}/IIASA-IAMC-h/CO2-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IIASA-IAMC-h-1-1-2_gn_202201-210012.nc"
+            vl:
+                    scen_sfc: "${emissions_dir}/IIASA-IAMC-vl/CO2-em-anthro_input4MIPs_emissions_ScenarioMIP_IIASA-IAMC-vl-1-1-1_gn_202201-210012.nc"
+                    scen_air: "${emissions_dir}/IIASA-IAMC-vl/CO2-em-AIR-anthro_input4MIPs_emissions_ScenarioMIP_IIASA-IAMC-vl-1-1-2_gn_202201-210012.nc"
+            "*":
+                    scen_sfc: ""
+
+    namelist_changes:
+            namelist.emissions_reader:
+                    NAMEMISREADER:
+                            RunLengthSec: "${runtime_seconds}"
+                            TimeStepSec: "${time_step}"
+                            StartYear: "${general.start_date!syear}"
+                            StartMonth: "${general.start_date!smonth}"
+                            StartDay: "${general.start_date!sday}"
+                            FixYear: "${fix_year}"
+                            GridName: "EM05"
+                            NStreams: 2
+                            StreamVar(1): "CO2_em_anthro"
+                            StreamField(1): "EM_CO2FF"
+                            StreamKind(1): "sum"
+                            StreamFiles(1,1): "${ceds_sfc}_175001-179912.nc"
+                            StreamFiles(2,1): "${ceds_sfc}_180001-184912.nc"
+                            StreamFiles(3,1): "${ceds_sfc}_185001-189912.nc"
+                            StreamFiles(4,1): "${ceds_sfc}_190001-194912.nc"
+                            StreamFiles(5,1): "${ceds_sfc}_195001-199912.nc"
+                            StreamFiles(6,1): "${ceds_sfc}_200001-202312.nc"
+                            StreamFiles(7,1): "${scen_sfc}"
+                            StreamVar(2): "CO2_em_AIR_anthro"
+                            StreamField(2): "EM_CO2AIR"
+                            StreamKind(2): "levels"
+                            StreamFiles(1,2): "${ceds_air}_175001-179912.nc"
+                            StreamFiles(2,2): "${ceds_air}_180001-184912.nc"
+                            StreamFiles(3,2): "${ceds_air}_185001-189912.nc"
+                            StreamFiles(4,2): "${ceds_air}_190001-194912.nc"
+                            StreamFiles(5,2): "${ceds_air}_195001-199912.nc"
+                            StreamFiles(6,2): "${ceds_air}_200001-202312.nc"
+                            StreamFiles(7,2): "${scen_air}"
+
+    grids:
+            EM05:
+                    name: EM05
+                    nx: 720
+                    ny: 360
+                    oasis_grid_type: "LR"
+                    oyac_grid_type: "LL"
+                    oyac_io_per_node: 4
+
+    emissions_reader_fields_send: [EM_CO2FF,
+        EM_CO2AIR01, EM_CO2AIR02, EM_CO2AIR03, EM_CO2AIR04, EM_CO2AIR05,
+        EM_CO2AIR06, EM_CO2AIR07, EM_CO2AIR08, EM_CO2AIR09, EM_CO2AIR10,
+        EM_CO2AIR11, EM_CO2AIR12, EM_CO2AIR13, EM_CO2AIR14, EM_CO2AIR15,
+        EM_CO2AIR16, EM_CO2AIR17, EM_CO2AIR18, EM_CO2AIR19, EM_CO2AIR20,
+        EM_CO2AIR21, EM_CO2AIR22, EM_CO2AIR23, EM_CO2AIR24, EM_CO2AIR25]
+
+    coupling_fields:
+            "[[emissions_reader_fields_send-->FIELD]]":
+                    grid: EM05

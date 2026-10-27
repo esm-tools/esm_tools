@@ -5,6 +5,7 @@ components:
 # at a different remote.
 - oifs-48r1-develop
 - amip-v1
+- emissions_reader-v1.0
 - oasis3mct-5.0-smhi
 coupling_changes:
 - sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml

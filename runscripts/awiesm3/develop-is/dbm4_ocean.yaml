@@ -108,7 +108,7 @@ general:
     debm2_ice_initial_state: "${general.antfill_root}/pism_repro/antg065/ic_X_nofrag_phi9.nc"
     # The chunk-1 bundle built on albedo for this mesh + initial condition; see its README.md.
     # dbm4: dbm3's state after the 1905 couple_in, instead of the cold-start bundle
-    pism_cavity_ini_dir: "/work/bb1469/a270092/input/fesom2/pism_cavity_ini_branch_dbm3_1905"
+    pism_cavity_ini_dir: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini_branch_dbm3_1905"
     nday: 0
     nmonth: 0
     nyear: 1

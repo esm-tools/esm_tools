@@ -73,14 +73,14 @@ general:
 
 pism:
         python_binary: "${general.conda_env_dir}/ocp-tool2/bin/python"
-        fesom_mesh_dir: "/work/bb1469/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/submesh_1904-12-31T00:00:00"   # dbm4: mesh of the chunk-1 ocean forcing
+        fesom_mesh_dir: "/work/ab0246/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/submesh_1904-12-31T00:00:00"   # dbm4: mesh of the chunk-1 ocean forcing
         # Chunk 1 conserves the cavity melt over PISM's OWN floating mask, read from the FIRST
         # record of this file -- the initial geometry. It must come from a run bootstrapped from
         # the same spinup_file, which this is: the first decade run from ic_X_nofrag.nc with the
         # parameters below. With a flotation test instead, only 0.87 of the cavity total arrives;
         # with this, 1.01 (ism43 measurement, coupling_ocean2pism.functions).
         # dbm4: PISM's own mask at the branch point, the one dbm3's 62420 leg used
-        initial_mask_file: "/work/bb1469/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/initial_mask_62419.nc"
+        initial_mask_file: "/work/ab0246/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/initial_mask_62419.nc"
         version: "github1.2.1"
         resolution: "08km"
         domain: "antarct_cr"
@@ -90,7 +90,7 @@ pism:
         # a FESOM carrying the 3-equation cavity melt fix (integrated basal melt 1280-1430 Gt/yr
         # against 250 in the older sets). Copied from levante a270234 with its submesh.
         # antg065: antfill1's own harvest, see its README.md (1919-1928 SMB, 1928 melt scaled to ~790).
-        bootstrap_forcing_dir: "/work/bb1469/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904"   # dbm4: dbm3's 1904 harvest
+        bootstrap_forcing_dir: "/work/ab0246/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904"   # dbm4: dbm3's 1904 harvest
 
         nx: 761
         ny: 761

@@ -130,6 +130,24 @@ def test_simulation_setup_user_config_path_still_works():
     assert setup.config["general"]["expid"] == "test"
 
 
+def test_simulation_setup_keeps_command_line_config_alongside_user_config():
+    # the pre-shim __init__ used both inputs when both were given
+    user_config = {
+        "general": {
+            "setup_name": "dummy",
+            "expid": "test",
+            "valid_model_names": [],
+            "jobtype": "prepare",
+            "version": "1",
+        }
+    }
+    command_line_config = {"jobtype": "prepare", "last_jobtype": "command_line"}
+    setup = SimulationSetup(
+        command_line_config=command_line_config, user_config=user_config
+    )
+    assert setup.config["general"]["command_line_config"] == command_line_config
+
+
 def test_simulation_setup_positional_command_line_config_still_works(tmp_path):
     # mirrors resubmit.py's exact call shape: SimulationSetup(command_line_config), positional
     runscript = tmp_path / "test.yaml"

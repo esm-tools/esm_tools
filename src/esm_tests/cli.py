@@ -151,6 +151,10 @@ def main():
     results = format_results(info)
     print_results(results, info)
 
+    # Write the errors and differences (before ``check_perfect``, which can exit)
+    if info["results_file"]:
+        write_results_file(info)
+
     # Check if all tests passed
     if info["system_exit_on_errors"]:
         check_perfect(info, results)

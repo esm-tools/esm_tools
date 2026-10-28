@@ -61,6 +61,9 @@ class Info(dict):
 
     - ``json``: print the ``--list`` output as JSON to stdout (``--json``).
 
+    - ``results_file``: absolute path of the file to write the errors and differences
+      to (``--results-file``), or ``None``.
+
     - ``user``: ``esm_tests`` configurations specific to the user, as read from
       ``<PATH>/esm_tools/src/esm_tests/user_config.yaml``.
 
@@ -204,6 +207,12 @@ class Info(dict):
             + "runscript) to stdout",
             action="store_true",
         )
+        parser.add_argument(
+            "--results-file",
+            default=None,
+            help="write the errors and the differences with 'last_tested' of each test "
+            + "to this file (JSON)",
+        )
 
         args = vars(parser.parse_args())
 
@@ -233,10 +242,17 @@ class Info(dict):
         self["runscript"] = args["runscript"]
         self["list"] = args["list"]
         self["json"] = args["json"]
+        # Absolute, because ``esm_tests`` changes directory while testing
+        self["results_file"] = args["results_file"] and os.path.abspath(
+            args["results_file"]
+        )
 
-        if self["in_github"]:
-            self["group_output"] = {"startg": "::group::{0}", "endg": "::endgroup::"}
-        else:
-            self["group_output"] = {"startg": "{0}", "endg": ""}
+        # No ``::group::`` in GitHub either: GitHub collapses groups and they cannot be
+        # expanded by default, which hides the differences of each test behind a click
+        # if self["in_github"]:
+        #     self["group_output"] = {"startg": "::group::{0}", "endg": "::endgroup::"}
+        # else:
+        #     self["group_output"] = {"startg": "{0}", "endg": ""}
+        self["group_output"] = {"startg": "{0}", "endg": ""}
 
         return save_flag, print_state, delete_tests

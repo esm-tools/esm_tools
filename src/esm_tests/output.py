@@ -1,5 +1,6 @@
 import copy
 import difflib
+import json
 import os
 import re
 import shutil
@@ -106,6 +107,48 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
         identical = False
 
     return identical, differences
+
+
+def write_results_file(info):
+    """
+    Writes the errors and differences found during the tests to
+    ``info["results_file"]`` as a JSON list with one item per test: ``computer``,
+    ``model``, ``runscript``, ``errors`` (list of ``message`` and, optionally,
+    ``excerpt`` of the output) and ``differences`` (dictionary of file path and unified
+    diff). Colors are removed. Used in GitHub to build a summary of all tests.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+    """
+    ansi_colors = re.compile(r"\x1b\[[0-9;]*m")
+    tests = []
+    for model, scripts in info["scripts"].items():
+        if model == "general":
+            continue
+        for script, v in scripts.items():
+            differences = {}
+            for mode_differences in v.get("differences", {}).values():
+                for path, diff in mode_differences.items():
+                    differences[path] = ansi_colors.sub("", diff)
+            errors = [
+                {key: ansi_colors.sub("", value) for key, value in error.items()}
+                for error in v.get("errors", [])
+            ]
+            tests.append(
+                {
+                    "computer": info["this_computer"],
+                    "model": model,
+                    "runscript": os.path.basename(v["path"]),
+                    "errors": errors,
+                    "differences": differences,
+                }
+            )
+
+    with open(info["results_file"], "w") as f:
+        json.dump(tests, f, indent=1)
+    logger.info(f"Results written to '{info['results_file']}'")
 
 
 def del_ignore_dicts(info, yaml_file):

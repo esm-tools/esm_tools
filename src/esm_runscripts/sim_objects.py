@@ -324,7 +324,9 @@ class SimulationSetup(Simulation):
             )
 
         if user_config:
-            builder = ConfigBuilder.from_user_config(user_config)
+            # Not ``from_user_config``: that drops ``command_line_config``, which
+            # the pre-shim ``__init__`` still used alongside ``user_config``.
+            builder = ConfigBuilder(user_config, command_line_config)
         else:
             builder = ConfigBuilder.from_runscript(
                 command_line_config["runscript_abspath"], **command_line_config

@@ -143,7 +143,7 @@ lpj_guess:
         # ifch4tocpl, which hands the wetland CH4-C to the atmosphere with the coupled CO2 flux
         # (lpj_guess.ch4_to_coupled_co2 in a runscript), and ifsplitfirecpl, which sends the coupled
         # CO2 as natural net exchange, land use and fire (lpj_guess.split_fire_coupled); both off by
-        # default.
+        # default, ifch4tocpl on in awiesm3 -cc.
         4.1.14:
             runscript_name: run_coupled_4_1_2.ins
             git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git

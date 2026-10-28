@@ -117,6 +117,11 @@ general:
     with_icb_default: false
     with_icb: "$(( ${general.with_icb_default} ))"
 
+    # Wetland CH4-C into the coupled CO2 flux (ifch4tocpl) closes the carbon cycle.
+    # On with LPJ-GUESS CO2 coupling and the CO2 tracer, except in v3.5.0-cc
+    # (LPJ-GUESS 4.1.13 lacks the switch).
+    ch4_to_coupled_co2_default: "$(( ${general.with_co2_veg_coupling} and ${general.with_co2_tracer} ))"
+
     # Counting the generated icebergs into icebergs%ib_num. It has to go in the
     # general recipe: the prepcompute_recipe under fesom's choose_with_icb is
     # never read, which is also why that block's two fesom_icb_pism steps have
@@ -399,6 +404,7 @@ general:
             with_co2_oce_coupling: true
             with_mslp_oce_coupling: true
             with_co2_veg_coupling: true
+            ch4_to_coupled_co2_default: false
         v3.5.0-is:
             major_version: v3.5
             with_pism: true
@@ -2076,6 +2082,9 @@ lpj_guess:
             choose_general.with_co2_concdriven:
                 false:
                     fixed_CO2: -1
+
+    # See general.ch4_to_coupled_co2_default.
+    ch4_to_coupled_co2: "$(( ${general.ch4_to_coupled_co2_default} ))"
 
 
 xios:

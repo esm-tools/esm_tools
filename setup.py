@@ -38,6 +38,10 @@ requirements = [
     # install path is off legacy pkg_resources.
     "ruamel.yaml.clib>=0.2.7,<0.2.15",
     "semver==2.13.0",
+    # esm_tools imports ``pkg_resources`` at run time, removed in setuptools 81 (and
+    # setuptools is no longer installed by default since Python 3.12). Before 66.1
+    # ``pkg_resources`` does not work with Python 3.12
+    "setuptools>=66.1,<81",
     "sqlalchemy>=1.4.49",
     "tabulate==0.8.10",
     "tqdm==4.66.3",

@@ -13,18 +13,18 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click>=8.0.4",  # Maximum version for Python 3.6 support
+    "Click>=8.0.4",
     "PyGithub==1.55",
     "colorama==0.4.5",
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.54",  # Maximum version for Python 3.6 support
+    "gitpython==3.1.54",
     "jinja2==3.1.6",
     "loguru==0.6.0",
-    "numpy>=1.19.5",  # Maximum version for Python 3.6 support
+    "numpy>=1.19.5",
     "packaging>=24.0",
-    "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
+    "pandas>=1.1.5",
     "psutil==5.9.1",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
@@ -41,7 +41,7 @@ requirements = [
     "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",
     "tqdm==4.66.3",
-    "typing_extensions>=4.1.1",  # Maximum number for Python 3.6 support
+    "typing_extensions>=4.1.1",
     "xdgenvpy==2.3.5",
     "pydantic>=2",
     "h5netcdf>=0.8.1",
@@ -64,17 +64,13 @@ setup(
         "sebastian.wahl@geomar.de",
         "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <3.13",
+    python_requires=">=3.10, <3.13",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",

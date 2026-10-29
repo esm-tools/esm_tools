@@ -406,6 +406,21 @@ How to approve changes on a GitHub Pull-Request
    ``#approve-changes``. This will commit the new files from the tests as the
    ``last-state``, in the ``esm_tests_info`` repository.
 
+   - Only users with write permission in the ``esm_tools`` repository can approve.
+     Comments from other users start the ``approve esm_tests changes`` workflow but it
+     fails in its ``authorize`` job.
+   - The approved commit is the last commit of the PR at the moment of the comment
+     (shown in the run summary). Commits pushed afterwards are not approved, comment
+     ``#approve-changes`` again if needed.
+   - The same tests as in the PR checks are run, without access to any secret, and
+     all the new files are pushed to ``esm_tests_info`` in a single commit by a
+     separate ``push`` job, that references the PR and the approved commit.
+   - Nothing is pushed if any of the test jobs fails. The run summary contains the
+     same problems and differences as in step 2, i.e. what is being approved.
+   - To try the approval without pushing, go to ``Actions`` > ``approve esm_tests
+     changes`` > ``Run workflow``, and give the PR number. ``dry_run`` is selected
+     by default: the ``push`` job only shows the changes it would commit.
+
    .. warning:: Currently, ``#approve-changes`` does not update the test status
       on GitHub, once the operation finishes. If you want to see whether
       ``#approve_changes`` finished or not you have to navigate to the ``Actions``

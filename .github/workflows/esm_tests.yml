@@ -1,12 +1,10 @@
 # ESM-Tests in check mode for all computers
 # =========================================
 #
-# Discovers every (computer, model, runscript) combination with
-# ``esm_tests --list``, which applies the ``computers``, ``ignore_runscripts`` and
-# ``ignore_scripts`` of the model control files
-# (src/esm_tests/resources/runscripts/*/config.yaml) exactly as in a real run. Each
-# combination runs as an independent matrix job. The ``summary`` job collects the
-# problems (errors, differences, failed jobs) of all jobs in the run summary.
+# Discovers every (computer, model, runscript) combination with ``esm_tests --list``
+# (``esm_tests_discover.yml``). Each combination runs as an independent matrix job. The
+# ``summary`` job collects the problems (errors, failed jobs) and the differences of
+# all jobs in the run summary (``esm_tests_summary.yml``).
 
 name: esm_tests
 
@@ -18,46 +16,7 @@ permissions:
 
 jobs:
   discover:
-    runs-on: ubuntu-latest
-    env:
-      LC_ALL: en_US.UTF-8
-      LANG: en_US.UTF-8
-      # Computers with a CI runner (names as in configs/machines/<name>.yaml). Any
-      # other computer listed in the model control files is skipped.
-      COMPUTERS: ollie levante juwels aleph albedo
-    container:
-      image: mandresm/ubuntu-miniforge-esm_tests:v1.0
-    outputs:
-      matrix: ${{ steps.discover.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: install esm-tools
-        run: |
-          source /opt/conda/etc/profile.d/conda.sh;
-          conda activate esm_tools;
-          ./install.sh;
-          echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
-        shell: bash
-
-      - id: discover
-        name: list tests
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE";
-          git config --global --add safe.directory "$GITHUB_WORKSPACE/src/esm_tests/resources";
-          computer_flags="";
-          for computer in $COMPUTERS; do
-            computer_flags="$computer_flags --computer $computer";
-          done
-          # ``-u`` so that the list matches the resources used by the test jobs
-          tests=$(esm_tests --list --json -u $computer_flags);
-          echo "matrix={\"include\":$tests}" >> "$GITHUB_OUTPUT";
-          echo "Discovered $(echo "$tests" | python -c 'import json,sys; print(len(json.load(sys.stdin)))') (computer, model, runscript) jobs";
-        shell: bash
+    uses: ./.github/workflows/esm_tests_discover.yml
 
   test:
     needs: discover
@@ -71,34 +30,11 @@ jobs:
         model: ${{ matrix.model }}
         runscript: ${{ matrix.runscript }}
 
-  # Problems (errors, differences, failed jobs) and differences of all tests in the
-  # run summary
   summary:
     needs: test
     if: ${{ !cancelled() && needs.test.result != 'skipped' }}
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       # To list the jobs of this run (conclusions and links to the logs)
       actions: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: .github/scripts
-          persist-credentials: false
-
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: results-*
-          path: results
-
-      - name: list jobs
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --paginate \
-            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100" \
-            --jq '.jobs[] | {name, conclusion, html_url}' | jq -s . > jobs.json
-
-      - name: write summary
-        run: python3 .github/scripts/esm_tests_summary.py results --jobs jobs.json >> "$GITHUB_STEP_SUMMARY"
+    uses: ./.github/workflows/esm_tests_summary.yml

@@ -214,7 +214,12 @@ def install(package: str) -> None:
         if this_plugin not in installed_plugins:
             installed_plugins.append(this_plugin)
     arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
-    if os.environ.get("VIRTUAL_ENV"):
+    # pip refuses --user inside a virtualenv. Detect the venv from the running
+    # interpreter (sys.prefix differs from sys.base_prefix there), not only from
+    # $VIRTUAL_ENV: that is set by "activate" alone, and is missing when the
+    # venv's executables are called by path or via PATH (e.g. from batch jobs).
+    in_venv = sys.prefix != getattr(sys, "base_prefix", sys.prefix)
+    if os.environ.get("VIRTUAL_ENV") or in_venv:
         arg_list.remove("--user")
     if (
         package_name not in installed_entry_points

@@ -26,7 +26,7 @@ jobs:
       # other computer listed in the model control files is skipped.
       COMPUTERS: ollie levante juwels aleph albedo
     container:
-      image: mandresm/ubuntu-miniforge-esm_tests:v1.0
+      image: mandresm/ubuntu-miniforge-esm_tests:v2.0
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:

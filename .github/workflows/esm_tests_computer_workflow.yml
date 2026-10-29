@@ -46,7 +46,7 @@ jobs:
       LANG: en_US.UTF-8
     container:
       # TODO (PG): Change to ghcr hosting at some point in the future.
-      image: mandresm/ubuntu-miniforge-esm_tests:v1.0
+      image: mandresm/ubuntu-miniforge-esm_tests:v2.0
       # The machine is selected with ``--computer``, but the node type is still
       # detected from the hostname (``configs/machines/all_machines.yaml``). Fake a
       # login node, as in a check run on the HPC (e.g. no dask cluster is started).

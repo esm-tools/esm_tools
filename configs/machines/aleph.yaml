@@ -124,3 +124,6 @@ computer:
 
     further_reading:
             - batch_system/pbs.yaml
+
+dask:
+    interconnect_interface: ipogif0

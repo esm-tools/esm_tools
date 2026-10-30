@@ -293,6 +293,11 @@ supported runscripts for all supported models in this platform, but still keep t
 file around (i.e. commented most of the contents), make the file content be an empty
 dictionary (``{}``).
 
+.. note:: To run a single model or runscript you don't need this file:
+   ``--model``/``--runscript`` take precedence over it (see
+   :ref:`esm_tests:Arguments`), e.g.
+   ``esm_tests -c --model fesom --runscript fesom2.0-initial-monthly.yaml``.
+
 **Example**
 
     .. code-block:: yaml
@@ -350,7 +355,12 @@ How to include a new model/runscript
    content
 7. If you are using the :ref:`Local test configuration (\`\`test_config.yaml\`\`)`
    to exclude some models, make sure the current model is included, so that your
-   tests can be run locally.
+   tests can be run locally. Alternatively, run only the new tests with
+   ``esm_tests -c --model <model> [--runscript <runscript>.yaml]``.
+8. Check that the new runscripts are selected for the computers you expect with
+   ``esm_tests --list --computer <computer1> --computer <computer2>``. This is the
+   same list the GitHub Actions use to create one ``esm_tests`` job per runscript and
+   computer.
 
 How to include a new platform for in an existing model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -362,6 +372,11 @@ How to include a new platform for in an existing model
    (``esm_tools/src/esm_tests/resources/runscripts/<model>/<runscript>.yaml``), add
    the necessary case to the ``choose_computer.name`` to specify pool directories,
    forcing files, ``nproc``, etc.
+3. Create the ``last_tested/<computer>/`` files of the new platform with
+   ``-s True``. For check mode (``-c``) this can be done from any machine with
+   ``--computer <computer>``; actual runs need to be done on that platform.
+4. For the tests to also run in the GitHub Actions, the computer needs to be in the
+   ``COMPUTERS`` list of ``.github/workflows/esm_tests_discover.yml``.
 
 How to approve changes on a GitHub Pull-Request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

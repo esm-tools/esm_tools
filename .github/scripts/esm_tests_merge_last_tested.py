@@ -11,7 +11,7 @@ before anything is written:
 - The same path in several artifacts (e.g. the compilation files of a model version,
   saved by every runscript of that version) must have the same content.
 
-Nothing is written if any check fails (exit code 1).
+Nothing is written if any check fails (``ValueError`` listing all the problems).
 
 Usage: esm_tests_merge_last_tested.py <artifacts_dir> <esm_tests_info_dir>
 """
@@ -19,7 +19,6 @@ Usage: esm_tests_merge_last_tested.py <artifacts_dir> <esm_tests_info_dir>
 import argparse
 import pathlib
 import shutil
-import sys
 
 
 def main():
@@ -65,10 +64,10 @@ def main():
             files[rel] = (path, artifact.name)
 
     if errors:
-        print("Not merging, problems found in the artifacts:", file=sys.stderr)
-        for error in errors:
-            print(f"  - {error}", file=sys.stderr)
-        sys.exit(1)
+        raise ValueError(
+            "Not merging, problems found in the artifacts:\n"
+            + "\n".join(f"  - {error}" for error in errors)
+        )
 
     for rel, (path, _) in sorted(files.items()):
         target = args.esm_tests_info_dir / rel

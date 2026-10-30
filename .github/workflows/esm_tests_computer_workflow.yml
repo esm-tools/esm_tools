@@ -21,15 +21,16 @@ on:
       runscript:
         type: string
         default: ""
-      update_esm_tests_info:
-        type: boolean
-        default: false
       test_flags:
         type: string
         default: "-cngeu -s False"
-    secrets:
-      ESM_TOOLS_BOT:
-        required: false
+      # Upload the ``last_tested/<computer>`` files changed by the run (``-s True``) as
+      # artifact ``last_tested-<computer>-<model>-<runscript>``, pushed to
+      # esm_tests_info by ``approve_esm_tests_changes.yml``. No secrets here: this job
+      # runs the code of the pull-request
+      upload_last_tested:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -86,7 +87,7 @@ jobs:
         if [ -n "$RUNSCRIPT" ]; then selection="$selection --runscript $RUNSCRIPT"; fi
         yes Y | esm_tests ${{ inputs.test_flags }} $selection --results-file esm_tests_results.json
 
-    # Collected by the ``summary`` job of ``esm_tests.yml``
+    # Collected by ``esm_tests_summary.yml``
     - name: upload results
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@v4
@@ -95,45 +96,29 @@ jobs:
         path: esm_tests_results.json
         if-no-files-found: ignore
         retention-days: 7
-#    - name: store last tested in a different directory
-#      if: ${{ inputs.update_esm_tests_info }}
-#      run: |
-#        cp -r src/esm_tests/resources /__w/esm_tests_info;
-#        ls /__w/esm_tests_info;
-#    - name: checkout esm_tests_info
-#      if: ${{ inputs.update_esm_tests_info }}
-#      uses: actions/checkout@v3
-#      with:
-#        repository: esm-tools/esm_tests_info
-#        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: update esm_tests info
-      if: ${{ inputs.update_esm_tests_info }}
+
+    # New and modified files under ``last_tested/<computer>`` of the resources
+    # (``esm_tests -s True`` only writes there, and never deletes), copied with their
+    # path relative to the resources
+    - name: collect last_tested
+      if: ${{ inputs.upload_last_tested }}
       env:
-        ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+        COMPUTER: ${{ inputs.computer }}
       run: |
+        mkdir -p "$GITHUB_WORKSPACE/last_tested_upload";
         cd src/esm_tests/resources;
-        git config --unset-all "http.https://github.com/.extraheader" || true;
-        git config user.name esmtools-bot;
-        git config user.email esmtools-bot@users.noreply.github.com;
-        echo "USER:";
-        git config user.name
-        echo "CURRENT:";
-        ls;
-        rm -rf automatic_testing; # cleanup the resources directory from tests
-        echo "PWD:";
-        pwd;
-        git status;
-        git diff;
-        git stash;
-        git pull;
-        git stash pop;
-        git add .;
-        git commit -m "approved changes from GitHub actions for ${{ inputs.computer }}";
-        git push https://esmtools-bot:${ESM_TOOLS_BOT}@github.com/esm-tools/esm_tests_info.git;
-#    - name: Push changes
-#      if: ${{ inputs.update_esm_tests_info }}
-#      uses: ad-m/github-push-action@master
-#      with:
-#        github_token: ${{ secrets.GITHUB_TOKEN }}
-#        branch: release
-#        repository: esm-tools/esm_tests_info
+        git status --short -- "last_tested/$COMPUTER";
+        git ls-files -z --modified --others --exclude-standard -- "last_tested/$COMPUTER" |
+          while IFS= read -r -d '' f; do
+            if [ -f "$f" ]; then cp --parents "$f" "$GITHUB_WORKSPACE/last_tested_upload/"; fi
+          done
+      shell: bash
+
+    - name: upload last_tested
+      if: ${{ inputs.upload_last_tested }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: last_tested-${{ inputs.computer }}-${{ inputs.model }}-${{ inputs.runscript }}
+        path: last_tested_upload/
+        if-no-files-found: ignore
+        retention-days: 7

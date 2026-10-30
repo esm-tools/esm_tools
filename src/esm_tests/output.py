@@ -1,5 +1,6 @@
 import copy
 import difflib
+import json
 import os
 import re
 import shutil
@@ -106,6 +107,48 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
         identical = False
 
     return identical, differences
+
+
+def write_results_file(info):
+    """
+    Writes the errors and differences found during the tests to
+    ``info["results_file"]`` as a JSON list with one item per test: ``computer``,
+    ``model``, ``runscript``, ``errors`` (list of ``message`` and, optionally,
+    ``excerpt`` of the output) and ``differences`` (dictionary of file path and unified
+    diff). Colors are removed. Used in GitHub to build a summary of all tests.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+    """
+    ansi_colors = re.compile(r"\x1b\[[0-9;]*m")
+    tests = []
+    for model, scripts in info["scripts"].items():
+        if model == "general":
+            continue
+        for script, v in scripts.items():
+            differences = {}
+            for mode_differences in v.get("differences", {}).values():
+                for path, diff in mode_differences.items():
+                    differences[path] = ansi_colors.sub("", diff)
+            errors = [
+                {key: ansi_colors.sub("", value) for key, value in error.items()}
+                for error in v.get("errors", [])
+            ]
+            tests.append(
+                {
+                    "computer": info["this_computer"],
+                    "model": model,
+                    "runscript": os.path.basename(v["path"]),
+                    "errors": errors,
+                    "differences": differences,
+                }
+            )
+
+    with open(info["results_file"], "w") as f:
+        json.dump(tests, f, indent=1)
+    logger.info(f"Results written to '{info['results_file']}'")
 
 
 def del_ignore_dicts(info, yaml_file):
@@ -395,6 +438,60 @@ def print_results(results, info):
                         f"{first_tab}        {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}{date}"
                     )
     logger.info(f"{colorama.Fore.WHITE}")
+    logger.info("")
+
+
+def print_list(tests, info):
+    """
+    Prints the tests that would run (``--list``) with the same structure as
+    ``print_results`` (``model`` > ``version`` > ``runscript`` > ``computer``). The
+    ``bulletpoints`` and ``in_github`` items in ``info`` control the format as in
+    ``print_results``.
+
+    Parameters
+    ----------
+    tests : list
+        List of dictionaries with the keys ``computer``, ``model``, ``version`` and
+        ``runscript``, as returned by ``list_tests``.
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+    """
+    colorama.init(autoreset=True)
+
+    if info.get("bulletpoints", False):
+        bp = "- "
+    else:
+        bp = ""
+
+    if info["in_github"]:
+        first_tab = "|   "
+    else:
+        first_tab = "    "
+
+    # Nest the tests as ``model`` > ``version`` > ``runscript`` > [``computers``]
+    nested = {}
+    for test in tests:
+        script = test["runscript"].replace(".yaml", "")
+        nested.setdefault(test["model"], {}).setdefault(test["version"], {}).setdefault(
+            script, []
+        ).append(test["computer"])
+
+    logger.info("")
+    logger.info("")
+    logger.info(f"{bs}TESTS{be}")
+    logger.info("")
+    for model, versions in sorted(nested.items()):
+        logger.info(f"{bp}{colorama.Fore.CYAN}{model}:")
+        for version, scripts in sorted(versions.items()):
+            logger.info(f"{first_tab}{bp}{colorama.Fore.MAGENTA}{version}:")
+            for script, computers in sorted(scripts.items()):
+                logger.info(f"{first_tab}    {bp}{colorama.Fore.WHITE}{script}:")
+                for computer in computers:
+                    logger.info(
+                        f"{first_tab}        {bp}{colorama.Fore.WHITE}{computer}"
+                    )
+    logger.info(f"{colorama.Fore.WHITE}")
+    logger.info(f"{len(tests)} tests")
     logger.info("")
 
 

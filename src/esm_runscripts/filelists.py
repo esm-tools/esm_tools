@@ -1027,7 +1027,7 @@ def check_for_unknown_files(config):
         unknown_files.add(real_file)
 
         index += 1
-        logger.warning("Unknown file in work: " + real_file)
+        logger.warning(f"Unknown file in work: {real_file=}")
         helpers.print_datetime(config)
 
     return config

@@ -48,6 +48,10 @@ Optional arguments                                                  Description
                                                                     the content of the file /directory if found in the last 
                                                                     ``run_`` folder.)
   ``--trace``                                                       Enable ``TRACE``-level output to stdout.
+  ``--computer COMPUTER``                                           Use the configuration of this machine (name as in
+                                                                    ``configs/machines/<name>.yaml``, e.g. ``levante``) instead of
+                                                                    detecting it from the hostname. Recommended only for testing, not for 
+                                                                    production runs.
   ``--task-log-files``                                              Enable per-task log files on disk.
 =================================================================== ==========================================================
 

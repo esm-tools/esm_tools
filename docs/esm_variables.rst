@@ -45,6 +45,7 @@ Compile time variables
    :header: Key, Section, Description
    :widths: 10, 10, 80
 
+   computer_name,      general,             "Name of the machine (as in ``configs/machines/<name>.yaml``) whose configuration is loaded instead of detecting the machine from the hostname. Set with the ``--computer`` flag of ``esm_master``."
    execution_mode,     general,             "Takes the value ``compile`` during compile time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."
    model,              general,             "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
    setup_name,         general,             Name of the coupled setup.
@@ -66,6 +67,7 @@ Run-time variables
    account,             general,                User account of the HPC system to be used to run the experiment.
    base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
    compute_time,        general,                "Estimated computing time for a run, used for submitting a job with the job scheduler."
+   computer_name,       general,                "Name of the machine (as in ``configs/machines/<name>.yaml``) whose configuration is loaded instead of detecting the machine from the hostname. Set with the ``--computer`` flag of ``esm_master``, ``esm_runscripts`` and ``esm_tests``."
    conda.env,           conda,                  "Full path (or name) of a conda environment to activate in the job script. Optional: only needed to override the conda environment auto-detected from the one ESM-Tools was launched with. See :ref:`esm_runscripts:Running an experiment with conda`."
    conda.root,          conda,                  "Root installation directory of conda (e.g. ``/path/to/conda``), used together with ``conda.env`` to source ``{conda.root}/bin/activate`` before activating the environment. See :ref:`esm_runscripts:Running an experiment with conda`."
    create_folders,      <component>,            "List of absolute paths of the folders to be created. See :ref:`yaml:Create empty folders`."

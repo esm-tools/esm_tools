@@ -1,0 +1,45 @@
+# ESM-Tests run summary
+# =====================
+#
+# Collects the ``results-*`` artifacts of the ``esm_tests_computer_workflow.yml`` jobs
+# of this run and writes the problems (errors, failed jobs) and the differences with
+# ``last_tested`` of all tests to the run summary
+# (``.github/scripts/esm_tests_summary.py``).
+#
+# The caller job needs ``permissions: actions: read`` (to list the jobs of the run).
+
+name: esm_tests_summary
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      # Only the scripts, from the commit of the event (for ``#approve-changes`` the
+      # default branch, not the approved PR)
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: results-*
+          path: results
+
+      - name: list jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate \
+            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs?per_page=100" \
+            --jq '.jobs[] | {name, conclusion, html_url}' | jq -s . > jobs.json
+
+      - name: write summary
+        run: python3 .github/scripts/esm_tests_summary.py results --jobs jobs.json >> "$GITHUB_STEP_SUMMARY"

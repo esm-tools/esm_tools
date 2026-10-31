@@ -57,9 +57,11 @@ fesom:
 
                 runoff_file: "runoff.15JUNE2009.nc"
                 sss_data_file: "PHC2_salx.nc"
+                chl_data_file: "Sweeney_2005.nc"
 
                 runoff_data_source: 'CORE2'
                 sss_data_source: 'CORE2'
+                chl_data_source: 'Sweeney'
              
         CORE2:
                 leapyear: false
@@ -116,9 +118,11 @@ fesom:
 
                 runoff_file: "runoff.nc"
                 sss_data_file: "PHC2_salx.nc"
+                chl_data_file: "Sweeney_2005.nc"
 
                 runoff_data_source: 'CORE2'
                 sss_data_source: 'CORE2'
+                chl_data_source: 'Sweeney'
 
         JRA55:
                 leapyear: true
@@ -175,9 +179,11 @@ fesom:
 
                 runoff_file: "CORE2_runoff.nc"
                 sss_data_file: "PHC2_salx.nc"
+                chl_data_file: "Sweeney_2005.nc"
 
                 runoff_data_source: 'CORE2'
                 sss_data_source: 'CORE2'
+                chl_data_source: 'Sweeney'
 
         ERA5:
                 leapyear: true
@@ -234,9 +240,11 @@ fesom:
 
                 runoff_file: "CORE2_runoff.nc"
                 sss_data_file: "PHC2_salx.nc"
+                chl_data_file: "Sweeney_2005.nc"
 
                 runoff_data_source: 'CORE2'
                 sss_data_source: 'CORE2'
+                chl_data_source: 'Sweeney'
 
         ECHAM5:
                 leapyear: true

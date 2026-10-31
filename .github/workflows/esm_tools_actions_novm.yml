@@ -11,18 +11,31 @@ jobs:
     env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
+          # Python versions newer than ``python_requires`` (setup.py): install anyway
+          # to see what breaks
+          PIP_IGNORE_REQUIRES_PYTHON: ${{ matrix.experimental && '1' || '0' }}
+    # Failures in the experimental versions are reported but do not fail the workflow
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: 
-            - "3.8"
-            - "3.9"
+        python-version:
             - "3.10"
             - "3.11"
-    name: Python ${{ matrix.python-version }} sample
+            - "3.12"
+        experimental: [false]
+        # Not supported yet (``python_requires``), early warning for the next versions
+        include:
+          - python-version: "3.13"
+            experimental: true
+          - python-version: "3.14"
+            experimental: true
+          - python-version: "3.15"
+            experimental: true
+    name: Python ${{ matrix.python-version }} sample${{ matrix.experimental && ' (experimental)' || '' }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64

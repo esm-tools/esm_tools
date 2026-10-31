@@ -296,9 +296,8 @@ def ini_dask_cluster(config):
 
     # Start the dask workers using the commands specified in the config, for example
     # ``srun --ntasks=${dask.ntasks} --cpus-per-task=1 --nodes=@nodes@
-    # --distribution=cyclic:cyclic:cyclic ~/.conda/envs/esm_tools/bin/dask worker
-    # --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1
-    # --interface ib0``
+    # --distribution=cyclic:cyclic:cyclic dask worker --scheduler-file
+    # ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ib0``
     init_workers_cmd = config["dask"].get("init_workers_cmd")
 
     # Substitute placeholders in scheduler commands

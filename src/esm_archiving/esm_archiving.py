@@ -422,6 +422,41 @@ def determine_datestamp_location(files):
     return valid_slices[0]
 
 
+# Month, quarter and year end aliases renamed in pandas 2.2 (``M`` -> ``ME``, ...) and
+# removed in pandas 3.0
+PANDAS_RENAMED_FREQUENCIES = {"M": "ME", "Q": "QE", "Y": "YE", "A": "YE"}
+
+
+def pandas_frequency(frequency):
+    """
+    Returns ``frequency`` as understood by the installed pandas version, so that the
+    configurations with the old aliases (e.g. ``frequency: "1M"``) keep working.
+
+    Parameters
+    ----------
+    frequency : str
+        Frequency of dates, pandas friendly (e.g. ``1M``, ``1ME``, ``1D``)
+
+    Returns
+    -------
+    str
+        ``frequency``, or its renamed alias if the installed pandas does not know it
+
+    Example
+    -------
+    >>> pandas_frequency("1D")
+    '1D'
+    """
+    try:
+        pd.tseries.frequencies.to_offset(frequency)
+        return frequency
+    except ValueError:
+        match = re.fullmatch(r"(\d*)([A-Z]+)", frequency)
+        if match and match.group(2) in PANDAS_RENAMED_FREQUENCIES:
+            return match.group(1) + PANDAS_RENAMED_FREQUENCIES[match.group(2)]
+        raise
+
+
 # Build a regex to go through a certain number of dates (e.g. 1 decade)
 def get_files_for_date_range(
     filepattern, start_date, stop_date, frequency, date_format=r"%Y%m%d"
@@ -480,7 +515,9 @@ def get_files_for_date_range(
     date_stamp = ">>>DATE<<<"
     dates = [
         date.to_pydatetime().strftime(date_format)
-        for date in pd.date_range(start=start_date, end=stop_date, freq=frequency)
+        for date in pd.date_range(
+            start=start_date, end=stop_date, freq=pandas_frequency(frequency)
+        )
     ]
     files = [filepattern.replace(date_stamp, str(date)) for date in dates]
     return files

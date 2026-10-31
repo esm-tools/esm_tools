@@ -13,22 +13,22 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click>=8.0.4",  # Maximum version for Python 3.6 support
+    "Click>=8.0.4",
     "PyGithub==1.55",
     "colorama==0.4.5",
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.54",  # Maximum version for Python 3.6 support
+    "gitpython==3.1.54",
     "jinja2==3.1.6",
     "loguru==0.6.0",
-    "numpy>=1.19.5",  # Maximum version for Python 3.6 support
+    "numpy>=1.19.5",
     "packaging>=24.0",
-    "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
-    "psutil==5.9.1",
+    "pandas>=1.1.5",
+    "psutil==5.9.5",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
-    "ruamel.yaml==0.17.32",
+    "ruamel.yaml==0.17.33",
     # 0.2.15 renamed its dist-info dir from the dotted "ruamel.yaml.clib-*" to
     # underscored "ruamel_yaml_clib-*" (PEP 503 normalization). Legacy pkg_resources
     # (still in play here via `setup.py develop`'s old-style console scripts) can't
@@ -38,10 +38,14 @@ requirements = [
     # install path is off legacy pkg_resources.
     "ruamel.yaml.clib>=0.2.7,<0.2.15",
     "semver==2.13.0",
-    "sqlalchemy>=1.4.39",
+    # esm_tools imports ``pkg_resources`` at run time, removed in setuptools 81 (and
+    # setuptools is no longer installed by default since Python 3.12). Before 66.1
+    # ``pkg_resources`` does not work with Python 3.12
+    "setuptools>=66.1,<81",
+    "sqlalchemy>=1.4.49",
     "tabulate==0.8.10",
     "tqdm==4.66.3",
-    "typing_extensions>=4.1.1",  # Maximum number for Python 3.6 support
+    "typing_extensions>=4.1.1",
     "xdgenvpy==2.3.5",
     "pydantic>=2",
     "h5netcdf>=0.8.1",
@@ -64,17 +68,13 @@ setup(
         "sebastian.wahl@geomar.de",
         "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <3.13",
+    python_requires=">=3.10, <3.13",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -146,6 +146,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.67.0",
+    version="6.71.1",
     zip_safe=False,
 )

@@ -89,7 +89,7 @@ def combine_components_yaml(parsed_args):
 
         # for package in os.listdir(cat_dir):
 
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             get_all_package_info(
                 os.listdir(cat_dir),
                 cat,

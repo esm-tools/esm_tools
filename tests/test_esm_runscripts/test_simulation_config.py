@@ -189,3 +189,32 @@ def test_run_state_builder_with_methods_return_self_for_chaining():
     builder = RunStateBuilder.from_config(config)
     assert builder.with_conda_env_recorded() is builder
     assert builder.with_openmp_found() is builder
+
+
+def _run_state_builder_with_plugins(install_missing_plugins=True):
+    general = {"setup_name": "dummy", "expid": "test", "valid_model_names": []}
+    if not install_missing_plugins:
+        general["install_missing_plugins"] = False
+    config = ConfigBuilder.from_user_config(
+        {"general": general, "fesom": {"required_plugins": ["some-plugin"]}}
+    ).build()
+    return RunStateBuilder.from_config(config)
+
+
+def test_with_missing_plugins_installed_installs_required_plugins(monkeypatch):
+    import esm_plugin_manager.esm_plugin_manager as epm
+
+    installed = []
+    monkeypatch.setattr(epm, "install", installed.append)
+    builder = _run_state_builder_with_plugins()
+    assert builder.with_missing_plugins_installed() is builder
+    assert installed == ["some-plugin"]
+
+
+def test_with_missing_plugins_installed_honors_opt_out(monkeypatch):
+    import esm_plugin_manager.esm_plugin_manager as epm
+
+    installed = []
+    monkeypatch.setattr(epm, "install", installed.append)
+    _run_state_builder_with_plugins(install_missing_plugins=False).with_missing_plugins_installed()
+    assert installed == []

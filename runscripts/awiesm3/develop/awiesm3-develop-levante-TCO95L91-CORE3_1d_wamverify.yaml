@@ -56,7 +56,7 @@ oifs:
     input_expid: awi3
     wam: true
     wam_xios: true
-    wam_xios_verify: true
+    wam_xios_level: verify
     lresume: false
     time_step: 3600
     nproc: 128

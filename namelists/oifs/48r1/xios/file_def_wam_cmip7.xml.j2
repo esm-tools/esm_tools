@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<file_definition type="one_file" format="netcdf4" par_access="collective"
+                 compression_level="{{xios.compression_level}}"
+                 time_counter_name="time" time_counter="exclusive">
+
+  <!-- WAM output, cmip7 level (oifs.wam_xios_level: cmip7): the low level plus
+       the 3-hourly instantaneous values of the CMIP7 data request (v1.2.2.5,
+       variable group sfc_waves, opportunity 68), which are also the raw input
+       for COWCLIP statistics that XIOS cannot compute (percentiles, circular
+       spread). The monthly part is identical to the low level and already
+       covers all CMIP7 monthly wave variables WAM computes. Not producible
+       without new WAM code: peak directions (wpdir, wpdirwindsea, wpdirswell)
+       and wind-sea and swell peak periods (wppwindsea, wppswell).
+       Monthly and daily fields go one file per frequency (coordinates written
+       once), the 3-hourly fields one file per variable (about 230 MB a year
+       each on 29530 points). About 3 GB a year compressed on 29530 points.
+       GFLAG needed: 1 2 3 6 7 11 12 13 14 15 16 21 35 36 39 41 (as low) -->
+
+  <file_group id="wam_mean" output_freq="{{ oifs.wam_xios_output_freq | default('1mo') }}" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="w_mean" name="wam_{{ oifs.wam_xios_output_freq | default('1mo') }}.%start_date%">
+      <!-- CMIP7 ocean.swh / swhmax / swhwindsea / swhswell -->
+      <field field_ref="swh"/>                                                <!-- 1  -->
+      <field field_ref="swh" name="swh_max" long_name="maximum significant height of combined wind waves and swell" operation="maximum"/> <!-- 1 -->
+      <field field_ref="shww"/>                                               <!-- 11 -->
+      <field field_ref="shts"/>                                               <!-- 12 -->
+      <!-- CMIP7 ocean.mpw / mpwwindsea / mpwswell (inverse moment, Tm-1,0) and mp2 (Tm02) -->
+      <field field_ref="mwp"/>                                                <!-- 3  -->
+      <field field_ref="mpww"/>                                               <!-- 15 -->
+      <field field_ref="mpts"/>                                               <!-- 16 -->
+      <field field_ref="mp2"/>                                                <!-- 21 -->
+      <!-- CMIP7 ocean.wpp -->
+      <field field_ref="pp1d"/>                                               <!-- 6  -->
+      <!-- CMIP7 ocean.wdir / wdirwindsea / wdirswell = atan2(mean sin, mean cos) -->
+      <field field_ref="mwd_sin"/>                                            <!-- 2  -->
+      <field field_ref="mwd_cos"/>                                            <!-- 2  -->
+      <field field_ref="mdww_sin"/>                                           <!-- 13 -->
+      <field field_ref="mdww_cos"/>                                           <!-- 13 -->
+      <field field_ref="mdts_sin"/>                                           <!-- 14 -->
+      <field field_ref="mdts_cos"/>                                           <!-- 14 -->
+      <!-- CMIP7 ocean.sduo / sdvo -->
+      <field field_ref="ust"/>                                                <!-- 35 -->
+      <field field_ref="vst"/>                                                <!-- 36 -->
+      <!-- wave coupling diagnostics (not in the CMIP7 request) -->
+      <field field_ref="cdww"/>                                               <!-- 7  -->
+      <field field_ref="phioc"/>                                              <!-- 39 -->
+      <field field_ref="tauoc"/>                                              <!-- 41 -->
+    </file>
+  </file_group>
+
+  <!-- Daily maximum of the hourly significant wave height: input for the
+       COWCLIP / ETCCDI-style Hs extreme indices (Morim et al. 2020, Table 3),
+       which are all defined on the daily maximum Hs. -->
+  <file_group id="wam_1d" output_freq="1d" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="w_1d" name="wam_1d.%start_date%">
+      <field field_ref="swh" name="swh_max" long_name="daily maximum significant height of combined wind waves and swell" operation="maximum"/> <!-- 1 -->
+    </file>
+  </file_group>
+
+  <!-- ============ 3-hourly instantaneous (CMIP7 tpt 3hr, COWCLIP raw input) ============ -->
+  <!-- Directions are written as instantaneous angles (field_def default),
+       no sine/cosine needed. swh_max is the maximum of the hourly samples in
+       each 3-hour window: the request lists swhmax at 3hr with
+       "time: point", which cannot be a maximum; to be confirmed. -->
+  <file_group id="wam_3h" output_freq="3h" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="w3_swh"     name="swh.wam_3h.%start_date%"    ><field field_ref="swh"  operation="instant"/></file> <!-- 1  swh        -->
+    <file id="w3_swhmax"  name="swh_max.wam_3h.%start_date%"><field field_ref="swh"  name="swh_max" long_name="3-hourly maximum significant height of combined wind waves and swell" operation="maximum"/></file> <!-- 1 swhmax -->
+    <file id="w3_shww"    name="shww.wam_3h.%start_date%"   ><field field_ref="shww" operation="instant"/></file> <!-- 11 swhwindsea -->
+    <file id="w3_shts"    name="shts.wam_3h.%start_date%"   ><field field_ref="shts" operation="instant"/></file> <!-- 12 swhswell  -->
+    <file id="w3_mwp"     name="mwp.wam_3h.%start_date%"    ><field field_ref="mwp"  operation="instant"/></file> <!-- 3  mpw        -->
+    <file id="w3_mpww"    name="mpww.wam_3h.%start_date%"   ><field field_ref="mpww" operation="instant"/></file> <!-- 15 mpwwindsea -->
+    <file id="w3_mpts"    name="mpts.wam_3h.%start_date%"   ><field field_ref="mpts" operation="instant"/></file> <!-- 16 mpwswell  -->
+    <file id="w3_pp1d"    name="pp1d.wam_3h.%start_date%"   ><field field_ref="pp1d" operation="instant"/></file> <!-- 6  wpp        -->
+    <file id="w3_mwd"     name="mwd.wam_3h.%start_date%"    ><field field_ref="mwd"  operation="instant"/></file> <!-- 2  wdir       -->
+    <file id="w3_mdww"    name="mdww.wam_3h.%start_date%"   ><field field_ref="mdww" operation="instant"/></file> <!-- 13 wdirwindsea -->
+    <file id="w3_mdts"    name="mdts.wam_3h.%start_date%"   ><field field_ref="mdts" operation="instant"/></file> <!-- 14 wdirswell  -->
+    <file id="w3_ust"     name="ust.wam_3h.%start_date%"    ><field field_ref="ust"  operation="instant"/></file> <!-- 35 sduo       -->
+    <file id="w3_vst"     name="vst.wam_3h.%start_date%"    ><field field_ref="vst"  operation="instant"/></file> <!-- 36 sdvo       -->
+  </file_group>
+
+  <!-- ============ Monthly-mean 2D spectra (optional) ============ -->
+  <!-- 24 directions x 36 frequencies per point: 102 MB per record on 29530
+       points, about 1.2 GB a year uncompressed, and the spectra compress
+       poorly (0.83 measured). Off unless oifs.wam_xios_spec is true. Sea-ice
+       points carry FLMIN instead of -999 and enter the mean. No GFLAG needed. -->
+  <file_group id="wam_spec" output_freq="1mo" split_freq="1y" split_freq_format="%y" enabled="{{ (oifs.wam_xios_spec | default(false)) | string | lower }}">
+    <file id="w_spec" name="wam_spec_1mo.%start_date%">
+      <field field_ref="spec2d"/>
+    </file>
+  </file_group>
+
+</file_definition>

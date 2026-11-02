@@ -27,10 +27,10 @@
     <field id="wind"    long_name="wave model wind speed"               unit="m s-1"/> <!-- 10 -->
     <field id="shww"    long_name="significant height of wind waves"    standard_name="sea_surface_wind_wave_significant_height" unit="m"/> <!-- 11 -->
     <field id="shts"    long_name="significant height of total swell"   standard_name="sea_surface_swell_wave_significant_height" unit="m"/> <!-- 12 -->
-    <field id="mdww"    long_name="mean direction of wind waves"        unit="degree" operation="instant"/> <!-- 13 -->
-    <field id="mdts"    long_name="mean direction of total swell"       unit="degree" operation="instant"/> <!-- 14 -->
-    <field id="mpww"    long_name="mean period of wind waves (inverse moment)"   unit="s"/> <!-- 15 -->
-    <field id="mpts"    long_name="mean period of total swell (inverse moment)"  unit="s"/> <!-- 16 -->
+    <field id="mdww"    long_name="mean direction of wind waves" standard_name="sea_surface_wind_wave_from_direction"        unit="degree" operation="instant"/> <!-- 13 -->
+    <field id="mdts"    long_name="mean direction of total swell" standard_name="sea_surface_swell_wave_from_direction"       unit="degree" operation="instant"/> <!-- 14 -->
+    <field id="mpww"    long_name="mean period of wind waves (inverse moment)" standard_name="sea_surface_wind_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment"   unit="s"/> <!-- 15 -->
+    <field id="mpts"    long_name="mean period of total swell (inverse moment)" standard_name="sea_surface_swell_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment"  unit="s"/> <!-- 16 -->
     <field id="awh"     long_name="altimeter wave height"               unit="m"/> <!-- 17 -->
     <field id="acwh"    long_name="altimeter corrected wave height"     unit="m"/> <!-- 18 -->
     <field id="arrc"    long_name="altimeter range relative correction" unit="m"/> <!-- 19 -->
@@ -47,7 +47,7 @@
     <field id="bfi"     long_name="Benjamin-Feir index"                 unit="1"/> <!-- 30 -->
     <field id="wsp"     long_name="wave spectral peakedness"            unit="1"/> <!-- 31 -->
     <field id="wmb"     long_name="model bathymetry"                    unit="m" operation="once"/> <!-- 32 -->
-    <field id="hmax"    long_name="maximum individual wave height"      unit="m"/> <!-- 33 -->
+    <field id="hmax"    long_name="maximum individual wave height" standard_name="sea_surface_wave_maximum_height"      unit="m"/> <!-- 33 -->
     <field id="tmax"    long_name="period of maximum individual wave height" unit="s"/> <!-- 34 -->
     <field id="ust"     long_name="eastward surface Stokes drift"       standard_name="sea_surface_wave_stokes_drift_eastward_velocity" unit="m s-1"/> <!-- 35 -->
     <field id="vst"     long_name="northward surface Stokes drift"      standard_name="sea_surface_wave_stokes_drift_northward_velocity" unit="m s-1"/> <!-- 36 -->
@@ -77,7 +77,7 @@
     <field id="oce_sit" long_name="sea-ice thickness received from the ocean model" unit="m"/> <!-- 60 -->
     <field id="oce_u"   long_name="eastward current received from the ocean model"  unit="m s-1"/> <!-- 61 -->
     <field id="oce_v"   long_name="northward current received from the ocean model" unit="m s-1"/> <!-- 62 -->
-    <field id="wefxm"   long_name="wave energy flux magnitude"          unit="W m-1"/> <!-- 63 -->
+    <field id="wefxm"   long_name="wave energy flux magnitude" standard_name="sea_surface_wave_energy_flux"          unit="W m-1"/> <!-- 63 -->
     <field id="wefxd"   long_name="wave energy flux mean direction"     unit="degree" operation="instant"/> <!-- 64 -->
     <field id="h1012"   long_name="significant wave height, periods 10 to 12 s" unit="m"/> <!-- 65 -->
     <field id="h1214"   long_name="significant wave height, periods 12 to 14 s" unit="m"/> <!-- 66 -->

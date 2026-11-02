@@ -1094,40 +1094,44 @@ oifs:
                                             LWCOU: ".false."
                                             LWCOU2W: ".false."
 
-    # WAM output through XIOS: NetCDF monthly means of the fields in
-    # namelists/oifs/48r1/xios/file_def_wam.xml.j2 on the WAM sea points,
-    # instead of WAM's GRIB output. Needs wam: 1, with_xios: 1 and
-    # fesom.with_xios (the "wam" context is only listed in that iodef), and an
-    # OpenIFS built with feat/wam-xios.
-    # wam_xios_gflag switches on the computation of each WAM parameter
-    # (NALINE GFLAG), indexed as in MPCRTBL (the numbers in field_def_wam.xml).
-    # It has to cover every field in file_def_wam, or the run stops at the first
-    # output time naming the missing GFLAG.
+    # WAM output through XIOS: NetCDF on the WAM sea points, written by XIOS
+    # instead of WAM's own GRIB. Needs wam: 1, with_xios: 1 and fesom.with_xios
+    # (the "wam" context is only listed in that iodef), and an OpenIFS built
+    # with feat/wam-xios.
     wam_xios: false
-    # Interval at which WAM hands its fields to XIOS for averaging, in hours
+    # Output level, file_def_wam_<level>.xml.j2 in namelists/oifs/<version>/xios:
+    #   low:    monthly means of all CMIP7 wave variables WAM computes plus the
+    #           coupling diagnostics, and the daily maximum Hs. Small (about
+    #           16 MB a year per 10k sea points), meant to stay on.
+    #   cmip7:  low plus the CMIP7 3-hourly instantaneous fields (about 1 GB a
+    #           year per 10k sea points).
+    #   verify: every parameter and the spectra both through XIOS and as WAM's
+    #           native GRIB, instantaneous at the same times, for comparing the
+    #           two. Not for production.
+    wam_xios_level: low
+    wam_xios_file_def: "${general.esm_namelist_dir}/oifs/${version}/xios/file_def_wam_${wam_xios_level}.xml.j2"
+    # Monthly mean 2D spectra (24 directions x 36 frequencies per point, about
+    # 1 GB a year per 30k sea points), with the low and cmip7 levels
+    wam_xios_spec: false
+    # Interval at which WAM hands its fields to XIOS, in hours
     wam_xios_idelint: 1
-    # Averaging period of the WAM output files (XIOS duration, e.g. 1d, 1mo)
+    # Averaging period of the main WAM output file (XIOS duration, e.g. 1d, 1mo)
     wam_xios_output_freq: 1mo
     # XIOS writes the fields, so WAM's own GRIB and its gather are skipped
     wam_xios_native_out: ".false."
-    # Default: 1 swh, 2 mwd, 3 mwp, 6 pp1d, 7 cdww, 11 shww, 12 shts, 21 mp2,
-    # 35 ust, 36 vst, 39 phioc, 41 tauoc (numbers as in field_def_wam.xml)
+    # NALINE GFLAG: which WAM parameters are computed, indexed as in MPCRTBL
+    # (the numbers in field_def_wam.xml). It has to cover every field in the
+    # file_def, or the run stops at the first output time naming the missing
+    # GFLAG. low and cmip7: 1 swh, 2 mwd, 3 mwp, 6 pp1d, 7 cdww, 11 shww,
+    # 12 shts, 13 mdww, 14 mdts, 15 mpww, 16 mpts, 21 mp2, 35 ust, 36 vst,
+    # 39 phioc, 41 tauoc
     wam_xios_gflag: [true,  true,  true,  false, false, true,  true,  false, false, false,
-                     true,  true,  false, false, false, false, false, false, false, false,
+                     true,  true,  true,  true,  true,  true,  false, false, false, false,
                      true,  false, false, false, false, false, false, false, false, false,
                      false, false, false, false, true,  true,  false, false, true,  false,
                      true]
-    # XIOS file definition for WAM
-    wam_xios_file_def: "${general.esm_namelist_dir}/oifs/${version}/xios/file_def_wam.xml.j2"
-    # Verification of the XIOS output against WAM's native GRIB in the same run:
-    # every parameter and the 2D spectra, natively and through XIOS
-    # (file_def_wam_verify.xml.j2), instantaneous at the same times. Not for
-    # production: it writes all 83 parameters every IDELINT and the spectra
-    # every IDELRES (6 h), twice.
-    wam_xios_verify: false
-    choose_wam_xios_verify:
-            true:
-                    wam_xios_file_def: "${general.esm_namelist_dir}/oifs/${version}/xios/file_def_wam_verify.xml.j2"
+    choose_wam_xios_level:
+            verify:
                     # native GRIB of all 83 parameters at every IDELINT
                     wam_xios_native_out: ".true."
                     wam_xios_gflag: [true, true, true, true, true, true, true, true, true, true,
@@ -1156,15 +1160,17 @@ oifs:
                                             LWAM_NATIVE_OUT: "${wam_xios_native_out}"
                                             IDELINT: "${wam_xios_idelint}"
                                             GFLAG: "${wam_xios_gflag}"
+                    # wam_1mo.*, wam_1d.*, wam_spec_1mo.*, wam_verify_* and the
+                    # per-variable 3-hourly <var>.wam_3h.* files
                     add_outdata_files:
                             wamnc: wamnc
-                            wamverify: wamverify
+                            wam3h: wam3h
                     add_outdata_in_work:
-                            wamnc: "*.wam.*.nc"
-                            wamverify: "wam_verify_*.nc"
+                            wamnc: "wam_*.nc"
+                            wam3h: "*.wam_3h.*.nc"
                     add_outdata_sources:
-                            wamnc: "*.wam.*.nc"
-                            wamverify: "wam_verify_*.nc"
+                            wamnc: "wam_*.nc"
+                            wam3h: "*.wam_3h.*.nc"
 
 
     #======================================================================================

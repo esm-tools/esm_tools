@@ -1,17 +1,17 @@
-computer:
-   pool_dir: "/mnt/lustre-grete/projects/geomar/foci_input2/"
-   partition: "standard96"
+#computer:
+   #pool_dir: "/mnt/lustre-grete/projects/geomar/foci_input2/"
+   #partition: "standard96"
    # test setting: use together with the daily restart settings below
    # partition: "standard96:test"
-   launcher: "mpirun"
-   launcher_flags: ""
+   #launcher: "mpirun"
+   #launcher_flags: ""
    # One MPI rank per core, including ECHAM I/O ranks; round up to whole nodes.
    # standard96 has 96 cores/node: MOPS = 10 nodes, provisional AGRIF = 11.
-   nnodes: "$(( (${echam.nproca} * ${echam.nprocb} + ${echam.nprocio} + ${nemo.nproc} + ${xios.nproc} + ${computer.partition_cpn} - 1) // ${computer.partition_cpn} ))"
+   #nnodes: "$(( (${echam.nproca} * ${echam.nprocb} + ${echam.nprocio} + ${nemo.nproc} + ${xios.nproc} + ${computer.partition_cpn} - 1) // ${computer.partition_cpn} ))"
    # Explicit nodes workaround from the templates after the June 2026 SLURM update.
-   additional_flags:
-      - "--nodes=${computer.nnodes}"
-      - "--qos=2h"
+   #additional_flags:
+   #   - "--nodes=${computer.nnodes}"
+   #   - "--qos=2h"
 
 general:
    use_venv: False
@@ -42,9 +42,9 @@ general:
 
    lresume: True
    # TODO: choose a consistent ECHAM/NEMO/OASIS restart set from FOCI_RESTART.
-   ini_parent_exp_id: "TODO_SELECT_RESTART"
-   ini_parent_date: "20141231"  # TODO: match the actual parent restart date
-   ini_nemo_restart_steps: 0   # TODO: copy the actual NEMO step
+   ini_parent_exp_id: "FOCI1.20.0-CC103_piControl_ESM_250y_spinup2099"
+   ini_parent_date: "20491231"  # TODO: match the actual parent restart date
+   ini_nemo_restart_steps: 2921960   # TODO: copy the actual NEMO step
    ini_parent_dir: "${computer.pool_dir}/FOCI_RESTART/${ini_parent_exp_id}"
    check_error:
       "check_exit_codes":
@@ -84,7 +84,7 @@ general:
          frequency: 15
 
 foci:
-   model_dir: ${general.homedir}/esm/models/foci-mops_oasismct4/
+   model_dir: ${general.homedir}/esm/models/foci-mops_oasismct5/
 
 oasis3mct:
    # EXPORTED exchanges fields; EXPOUT additionally writes coupling fields to NetCDF.

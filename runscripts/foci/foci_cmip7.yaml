@@ -36,6 +36,19 @@ echam:
             "${forcing_dir}/ozone/${resolution}_ozone_historical_@YEAR@.nc":
                 from: 1851
                 to: 2022
+        # CMIP7 has a real 1849 file (December 1849 for the start of 1850); CMIP6 used 1850
+        volcir_cmip7:
+            "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_1849.nc":
+                to: 1849
+            "${forcing_dir}/volcano_aerosols/strat_aerosol_ir_${resolution}_@YEAR@.nc":
+                from: 1850
+                to: 2023
+        volcsw_cmip7:
+            "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_1849.nc":
+                to: 1849
+            "${forcing_dir}/volcano_aerosols/strat_aerosol_sw_${resolution}_@YEAR@.nc":
+                from: 1850
+                to: 2023
         carbon_emissions_cmip7: "${forcing_dir}/carbon_emissions/${resolution}_carbon_emissions_historical.nc"
     choose_scenario:
         cmip7hist:
@@ -45,6 +58,8 @@ echam:
                 greenhouse: greenhouse_cmip7
                 MAC-SP: MAC-SP_cmip7
                 ozone: ozone_cmip7
+                volcir: volcir_cmip7
+                volcsw: volcsw_cmip7
     choose_with_lco2_emis:
         True:
             add_choose_scenario:

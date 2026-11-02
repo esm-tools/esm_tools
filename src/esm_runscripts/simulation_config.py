@@ -535,6 +535,20 @@ class RunStateBuilder:
         self._data = prepare.finalize_config(self._data)
         return self
 
+    def with_missing_plugins_installed(self):
+        """
+        Install the ``required_plugins`` of every component that are missing.
+
+        Skipped when ``general.install_missing_plugins`` is ``False``.
+
+        Returns
+        -------
+        self
+            For method chaining.
+        """
+        self._data = prepare.install_missing_plugins(self._data)
+        return self
+
     def build(self):
         """
         Finalize the run state and return a RunState product.

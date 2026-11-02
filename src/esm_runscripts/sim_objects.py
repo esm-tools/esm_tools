@@ -92,6 +92,7 @@ class Simulation(object):
                 .with_prev_date()
                 .with_parent_info()
                 .with_finalized_config()
+                .with_missing_plugins_installed()
                 .build()
             )
             # The pplan engine's per-invocation facts (dates, calendar,

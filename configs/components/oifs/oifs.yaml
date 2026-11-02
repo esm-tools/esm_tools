@@ -1099,12 +1099,10 @@ oifs:
     # instead of WAM's GRIB output. Needs wam: 1, with_xios: 1 and
     # fesom.with_xios (the "wam" context is only listed in that iodef), and an
     # OpenIFS built with feat/wam-xios.
-    # GFLAG switches on the computation of each WAM parameter, indexed as in
-    # MPCRTBL (the numbers in field_def_wam.xml). It has to cover every field in
-    # file_def_wam, or the run stops at the first output time naming the missing
-    # GFLAG. Default: 1 swh, 3 mwp, 6 pp1d, 7 cdww, 11 shww, 12 shts, 21 mp2,
-    # 35 ust, 36 vst, 39 phioc, 41 tauoc. To change it, restate the whole list
-    # under add_namelist_changes in the runscript.
+    # wam_xios_gflag switches on the computation of each WAM parameter
+    # (NALINE GFLAG), indexed as in MPCRTBL (the numbers in field_def_wam.xml).
+    # It has to cover every field in file_def_wam, or the run stops at the first
+    # output time naming the missing GFLAG.
     wam_xios: false
     # Interval at which WAM hands its fields to XIOS for averaging, in hours
     wam_xios_idelint: 1
@@ -1112,7 +1110,9 @@ oifs:
     wam_xios_output_freq: 1mo
     # XIOS writes the fields, so WAM's own GRIB and its gather are skipped
     wam_xios_native_out: ".false."
-    wam_xios_gflag: [true,  false, true,  false, false, true,  true,  false, false, false,
+    # Default: 1 swh, 2 mwd, 3 mwp, 6 pp1d, 7 cdww, 11 shww, 12 shts, 21 mp2,
+    # 35 ust, 36 vst, 39 phioc, 41 tauoc (numbers as in field_def_wam.xml)
+    wam_xios_gflag: [true,  true,  true,  false, false, true,  true,  false, false, false,
                      true,  true,  false, false, false, false, false, false, false, false,
                      true,  false, false, false, false, false, false, false, false, false,
                      false, false, false, false, true,  true,  false, false, true,  false,

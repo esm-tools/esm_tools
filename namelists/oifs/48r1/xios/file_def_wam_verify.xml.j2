@@ -7,7 +7,9 @@
        same run: every integrated parameter instantaneous at every sample
        (IDELINT), and the 2D spectra instantaneous every 6 h, the times at which
        WAM writes its native GRIB spectra with IREST=1 and IDELRES=6 h. Needs
-       GFLAG for all 83 parameters. Not for production. -->
+       GFLAG for all 83 parameters. The altimeter parameters (awh, acwh, arrc)
+       are left out: WAM only computes them with altimeter data assimilation,
+       natively as well. Not for production. -->
   <file id="w_verify_int" name="wam_verify_int_%start_date%" output_freq="{{ oifs.wam_xios_idelint }}h" split_freq="1y" split_freq_format="%y" enabled="true">
     <field field_ref="swh" operation="instant"/>
     <field field_ref="mwd" operation="instant"/>
@@ -25,9 +27,6 @@
     <field field_ref="mdts" operation="instant"/>
     <field field_ref="mpww" operation="instant"/>
     <field field_ref="mpts" operation="instant"/>
-    <field field_ref="awh" operation="instant"/>
-    <field field_ref="acwh" operation="instant"/>
-    <field field_ref="arrc" operation="instant"/>
     <field field_ref="mp1" operation="instant"/>
     <field field_ref="mp2" operation="instant"/>
     <field field_ref="wdw" operation="instant"/>
@@ -45,8 +44,8 @@
     <field field_ref="tmax" operation="instant"/>
     <field field_ref="ust" operation="instant"/>
     <field field_ref="vst" operation="instant"/>
-    <field field_ref="ucurr" operation="instant"/>
-    <field field_ref="vcurr" operation="instant"/>
+    <field field_ref="ocu" operation="instant"/>
+    <field field_ref="ocv" operation="instant"/>
     <field field_ref="phioc" operation="instant"/>
     <field field_ref="phiaw" operation="instant"/>
     <field field_ref="tauoc" operation="instant"/>
@@ -59,13 +58,13 @@
     <field field_ref="swh3" operation="instant"/>
     <field field_ref="mwd3" operation="instant"/>
     <field field_ref="mwp3" operation="instant"/>
-    <field field_ref="wss" operation="instant"/>
+    <field field_ref="mswsi" operation="instant"/>
     <field field_ref="sh10" operation="instant"/>
     <field field_ref="rhoao" operation="instant"/>
     <field field_ref="wstar" operation="instant"/>
     <field field_ref="ci_wam" operation="instant"/>
     <field field_ref="sit_wam" operation="instant"/>
-    <field field_ref="wskew" operation="instant"/>
+    <field field_ref="wss" operation="instant"/>
     <field field_ref="oce_sst" operation="instant"/>
     <field field_ref="oce_ci" operation="instant"/>
     <field field_ref="oce_sit" operation="instant"/>
@@ -80,13 +79,13 @@
     <field field_ref="h2125" operation="instant"/>
     <field field_ref="h2530" operation="instant"/>
     <field field_ref="weta" operation="instant"/>
-    <field field_ref="wsi" operation="instant"/>
-    <field field_ref="nfw" operation="instant"/>
+    <field field_ref="wraf" operation="instant"/>
+    <field field_ref="wnslc" operation="instant"/>
     <field field_ref="utaua" operation="instant"/>
     <field field_ref="vtaua" operation="instant"/>
     <field field_ref="utauo" operation="instant"/>
     <field field_ref="vtauo" operation="instant"/>
-    <field field_ref="phioct" operation="instant"/>
+    <field field_ref="wphio" operation="instant"/>
     <field field_ref="wam_extra_1" operation="instant"/>
     <field field_ref="wam_extra_2" operation="instant"/>
     <field field_ref="wam_extra_3" operation="instant"/>
@@ -97,4 +96,13 @@
     <field field_ref="spec2d" operation="instant"/>
   </file>
 
+  <!-- The averaged products of the production file_def (mean, maximum, and the
+       sine and cosine of the direction), daily, to check them against the
+       hourly instantaneous values above. -->
+  <file id="w_verify_mean" name="wam_verify_mean_%start_date%" output_freq="1d" split_freq="1y" split_freq_format="%y" enabled="true">
+    <field field_ref="swh"/>
+    <field field_ref="swh" name="swh_max" operation="maximum"/>
+    <field field_ref="mwd_sin"/>
+    <field field_ref="mwd_cos"/>
+  </file>
 </file_definition>

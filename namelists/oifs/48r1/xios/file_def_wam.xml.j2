@@ -9,7 +9,10 @@
        choose_wam_xios in configs/components/oifs/oifs.yaml. WAM samples every
        IDELINT (1 h by default) and XIOS averages the samples. -->
   <file_group id="wam_mean" output_freq="{{ oifs.wam_xios_output_freq | default('1mo') }}" split_freq="1y" split_freq_format="%y" enabled="true">
-    <file id="w_swh"   name="swh.wam.%start_date%"  ><field field_ref="swh"  /></file>
+    <file id="w_swh"   name="swh.wam.%start_date%"  >
+      <field field_ref="swh"/>
+      <field field_ref="swh" name="swh_max" long_name="maximum significant height of combined wind waves and swell" operation="maximum"/>
+    </file>
     <file id="w_mwp"   name="mwp.wam.%start_date%"  ><field field_ref="mwp"  /></file>
     <file id="w_mp2"   name="mp2.wam.%start_date%"  ><field field_ref="mp2"  /></file>
     <file id="w_pp1d"  name="pp1d.wam.%start_date%" ><field field_ref="pp1d" /></file>
@@ -20,6 +23,11 @@
     <file id="w_vst"   name="vst.wam.%start_date%"  ><field field_ref="vst"  /></file>
     <file id="w_phioc" name="phioc.wam.%start_date%"><field field_ref="phioc"/></file>
     <file id="w_tauoc" name="tauoc.wam.%start_date%"><field field_ref="tauoc"/></file>
+    <!-- mean wave direction = atan2(mwd_sin, mwd_cos) -->
+    <file id="w_mwd"   name="mwd.wam.%start_date%"  >
+      <field field_ref="mwd_sin"/>
+      <field field_ref="mwd_cos"/>
+    </file>
   </file_group>
 
 </file_definition>

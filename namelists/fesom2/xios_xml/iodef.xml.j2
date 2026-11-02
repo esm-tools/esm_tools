@@ -7,6 +7,11 @@
 
   <context id="oifs"  src="./context_ifs.xml" />
   <context id="fesom" src="./context_fesom.xml" />
+{% if oifs is defined and oifs.wam_xios | default(false) %}
+  <!-- WAM inside OpenIFS (oifs.wam_xios). Every client parses every
+       context listed here, so it is only listed when its files are staged. -->
+  <context id="wam"   src="./context_wam.xml" />
+{% endif %}
 
   <context id="xios">
     <variable_definition>

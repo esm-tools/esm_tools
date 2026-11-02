@@ -1575,6 +1575,12 @@ def movement(func):
             # If source_path is a template use jinja and copy, otherwise run the movement
             # function
             if source_path.endswith(".j2"):
+                # Parallel movements pass no config. Rendering then only fails for
+                # templates that hit an undefined variable; one that guards with
+                # ``is defined`` or ``| default`` renders silently with the wrong
+                # values. Return False so the serial retry renders it with the config.
+                if not config:
+                    return False
                 jinja.render_template(config, source_path, target_path)
             else:
                 func(source_path, target_path)

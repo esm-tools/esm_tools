@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<file_definition type="one_file" format="netcdf4" par_access="collective"
+                 compression_level="{{xios.compression_level}}"
+                 time_counter_name="time" time_counter="exclusive">
+
+  <!-- WAM means on the WAM sea points (monthly unless oifs.wam_xios_output_freq
+       says otherwise), one file per variable, split yearly. Every field here
+       needs its GFLAG set in wam_namelist; the default list is under
+       choose_wam_xios in configs/components/oifs/oifs.yaml. WAM samples every
+       IDELINT (1 h by default) and XIOS averages the samples. -->
+  <file_group id="wam_mean" output_freq="{{ oifs.wam_xios_output_freq | default('1mo') }}" split_freq="1y" split_freq_format="%y" enabled="true">
+    <file id="w_swh"   name="swh.wam.%start_date%"  ><field field_ref="swh"  /></file>
+    <file id="w_mwp"   name="mwp.wam.%start_date%"  ><field field_ref="mwp"  /></file>
+    <file id="w_mp2"   name="mp2.wam.%start_date%"  ><field field_ref="mp2"  /></file>
+    <file id="w_pp1d"  name="pp1d.wam.%start_date%" ><field field_ref="pp1d" /></file>
+    <file id="w_shww"  name="shww.wam.%start_date%" ><field field_ref="shww" /></file>
+    <file id="w_shts"  name="shts.wam.%start_date%" ><field field_ref="shts" /></file>
+    <file id="w_cdww"  name="cdww.wam.%start_date%" ><field field_ref="cdww" /></file>
+    <file id="w_ust"   name="ust.wam.%start_date%"  ><field field_ref="ust"  /></file>
+    <file id="w_vst"   name="vst.wam.%start_date%"  ><field field_ref="vst"  /></file>
+    <file id="w_phioc" name="phioc.wam.%start_date%"><field field_ref="phioc"/></file>
+    <file id="w_tauoc" name="tauoc.wam.%start_date%"><field field_ref="tauoc"/></file>
+  </file_group>
+
+</file_definition>

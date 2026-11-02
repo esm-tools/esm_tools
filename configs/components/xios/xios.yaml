@@ -591,6 +591,27 @@ xios:
                             axis_def: axis_def
                             grid_def: grid_def
 
+    # WAM output through XIOS (oifs.wam_xios). The "wam" context is only listed
+    # in the merged iodef that comes with fesom.with_xios (iodef.xml.j2), so
+    # that is required. OpenIFS sets the WAM namelist side in oifs.yaml.
+    oifs_in_setup: "$(( 'oifs' in config ))"
+    choose_oifs_in_setup:
+        true:
+            choose_oifs.wam_xios:
+                true:
+                    add_config_files:
+                        context_wam:   context_wam
+                        field_def_wam: field_def_wam
+                        file_def_wam:  file_def_wam
+                    add_config_sources:
+                        context_wam:   ${general.esm_namelist_dir}/oifs/${oifs.version}/xios/context_wam.xml
+                        field_def_wam: ${general.esm_namelist_dir}/oifs/${oifs.version}/xios/field_def_wam.xml
+                        file_def_wam:  ${oifs.wam_xios_file_def}
+                    add_config_in_work:
+                        context_wam:   context_wam.xml
+                        field_def_wam: field_def_wam.xml
+                        file_def_wam:  file_def_wam.xml
+
 
     # Auto-add FESOM XIOS XML files when FESOM is compiled/run with XIOS.
     # Mirrors the choose_general.setup_name: oifs pattern above.
@@ -625,7 +646,7 @@ xios:
                         field_def_fesom:  field_def_fesom
                         file_def_fesom:   file_def_fesom
                     add_config_sources:
-                        io_def:           ${fesom_xios_xml_dir}/iodef.xml
+                        io_def:           ${fesom_xios_xml_dir}/iodef.xml.j2
                         context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
                         axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
                         domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml.j2

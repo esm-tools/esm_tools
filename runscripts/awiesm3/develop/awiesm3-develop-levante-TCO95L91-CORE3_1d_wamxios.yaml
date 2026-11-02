@@ -1,0 +1,82 @@
+# WAM XIOS output test (oifs.wam_xios, OpenIFS feat/wam-xios): one day, daily means of the
+# WAM fields. FESOM branches off cc5082_1y (CORE3 220509 nodes, linfs, 600 s, 1792 ranks,
+# two clean years) because a FESOM cold start at 600 s blows up on this mesh within hours
+# (wamxios2, mstep 61). OpenIFS, WAM and LPJ-GUESS start cold.
+general:
+    user: !ENV ${USER}
+    use_venv: False
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "ab0246"
+    compute_time: "00:30:00"
+    initial_date: "1902-01-01"
+    final_date: "1902-01-02"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    add_namelist_changes:
+        namelist.config:
+            run_config:
+                use_cavity: true
+    resolution: "CORE3"
+    # one restart per 1-day leg; a leg without a restart at its end dies in finalisation
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    lresume: true
+    ini_parent_exp_id: "cc5082_1y"
+    ini_parent_date: "1901-12-31"
+    ini_restart_dir: "/work/bb1469/a270092/runtime/awiesm3-develop-cc/cc5082_1y/restart/fesom/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.1902-01-01.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1902-01-01.ice.restart/*.nc
+    time_step: 600
+    nproc: 1792
+    omp_num_threads: 1
+    tar_binary_restarts: true
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    wam_xios: true
+    wam_xios_output_freq: 1d
+    lresume: false
+    time_step: 3600
+    nproc: 128
+    omp_num_threads: 1
+    mip: cmip7
+    scenario: piControl
+
+oasis3mct:
+    use_lucia: true
+    lresume: false
+    time_step: 7200
+    norestart: T
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 4
+    omp_num_threads: 32
+
+lpj_guess:
+    nproc: 8
+    omp_num_threads: 8
+    lresume: false
+    file_luh3_natural_override: /work/ab0246/a270092/input/lpj-guess/land_use/TCO95/luh3_natural_override_TCO95_CORE3.txt

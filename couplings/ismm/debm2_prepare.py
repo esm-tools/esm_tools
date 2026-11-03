@@ -17,11 +17,12 @@ replaces it every month with the atmosphere's own (<prefix>_Orog).
     debm2_prepare.py --debm2-dir DIR --geometry latest_ice_geometry.nc \
         [--surface-from pism_state.nc] --param debm2_param.py --static debm2_static.nc \
         --year Y [--init-restart R] \
-        [--check-grid grids.nc --grid-name ismp] [dEBM2 settings]
+        [--check-grid grids.nc --grid-name ismp] [dEBM2 settings] [--set KEY=VALUE ...]
 """
 from __future__ import annotations
 
 import argparse
+import ast
 import sys
 from pathlib import Path
 
@@ -62,11 +63,32 @@ orbit_S0       = {s0!r}
 '''
 
 
+def _parse_set(items: list[str]) -> list[tuple[str, object]]:
+    """--set KEY=VALUE pairs: KEY a dEBM2 parameter name in its loader's
+    spelling (albedo_new_snow, atm_PDDstd, CF, ...), VALUE a Python literal."""
+    out = []
+    for item in items:
+        key, sep, value = item.partition("=")
+        key = key.strip()
+        if not sep or not key.isidentifier():
+            sys.exit(f"debm2_prepare: --set needs KEY=VALUE, got {item!r}")
+        try:
+            out.append((key, ast.literal_eval(value.strip())))
+        except (ValueError, SyntaxError):
+            sys.exit(f"debm2_prepare: --set {key}: {value!r} is not a literal")
+    return out
+
+
 def write_param(path: Path, a: argparse.Namespace, afac: float) -> None:
-    path.write_text(PARAM_TEMPLATE.format(
+    text = PARAM_TEMPLATE.format(
         exp=a.exp, year=a.year, hem=a.hem, biascorr=a.biascorr, afac=afac,
         subl=a.subl, firnmax=a.firnmax, ecc=a.orbit_ecc, obl=a.orbit_obl,
-        lonp=a.orbit_lonp, s0=a.orbit_s0))
+        lonp=a.orbit_lonp, s0=a.orbit_s0)
+    extra = _parse_set(a.set)
+    if extra:
+        text += "\n# from the runscript (ismm.debm2_extra_params)\n"
+        text += "".join(f"{k:14s} = {v!r}\n" for k, v in extra)
+    path.write_text(text)
 
 
 def _last(ds, name):
@@ -175,6 +197,8 @@ def main() -> None:
     ap.add_argument("--orbit-obl", type=float, required=True)
     ap.add_argument("--orbit-lonp", type=float, required=True)
     ap.add_argument("--orbit-s0", type=float, default=1361.0)
+    ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
+                    help="extra dEBM2 parameter, e.g. albedo_new_snow=0.89; repeatable")
     a = ap.parse_args()
 
     sys.path[:0] = [a.debm2_dir]

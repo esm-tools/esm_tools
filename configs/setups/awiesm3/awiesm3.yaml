@@ -2302,6 +2302,10 @@ ismm:
     debm2_biascorr: none
     debm2_atm_subl: 2
     debm2_firnmax: 10000.0
+    # Further dEBM2 parameters, passed on to its parameter file as they are:
+    # "--set albedo_new_snow=0.89 --set CF=0.0 ..." (debm2_prepare.py --set).
+    # Empty: dEBM2's own defaults, which are its Greenland values.
+    debm2_extra_params: ""
     # The orbit OIFS runs with (NAMORB ORBMODE fixed_year, ORBIY 1850), from
     # Berger (1978) for 1850, longitude of perihelion in dEBM2's convention
     # (present day 282.9). dEBM2 takes the declination and the irradiance of
@@ -2340,7 +2344,8 @@ ismm:
                         --exp ${general.expid} --biascorr ${debm2_biascorr} --subl ${debm2_atm_subl}
                         --firnmax ${debm2_firnmax}
                         --orbit-ecc ${debm2_orbit_ecc} --orbit-obl ${debm2_orbit_obl}
-                        --orbit-lonp ${debm2_orbit_lonp} --orbit-s0 ${debm2_orbit_s0}"
+                        --orbit-lonp ${debm2_orbit_lonp} --orbit-s0 ${debm2_orbit_s0}
+                        ${debm2_extra_params}"
                     type: shell
             # Both dEBM2 restarts: the surface state, and the runoff of the last
             # month, which the mapper sends during the month after it.

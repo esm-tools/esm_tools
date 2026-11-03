@@ -59,6 +59,12 @@ def prepare_environment(config):
             "ISM_TO_ECHAM_update_land_runoff": int(config["echam"].get("update_land_runoff", True).__bool__()),
             "oro_update_mod": config["echam"].get("oro_update_mod", 1),
             "oro_update_var": config["echam"].get("oro_update_var", "OROMEA"),
+            # high-res orography reference on the first orography update of an
+            # experiment (update_orography_init_high_res_reference in
+            # echam/coupling_ice2echam.functions)
+            "oro_hi_res_parent_file": config["echam"].get("oro_hi_res_parent_file", ""),
+            "oro_hi_res_on_mismatch": config["echam"].get("oro_hi_res_on_mismatch", "abort"),
+            "oro_hi_res_tolerance": config["echam"].get("oro_hi_res_tolerance", 100),
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             "paleo_time": config["echam"].get("paleo_time", "pi"),

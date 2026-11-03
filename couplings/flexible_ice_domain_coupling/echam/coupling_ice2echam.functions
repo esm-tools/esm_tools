@@ -325,6 +325,144 @@ update_orography_select_field() {
         rmlist="$rmlist ${ICE_COUPLE_DIR}/ice_orog_difference.nc"
 }
 
+## @fn update_orography_init_high_res_reference()
+## GLOBAL. Starting T511 orography (variable `oromea`) for the case that
+## ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc does not exist
+## yet, i.e. on the first orography update of an experiment.
+##
+## That file accumulates every ice-sheet surface-height increment and feeds
+## GEOSP (and, through CALNORO, the sub-grid parameters), while OROMEA is
+## accumulated in the ECHAM restart. The old code always started it from the
+## PI T511 field. For an experiment branched from a coupled parent this reset
+## GEOSP to PI while OROMEA kept the parent's ice sheet -- a permanent
+## GEOSP/OROMEA mismatch (~240 m in pi_spinup_3rd_cont_mid, ~900 m mean and
+## >2 km locally in ssp585_1x1_to_ssp460).
+##
+## The candidate start is echam.oro_hi_res_parent_file if set (the parent's
+## high-res file from the branch year), else ${hi_res_init_oro} (PI T511).
+## It is accepted only if its anomaly against PI T511 matches the restart's
+## anomaly against unit.24:
+##
+##     A_hi = remapnn_T63(candidate) - remapnn_T63(PI T511)
+##     A_lo = restart oromea         - unit.24 OROMEA
+##     mismatch = mean |A_hi - A_lo| over cells where |A_hi| or |A_lo| > 1 m
+##
+## mismatch <= echam.oro_hi_res_tolerance (default 100 m) -> use the candidate
+## (a PI start from a PI restart has no such cells and always passes).
+## Otherwise echam.oro_hi_res_on_mismatch decides:
+##     abort (default) -> diagnostics and stop
+##     reconstruct     -> PI T511 + bilinear T511 remap of A_lo, applied on
+##                        T511 land (SLM >= 0.5) only, clipped at 0 m
+##     ignore          -> use the candidate anyway, with a warning
+##
+## Reference values (Greenland, T63): consistent branch 34 m; parent file of
+## the wrong year 477 m; PI start of a branched run 704 m.
+##
+## @param $1 output file (T511, variable `oromea`)
+update_orography_init_high_res_reference() {
+        _hro_out=$1
+        _hro_mode=${oro_hi_res_on_mismatch:-abort}
+        _hro_tol=${oro_hi_res_tolerance:-100}
+        _hro_pi_ref=${INIT_DIR_echam}/unit.24
+        _hro_cand=${oro_hi_res_parent_file:-${hi_res_init_oro}}
+        if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                _hro_rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+        else
+                _hro_rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+        fi
+
+        echo "                -   no accumulated high-res orography in ${COUPLE_DIR}"
+        echo "                -   candidate start: ${_hro_cand}"
+
+        for _hro_f in "${_hro_cand}" "${hi_res_init_oro}" "${_hro_rfile}" "${_hro_pi_ref}"; do
+                if [[ ! -f "${_hro_f}" ]]; then
+                        echo " !!! update_orography_init_high_res_reference: missing file >${_hro_f}<"
+                        echo " S T O P  48"
+                        exit 48
+                fi
+        done
+
+        # candidate as `oromea`; the parent file already uses that name
+        if ncdump -h "${_hro_cand}" | grep -q '[[:space:]]oromea('; then
+                ncks -O -v oromea "${_hro_cand}" hro_cand.nc 2>> nco_stderr_ice2echam
+        else
+                ncks -O -v OROMEA "${_hro_cand}" hro_cand.nc 2>> nco_stderr_ice2echam \
+                        && ncrename -v OROMEA,oromea hro_cand.nc 2>> nco_stderr_ice2echam
+        fi
+
+        # A_hi and A_lo on the ECHAM grid. ncks drops the CDI grid, so the T511
+        # files get T511grid and the restart gets the grid of unit.24.
+        cdo -s griddes -selname,OROMEA ${_hro_pi_ref} > hro_grid.txt 2>> cdo_stderr_ice2echam
+        cdo -s --reduce_dim -sub \
+                -remapnn,hro_grid.txt -setgrid,T511grid -seltimestep,1 hro_cand.nc \
+                -remapnn,hro_grid.txt -setgrid,T511grid -chname,OROMEA,oromea -selname,OROMEA ${hi_res_init_oro} \
+                hro_a_hi.nc 2>> cdo_stderr_ice2echam
+        ncks -O -v oromea ${_hro_rfile} hro_restart.nc 2>> nco_stderr_ice2echam
+        cdo -s -sub -setgrid,hro_grid.txt hro_restart.nc \
+                -chname,OROMEA,oromea -selname,OROMEA ${_hro_pi_ref} \
+                hro_a_lo.nc 2>> cdo_stderr_ice2echam
+        cdo -s -gtc,0 -add -gtc,1 -abs hro_a_hi.nc -gtc,1 -abs hro_a_lo.nc hro_mask.nc 2>> cdo_stderr_ice2echam
+        _hro_n=$(cdo -s output -fldsum hro_mask.nc 2>> cdo_stderr_ice2echam | tr -d ' ')
+        _hro_mis=$(cdo -s output -fldmean -ifthen hro_mask.nc -abs -sub hro_a_hi.nc hro_a_lo.nc 2>> cdo_stderr_ice2echam | tr -d ' ')
+        if [[ -z "${_hro_n}" ]]; then
+                echo " !!! could not compare ${_hro_cand} with the restart orography ${_hro_rfile} (see cdo_stderr_ice2echam)"
+                echo " S T O P  48"
+                exit 48
+        fi
+        # an all-masked fldmean prints a missing value; no anomaly cells means no mismatch
+        if awk -v n="${_hro_n}" 'BEGIN { exit !(n + 0 == 0) }'; then
+                _hro_mis=0
+        fi
+        echo "                -   anomaly mismatch candidate vs restart: ${_hro_mis} m over ${_hro_n} cells (tolerance ${_hro_tol} m)"
+
+        if awk -v m="${_hro_mis}" -v t="${_hro_tol}" 'BEGIN { exit !(m + 0 <= t + 0) }'; then
+                echo "                -   consistent; starting high-res orography from ${_hro_cand}"
+                mv hro_cand.nc ${_hro_out}
+        else
+                case ${_hro_mode} in
+                reconstruct)
+                        echo "                -   WARNING: ${_hro_cand} does not match the restart orography;"
+                        echo "                -            reconstructing PI T511 + remapbil_T511(restart oromea - unit.24 OROMEA) on land"
+                        rm -f ${_hro_out}
+                        cdo -s -maxc,0 -add \
+                                -setgrid,T511grid -chname,OROMEA,oromea -selname,OROMEA ${hi_res_init_oro} \
+                                -mul -setgrid,T511grid -gec,0.5 -selname,SLM ${hi_res_init_oro} \
+                                     -remapbil,T511grid hro_a_lo.nc \
+                                ${_hro_out} 2>> cdo_stderr_ice2echam
+                        if [[ ! -s ${_hro_out} ]]; then
+                                echo " !!! reconstruction of the high-res orography failed (see cdo_stderr_ice2echam)"
+                                echo " S T O P  48"
+                                exit 48
+                        fi
+                        ;;
+                ignore)
+                        echo "                -   WARNING: oro_hi_res_on_mismatch=ignore -> starting from ${_hro_cand} anyway;"
+                        echo "                -   WARNING: GEOSP will be offset from OROMEA by about ${_hro_mis} m over the ice"
+                        mv hro_cand.nc ${_hro_out}
+                        ;;
+                *)
+                        echo ""
+                        echo " !!! The high-res orography would start from"
+                        echo " !!!   ${_hro_cand}"
+                        echo " !!! but that does not match the ECHAM restart orography"
+                        echo " !!!   ${_hro_rfile}"
+                        echo " !!! (mean anomaly mismatch ${_hro_mis} m over ${_hro_n} cells > ${_hro_tol} m)."
+                        echo " !!! GEOSP would then describe a different ice sheet than OROMEA."
+                        echo " !!! Set one of these under echam: in the runscript:"
+                        echo " !!!   oro_hi_res_parent_file: <parent couple dir>/echam6_new_orography_before_calnoro_high_res.nc"
+                        echo " !!!                           (the parent's file from the branch year)"
+                        echo " !!!   oro_hi_res_on_mismatch: reconstruct   (rebuild from the restart oromea anomaly)"
+                        echo " !!!   oro_hi_res_on_mismatch: ignore        (start from the candidate anyway; inconsistent)"
+                        echo " S T O P  48"
+                        rm -f hro_cand.nc hro_grid.txt hro_a_hi.nc hro_restart.nc hro_a_lo.nc hro_mask.nc
+                        exit 48
+                        ;;
+                esac
+        fi
+        rm -f hro_cand.nc hro_grid.txt hro_a_hi.nc hro_restart.nc hro_a_lo.nc hro_mask.nc
+        unset _hro_out _hro_mode _hro_tol _hro_pi_ref _hro_cand _hro_rfile _hro_f _hro_n _hro_mis
+}
+
 ## @fn update_orography_apply_orography_anomaly_high_res()
 ## GLOBAL. $ifile is the anomaly summed over all ice domains; it already
 ## carries the name "oromea", has no missing values and no time axis
@@ -338,9 +476,10 @@ update_orography_apply_orography_anomaly_high_res() {
             rfile=${ofile}
             ncks -O -v oromea $rfile tmp_oromea
         else
-            rfile=${hi_res_init_oro}
-            ncks -O -v OROMEA $rfile tmp_oromea
-            ncrename -v OROMEA,oromea tmp_oromea
+            # No accumulated high-res orography yet (first coupling of this
+            # experiment). Do not silently start from the PI reference; this
+            # picks a consistent reference or stops (exit 48).
+            update_orography_init_high_res_reference tmp_oromea
         fi
         # LA: need to backup echam6_new_orography_before_calnoro!!!
         ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam

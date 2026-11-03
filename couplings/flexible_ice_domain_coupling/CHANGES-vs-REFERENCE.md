@@ -150,7 +150,17 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
 9. **`ice2echam` aborts (exit 72)** when an ice domain did not deliver its
    `ice_file_for_atmosphere.nc`, instead of falling through the wait loop and
    failing later inside `cdo`.
-10. **`apply_hosing_correction.py`** takes any number of
+10. **No silent PI fallback for the high-res orography.** When
+    `echam6_new_orography_before_calnoro_high_res.nc` was missing (first
+    orography update, e.g. after branching from a coupled parent), the T511 PI
+    orography was used without a check. That reset `GEOSP` to PI while `OROMEA`
+    (from the restart) kept the parent's ice sheet. Now
+    `update_orography_init_high_res_reference` starts from
+    `echam.oro_hi_res_parent_file` (or PI T511) only if its anomaly matches the
+    restart's `oromea` anomaly within `oro_hi_res_tolerance`, and otherwise
+    stops with exit 48 unless `oro_hi_res_on_mismatch` is `reconstruct` or
+    `ignore` (see RUNNING.md).
+11. **`apply_hosing_correction.py`** takes any number of
     `--pair DISCHARGE AREA` and sums the integrals; the old four-positional form
     still works.
 

@@ -171,6 +171,7 @@ pism2esm() {
            "${OUTPUT_DIR_pism}/latest_ex_file_pism.chunk_${CHUNK_NUMBER}.nc" || _ok=0
         [ -e "${_geom_out}" ] || { echo " *** missing ${_geom_out} ***"; _ok=0; }
         if [ ${_ok} -eq 1 ]; then
+            pism2esm_prebuild_couple_in
             touch_coupling_marker "${COUPLE_DIR}/pism_chunk_${CHUNK_NUMBER}.done"
         else
             echo "incomplete PISM->AWI handoff set for chunk ${CHUNK_NUMBER}" \
@@ -184,4 +185,40 @@ pism2esm() {
     couple_timer "pism2esm: DONE"
 
     echo " *** pism2esm done *** "
+}
+
+function pism2esm_prebuild_couple_in {
+    # Prebuild awiesm3 chunk N+1's submesh, OASIS set and the restart-independent
+    # part of its icebergs here, while the awiesm3 leg is still running
+    # (general.couple_in_prebuild_in_pism). Called between the tagged hand-off
+    # files and the marker: it reads the tagged ex-file, and the awiesm3
+    # couple_in, which waits for the marker, never meets a half-built set.
+    # In its own clean shell (prebuild_couple_in.sh): pism2esm must not source
+    # the fesom coupling files (see there). Its failure only means the awiesm3
+    # chain builds the set itself, so it never stops this chain. Skipped when the
+    # marker already exists: the awiesm3 chain may then be building it right now.
+    [ "${COUPLE_IN_PREBUILD_IN_PISM:-0}" = "1" ] || return 0
+    [ "${COUPLING_MODE:-serial}" = "concurrent" ] || return 0
+    if [ -e "${COUPLE_DIR}/pism_chunk_${CHUNK_NUMBER}.done" ]; then
+        echo " *   pism_chunk_${CHUNK_NUMBER}.done already there; not prebuilding (rerun)"
+        return 0
+    fi
+    couple_timer "pism2esm: prebuild awiesm3 couple_in"
+    local chunk=$(( CHUNK_NUMBER + 1 ))
+    local log=${COUPLE_DIR}/prebuild/chunk_${chunk}.log
+    mkdir -p "${COUPLE_DIR}/prebuild"
+    echo " *   prebuilding awiesm3 chunk ${chunk}'s couple_in (log: ${log})"
+    if timeout --kill-after=60 "${COUPLE_IN_PREBUILD_TIMEOUT:-2700}" \
+            bash "${FUNCTION_PATH}/../fesom/prebuild_couple_in.sh" \
+            "${COUPLE_DIR}" "${chunk}" "${OUTPUT_DIR_pism}" > "${log}" 2>&1 ; then
+        if [ -f "${COUPLE_DIR}/prebuild/chunk_${chunk}.ready" ]; then
+            echo " *   prebuilt: $(tail -1 "${log}")"
+        else
+            echo " *   nothing prebuilt: $(tail -1 "${log}")"
+        fi
+    else
+        echo " *   prebuild failed or timed out (rc=$?), awiesm3 builds it itself; last lines of ${log}:"
+        tail -5 "${log}" | sed 's/^/ *     /'
+        rm -f "${COUPLE_DIR}/prebuild/chunk_${chunk}.ready"
+    fi
 }

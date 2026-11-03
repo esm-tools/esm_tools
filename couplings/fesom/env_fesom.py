@@ -216,6 +216,10 @@ def prepare_environment(config):
             # and the OASIS weight regeneration, which do not need it (see
             # ice2fesom). Off by default.
             "ICB_PREP_BACKGROUND": int(bool(general.get("icb_prep_background", False))),
+            # Let the PISM chain prebuild the next leg's submesh and OASIS set:
+            # couple_namcouple then saves this environment for it
+            # (write_prebuild_env). Off by default.
+            "COUPLE_IN_PREBUILD_IN_PISM": int(bool(general.get("couple_in_prebuild_in_pism", False))),
             "CURRENT_YEAR_fesom": general["current_date"].syear,
             # FESOM install bin/ -- holds the native mesh partitioner
             # (fesom_meshpart, built for the -is variant via

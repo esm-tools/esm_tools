@@ -29,6 +29,11 @@ def prepare_environment(config):
             # fesom side it never sees OCP_WEIGHTGEN_DRIVER_PY, so the
             # interpreter has to be named here.
             "ISM_OROG_PY": config["general"].get("ism_orog_python", "python3"),
+            # Build the next awiesm3 leg's submesh and OASIS set at the end of this
+            # leg, while the awiesm3 leg still runs (prebuild_couple_in in
+            # couplings/fesom). Same switch as in env_fesom.py.
+            "COUPLE_IN_PREBUILD_IN_PISM": int(bool(config["general"].get("couple_in_prebuild_in_pism", False))),
+            "COUPLE_IN_PREBUILD_TIMEOUT": config["general"].get("couple_in_prebuild_timeout", 2700),
             "DOWNSCALE_TEMP": 1, 
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
             "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1),

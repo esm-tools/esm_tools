@@ -93,8 +93,18 @@ function ice2fesom {
     # chunk's FESOM restart from the old mesh onto the new submesh before the
     # next FESOM run picks it up.
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
-        couple_timer "ice2fesom: build_submesh"
-        build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
+        # The PISM chain may already have built this leg's submesh and OASIS set
+        # (general.couple_in_prebuild_in_pism, prebuild_couple_in). Only the parts
+        # that need this chain's own end-of-leg state are left to do here.
+        _prebuilt=0
+        if prebuilt_couple_in_valid ; then
+            _prebuilt=1
+            couple_timer "ice2fesom: install prebuilt submesh"
+            install_prebuilt_couple_in || couple_fail "ice2fesom FAILED: install_prebuilt_couple_in"
+        else
+            couple_timer "ice2fesom: build_submesh"
+            build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
+        fi
         # Bergs go in here, after the submesh exists and before anything reads
         # the iceberg files. With ICB_PREP_BACKGROUND (general.icb_prep_background)
         # they are made in the background while the restart remap and the OASIS
@@ -128,6 +138,13 @@ function ice2fesom {
             # background while the ~1 min F90 restart remap runs in the foreground,
             # then wait for the weight-gen before remap_oasis_restart. Backgrounding
             # a function runs it in a subshell, so its env/cd changes do not leak.
+            if [ ${_prebuilt} -eq 1 ]; then
+                # weights already in oasis_regen; only the install is left
+                couple_timer "ice2fesom: remap_fesom_restart"
+                remap_fesom_restart  || couple_fail "ice2fesom FAILED: remap_fesom_restart"
+                couple_timer "ice2fesom: stage_oasis_regen (prebuilt)"
+                stage_oasis_regen    || couple_fail "ice2fesom FAILED: stage_oasis_regen"
+            else
             couple_timer "ice2fesom: remap_fesom_restart || regenerate_oasis_weights"
             _rgw_log=${COUPLE_DIR}/regenerate_oasis_weights.bg.log
             regenerate_oasis_weights > "${_rgw_log}" 2>&1 &
@@ -146,6 +163,7 @@ function ice2fesom {
             if [ ${_rgw_rc} -ne 0 ] ; then
                 touch "${COUPLE_DIR}/.oasis_weights_stale"
                 couple_fail "ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc})"
+            fi
             fi
 
             # The weights must match the mesh we just built them for. A silent
@@ -189,7 +207,7 @@ function ice2fesom {
             echo "----- end prepare_iceberg_forcing output (rc=${_icb_rc}) -----"
             [ ${_icb_rc} -eq 0 ] || couple_fail "ice2fesom FAILED: prepare_iceberg_forcing (rc=${_icb_rc})"
         fi
-        unset _icb_pid _icb_log _icb_rc
+        unset _icb_pid _icb_log _icb_rc _prebuilt
     fi
     couple_timer "ice2fesom: DONE"
 
@@ -259,9 +277,7 @@ function ice2fesom {
     couple_timer_end
 }
 
-function build_submesh {
-    echo " *** Building dynamic submesh from MAXMESH ***"
-
+function promote_submesh {
     # Promote the CURRENT submesh to previous_submesh BEFORE we replace it. The
     # restart remap needs the mesh the PREVIOUS leg actually ran on. previous_submesh
     # was read in several places but NEVER created anywhere, so every mesh-change leg
@@ -276,11 +292,13 @@ function build_submesh {
     # as UNCHANGED, and the remap copies the old restart's sub-ice ZEROS into
     # the newly-opened levels verbatim -> 0 psu surface water -> density
     # catastrophe -> CFLz blowup at mstep=1 (movcav16 chunk-3, 2026-07-14).
+    # $1: the submesh dir name this leg will run on (submesh_<chunk end date>).
+    local _this=$1
     if [ -e "${COUPLE_DIR}/latest_submesh" ] ; then
         _prev_target=$(readlink -f "${COUPLE_DIR}/latest_submesh" 2>/dev/null)
         if [ -n "${_prev_target}" ] && [ -f "${_prev_target}/nod2d.out" ] ; then
-            if [ "$(basename "${_prev_target}")" = "submesh_${CHUNK_END_DATE_fesom}" ] ; then
-                echo " *   latest_submesh already targets THIS chunk (submesh_${CHUNK_END_DATE_fesom})"
+            if [ "$(basename "${_prev_target}")" = "${_this}" ] ; then
+                echo " *   latest_submesh already targets THIS chunk (${_this})"
                 echo " *   -> rerun detected; keeping existing previous_submesh untouched"
             else
                 rm -rf "${COUPLE_DIR}/previous_submesh"
@@ -289,12 +307,263 @@ function build_submesh {
             fi
         fi
     fi
+}
+
+# --- couple_in prebuilt by the PISM chain (general.couple_in_prebuild_in_pism) ------
+# In concurrent mode the PISM leg is usually much shorter than the awiesm3 leg, and
+# its allocation then waits for the awiesm3 marker. Of awiesm3's next couple_in only
+# the restart remaps (FESOM, OASIS) and the icebergs need awiesm3's own end-of-leg
+# state; the submesh and the OASIS set (~6 min, 2026-10 dbm3) need only the PISM
+# geometry. So the PISM chain builds those for awiesm3 chunk K = its own chunk + 1
+# right after its leg, before it writes its marker, in COUPLE_DIR/prebuild:
+#   env.chunk_K.sh    the couple_in environment, written by awiesm3 chunk K-1 at its
+#                     start (write_prebuild_env, from couple_namcouple)
+#   chunk_K/          oasis_regen/ + latest_ice_geometry_for_fesom.nc
+#   chunk_K.ready     written last: submesh, node count, nproc, geometry md5
+#   chunk_K.log       the PISM chain's log of it
+# The submesh itself goes straight to COUPLE_DIR/submesh_<chunk K end date>, a name
+# the running leg does not use. ice2fesom installs the set if it matches this leg
+# exactly and otherwise builds everything itself as before, so a failed or missing
+# prebuild costs time, not the run.
+
+function write_prebuild_env {
+    # Snapshot this subjob's environment (modules + env_fesom.py) for the PISM
+    # chain, with the chunk variables moved on to the next awiesm3 chunk. Runs at
+    # the start of every awiesm3 leg, chunk 1 included (couple_namcouple).
+    [ "${COUPLE_IN_PREBUILD_IN_PISM:-0}" = "1" ] || return 0
+    [ "${COUPLING_MODE:-serial}" = "concurrent" ] || return 0
+    [ "${CHANGE_OCEAN:-0}" = "1" ] || return 0
+    local nyears=${number_of_years_for_forcing:-1}
+    local s_y=${CHUNK_START_DATE_fesom%%-*} e_y=${CHUNK_END_DATE_fesom%%-*}
+    if ! [[ "${nyears}${s_y}${e_y}${CHUNK_NUMBER}${CURRENT_YEAR_fesom}" =~ ^[0-9]+$ ]]; then
+        echo " *   write_prebuild_env: cannot step the chunk dates (${CHUNK_START_DATE_fesom} .. ${CHUNK_END_DATE_fesom}, ${nyears} yr); no prebuild"
+        return 0
+    fi
+    local next=$(( CHUNK_NUMBER + 1 ))
+    local dir=${COUPLE_DIR}/prebuild
+    local f=${dir}/env.chunk_${next}.sh
+    mkdir -p "${dir}" || return 0
+    {
+        local _v
+        for _v in $(compgen -e); do
+            case ${_v} in
+                SLURM_*|PWD|OLDPWD|SHLVL|_|BASH*|SHELLOPTS|PPID|UID|EUID) continue ;;
+            esac
+            declare -p "${_v}" 2>/dev/null | grep -v '^declare -[a-zA-Z]*r'
+        done
+        echo "export CHUNK_NUMBER=${next}"
+        echo "export CHUNK_START_DATE_fesom=$(( s_y + nyears ))-${CHUNK_START_DATE_fesom#*-}"
+        echo "export CHUNK_END_DATE_fesom=$(( e_y + nyears ))-${CHUNK_END_DATE_fesom#*-}"
+        echo "export CURRENT_YEAR_fesom=$(( CURRENT_YEAR_fesom + nyears ))"
+    } > "${f}.tmp" && mv -f "${f}.tmp" "${f}" \
+        && echo " *   couple_in environment for chunk ${next} -> ${f}"
+}
+
+function prebuild_couple_in {
+    # Run by the PISM chain (couplings/fesom/prebuild_couple_in.sh) in the
+    # environment write_prebuild_env saved, i.e. for awiesm3 chunk CHUNK_NUMBER.
+    echo " *** prebuild_couple_in: awiesm3 chunk ${CHUNK_NUMBER} (submesh_${CHUNK_END_DATE_fesom}) ***"
+    local pre=${COUPLE_DIR}/prebuild
+    local stage=${pre}/chunk_${CHUNK_NUMBER}
+    local ready=${pre}/chunk_${CHUNK_NUMBER}.ready
+    local geom=${COUPLE_DIR}/latest_ice_geometry.chunk_$(( CHUNK_NUMBER - 1 )).nc
+    local sub=submesh_${CHUNK_END_DATE_fesom}
+    rm -f "${ready}"
+    rm -rf "${stage}"
+    if [ ! -f "${geom}" ]; then
+        echo " *   ${geom} missing; nothing to build from"
+        return 1
+    fi
+    # Never rebuild the submesh the awiesm3 chain is already on (a rerun of a
+    # PISM leg after the AWI chain has moved on).
+    if [ "$(basename "$(readlink -f "${COUPLE_DIR}/latest_submesh" 2>/dev/null)")" = "${sub}" ]; then
+        echo " *   latest_submesh already is ${sub}; not touching it"
+        return 1
+    fi
+    mkdir -p "${stage}/work" && cd "${stage}/work" || return 1
+    MAXMESH_DIR_fesom=$MAX_MESH
+
+    couple_timer "prebuild: build_submesh"
+    ( export SUBMESH_PREBUILD=1 ICE_GEOMETRY_FILE=${geom} \
+             ICE_GEOMETRY_FOR_FESOM=${stage}/latest_ice_geometry_for_fesom.nc
+      build_submesh ) || { echo " *   prebuild: build_submesh failed"; return 1; }
+
+    local nod
+    nod=$(head -1 "${COUPLE_DIR}/${sub}/nod2d.out" 2>/dev/null | tr -d ' ')
+
+    # the restart-independent part of the icebergs, alongside the weights as in
+    # ice2fesom; on failure only the icebergs are left to the awiesm3 chain
+    local icb_pid="" icb=0
+    if [ "${ICE_TO_FESOM:-0}" = "1" ]; then
+        prebuild_icebergs "${stage}" "${COUPLE_DIR}/${sub}" > "${stage}/prebuild_icebergs.log" 2>&1 &
+        icb_pid=$!
+    fi
+    if [ "${REGEN_OASIS_WEIGHTS:-0}" = "1" ]; then
+        couple_timer "prebuild: regenerate_oasis_weights"
+        ( export OASIS_REGEN_OUT_DIR=${stage}/oasis_regen \
+                 OASIS_REGEN_SUBMESH=${COUPLE_DIR}/${sub} OASIS_REGEN_STAGE=0
+          regenerate_oasis_weights ) || { echo " *   prebuild: regenerate_oasis_weights failed"
+                                           [ -n "${icb_pid}" ] && kill ${icb_pid} 2>/dev/null
+                                           return 1; }
+        # the same weights-vs-mesh check ice2fesom makes
+        local f dim have
+        for f in "${stage}/oasis_regen"/rmp_*feom*.nc ; do
+            [ -e "${f}" ] || continue
+            case "$(basename ${f})" in
+                rmp_feom_to_*) dim=src_grid_size ;;
+                *)             dim=dst_grid_size ;;
+            esac
+            have=$(ncdump -h "${f}" | awk -v d="${dim}" '$1==d{print $3; exit}')
+            if [ "${have}" != "${nod}" ]; then
+                echo " *   prebuild: $(basename ${f}) has ${dim}=${have}, the new mesh has ${nod} nodes"
+                [ -n "${icb_pid}" ] && kill ${icb_pid} 2>/dev/null
+                return 1
+            fi
+        done
+    fi
+    if [ -n "${icb_pid}" ]; then
+        couple_timer "prebuild: wait for prebuild_icebergs"
+        if wait ${icb_pid} && [ -s "${stage}/icb_state.pkl" ]; then
+            icb=1
+        else
+            echo " *   prebuild: iceberg part failed, the awiesm3 chain makes the icebergs itself:"
+            rm -f "${stage}/icb_state.pkl"
+        fi
+        sed 's/^/ *   [icebergs] /' "${stage}/prebuild_icebergs.log" | grep -v '^ \*   \[icebergs\] *$' | tail -20
+    fi
+
+    {
+        echo "submesh=${sub}"
+        echo "nod2d=${nod}"
+        echo "nproc=${NPROC_fesom}"
+        echo "regen=${REGEN_OASIS_WEIGHTS:-0}"
+        echo "icebergs=${icb}"
+        echo "geometry_md5=$(md5sum "${geom}" | cut -c1-32)"
+        echo "built=$(date +'%Y-%m-%dT%H:%M:%S') job=${SLURM_JOB_ID:-none}"
+    } > "${ready}.tmp" && mv -f "${ready}.tmp" "${ready}" || return 1
+    cd "${pre}" && rm -rf "${stage}/work"
+    couple_timer_end
+    echo " *** prebuild_couple_in: chunk ${CHUNK_NUMBER} ready (${sub}, ${nod} nodes) ***"
+}
+
+function prebuild_icebergs {
+    # The part of iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+    # that needs no iceberg restart (make_icebergs.py --prepare), into <stage>:
+    # latest_discharge_fesom.nc, icb_mask.nc and icb_state.pkl.
+    local stage=$1 mesh=$2
+    local pism_outdir=${OUTPUT_DIR_pism:-${COUPLE_DIR}/../outdata/pism}
+    local ex=${pism_outdir}/latest_ex_file_pism.chunk_$(( CHUNK_NUMBER - 1 )).nc
+    local disch=${stage}/latest_discharge_fesom.nc
+    if [ ! -f "${ex}" ]; then
+        echo " *   ${ex} missing"
+        return 1
+    fi
+    if [ -z "${ICB_BASIN_FILE:-}" ]; then
+        echo " *   fesom.basin_file unset"
+        return 1
+    fi
+    cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+            -setgrid,${COUPLE_DIR}/ice.griddes "${ex}" "${disch}" || return 1
+    PYTHONPATH="${OCP_TOOL_DIR}:${PYTHONPATH}" \
+        ${OCP_WEIGHTGEN_DRIVER_PY:-python} ${FUNCTION_PATH}/../pism/add_cell_bounds.py \
+        "${disch}" "${ICB_BASIN_FILE}" || return 1
+    ${OCP_WEIGHTGEN_DRIVER_PY:-python} ${FUNCTION_PATH}/make_icebergs.py \
+        "${disch}" "${mesh}" "${stage}" "${ICB_BASIN_FILE}" \
+        --seed "${CURRENT_YEAR_fesom:-0}" \
+        --cavities "${ICB_USE_CAVITIES:-1}" \
+        --scaling "${ICB_SCALING:-1,1,1,1,1,1}" \
+        --prepare "${stage}/icb_state.pkl" || return 1
+}
+
+function prebuilt_couple_in_valid {
+    # True if the PISM chain prebuilt exactly this leg's submesh + OASIS set.
+    # Every mismatch is reported and sends ice2fesom down the full path.
+    [ "${COUPLING_MODE:-serial}" = "concurrent" ] || return 1
+    local ready=${COUPLE_DIR}/prebuild/chunk_${CHUNK_NUMBER}.ready
+    local stage=${COUPLE_DIR}/prebuild/chunk_${CHUNK_NUMBER}
+    if [ ! -f "${ready}" ]; then
+        [ -d "${COUPLE_DIR}/prebuild" ] && echo " *   no prebuilt couple_in for chunk ${CHUNK_NUMBER}; building it here"
+        return 1
+    fi
+    local sub nod nproc regen md5
+    sub=$(sed -n 's/^submesh=//p' "${ready}")
+    nod=$(sed -n 's/^nod2d=//p' "${ready}")
+    nproc=$(sed -n 's/^nproc=//p' "${ready}")
+    regen=$(sed -n 's/^regen=//p' "${ready}")
+    md5=$(sed -n 's/^geometry_md5=//p' "${ready}")
+    local why=""
+    if [ "${sub}" != "submesh_${CHUNK_END_DATE_fesom}" ]; then
+        why="built for ${sub}, this leg is submesh_${CHUNK_END_DATE_fesom}"
+    elif [ "${nproc}" != "${NPROC_fesom}" ]; then
+        why="partitioned for ${nproc} ranks, FESOM runs ${NPROC_fesom}"
+    elif [ "${regen}" != "${REGEN_OASIS_WEIGHTS:-0}" ]; then
+        why="built with REGEN_OASIS_WEIGHTS=${regen}"
+    elif [ "${md5}" != "$(md5sum "${COUPLE_DIR}/latest_ice_geometry.nc" | cut -c1-32)" ]; then
+        why="built from a different PISM geometry than latest_ice_geometry.nc"
+    elif [ "$(head -1 "${COUPLE_DIR}/${sub}/nod2d.out" 2>/dev/null | tr -d ' ')" != "${nod}" ]; then
+        why="${sub}/nod2d.out no longer has ${nod} nodes"
+    elif [ ! -f "${COUPLE_DIR}/${sub}/dist_${NPROC_fesom}/rpart.out" ] || [ ! -s "${COUPLE_DIR}/${sub}/mesh_cst.nc" ]; then
+        why="${sub} is incomplete"
+    elif [ ! -s "${stage}/latest_ice_geometry_for_fesom.nc" ]; then
+        why="no latest_ice_geometry_for_fesom.nc in ${stage}"
+    elif [ "${regen}" = "1" ] && [ "$(ls "${stage}"/oasis_regen/rmp_*feom*.nc 2>/dev/null | wc -l)" -lt 4 ]; then
+        why="oasis_regen in ${stage} is incomplete"
+    fi
+    if [ -n "${why}" ]; then
+        echo " *   prebuilt couple_in for chunk ${CHUNK_NUMBER} NOT used: ${why}; building it here"
+        rm -f "${ready}"
+        return 1
+    fi
+    echo " *   using the couple_in prebuilt by the PISM chain for chunk ${CHUNK_NUMBER} ($(sed -n 's/^built=//p' "${ready}"))"
+}
+
+function install_prebuilt_couple_in {
+    # Make the prebuilt submesh and OASIS set this leg's, as build_submesh and
+    # regenerate_oasis_weights would have left them (staging to restart/ and
+    # input/oifs follows in stage_oasis_regen).
+    local stage=${COUPLE_DIR}/prebuild/chunk_${CHUNK_NUMBER}
+    local sub=submesh_${CHUNK_END_DATE_fesom}
+    MAXMESH_DIR_fesom=$MAX_MESH   # remap_fesom_restart reads it; build_submesh sets it otherwise
+    promote_submesh "${sub}"
+    rm -rf "${COUPLE_DIR}/latest_submesh"
+    ln -sf "${COUPLE_DIR}/${sub}" "${COUPLE_DIR}/latest_submesh" || return 1
+    cp -f "${stage}/latest_ice_geometry_for_fesom.nc" "${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc" || return 1
+    if [ -d "${stage}/oasis_regen" ]; then
+        rm -rf "${COUPLE_DIR}/oasis_regen"
+        mv "${stage}/oasis_regen" "${COUPLE_DIR}/oasis_regen" || return 1
+    fi
+    # icebergs: what make_icebergs --prepare left, for the --from-state run in
+    # iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+    unset ICB_STATE_FILE
+    if [ "$(sed -n 's/^icebergs=//p' "${COUPLE_DIR}/prebuild/chunk_${CHUNK_NUMBER}.ready")" = "1" ] \
+            && [ -s "${stage}/icb_state.pkl" ]; then
+        cp -f "${stage}/latest_discharge_fesom.nc" "${COUPLE_DIR}/latest_discharge_fesom.nc" || return 1
+        cp -f "${stage}/icb_mask.nc" "${COUPLE_DIR}/icb_mask.nc" || return 1
+        ICB_STATE_FILE=${COUPLE_DIR}/prebuild/icb_state.chunk_${CHUNK_NUMBER}.pkl
+        mv -f "${stage}/icb_state.pkl" "${ICB_STATE_FILE}" || return 1
+    fi
+    # consumed: a rerun of this couple_in builds everything itself
+    rm -f "${COUPLE_DIR}/prebuild/chunk_${CHUNK_NUMBER}.ready"
+    rm -rf "${stage}"
+    echo " *   installed prebuilt ${sub} ($(head -1 ${COUPLE_DIR}/${sub}/nod2d.out | awk '{print $1}') nodes)"
+}
+
+function build_submesh {
+    echo " *** Building dynamic submesh from MAXMESH ***"
+
+    # SUBMESH_PREBUILD=1: the PISM chain builds the NEXT leg's submesh ahead of time
+    # (prebuild_couple_in) while the awiesm3 leg that runs on latest_submesh is still
+    # going. Then latest_submesh / previous_submesh must not move, and the geometry
+    # comes from the chunk-tagged PISM file instead of the AWI chain's fixed name.
+    if [ "${SUBMESH_PREBUILD:-0}" != "1" ]; then
+        promote_submesh "submesh_${CHUNK_END_DATE_fesom}"
+    fi
 
     SUBMESH_DIR=submesh_${CHUNK_END_DATE_fesom}/
     MAXMESH_DIR_fesom=$MAX_MESH
     echo " *   target submesh dir: ${SUBMESH_DIR}"
     echo " *   max mesh dir:       ${MAXMESH_DIR_fesom}"
-    mkdir -p $SUBMESH_DIR
+    mkdir -p $SUBMESH_DIR ${COUPLE_DIR}/${SUBMESH_DIR}
     rm -rf $SUBMESH_DIR/*
 
     # 1. Regrid PISM ice geometry to ocean resolution and onto the max-mesh nodes.
@@ -307,7 +576,8 @@ function build_submesh {
     # bilinear domain indicator (valid inside, missing outside).
     couple_timer "ice2fesom: regrid ice geometry"
     local _griddes=${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom}
-    local _geom=${COUPLE_DIR}/latest_ice_geometry.nc
+    local _geom=${ICE_GEOMETRY_FILE:-${COUPLE_DIR}/latest_ice_geometry.nc}
+    local _geom_fesom=${ICE_GEOMETRY_FOR_FESOM:-${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc}
     if [ "${ICE2FESOM_REMAP:-twohop}" = "masked" ]; then
         # One hop straight onto the max-mesh nodes, and the ice draft averaged over
         # FLOATING cells only: ice_subNN is 0 over open ocean, and a plain bilinear
@@ -321,17 +591,17 @@ function build_submesh {
         cdo -remapnn,${_griddes} -selname,mask ${_geom} tmp1_nn.nc
         cdo -setmisstoc,5 -mul tmp1_nn.nc tmp1_ind.nc tmp1_mask.nc
         cdo merge tmp1_cont.nc tmp1_draft.nc tmp1_mask.nc tmp2.nc
-        ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
+        ncks -O -d time,0 tmp2.nc ${_geom_fesom}
         rm -f tmp1_cont.nc tmp1_fl.nc tmp1_draft.nc tmp1_ind.nc tmp1_nn.nc tmp1_mask.nc tmp2.nc
     else
     echo " *   regridding ice geometry to max-mesh nodes (mask: remapnn + domain indicator)"
-    cdo -setmisstoc,5 -remapbil,T512grid -delname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_cont.nc
-    cdo -remapbil,T512grid -expr,"ind=mask*0+1" ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_ind.nc
-    cdo -remapnn,T512grid -selname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_nn.nc
+    cdo -setmisstoc,5 -remapbil,T512grid -delname,mask ${_geom} tmp1_cont.nc
+    cdo -remapbil,T512grid -expr,"ind=mask*0+1" ${_geom} tmp1_ind.nc
+    cdo -remapnn,T512grid -selname,mask ${_geom} tmp1_nn.nc
     cdo -setmisstoc,5 -mul tmp1_nn.nc tmp1_ind.nc tmp1_mask.nc
     cdo merge tmp1_cont.nc tmp1_mask.nc tmp1.nc
     cdo -remapnn,${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom} tmp1.nc tmp2.nc
-    ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
+    ncks -O -d time,0 tmp2.nc ${_geom_fesom}
     rm tmp1_cont.nc tmp1_ind.nc tmp1_nn.nc tmp1_mask.nc tmp1.nc tmp2.nc
     fi
 
@@ -342,7 +612,7 @@ function build_submesh {
         couple_timer "ice2fesom: gl_majority.py (element majority)"
         echo " *   grounding line by element majority (gl_majority.py)"
         GL_MAJORITY_MODE=element ${GL_MAJORITY_PY:-python3} ${FUNCTION_PATH}/../pism/gl_majority.py \
-            ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc ${MAXMESH_DIR_fesom}/ \
+            ${_geom_fesom} ${MAXMESH_DIR_fesom}/ \
             ${MAXMESH_DIR_fesom}/aux3d_undug.out ${_geom} \
             || { echo " *   build_submesh ERROR: gl_majority.py failed"; return 1; }
     fi
@@ -350,8 +620,8 @@ function build_submesh {
     # 2. Derive node flags (topo_raw, cavity_raw, mask) from the regridded geometry
     couple_timer "ice2fesom: mesh_flags.py"
     echo " *   generating mesh flags (mesh_flags.py)"
-    export PATH2COUPLE=${COUPLE_DIR}
-    export GEOMETRY_FILE=latest_ice_geometry_for_fesom.nc
+    export PATH2COUPLE=$(dirname ${_geom_fesom})
+    export GEOMETRY_FILE=$(basename ${_geom_fesom})
     python3 ${FUNCTION_PATH}/../pism/mesh_flags.py > mesh_flags.log 2>&1
 
     # 3. Compile and run the mesh-reduction tool to carve a submesh out of the max mesh
@@ -378,7 +648,7 @@ print(int((np.loadtxt('${COUPLE_DIR}/${SUBMESH_DIR}/cavity_depth.out')<-1e-3).su
     if [ "${_n_flag}" -gt 100 ] && [ $((_n_kept * 2)) -lt "${_n_flag}" ]; then
         couple_fail "ice2fesom FAILED: submesh kept <50% of flagged cavity nodes (${_n_kept}/${_n_flag}) - cavity amputation guard"
     fi
-    rm -rf ${COUPLE_DIR}/latest_submesh
+    [ "${SUBMESH_PREBUILD:-0}" = "1" ] || rm -rf ${COUPLE_DIR}/latest_submesh
 
     # 4. Partition the submesh and produce the CDO grid description, NATIVELY.
     #    Replaces the meshtools-creator Singularity container (mesh-partition +
@@ -447,7 +717,8 @@ NML
         || { echo " *   build_submesh ERROR: fesom_mesh_to_cdo.py failed"; return 1; }
 
     rm -f ${mesh_dir}/tmp*.nc
-    ln -sf ${COUPLE_DIR}/submesh_$CHUNK_END_DATE_fesom ${COUPLE_DIR}/latest_submesh
+    [ "${SUBMESH_PREBUILD:-0}" = "1" ] || \
+        ln -sf ${COUPLE_DIR}/submesh_$CHUNK_END_DATE_fesom ${COUPLE_DIR}/latest_submesh
 
     # 5. Build OCE_flag / GLAC_flag masks from the cavity-level file, if any
     couple_timer "ice2fesom: OCE_flag/GLAC_flag masks (cdo)"
@@ -748,6 +1019,9 @@ function fix_namcouple_feom_dim {
         echo " *   note: ${COUPLE_DIR}/antar_pism2ece.nc absent -- no plit to stage"
     fi
 
+    # The PISM chain prebuilds the next leg's couple_in in this environment.
+    write_prebuild_env
+
     local nc=${WORK_DIR_fesom}/namcouple
     if [ ! -f "${nc}" ]; then
         echo " *   fix_namcouple_feom_dim: no namcouple at ${nc}, skipping"
@@ -892,8 +1166,10 @@ function regenerate_oasis_weights {
     # initial files are actually in there.
     link_oifs_icm_into_ocp_tool
 
-    local out_dir=${COUPLE_DIR}/oasis_regen
-    local submesh=${COUPLE_DIR}/latest_submesh
+    # prebuild_couple_in points these at its staging dir and the not-yet-current
+    # submesh, and installs the result later with stage_oasis_regen (OASIS_REGEN_STAGE=0).
+    local out_dir=${OASIS_REGEN_OUT_DIR:-${COUPLE_DIR}/oasis_regen}
+    local submesh=${OASIS_REGEN_SUBMESH:-${COUPLE_DIR}/latest_submesh}
     rm -rf "${out_dir}"
     mkdir -p "${out_dir}"
 
@@ -1019,6 +1295,24 @@ SBEOF
             [ -e "${out_dir}/${bn}" ] || ln -sf "${f}" "${out_dir}/${bn}"
         done
     fi
+
+    # Prebuilt by the PISM chain: the awiesm3 leg that uses restart/ and
+    # input/oifs is still running, and its tidy would overwrite what is staged
+    # there now. ice2fesom stages it when it installs the prebuilt set.
+    if [ "${OASIS_REGEN_STAGE:-1}" = "0" ]; then
+        echo "     ...done. regenerated atm-side LSM set + feom weights -> ${out_dir} (not staged)"
+        return 0
+    fi
+    stage_oasis_regen
+}
+
+function stage_oasis_regen {
+    # Install ${COUPLE_DIR}/oasis_regen for the leg about to start: OASIS files
+    # into restart/oasis3mct, the regenerated ICMGG into input/oifs, and the
+    # per-leg plit masks into antar_pism2ece.nc. Split from
+    # regenerate_oasis_weights so that a set prebuilt by the PISM chain can be
+    # installed by ice2fesom after the previous awiesm3 leg has tidied.
+    local out_dir=${COUPLE_DIR}/oasis_regen
     # Stage the regenerated submesh OASIS descriptor + weight files into the
     # experiment's oasis3mct restart dir. That dir (${exp}/restart/oasis3mct/) is
     # where the next awiesm3 leg's prepcompute actually reads grids/masks/areas +
@@ -1239,6 +1533,15 @@ function iterative_coupling_ice_fesom_rename_vars {
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     echo " *** preparing iceberg-model forcing from PISM discharge ***"
 
+    local icb_disch=${COUPLE_DIR}/latest_discharge_fesom.nc
+    # Prebuilt by the PISM chain (install_prebuilt_couple_in): the discharge, its
+    # cell bounds and the generator's state are there, only the part that needs
+    # the iceberg restart is left (make_icebergs --from-state).
+    local icb_state=""
+    if [ -n "${ICB_STATE_FILE:-}" ] && [ -s "${ICB_STATE_FILE}" ] && [ -s "${icb_disch}" ]; then
+        icb_state=${ICB_STATE_FILE}
+        echo " *   continuing from the iceberg state the PISM chain prebuilt: ${icb_state}"
+    else
     # Resolve the PISM output dir from OUTPUT_DIR_pism (set by esm-tools / test
     # harness); fall back to the conventional sibling-of-COUPLE_DIR layout for
     # back-compat with older runscripts.
@@ -1271,7 +1574,6 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # make_icebergs is still reading: on levante (antfill1, 2026-10-09) it replaced
     # the file mid-read and make_icebergs died with "All arrays must be of the same
     # length". Nothing reads the pism chain's copy.
-    local icb_disch=${COUPLE_DIR}/latest_discharge_fesom.nc
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${icb_disch}
 
@@ -1290,6 +1592,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
             "${icb_disch}" "${ICB_BASIN_FILE}" ; then
         couple_fail "ice2fesom FAILED: add_cell_bounds"
+    fi
     fi
 
     # Re-seat the carried icebergs first. Their iceberg_elem is a global index on
@@ -1338,9 +1641,11 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             --restart "${ICB_RESTART_ISM:-}" \
             --seed "${CURRENT_YEAR_fesom:-0}" \
             --cavities "${ICB_USE_CAVITIES:-1}" \
-            --scaling "${ICB_SCALING:-1,1,1,1,1,1}" ; then
+            --scaling "${ICB_SCALING:-1,1,1,1,1,1}" \
+            ${icb_state:+--from-state "${icb_state}"} ; then
         couple_fail "ice2fesom FAILED: make_icebergs"
     fi
+    [ -n "${icb_state}" ] && rm -f "${icb_state}"
 
     use_icesheet_coupling=1
     echo "     ...done."

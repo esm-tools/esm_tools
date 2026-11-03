@@ -275,7 +275,16 @@ def prev_chunk_info(config):
             continue
 
         # prev_chunk finished_config
-        model_date, run_number = _read_model_date_file(config, model)
+        _wait_for_sibling_date_file(config, model)
+        date_and_run = _read_model_date_file(config, model)
+        if date_and_run is None:
+            user_error(
+                "Iterative coupling",
+                f"chunk {chunk_number} needs the date file of {model} "
+                f"({expid}_{model}.date in the experiment's scripts dir), which "
+                f"does not exist. Has the {model} chain finished its first leg?",
+            )
+        model_date, run_number = date_and_run
         finished_config = _find_model_finished_config(config, model, model_date)
 
         # Load prev_chunk info
@@ -430,6 +439,61 @@ def _read_model_date_file(config, model):
             model_date, run_number = model_dates.read().split()
 
         return model_date, run_number
+
+
+def _wait_for_sibling_date_file(config, model, timeout=1800, poll=10):
+    """
+    Concurrent coupling: wait until the sibling chain's ``.date`` file has been
+    written for the leg whose done-marker this chunk was started on.
+
+    The sibling touches ``<model>_chunk_<N>.done`` in its couple_out step, but
+    writes its ``.date`` file only at the end of its tidy job, a minute or two
+    later. A chain whose leg ends in that gap finds the marker, resubmits, and
+    would read a date file that is missing (chunk 2) or still the previous leg's
+    (later chunks). Waiting until the date file is at least as new as the marker
+    closes the gap. If it does not arrive within ``timeout`` seconds, the
+    sibling stopped between the two steps; that is reported as an error.
+    """
+    if _coupling_mode(config) != "concurrent":
+        return
+    from . import concurrent_coupling  # imports this module
+
+    if model != concurrent_coupling.sibling_name(config):
+        return
+    marker = concurrent_coupling.required_marker(config, config["general"]["chunk_number"])
+    if marker is None or not os.path.isfile(marker):
+        return  # not past the rendezvous: nothing to wait for
+
+    expid = config["general"]["expid"]
+    base_dir = _early_resolve(config, config["general"]["base_dir"])
+    date_file = f"{base_dir}/{expid}/scripts/{expid}_{model}.date"
+
+    def ready():
+        try:
+            return os.path.getmtime(date_file) >= os.path.getmtime(marker)
+        except OSError:
+            return False
+
+    if ready():
+        return
+    import time
+
+    logger.info(
+        f"Concurrent coupling: {os.path.basename(marker)} is there, waiting for "
+        f"{os.path.basename(date_file)} to be written (up to {timeout // 60} min)"
+    )
+    deadline = time.time() + timeout
+    while not ready():
+        if time.time() > deadline:
+            user_error(
+                "Concurrent coupling",
+                f"{os.path.basename(marker)} exists but {date_file} was not written "
+                f"after it within {timeout // 60} min: the {model} chain probably "
+                f"stopped between its couple_out and the end of its tidy job. "
+                f"Check its log, then relaunch it.",
+            )
+        time.sleep(poll)
+    logger.info(f"Concurrent coupling: {os.path.basename(date_file)} written, continuing")
 
 
 def _find_model_finished_config(config, model, model_date):

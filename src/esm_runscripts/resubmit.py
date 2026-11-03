@@ -283,11 +283,15 @@ def _write_date_file(config):  # self, date_file=None):
         f"/{config['general']['expid']}_{config['general']['setup_name']}.date"
     )
 
-    with open(date_file, "w") as date_file:
-        date_file.write(
+    # write-then-rename: in concurrent coupling the sibling chain reads this file
+    # (chunky_parts.prev_chunk_info) and must never see it half-written
+    tmp = f"{date_file}.tmp.{os.getpid()}"
+    with open(tmp, "w") as fid:
+        fid.write(
             config["general"]["current_date"].output()
             + " "
             + str(config["general"]["run_number"])
         )
+    os.replace(tmp, date_file)
     logger.debug("writing date file")
     return config

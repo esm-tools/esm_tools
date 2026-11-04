@@ -58,6 +58,27 @@ oifs:
                             NAERAD:
                                 LCMIP_STRATAER_CMIP7: True
                                 LCMIP_STRATAER_BCKGD: False
+                "piClim-control":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                "piClim-anthro":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                    
             add_namelist_changes:
                 fort.4:
                     NAMECECMIP:

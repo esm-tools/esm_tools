@@ -87,6 +87,10 @@ def prepare_environment(config):
         "account_all_fw_input": ice.get("account_all_fw_input", 0),
         "USE_YMONMEAN": ice.get("use_ymonmean", 0),
         "orog_reference_pism": ice.get("orog_reference_pism", 1),
+        # surface height handed to the atmosphere: "physical" or the legacy
+        # "thk_plus_topg" (pism_surface_elevation_expr in
+        # pism/coupling_pism2atmosphere.functions)
+        "orog_surface_definition": ice.get("orog_surface_definition", "physical"),
     }
 
     environment_dict.update(ice_domain_env.ice_domain_environment(config))

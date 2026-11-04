@@ -171,12 +171,31 @@ define_echam_names() {
         echam_glacial_mask_name=glac
 }
 
+## @fn update_orography_check_options()
+## Stop on a misspelt orography option instead of silently running with some
+## other behaviour.
+##   oro_regrid_method  remapcon (default) | remapbil (legacy)
+##   oro_lo_res_source  high_res (default) | restart  (legacy)
+update_orography_check_options() {
+        case "x${oro_regrid_method:-remapcon}" in
+            xremapcon|xremapbil) ;;
+            *)  echo " !!! oro_regrid_method must be 'remapcon' or 'remapbil', not >${oro_regrid_method}<"
+                echo " S T O P  49"; exit 49 ;;
+        esac
+        case "x${oro_lo_res_source:-high_res}" in
+            xhigh_res|xrestart) ;;
+            *)  echo " !!! oro_lo_res_source must be 'high_res' or 'restart', not >${oro_lo_res_source}<"
+                echo " S T O P  49"; exit 49 ;;
+        esac
+}
+
 ## @fn update_orography_to_echam_grid()
 ## PER DOMAIN. Bring this domain's surface height change onto the ECHAM grid
 ## (and onto T511 for the high resolution sub-grid parameters), so that the
 ## contributions of all domains can simply be added afterwards.
 update_orography_to_echam_grid() {
         ice_domain_require_selected update_orography_to_echam_grid
+        update_orography_check_options
 
         # A user supplied absolute ice orography wins over the anomaly that
         # the ice sheet model reported. Look for it per domain first, then in
@@ -202,13 +221,46 @@ update_orography_to_echam_grid() {
             fi
         fi
 
+        # oro_regrid_method (see update_orography_check_options):
+        #   remapcon -- every ECHAM cell gets the area mean of the ice sheet
+        #               cells it overlaps. A 5 km ice grid has ~1500 cells per
+        #               T63 cell; remapbil reads only the 4 around the centre,
+        #               which put single fjords or nunataks (+-1000 m) into
+        #               OROMEA.
+        #   remapbil -- the legacy behaviour, bit for bit.
+        # Without cell corners in ice.griddes remapcon cannot run; we then
+        # fall back to remapbil and say so (as regrid_to_echam does).
+        _u2e_method=${oro_regrid_method:-remapcon}
+        if [ "x${_u2e_method}" = "xremapcon" ] \
+           && ! ice_griddes_has_corners "${ICE_COUPLE_DIR}/ice.griddes"; then
+                echo "                !   oro_regrid_method=remapcon needs cell corners in"
+                echo "                !     ${ICE_COUPLE_DIR}/ice.griddes"
+                echo "                !   which it does not carry -- using remapbil for the orography."
+                _u2e_method=remapbil
+        fi
+        echo "                -   orography change to the ECHAM grids with ${_u2e_method}"
+
         if [ -f ${ice_orog_file} ]
         then
             # Absolute ice orography given: build the anomaly against the
             # orography that ECHAM reported in the *global* exchange file.
             for _u2e_res in ${RES_echam} T511 ; do
-                cdo -s remapbil,${_u2e_res}grid ${ice_orog_file} \
-                        ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc
+                if [ "x${_u2e_method}" = "xremapcon" ]; then
+                        # Mean over the part of the ECHAM cell that the ice
+                        # grid covers (fracarea): an absolute height must not be
+                        # diluted towards 0 at the edge of the ice domain.
+                        CDO_REMAP_NORM=fracarea cdo -s remapcon,${_u2e_res}grid \
+                                -setgrid,${ICE_COUPLE_DIR}/ice.griddes ${ice_orog_file} \
+                                ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc
+                else
+                        cdo -s remapbil,${_u2e_res}grid ${ice_orog_file} \
+                                ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc
+                fi
+                if [ ! -s ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc ]; then
+                        echo " !!! could not regrid ${ice_orog_file} to ${_u2e_res} with ${_u2e_method}"
+                        echo " S T O P  47"
+                        exit 47
+                fi
                 cdo -s gtc,0 ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc \
                         ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.mask.nc
                 cdo -s ifthen ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.mask.nc \
@@ -227,13 +279,26 @@ update_orography_to_echam_grid() {
                         ${ICE_COUPLE_DIR}/ice_orog_difference_${_u2e_res}grid.nc
             done
             unset _u2e_res _u2e_ref
-        elif [ -f "${hi_res_init_oro}" ]
-        then
-            regrid_to_echam ${ICE_COUPLE_DIR}/ice_orog_difference.nc remapbil T511
-            regrid_to_echam ${ICE_COUPLE_DIR}/ice_orog_difference.nc remapbil
         else
-            regrid_to_echam ${ICE_COUPLE_DIR}/ice_orog_difference.nc remapbil
+            # Anomaly: normalise by the full ECHAM cell area (destarea), i.e.
+            # the part of a cell outside the ice domain counts as "no change".
+            # With fracarea a cell that the domain only grazes would get the
+            # full change of the few ice cells inside it. (No effect on
+            # remapbil.)
+            _u2e_norm=${CDO_REMAP_NORM-unset}
+            export CDO_REMAP_NORM=destarea
+            if [ -f "${hi_res_init_oro}" ]; then
+                regrid_to_echam ${ICE_COUPLE_DIR}/ice_orog_difference.nc ${_u2e_method} T511
+            fi
+            regrid_to_echam ${ICE_COUPLE_DIR}/ice_orog_difference.nc ${_u2e_method}
+            if [ "x${_u2e_norm}" = "xunset" ]; then
+                unset CDO_REMAP_NORM
+            else
+                export CDO_REMAP_NORM=${_u2e_norm}
+            fi
+            unset _u2e_norm
         fi
+        unset _u2e_method
 
         # Normalise the per-domain anomalies before they are added up: same
         # variable name, no missing values, no time axis, lat/lon order. The
@@ -484,15 +549,23 @@ update_orography_apply_orography_anomaly_high_res() {
         # LA: need to backup echam6_new_orography_before_calnoro!!!
         ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
 
-        update_orography_apply_orography_anomaly
+        update_orography_apply_orography_anomaly from_high_res
 }
 
 ## @fn update_orography_apply_orography_anomaly()
 ## GLOBAL. As above: $ifile is already the sum over all ice domains.
+## Called with "from_high_res" right after the high-resolution orography was
+## updated; with oro_lo_res_source=high_res (default) OROMEA is then derived
+## from it (update_orography_lo_res_from_high_res). Otherwise -- legacy, or
+## the low resolution only path -- the anomaly is added to the restart OROMEA.
 update_orography_apply_orography_anomaly() {
         echo; echo "                *   applying surface height changes to low-resolution echam topography"
         ifile=${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
         ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
+        if [ "x$1" = "xfrom_high_res" ] && [ "x${oro_lo_res_source:-high_res}" = "xhigh_res" ]; then
+                update_orography_lo_res_from_high_res ${ofile}
+                return
+        fi
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
                 rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
         else
@@ -502,7 +575,76 @@ update_orography_apply_orography_anomaly() {
         ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
 }
 
-## @fn update_orography_prepare_calnoro_high_res() 
+## @fn update_orography_lo_res_from_high_res()
+## GLOBAL. Writes $1, the ECHAM-resolution orography, as the area mean of the
+## high-resolution orography that was just updated:
+##
+##     inside the ice domains:  OROMEA = unit.24 OROMEA
+##                                     + remapcon( HIGH - reference T511 )
+##     elsewhere:               OROMEA = restart OROMEA (unchanged)
+##
+## GEOSP and the sub-grid parameters (CALNORO) are made from HIGH as well, so
+## all of ECHAM's orography fields now describe one and the same surface.
+## Because it is rebuilt from HIGH every chunk, OROMEA no longer accumulates
+## its own regridding errors, and errors that earlier chunks left in the
+## restart OROMEA are replaced at the first update with this option.
+## Inside the ice domains the result is kept >= 0: the ice sheet surface is
+## never below sea level (see pism_surface_elevation_expr).
+##
+## Needs the same reference pair as update_orography_init_high_res_reference:
+## ${hi_res_init_oro} (T511) and ${INIT_DIR_echam}/unit.24 (ECHAM grid).
+update_orography_lo_res_from_high_res() {
+        typeset _lo_out=$1
+        typeset _lo_hi=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
+        typeset _lo_u24=${INIT_DIR_echam}/unit.24
+        typeset _lo_dom=${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc
+        typeset _lo_rfile _lo_f _lo_stats
+        echo "                -   OROMEA = area mean of the high-resolution orography (oro_lo_res_source=high_res)"
+
+        if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                _lo_rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+        else
+                _lo_rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+        fi
+        for _lo_f in "${_lo_hi}" "${hi_res_init_oro}" "${_lo_u24}" "${_lo_rfile}" "${_lo_dom}"; do
+                if [ -z "${_lo_f}" ] || [ ! -f "${_lo_f}" ]; then
+                        echo " !!! update_orography_lo_res_from_high_res: missing file >${_lo_f}<"
+                        echo " !!! (set oro_lo_res_source: restart under echam: to add the"
+                        echo " !!!  ECHAM-grid anomaly to the restart OROMEA instead)"
+                        echo " S T O P  49"
+                        exit 49
+                fi
+        done
+
+        cdo -s griddes -selname,OROMEA ${_lo_u24} > lo_grid.txt
+        # change since the reference, on T511, then area mean on the ECHAM grid
+        cdo -s -remapcon,lo_grid.txt \
+                -sub -setgrid,T511grid -selname,oromea ${_lo_hi} \
+                     -setgrid,T511grid -chname,OROMEA,oromea -selname,OROMEA ${hi_res_init_oro} \
+                lo_anom.nc 2>>cdo_stderr_ice2echam
+        cdo -s -maxc,0 -add -chname,OROMEA,oromea -selname,OROMEA ${_lo_u24} lo_anom.nc \
+                lo_new.nc 2>>cdo_stderr_ice2echam
+        ncks -O -v oromea ${_lo_rfile} lo_rst_raw.nc
+        cdo -s -setgrid,lo_grid.txt lo_rst_raw.nc lo_rst.nc 2>>cdo_stderr_ice2echam
+        cdo -s -ifthenelse -gtc,0 -setmisstoc,0 -setgrid,lo_grid.txt ${_lo_dom} \
+                lo_new.nc lo_rst.nc ${_lo_out} 2>>cdo_stderr_ice2echam
+        if [ ! -s ${_lo_out} ]; then
+                echo " !!! update_orography_lo_res_from_high_res: building ${_lo_out} failed (see cdo_stderr_ice2echam)"
+                echo " S T O P  49"
+                exit 49
+        fi
+
+        # How far this moved OROMEA away from the restart (large only at the
+        # first update of an experiment that ran with the old regridding).
+        _lo_stats=$(cdo -s -outputf,%.0f,3 -fldmax -abs -sub ${_lo_out} lo_rst.nc \
+                        -fldsum -gtc,50 -abs -sub ${_lo_out} lo_rst.nc \
+                        -fldsum -setmisstoc,0 -gtc,0 -setgrid,lo_grid.txt ${_lo_dom} 2>>cdo_stderr_ice2echam \
+                    | tr -s ' \n' ' ')
+        echo "                -   |OROMEA - restart OROMEA|: max, cells > 50 m, ice-domain cells: ${_lo_stats}"
+        rm -f lo_grid.txt lo_anom.nc lo_new.nc lo_rst_raw.nc lo_rst.nc
+}
+
+## @fn update_orography_prepare_calnoro_high_res()
 update_orography_prepare_calnoro_high_res() {
         echo; echo "                *   preparing for external program CALNORO"
         ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
@@ -1607,6 +1749,29 @@ update_land_runoff_set_namelist_modifications_next_jsbach_run() {
         add_to ${jsbach_variable_modify_file} jsbach_namelist_switches.dat config jsbach
 }
 
+## @fn ice_griddes_has_corners()
+## @brief Whether an ice grid description carries cell corner coordinates.
+##
+## Conservative remapping (remapcon*, remapycon*, remaplaf) needs cell corners;
+## bilinear and friends only need cell centres. Not every ice grid provides
+## them -- the Antarctic 8 km griddes in the PISM pool, for instance, has only
+## centres, while the Greenland one carries xbounds/ybounds.
+##
+## The griddes can be tens of MB, so the answer is cached for the file that was
+## asked about last; regrid_to_echam asks repeatedly within one domain.
+ice_griddes_has_corners() {
+        typeset _gd=$1
+        if [ "x${_ice_griddes_checked}" != "x${_gd}" ]; then
+                _ice_griddes_checked=${_gd}
+                if grep -qm1 -E '^[[:space:]]*(xbounds|ybounds)' "${_gd}" 2>/dev/null; then
+                        _ice_griddes_corners=1
+                else
+                        _ice_griddes_corners=0
+                fi
+        fi
+        [ "x${_ice_griddes_corners}" = "x1" ]
+}
+
 ## @fn regrid_to_echam() 
 regrid_to_echam() { 
         FILENAME=$1
@@ -1615,11 +1780,41 @@ regrid_to_echam() {
     if [[ "x$remapper" == "x" ]]; then
 		remapper=remapcon2
 	fi
+        typeset _r2e_griddes=${ICE_COUPLE_DIR:-${COUPLE_DIR}}/ice.griddes
+        # Fall back per domain when the grid cannot support the conservative
+        # operator. cdo would otherwise abort with "Source grid cell corner
+        # coordinates missing!", leave no output, and the missing *_${RES}grid.nc
+        # would only surface much later as a pile of nco file-not-found errors.
+        case ${remapper} in
+        remapcon|remapcon2|remapycon|remapycon2|remaplaf)
+                if ! ice_griddes_has_corners "${_r2e_griddes}"; then
+                        echo "                !   ${remapper} needs cell corner coordinates, which"
+                        echo "                !     ${_r2e_griddes}"
+                        echo "                !   does not carry -- using remapbil for $(basename ${FILENAME})."
+                        echo "                !   NOTE: remapbil is not conservative. Stage an ice.griddes"
+                        echo "                !   with xbounds/ybounds for this domain to keep it conservative."
+                        remapper=remapbil
+                fi
+                ;;
+        esac
 	echo "                -   regridding $FILENAME to echam ${RES} grid with $remapper"
         cdo -s -P 28 \
                 -$remapper,${RES}grid \
-                -setgrid,${ICE_COUPLE_DIR:-${COUPLE_DIR}}/ice.griddes \
+                -setgrid,${_r2e_griddes} \
                 $FILENAME ${FILENAME%.*}_${RES}grid.nc
+
+        # A failed remap used to be silent; the cascade of downstream nco errors
+        # did not name this step.
+        if [ ! -s "${FILENAME%.*}_${RES}grid.nc" ]; then
+                echo ""
+                echo " !!! Regridding produced no output:"
+                echo " !!!   in  : ${FILENAME}"
+                echo " !!!   out : ${FILENAME%.*}_${RES}grid.nc"
+                echo " !!!   grid: ${_r2e_griddes}  (remapper ${remapper})"
+                echo " S T O P  47"
+                exit 47
+        fi
+        unset _r2e_griddes
 }
 
 ## @fn set_in_jsbach_restart_file() 

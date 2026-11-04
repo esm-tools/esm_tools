@@ -65,6 +65,11 @@ def prepare_environment(config):
             "oro_hi_res_parent_file": config["echam"].get("oro_hi_res_parent_file", ""),
             "oro_hi_res_on_mismatch": config["echam"].get("oro_hi_res_on_mismatch", "abort"),
             "oro_hi_res_tolerance": config["echam"].get("oro_hi_res_tolerance", 100),
+            # how the ice sheet's orography change reaches the ECHAM grids, and
+            # where the T63 OROMEA comes from (see update_orography_to_echam_grid
+            # and update_orography_lo_res_from_high_res)
+            "oro_regrid_method": config["echam"].get("oro_regrid_method", "remapcon"),
+            "oro_lo_res_source": config["echam"].get("oro_lo_res_source", "high_res"),
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             "paleo_time": config["echam"].get("paleo_time", "pi"),

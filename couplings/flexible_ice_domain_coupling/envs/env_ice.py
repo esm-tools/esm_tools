@@ -92,6 +92,7 @@ def prepare_environment(config):
         "NYEAR": config["general"]["nyear"],
         "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
         "orog_reference_pism": ice.get("orog_reference_pism", 1),
+        "orog_surface_definition": ice.get("orog_surface_definition", "physical"),
         "first_year_in_chunk_input": ice["experiment_input_dir"]
         + "/"
         + config["general"]["expid"]

@@ -15,6 +15,22 @@ function pism2atmosphere {
         echo " * first_year_in_chunk_input = ${first_year_in_chunk_input}"
         echo " * last_year_in_chunk_restart = ${last_year_in_chunk_restart}"
 
+        # Which surface height is handed to the atmosphere (see
+        # pism_surface_elevation_expr). Checked here, before anything is
+        # written, so that a typo stops the run instead of changing it.
+        orog_surface_definition=${orog_surface_definition:-physical}
+        case "x${orog_surface_definition}" in
+            "xphysical"|"xthk_plus_topg") ;;
+            *)
+                echo ""
+                echo " orog_surface_definition must be 'physical' or 'thk_plus_topg',"
+                echo " but it is >>${orog_surface_definition}<<. Exit with error! "
+                echo " S T O P  49"
+                exit 49
+                ;;
+        esac
+        echo " * orog_surface_definition = ${orog_surface_definition}"
+
         if [[ $PISM_TO_ATMOSPHERE -eq 1 ]]; then
                 iterative_coupling_pism_atmosphere_write_grid
                 iterative_coupling_pism_atmosphere_write_names
@@ -339,26 +355,56 @@ function convert_ice_thk_diff_to_flux_over_pism_run {
                 $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
 }
 
-function generate_orography_anomaly_over_pism_run { 
+## @fn pism_surface_elevation_expr()
+## Prints the cdo -expr that turns a PISM file (thk, topg) into the surface
+## height the atmosphere sees, named ${OROG_VARNAME_pism}.
+##
+##   physical (default) -- height of the actual surface above sea level:
+##       grounded ice and bare land:  topg + thk
+##       floating ice:                freeboard  thk * (1 - rho_ice/rho_seawater)
+##       open ocean:                  0
+##     which is max(topg + thk, freeboard) for sea level 0 (PISM's default).
+##   thk_plus_topg (legacy) -- topg + thk everywhere. Over open ocean that is
+##     the bed depth (down to several km below sea level) and over floating ice
+##     it is far too low, so every retreat onto a marine bed pushed ECHAM's
+##     orography below sea level.
+##
+## Both files of an anomaly are evaluated with the same definition, so
+## switching between two chunks does not create a jump in the anomaly.
+## Densities: PISM defaults, overridable through RHO_ICE_pism/RHO_SEAWATER_pism.
+pism_surface_elevation_expr() {
+        if [ "x${orog_surface_definition:-physical}" == "xthk_plus_topg" ]; then
+                echo "${OROG_VARNAME_pism}=thk+topg"
+        else
+                typeset _fb
+                _fb=$(awk -v ri=${RHO_ICE_pism:-910} -v rw=${RHO_SEAWATER_pism:-1028} \
+                        'BEGIN { printf "%.8f", 1 - ri/rw }')
+                echo "${OROG_VARNAME_pism}=((topg+thk) > (thk*${_fb})) ? (topg+thk) : (thk*${_fb})"
+        fi
+}
+
+function generate_orography_anomaly_over_pism_run {
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
         ifile1=${last_year_in_chunk_restart}
-       
+        _orog_expr=$(pism_surface_elevation_expr)
+        echo "                 -   surface height (${orog_surface_definition:-physical}): ${_orog_expr}"
+
         # LA: as before use difference between PISM input and PISM restart for orography change 
         if [[ "x${orog_reference_pism}" == "x0" ]]; then 
             ifile2=${first_year_in_chunk_input}
             ofile=${ICE_COUPLE_DIR}/ice_orog_difference.nc
             cdo -s -sub \
                     -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
-                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    -expr,"${_orog_expr}" \
                     $ifile1 \
-                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    -expr,"${_orog_expr}" \
                     $ifile2 \
                     $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
         elif [ "x${orog_reference_pism}" == "x1" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ]; then 
             #ifile2="${ICE_COUPLE_DIR}/elev_lo.nc"
             ofile=${ICE_COUPLE_DIR}/ice_orog.nc
             cdo -s  \
-                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    -expr,"${_orog_expr}" \
                     $ifile1 \
                     $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
             ncwa -a time $ofile tmp
@@ -373,9 +419,9 @@ function generate_orography_anomaly_over_pism_run {
             ofile=${ICE_COUPLE_DIR}/ice_orog_difference.nc
             cdo -s -sub \
                     -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
-                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    -expr,"${_orog_expr}" \
                     $ifile1 \
-                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    -expr,"${_orog_expr}" \
                     $ifile2 \
                     $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
            echo " * continue with only ice thk diff approach"
@@ -385,6 +431,7 @@ function generate_orography_anomaly_over_pism_run {
 
         ncks -O -x -v GEOSP $ofile tmp.nc 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
         mv tmp.nc $ofile
+        unset _orog_expr
 }
 
 function generate_runoff_select_variables {

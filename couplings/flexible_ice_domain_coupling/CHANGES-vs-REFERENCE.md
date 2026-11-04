@@ -49,6 +49,40 @@ fractions → the JSBACH and vegetation restarts.
 *To reproduce the reference behaviour:* set `ISM_TO_ECHAM_reset_glac_in_ice_domain=0`
 in the coupling environment (it is a plain shell switch read by `ice2echam`).
 
+**ECHAM orography: physical surface, area-mean regridding, one source.**
+Three defaults change; together they take the spikes out of the T63
+`OROMEA`. In the old coupling, `OROMEA` was the 5 km PISM `thk+topg`
+point-sampled at the T63 cell centres: ±1000 m single-cell errors at the
+Greenland margins, land below sea level wherever ice retreated onto a marine
+bed, `OROMEA` outside `OROVAL`…`OROPIC`, and `GEOSP/g − OROMEA` off by several
+hundred metres at those cells. Through `elev_lo` the error also reached the
+lapse-rate downscaling for the ice sheet: 0.005 K/m × the `OROMEA` error.
+
+| key | new default | legacy value | what changes |
+|---|---|---|---|
+| `orog_surface_definition` (ice domain) | `physical` | `thk_plus_topg` | surface handed to the atmosphere = `max(topg+thk, freeboard)`: open ocean 0 instead of the bed depth, floating ice its freeboard |
+| `oro_regrid_method` (echam) | `remapcon` | `remapbil` | area mean of all ice-grid cells per ECHAM cell instead of the 4 around the centre. Anomalies are normalised by the full cell area (`destarea`), which also makes the sum over several domains exact |
+| `oro_lo_res_source` (echam) | `high_res` | `restart` | `OROMEA` = `unit.24` + area mean (T511 → ECHAM grid) of the high-res change, inside the ice domains; no longer restart `OROMEA` + a separately regridded anomaly. `OROMEA`, `GEOSP` and the CALNORO parameters then come from the same field |
+
+Checked offline on fix_oro/ssp585_1x1 data:
+* The legacy values reproduce the old code exactly (all variables and values).
+* One 500-year step, ssp585_1x1 PISM 2499 → 2999 started from PI: `OROMEA`
+  differs from `unit.24` + the true cell-mean change by mean |.| 1.1 m and at
+  most 13 m. Old chain: 21.8 m mean, at most 531 m.
+* The conservative remap conserves the volume change: 99.98 % at T63, where
+  bilinear gave 104.6 %.
+
+*Propagates to:* `OROMEA` → `elev_lo` (downscaled temperature for the ice
+sheet) and the SSO drag. In an experiment that already ran with the old scheme,
+the first update with `oro_lo_res_source: high_res` replaces the accumulated
+`OROMEA` errors in one step (up to ~1000 m at single cells; the log line
+`|OROMEA - restart OROMEA|` reports the size). Outside the ice domains nothing
+changes.
+
+*To reproduce the reference behaviour:* `orog_surface_definition:
+thk_plus_topg` in each ice domain runscript, and `oro_regrid_method: remapbil`
+and `oro_lo_res_source: restart` under `echam:`.
+
 ### 1.2 Affects the **dual** experiment
 
 **(a) CALNORO is now fed the current chunk's merged orography.**

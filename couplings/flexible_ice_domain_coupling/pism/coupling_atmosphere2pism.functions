@@ -1263,7 +1263,17 @@ ic_atm2pism_ablation_pdd_set_time_axis() {
                 calendar,time,o,c,${time_calendar} \
                 ${ICE_COUPLE_DIR}/atmo_given_file.nc tmp && mv tmp ${ICE_COUPLE_DIR}/atmo_given_file.nc
         
+        # Rebuild the time axis for this chunk's ${nt} steps. CreateTimeAxisNC
+        # refuses to overwrite (" S T O P   2"), so the axis of the first chunk
+        # was attached forever, even after ${nt} changed. Same as in
+        # iterative_coupling_ocean_pism_regrid_set_time_axis.
+        rm -f ${ICE_COUPLE_DIR}/time_axis_pism.nc
         ${FUNCTION_PATH}/../utils/CreateTimeAxisNC.bash ${nt} ${ICE_COUPLE_DIR}/time_axis_pism.nc 0 classic 365_day #${CHUNK_START_YEAR_pism} 
+        if [ ! -s ${ICE_COUPLE_DIR}/time_axis_pism.nc ]; then
+                echo " !!! could not build ${ICE_COUPLE_DIR}/time_axis_pism.nc (nt=${nt})"
+                echo " S T O P  50"
+                exit 50
+        fi
         #ncks -A ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc  ${ICE_COUPLE_DIR}/atmo_given_file.nc
         ncks -A ${ICE_COUPLE_DIR}/time_axis_pism.nc ${ICE_COUPLE_DIR}/atmo_given_file.nc
         #cdo -s settunits,days -settaxis,0000-01-01,00:00:00,1mon ${ICE_COUPLE_DIR}/atmo_given_file.nc tmp
@@ -1998,7 +2008,17 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
                 ${ICE_COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc tmp_with_taxis \
                 && mv tmp_with_taxis ${ICE_COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
 
+        # Rebuild the time axis for this chunk's ${nt} steps. CreateTimeAxisNC
+        # refuses to overwrite (" S T O P   2"), so the axis of the first chunk
+        # was attached forever, even after ${nt} changed. Same as in
+        # iterative_coupling_ocean_pism_regrid_set_time_axis.
+        rm -f ${ICE_COUPLE_DIR}/time_axis_pism.nc
         ${FUNCTION_PATH}/../utils/CreateTimeAxisNC.bash ${nt} ${ICE_COUPLE_DIR}/time_axis_pism.nc 0 classic 365_day #${CHUNK_START_YEAR_pism}
+        if [ ! -s ${ICE_COUPLE_DIR}/time_axis_pism.nc ]; then
+                echo " !!! could not build ${ICE_COUPLE_DIR}/time_axis_pism.nc (nt=${nt})"
+                echo " S T O P  50"
+                exit 50
+        fi
         ncks -A \
                 ${ICE_COUPLE_DIR}/time_axis_pism.nc \
                 ${ICE_COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc

@@ -656,8 +656,7 @@ update_orography_prepare_calnoro_high_res() {
                  $ifile \
                  $ofile 2>>cdo_stderr_ice2echam
         
-        ncwa -a time $ofile tmp
-        mv tmp $ofile
+        drop_time_dimension $ofile
 }
 
 ## @fn update_orography_prepare_calnoro() 
@@ -672,8 +671,7 @@ update_orography_prepare_calnoro() {
                  $ifile \
                  $ofile 2>>cdo_stderr_ice2echam
         
-        ncwa -a time $ofile tmp
-        mv tmp $ofile
+        drop_time_dimension $ofile
 }
 
 ## @fn update_orography_run_calnoro() 
@@ -789,8 +787,7 @@ update_orography_generate_target_orography_file() {
                 # Make sure dimension order is correct:
                 change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
 
-                ncwa -a time ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc tmp
-                mv tmp ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc
+                drop_time_dimension ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc
 
                 cdo -s -O merge \
                         ${ifile} \
@@ -1859,6 +1856,22 @@ set_in_jsbach_restart_file() {
                         tmp
                cp ${RESTART_FILE} ${RESTART_FILE%.*}_backup_before_replace_${TARGET_VARNAME}_$(date +%Y%m%d%H%M%S).nc
                mv tmp ${RESTART_FILE}
+        fi
+}
+
+## @fn drop_time_dimension()
+## Removes the time dimension (length 1) from $1 -- only if there is one.
+## The files this is used on normally have none; the old
+##     ncwa -a time $f tmp; mv tmp $f
+## then failed ("ncwa: ERROR no variables fit criteria", "mv: cannot stat
+## 'tmp'") and, had a stale "tmp" been lying in the working directory, would
+## have moved that over $f. A failing ncwa now leaves $f untouched.
+drop_time_dimension() {
+        typeset _dtd_f=$1
+        if ncdump -h "${_dtd_f}" | grep -qE '^[[:space:]]+time = '; then
+                ncwa -O -a time "${_dtd_f}" "${_dtd_f}.notime.nc" \
+                        && mv "${_dtd_f}.notime.nc" "${_dtd_f}"
+                rm -f "${_dtd_f}.notime.nc"
         fi
 }
 

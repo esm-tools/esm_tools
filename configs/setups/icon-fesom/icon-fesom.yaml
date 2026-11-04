@@ -10,7 +10,14 @@ computer:
             add_export_vars:
                NETLIBLAPACKROOT: "/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/"
                LIBFYAMLROOT: "/sw/spack-levante/libfyaml-0.7.12-fvbhgo/" 
-               ICON_CONFIGURE_COMMAND: "config/dkrz/levante.intel"
+               # relative to ${icon.destination}/build (see comp_command in icon.yaml)
+               ICON_CONFIGURE_COMMAND: "../config/dkrz/levante.intel"
+            
+            # overwrite the standalone jsbach land input as it 
+            # depends on the ocean grid in case of ICON-FESOM
+            jsbach_ic_dir: ${input_dir}/${icon.grid_id}-${fesom.resolution}/land/r00xx
+            jsbach_forcing_dir: ${jsbach_ic_dir}
+
         nesh:
             compiler_mpi: intel2023_ompi416_spack
             #compiler_mpi: intel2023_ompi415
@@ -22,6 +29,11 @@ computer:
                ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intelspack"
                #ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intel"
                #ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intelmpi"
+            
+            # overwrite the standalone jsbach land input as it 
+            # depends on the ocean grid in case of ICON-FESOM
+            jsbach_ic_dir: ${input_dir}/${icon.grid_id}-${fesom.resolution}/land/r00xx
+            jsbach_forcing_dir: ${jsbach_ic_dir}
                 
 general:
     model: icon-fesom 
@@ -59,6 +71,22 @@ general:
         - "_write_finalized_config"
         - "database_entry"
 
+# because of the hack for standalone, we need this
+# seb-wahl: 11/2026
+icon:
+    # ICON source code is checked out to ${general.model_dir}/${icon.destination}
+    # (see compile_infos in icon.yaml), but esm_master installs the binary
+    # into the setup's bin directory
+    model_dir: ${general.model_dir}/icon-${icon.version}
+    bin_sources:
+       bin_tag: ${general.model_dir}/bin/${executable}
+
+    input_sources:
+      # JSBACH
+      ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc
+      # hd file is ocean grid specific in the coupled case
+      bc_land_hd: ${jsbach_ic_dir}/hdpara_${resolution_lc}_${icon.grid_id}_${fesom.resolution}_sc_hfrac_s_v1.nc
+         
 fesom:
     choose_general.version:
        v1.0:

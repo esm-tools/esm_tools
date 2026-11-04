@@ -47,8 +47,11 @@ icon:
       git-repository: https://gitlab.dkrz.de/icon/icon-model.git 
       repo_options: --recursive
       branch: release-${icon.version} 
-      destination: icon
+      destination: icon-${icon.version} 
       install_bins: build/bin/icon
+      # ICON_CONFIGURE_COMMAND is exported per machine in the computer section
+      # at the end of this file (path relative to build/ or absolute), and can
+      # be overwritten in setups, e.g. icon-fesom.yaml
       comp_command: 'mkdir -p build ; cd build ; 
          $ICON_CONFIGURE_COMMAND ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
          make -j32' 
@@ -168,7 +171,7 @@ icon:
             #msg_level: 1
             restart_filename: ${expid}_restart_atm_<rsttime>.mfr
          radiation_nml:
-            ecrad_data_path: ${model_dir}/icon/externals/ecrad/data/ 
+            ecrad_data_path: ${model_dir}/externals/ecrad/data/ 
          output_nml:
             # TODO: different file names, look at f90nml issue
             # WORKAROUND is using a pre_run_command
@@ -418,16 +421,16 @@ icon:
 
    input_sources:
       # input files distributed with the source code
-      cloud_optics: ${model_dir}/icon/data/ECHAM6_CldOptProps.nc
-      radrrtm: ${model_dir}/icon/externals/ecrad/data/RADRRTM
-      radsrtm: ${model_dir}/icon/externals/ecrad/data/RADSRTM
-      socrates_droplet_rrtm: ${model_dir}/icon/externals/ecrad/data/socrates_droplet_scattering_rrtm.nc
-      fu_ice_rrtm: ${model_dir}/icon/externals/ecrad/data/fu_ice_scattering_rrtm.nc
-      mcica_gamma: ${model_dir}/icon/externals/ecrad/data/mcica_gamma.nc
+      cloud_optics: ${model_dir}/data/ECHAM6_CldOptProps.nc
+      radrrtm: ${model_dir}/externals/ecrad/data/RADRRTM
+      radsrtm: ${model_dir}/externals/ecrad/data/RADSRTM
+      socrates_droplet_rrtm: ${model_dir}/externals/ecrad/data/socrates_droplet_scattering_rrtm.nc
+      fu_ice_rrtm: ${model_dir}/externals/ecrad/data/fu_ice_scattering_rrtm.nc
+      mcica_gamma: ${model_dir}/externals/ecrad/data/mcica_gamma.nc
       # "dictionary" describing the translation of user-defined shortnames with names used
       # in ICON's "add_var" call
-      #vardict: ${model_dir}/icon/run/dict.iconam.mpim
-      dictlatbc: ${model_dir}/icon/run/dict.latbc
+      #vardict: ${model_dir}/run/dict.iconam.mpim
+      dictlatbc: ${model_dir}/run/dict.latbc
 
       # ICON grid description file
       #atmo_dyn_grid: ${input_dir}/grids/${grid_name}.nc 
@@ -456,16 +459,17 @@ icon:
       sst: ${input_dir}/path/to/data/SST_*__${resolution}_${grid_label}.nc
 
       # JSBACH
-      ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc
+      # ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc
+      ic_land_soil: ${jsbach_ic_dir}/../r0002/ic_land_soil.nc
       bc_land_sso: ${jsbach_ic_dir}/bc_land_sso.nc
       bc_land_phys: ${jsbach_ic_dir}/bc_land_phys.nc
       bc_land_soil: ${jsbach_ic_dir}/bc_land_soil.nc
-      lctlib: ${model_dir}/icon/externals/jsbach/data/lctlib_nlct21.def
+      lctlib: ${model_dir}/externals/jsbach/data/lctlib_nlct21.def
 
       # HD model 
       #bc_land_hd: ${jsbach_ic_dir}/hdpara_${resolution_lc}_0012_CORE2_sc_hfrac_s_v1.nc
       #bc_land_hd: ${input_dir}/common/hd/input/05deg/hdpara_vs1_12.nc
-      bc_land_hd: ${jsbach_ic_dir}/hdpara_${resolution_lc}_${icon.grid_id}_${fesom.resolution}_sc_hfrac_s_v1.nc
+      bc_land_hd: ${jsbach_ic_dir}/../r0001/hdpara_${resolution_lc}_${icon.grid_id}_sc_hfrac_s_v1.nc
 
    input_in_work:
       cloud_optics: ECHAM6_CldOptProps.nc
@@ -553,8 +557,20 @@ computer:
                jsbach_ic_dir: "" 
                jsbach_forcing_dir: ${jsbach_ic_dir}
 
+               # same environment as for the run section below and as in
+               # icon-fesom.yaml, nesh.intelspack requires the spack environment
                iolibraries: system_libs
-               compiler_mpi: intel2023_ompi415 
+               compiler_mpi: intel2023_ompi416_spack
+               # ICON_CONFIGURE_COMMAND is used in compile_infos.comp_command,
+               # which is executed inside ${icon.destination}/build, so give the
+               # path relative to the build directory (or an absolute path).
+               # Setups (e.g. icon-fesom.yaml) can overwrite this value.
+               add_export_vars:
+                  NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"
+                  LIBFYAMLROOT: "/gxfs_home/geomar/smomw235/sw/libfyaml-0.9.6/"
+                  ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intelspack"
+                  #ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intel"
+                  #ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intelmpi"
             levante:
                extpar_file: ""
                input_dir: "" 
@@ -565,18 +581,15 @@ computer:
 
                iolibraries: None 
                compiler_mpi: None
-               # this should work but esm_master is still stupid and can't resolve computer.name
-               #comp_command: ./config/dkrz/levante.intel --enable-openmp ; make -j 16 
-               #add_module_actions:
-               #   - purge
-               #   - load git
-               #choose_compiler_mpi:
-               #   intel:
-               #      add_export_vars:
-               #         ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.intel'"
-               #   gcc:
-               #      add_export_vars:
-               #         ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.gcc'"
+               # ICON ships its own configure wrappers that load the required
+               # modules, hence no compiler_mpi/iolibraries are needed here.
+               # ICON_CONFIGURE_COMMAND is used in compile_infos.comp_command,
+               # which is executed inside ${icon.destination}/build, so give the
+               # path relative to the build directory (or an absolute path).
+               # Setups (e.g. icon-fesom.yaml) can overwrite this value.
+               add_export_vars:
+                  ICON_CONFIGURE_COMMAND: "../config/dkrz/levante.intel"
+                  #ICON_CONFIGURE_COMMAND: "../config/dkrz/levante.gcc"
             "*":
                extpar_file: ""
                input_dir: "" 
@@ -591,16 +604,16 @@ computer:
                # in CMIP7 ICON uses backgroud aerosol + volcanic aerosol + MacSP
                aerosol_dir: ${input_dir}/${icon.grid_id}/aerosol_kinne/r0001
                ozone_dir: ${input_dir}/${icon.grid_id}/ozone/r0002
-               jsbach_ic_dir: ${input_dir}/${icon.grid_id}-${fesom.resolution}/land/r00xx
+               jsbach_ic_dir: ${input_dir}/${icon.grid_id}/land/r0002 # r0003 has broken links
                jsbach_forcing_dir: ${jsbach_ic_dir}
 
                choose_icon.resolution:
                   R02B04:
                      #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb_cdnc.nc
+                     extpar_file: ${input_dir}/${icon.grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${icon.grid_id}_20250306_tiles_jsb_cdnc.nc
                   R02B05:
                      #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20250306_tiles_jsb_cdnc.nc
+                     extpar_file: ${input_dir}/${icon.grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${icon.grid_id}_20250306_tiles_jsb_cdnc.nc
 
                iolibraries: None 
                compiler_mpi: None
@@ -625,21 +638,24 @@ computer:
                # in CMIP7 ICON uses backgroud aerosol + volcanic aerosol + MacSP
                aerosol_dir: ${input_dir}/${icon.grid_id}/aerosol_kinne/r0001
                ozone_dir: ${input_dir}/${icon.grid_id}/ozone/r0002
-               jsbach_ic_dir: ${input_dir}/${icon.grid_id}-${fesom.resolution}/land/r00xx
+               jsbach_ic_dir: ${input_dir}/${icon.grid_id}/land/r0002 # r0003 has broken links
                jsbach_forcing_dir: ${jsbach_ic_dir}
 
                choose_icon.resolution:
                   R02B04:
                      #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb_cdnc.nc
+                     extpar_file: ${input_dir}/${icon.grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${icon.grid_id}_20250306_tiles_jsb_cdnc.nc
                   R02B05:
                      #extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
-                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20250306_tiles_jsb_cdnc.nc
+                     extpar_file: ${input_dir}/${icon.grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${icon.grid_id}_20250306_tiles_jsb_cdnc.nc
 
-               #iolibraries: None 
-               #compiler_mpi: None
+               # must match the compile environment (see compile section above)
+               iolibraries: system_libs
+               compiler_mpi: intel2023_ompi416_spack
 
                add_export_vars:
+                  NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"
+                  LIBFYAMLROOT: "/gxfs_home/geomar/smomw235/sw/libfyaml-0.9.6/"
                   # optimization settings (from DKRZ)
                   MALLOC_TRIM_THRESHOLD_: "-1" 
                   SLURM_DIST_PLANESIZE: 32 

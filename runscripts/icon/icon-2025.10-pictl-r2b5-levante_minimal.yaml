@@ -1,0 +1,19 @@
+# Minimal standalone ICON (2025.10-public) runscript, R02B05 (grid 0030), levante.
+# Compile first with: esm_master comp-icon-2025.10-public
+general:
+   use_venv: False
+   user: !ENV ${USER}
+   account: bb0519
+   setup_name: icon
+   compute_time: "00:30:00"
+   initial_date: "1850-01-01"
+   final_date: "1851-01-01"
+   nyear: 1
+   base_dir: !ENV ${HOME}/esm/experiments
+   model_dir: !ENV ${HOME}/esm/models/icon-2025.10-public
+
+icon:
+   version: 2025.10-public
+   resolution: R02B05
+   grid_id: '0030'
+   nodes: 4

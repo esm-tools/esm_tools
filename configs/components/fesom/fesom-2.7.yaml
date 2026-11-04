@@ -57,7 +57,7 @@ fesom:
         # TODO: test on levante
         comp_command: 'FESOM_ROOT=$(pwd) ;
             mkdir -p build; cd build;
-            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
+            export yac_DIR=${icon.model_dir}/build/externals/yac ;
             cmake .. -DCMAKE_INSTALL_PREFIX=../
                   -DCMAKE_BUILD_TYPE=RelWithDebInfo
                   -DUSE_YAC=ON

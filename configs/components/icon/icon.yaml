@@ -32,7 +32,11 @@ icon:
    #- hdmodel
    #
    scenario: 'PI-CTRL'
-   monitoring: False 
+   # amip: True runs ICON standalone with prescribed SST/sea ice (AMIP),
+   # settings follow Trang's ICON-XPP CAP7 AMIP setup, see choose_amip below.
+   # Combine with scenario: 'cmip7hist' for transient forcing.
+   amip: False
+   monitoring: False
 
    compile_infos:
       choose_version:
@@ -85,6 +89,9 @@ icon:
    end_rsttime: ${next_date!syear!smonth!sday}T${next_date!shour!sminute!ssecond}Z
    # By default do a cold start
    lresume: false
+   # IFS analysis used for the cold start (overwritten in choose_amip)
+   ifs2icon_dir: ${input_dir}/${grid_id}/initial_conditions/r0001
+   ifs2icon_date: "2000010100"
 
    # parallelization
    nproma: 8 
@@ -226,7 +233,11 @@ icon:
                NAMELIST_atm:
                    radiation_nml:
                        irad_aero: 12
-                       irad_o3: ${with_ozone} 
+                       irad_o3: ${with_ozone}
+                   nwp_phy_nml:
+                       # scaling of the external (modis) cdnc by the simple plumes,
+                       # 2: piControl scaling factor fixed to 1850
+                       scale_cdnc_mode: 2
            add_forcing_files:
                swflux: swflux_picontrol
                ozone: ozone_picontrol
@@ -247,6 +258,20 @@ icon:
                        irad_cfc12: 4
                    ccycle_nml:
                        ccycle_config%ico2conc: 4
+                   nwp_phy_nml:
+                       # scaling of the external (modis) cdnc by the simple plumes,
+                       # 1: transient (historical) scaling factor
+                       scale_cdnc_mode: 1
+               NAMELIST_lnd:
+                   # transient land use change, reads bc_land_frac_${pfts}pfts_<year>.nc
+                   # (see bc_land_frac_hist in forcing_sources)
+                   jsb_alcc_nml:
+                       active: true
+                       lrestart_cont: true
+                       alcc_filename_prefix: bc_land_frac_${pfts}pfts_
+                   jsb_pplcc_nml:
+                       active: true
+                       lrestart_cont: true
 
            add_forcing_files:
                swflux: swflux_hist
@@ -257,6 +282,38 @@ icon:
                volc_hist: volc_hist
                macv2_sp: macv2_sp
                greenhouse_gases: greenhouse_gases
+
+   # AMIP: standalone ICON with prescribed SST and sea ice, following Trang's
+   # ICON-XPP CAP7 AMIP setup (mkexp, icon-mpim). The default (False) leaves the
+   # coupled ICON-FESOM setup untouched.
+   choose_amip:
+      True:
+         # same namelists as geomar, but with the CMIP7 output streams of Trang's setup
+         namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/${icon.resolution}/amip"
+         # HD only provides river runoff to the ocean, not needed in AMIP
+         jsbach_with_hd: no
+         add_namelist_changes:
+            NAMELIST_atm:
+               coupling_mode_nml:
+                  coupled_to_ocean: false
+               lnd_nml:
+                  # 6: SST and sea ice from (daily) files
+                  sstice_mode: 6
+                  sst_td_filename: bc_sst.nc
+                  ci_td_filename: bc_sic.nc
+                  # NWP sea ice model is active in AMIP
+                  albsi_snow_max: 0.81
+                  albsi_snow_min: 0.71
+            NAMELIST_lnd:
+               jsb_model_nml:
+                  # stop in case of water conservation problem
+                  enforce_water_budget: error
+         add_input_files:
+            sst: sst
+            sic: sic
+         # IFS analysis for the initial date (available for 1970 and 1979)
+         ifs2icon_dir: ${input_dir}/${grid_id}/initial_conditions/r0002
+         ifs2icon_date: ${general.initial_date!syear}010100
 
    #
    # output data settings
@@ -339,8 +396,7 @@ icon:
       atmo_dyn_grid: atmo_dyn_grid 
       atmo_dyn_grid_grfinfo: atmo_dyn_grid_grfinfo 
       extpar: extpar
-      sst: sst
-      sic: sic
+      # sst and sic are added in choose_amip
       bc_land_sso: bc_land_sso
       bc_land_phys: bc_land_phys
       bc_land_soil: bc_land_soil
@@ -381,7 +437,7 @@ icon:
       
       # solar forcing  
       swflux_picontrol: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_picontrol_v4-6_999-4000.nc
-      swflux_hist: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_picontrol_v4-6_999-4000.nc
+      swflux_hist: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_historical_v4-6_1849-2023.nc
 
       # ozone forcing
       ozone_picontrol: ${ozone_dir}/bc_ozone_cmip7_picontrol_v1-2_1850.nc
@@ -441,7 +497,7 @@ icon:
       # initial conditions
       #ifs2icon: ${input_dir}/grids/private/dian/mpim/${grid_id}/initial_condition/r0001/ifs2icon_2000010100_${resolution}_${grid_label}.nc
       #extpar: ${input_dir}/grids/public/mpim/0013/nwp/icon_extpar_${grid_id}_${resolution}_${grid_label}_20180820_tiles.nc
-      ifs2icon: ${input_dir}/${grid_id}/initial_conditions/r0001/ifs2icon_2000010100_${grid_id}_${resolution}_${grid_label}.nc
+      ifs2icon: ${ifs2icon_dir}/ifs2icon_${ifs2icon_date}_${grid_id}_${resolution}_${grid_label}.nc
 
       extpar: ${extpar_file}  
       # greenhouse gases
@@ -453,10 +509,10 @@ icon:
       # sveta also links 1851 and 1852 for PI-CTRL...
       kinne_fin: ${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1850.nc
 
-      # SST / sea ice
-      # TODO: not sure if that works.
-      sic: ${input_dir}/path/to/data/CI_*_${resolution}_${grid_label}.nc
-      sst: ${input_dir}/path/to/data/SST_*__${resolution}_${grid_label}.nc
+      # SST / sea ice, only used if amip: True (see choose_amip)
+      # daily PCMDI AMIP 1.1.10 data as in Trang's ICON-XPP AMIP setup
+      sic: ${input_dir}/${grid_id}/sst_and_seaice/r0001/SeaIce_CMIP_PCMDI-AMIP-1-1-10_194901-202112_daily_${grid_id}_${resolution}_${grid_label}.nc
+      sst: ${input_dir}/${grid_id}/sst_and_seaice/r0001/SST_CMIP_PCMDI-AMIP-1-1-10_194901-202112_daily_${grid_id}_${resolution}_${grid_label}.nc
 
       # JSBACH
       # ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc

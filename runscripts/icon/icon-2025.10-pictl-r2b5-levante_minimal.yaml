@@ -2,15 +2,17 @@
 # Compile first with: esm_master comp-icon-2025.10-public
 general:
    use_venv: False
-   user: !ENV ${USER}
    account: bb0519
    setup_name: icon
    compute_time: "00:30:00"
    initial_date: "1850-01-01"
    final_date: "1851-01-01"
    nyear: 1
-   base_dir: !ENV ${HOME}/esm/experiments
-   model_dir: !ENV ${HOME}/esm/models/icon-2025.10-public
+   # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to
+   # the job with the full value of the line (e.g. HOME=<model_dir>)
+   homedir: !ENV ${HOME}
+   base_dir: ${homedir}/esm/esm-experiments # links to /work/bb0519
+   model_dir: ${homedir}/esm/models/icon-2025.10-public
 
 icon:
    version: 2025.10-public

@@ -1,0 +1,88 @@
+# Standalone ICON (2025.10-public) AMIP runscript, R02B05 (grid 0030), levante.
+#
+# Model settings follow Trang's ICON-XPP CAP7 AMIP setup (mkexp, icon-mpim):
+#   - icon.amip: True       prescribed daily SST/sea ice, no ocean coupling, no HD,
+#                           CMIP7 output streams (namelists/icon/2025.10-public/R02B05/amip)
+#   - icon.scenario: cmip7hist  transient CMIP7 forcing (GHG, ozone, volcanic and
+#                           MACv2-SP aerosol, solar, land use change)
+# Process layout and performance settings are those of ICON-FESOM.
+#
+# Compile first with: esm_master comp-icon-2025.10-public
+#
+# Test: 2 days starting 1979-01-01 with a restart after 1 day.
+# For production change runlength/unit/final_date only, e.g. 5 year slabs:
+#    runlength: 5, unit: 'y', final_date: "1989-01-01T00:00:00"
+computer:
+    use_hyperthreading: True
+    additional_flags:
+        - "--tasks-per-node=128"
+    launcher_flags: "-l --kill-on-bad-exit=1 --hint=nomultithread --distribution=plane"
+    check_error:
+      "srun: error:" :
+          frequency: 30
+          method: "kill"
+          message: "SLURM ERROR: slurm ended with an error, good luck."
+          file: "stdout"
+
+general:
+   use_venv: False
+   account: bb0519
+   setup_name: icon
+   compute_time: "00:30:00"
+
+   initial_date: "1979-01-01T00:00:00"       # Initial exp. date
+   final_date: "1979-01-03T00:00:00"         # Final date of the experiment
+   # set length and unit of each run (= restart interval), both are used
+   # to set the ESM-Tools run length and the ICON restart intervals
+   runlength: 1
+   unit: 'd' # 'd' for day, 'm' for month, 'y' for year
+   # needs fixing, esm_tools can't resolve ${runlength} here
+   # https://github.com/esm-tools/esm_tools/issues/1453
+   # so set nday/nmonth/nyear to the same value as runlength
+   choose_unit:
+      'd':
+         nday: 1
+         unitUpper: 'D'
+      'm':
+         nmonth: 1
+         unitUpper: 'M'
+      'y':
+         nyear: 1
+         unitUpper: 'Y'
+
+   # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to
+   # the job with the full value of the line (e.g. HOME=<model_dir>)
+   homedir: !ENV ${HOME}
+   base_dir: ${homedir}/esm/esm-experiments # links to /work/bb0519
+   model_dir: ${homedir}/esm/models/icon-2025.10-public
+
+icon:
+   version: 2025.10-public
+   resolution: R02B05
+   grid_id: '0030'
+
+   amip: True
+   scenario: 'cmip7hist'
+
+   # as in ICON-FESOM
+   nproc: 2560
+   omp_num_threads: 1
+   dtime: 450
+
+   # restart after each run, output intervals are set per stream in the
+   # amip NAMELIST_atm
+   checkpoint_interval: P${general.runlength}${general.unitUpper}
+   restart_interval: ${checkpoint_interval}
+
+   pre_run_commands:
+       - "ulimit -c 0"
+       - "cd ${work_dir}"
+       # ICON reads the restart from a link that points to the multifile restart directory
+       - "ln -sf ${icon.parent_restart_dir}/${parent_expid}_restart_atm_${start_rsttime}.mfr multifile_restart_atmo.mfr"
+       # overcome limitation of f90nml who cannot handle the duplicate namelists output_nml in NAMELIST_atm correctly
+       - sed -i s/\'icon_/\'${general.expid}_/ NAMELIST_*
+
+   add_namelist_changes:
+      NAMELIST_atm:
+         run_nml:
+            msg_level: 10

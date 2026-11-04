@@ -168,17 +168,6 @@ rbf_scale_mode_ll        = 2
  htop_moist_proc         = 22500.                    
  hbot_qvsubstep          = 16000.                    
 /
-&sea_ice_nml
- albedoW_sim             = 0.066_wp         ! albedo of the ocean used in sea ice model
- albedoW                 = 0.085_wp         ! 0.066 albedo of the ocean water
- albs                    = 0.83_wp          !0.85_wp Albedo of snow (not melting)
- albsm                   = 0.77_wp          !0.70_wp Albedo of snow (melting)
- albi                    = 0.70_wp         ! 0.75_wp Albedo of ice (not melting)
- albim                   = 0.68_wp         ! 0.70_wp Albedo of ice (melting)
- Cd_ia                   = 1.20e-3_wp      ! Ice-atmosphere drag coefficient			
- t_heat_base             = -2.0_wp         ! -5.0 arbitrary temperature used as basis for
- hci_layer               = 0.25_wp         ! 0.10 Thickness of stabilizing constant heat capacity layer
-/
 &sleve_nml			                     
  min_lay_thckn           = 20.                       ! lowest level thickness (between half-levels)
  max_lay_thckn           = 400.                      ! maximum layer thickness below htop_thcknlimit

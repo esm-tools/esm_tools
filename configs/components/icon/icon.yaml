@@ -32,10 +32,34 @@ icon:
    #- hdmodel
    #
    scenario: 'PI-CTRL'
+   # CMIP7 ScenarioMIP used to continue the historical forcing in 'cmip7hist'
+   # (ozone from 2023, MACv2-SP simple plumes from 2024): vl, m, hl or h
+   cmip7_scenario: m
    # amip: True runs ICON standalone with prescribed SST/sea ice (AMIP),
    # settings follow Trang's ICON-XPP CAP7 AMIP setup, see choose_amip below.
    # Combine with scenario: 'cmip7hist' for transient forcing.
    amip: False
+   # SST and sea ice used if amip: True (daily files, sstice_mode = 6):
+   #   hadisst1p1:   CMIP7 CFMIP ImperialCollege-AMIP-HadISST1p1-1-0 (HadISST1.1),
+   #                 1949-01 .. 2024-12, mid-month boundary conditions computed by
+   #                 GEOMAR from the monthly means with the PCMDI (Taylor et al.,
+   #                 2000) algorithm, see r0002/README.md
+   #   hadisst1p1-origbcs: as hadisst1p1, but with the tosbcs/siconcbcs of the
+   #                 original dataset (sea ice not mean-preserving, ~16% too much
+   #                 summer sea ice in ICON)
+   #   pcmdi-1-1-10: CMIP7 PCMDI-AMIP-1-1-10 (HadISST1 + OISST v2.1) as used by
+   #                 Trang's ICON-XPP AMIP setup, 1949-01 .. 2022-01-16
+   amip_sst: hadisst1p1
+   choose_amip_sst:
+      hadisst1p1:
+         amip_sst_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0002
+         amip_sst_name: CFMIP_ImperialCollege-AMIP-HadISST1p1-1-0-midmonth_194901-202412
+      hadisst1p1-origbcs:
+         amip_sst_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0001
+         amip_sst_name: CFMIP_ImperialCollege-AMIP-HadISST1p1-1-0_194901-202412
+      pcmdi-1-1-10:
+         amip_sst_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
+         amip_sst_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
    monitoring: False
 
    compile_infos:
@@ -280,7 +304,7 @@ icon:
                bc_land_frac: bc_land_frac_picontrol
                bc_land_frac_hist: bc_land_frac_hist
                volc_hist: volc_hist
-               macv2_sp: macv2_sp
+               macv2_sp: macv2_sp_hist
                greenhouse_gases: greenhouse_gases
 
    # AMIP: standalone ICON with prescribed SST and sea ice, following Trang's
@@ -437,22 +461,26 @@ icon:
       
       # solar forcing  
       swflux_picontrol: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_picontrol_v4-6_999-4000.nc
-      swflux_hist: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_historical_v4-6_1849-2023.nc
+      # historical 1849-2023 + scenario 2024-2299 merged by GEOMAR: ICON reads
+      # Dec(year-1)..Jan(year+1), so the historical file alone fails from 2023 on
+      swflux_hist: ${input_dir}/common_geomar/solar_radiation/swflux_14band_cmip7_historical-scenario_v4-6_1849-2299.nc
 
       # ozone forcing
       ozone_picontrol: ${ozone_dir}/bc_ozone_cmip7_picontrol_v1-2_1850.nc
       # TODO: remove tmp changes once ozone data is available
       # for both r2b4 and r2b5
-      ozone_hist: 
+      # historical until 2022 (the historical 2023 file is a copy of 2022),
+      # CMIP7 ScenarioMIP ${cmip7_scenario}-1-0 from 2023 to 2101
+      ozone_hist:
          "${ozone_dir}/bc_ozone_cmip7_picontrol_v1-2_1850.nc":
             to: 1850
          "${ozone_dir}/bc_ozone_cmip7_historical_v2-0_@YEAR@.nc":
             from: 1851
-            to: 2023
-         # TODO: do proper scenario setup
-         "${ozone_dir}/bc_ozone_cmip7_historical_v2-0_2023.nc":
-            from: 2024
-         
+            to: 2022
+         "${input_dir}/${icon.grid_id}/ozone/CMIP7/ScenarioMIP/${cmip7_scenario}/${cmip7_scenario}-1-0/bc_ozone_cmip7_scenario_${cmip7_scenario}-1-0_@YEAR@.nc":
+            from: 2023
+            to: 2101
+
       # CMIP7 volcano aerosol forcing
       volc_hist: 
          "${input_dir}/common/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_1750.nc":
@@ -460,12 +488,23 @@ icon:
          "${input_dir}/common/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_@YEAR@.nc":
             from: 1751
             to: 2023
-      #   # TODO: do proper scenario setup
-         "${input_dir}/common/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_2023.nc":
+         # 2024-2025: 2023 scaled with the observed stratospheric AOD of GloSSAC v2.24
+         # (GEOMAR, see README.md there); later years persist 2025
+         # TODO: do proper scenario setup
+         "${input_dir}/common_geomar/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_@YEAR@.nc":
             from: 2024
+            to: 2025
+         "${input_dir}/common_geomar/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_2025.nc":
+            from: 2026
 
       macv2_sp: ${input_dir}/common/MACv2_simple_plumes_merged/SPv2.1_1850-2023_CMIP7.nc
-      greenhouse_gases: ${input_dir}/common/greenhouse_gases/greenhouse_gases_cmip7_0001-2023.nc
+      # historical + CMIP7 ScenarioMIP ${cmip7_scenario}, identical to the file above
+      # for 1850-2023, which has fill values (9.97e36) from 2024 on
+      macv2_sp_hist: ${input_dir}/common/MACv2_simple_plumes_cmip7/ScenarioMIP/SPv2.1_CMIP7_combined_hist-ScenarioMIP_${cmip7_scenario}_1850-2100.nc
+      # CMIP7 greenhouse gases extended by GEOMAR: 2023 and 2024 from NOAA/GML
+      # (the original 0001-2023 file has 2023 = 2022), 2025 = copy of 2024
+      # (ICON interpolates between mid-year values and needs year+1)
+      greenhouse_gases: ${input_dir}/common_geomar/greenhouse_gases/greenhouse_gases_cmip7_0001-2024.nc
 
       # SST / SEA ICE 
       #sst_ice: 
@@ -509,10 +548,10 @@ icon:
       # sveta also links 1851 and 1852 for PI-CTRL...
       kinne_fin: ${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1850.nc
 
-      # SST / sea ice, only used if amip: True (see choose_amip)
-      # daily PCMDI AMIP 1.1.10 data as in Trang's ICON-XPP AMIP setup
-      sic: ${input_dir}/${grid_id}/sst_and_seaice/r0001/SeaIce_CMIP_PCMDI-AMIP-1-1-10_194901-202112_daily_${grid_id}_${resolution}_${grid_label}.nc
-      sst: ${input_dir}/${grid_id}/sst_and_seaice/r0001/SST_CMIP_PCMDI-AMIP-1-1-10_194901-202112_daily_${grid_id}_${resolution}_${grid_label}.nc
+      # SST / sea ice, only used if amip: True (see choose_amip), selected by
+      # amip_sst (see choose_amip_sst above)
+      sic: ${amip_sst_dir}/SeaIce_${amip_sst_name}_daily_${grid_id}_${resolution}_${grid_label}.nc
+      sst: ${amip_sst_dir}/SST_${amip_sst_name}_daily_${grid_id}_${resolution}_${grid_label}.nc
 
       # JSBACH
       # ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc

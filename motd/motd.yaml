@@ -204,6 +204,78 @@ esm_environment_refactoring:
         action: DELAY(1)
         announcement: true
 
+parallel_file_movements:
+        package: "esm_tools"
+        versions: "<6.61.0"
+        message: "\x1b[1m\x1b[96mPARALLEL FILE MOVEMENTS WITH DASK!\x1b[0m\n
+
+            File movements (inputs, restarts, outputs, etc.) are now \x1b[96mparallelized by default\x1b[0m\n
+            using \x1b[1mDask\x1b[0m workers distributed across your compute nodes.\n
+
+            This speeds up the file-handling phases significantly, especially on large\n
+            allocations. No configuration changes are needed \x1b[35m- it just works!\x1b[0m hopefully ;)\n
+
+            If you prefer the previous behavior, you can switch to local threads or\n
+            disable parallelization in your runscript:\n
+
+            \ \ \x1b[35mgeneral\x1b[0m:\n
+            \ \ \ \ \x1b[96mparallel_file_movements\x1b[0m: \x1b[31m\"threads\"\x1b[0m \ \ \ \x1b[34m# local threads (good for < 5 nodes)\x1b[0m\n
+            \ \ \ \ \x1b[96mparallel_file_movements\x1b[0m: \x1b[31mFalse\x1b[0m \ \ \ \ \ \ \ \x1b[34m# serial\x1b[0m\n
+
+            This feature only works on SLURM at the moment, but we will very soon add PBS\n
+            support as well.\n
+
+            Read more at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_runscripts.html#parallel-file-movements\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
+geomar_merge:
+        package: "esm_tools"
+        versions: "<6.62.0"
+        message: "\x1b[1m\x1b[96mCONTRIBUTIONS FROM GEOMAR!\x1b[0m\n
+
+            This new release was a contribution from our coleagues at \x1b[1m\x1b[96mGEOMAR\x1b[0m. Big thanks to\n
+            them, specially to Sebastian Wahl, who was the main author, but also to Joakim\n
+            Kjellsson for his work on FOCIOFS. This release includes:\n
+            \x1b[96m→\x1b[0m The \x1b[1m\x1b[35mlatest settings from FOCIOIFS-5.0\x1b[0m (OIFS48r1 with NEMO5,
+            without (working) and\n
+            \ \ with (WIP) nest, used in WHIRLS project)\n
+            \x1b[96m→\x1b[0m The latest settings used in \x1b[1m\x1b[35mFOCI-MOZ\x1b[0m (FOCI with interactive
+            stratospheric\n
+            \ \ chemistry in ECHAM6, used in SOLVe project) the latest settings used
+            in the\n
+            \ \ RESCUE project (modified ECHAM6 and JSBACH (12 tiles))\n
+            \x1b[96m→\x1b[0m A draft version of \x1b[1m\x1b[35mICON-FESOM\x1b[0m that compiles and runs under
+            piControl conditions\n
+            \ \ (tuning ongoing)\n
+            \x1b[96m→\x1b[0m Bug fixes and improvements to the backend
+
+            "
+        action: DELAY(1)
+        announcement: true
+
+conda_support:
+        package: "esm_tools"
+        versions: "<6.64.0"
+        message: "\x1b[1m\x1b[96mIMPROVED CONDA ENVIRONMENT SUPPORT!\x1b[0m\n
+
+            ESM-Tools now \x1b[96mauto-detects and activates your conda environment\x1b[0m\n
+            inside the generated job scripts, no extra setup required!\n
+
+            If you launch \x1b[35mesm_runscripts\x1b[0m from within an active conda environment,\n
+            the same environment will be sourced on the compute nodes after the model is\n
+            launched, which solves problems of ESM-Tools packages not being found if the\n
+            previous lines of the .run file cleaned up the conda environment.\n
+
+            Read more at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/installation.html#installing-in-a-conda-environment\x1b[0m\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_runscripts.html#running-an-experiment-with-conda\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
 #online_workshops:
 #        package: "esm_tools"
 #        versions: "<7.0.0"

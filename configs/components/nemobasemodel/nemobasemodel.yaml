@@ -6,10 +6,14 @@ nemobasemodel:
     - 3.6foci_autotools
     - 4.2.0
     - 4.2.x
+    - 5.0.0
 
     choose_version:
       4.2.x:
         branch: branch_4.2
+        git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
+      5.0.0:
+        branch: branch_5.0
         git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
 
       4.2.0:

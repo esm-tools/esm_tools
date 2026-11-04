@@ -1,0 +1,324 @@
+!
+&coupling_mode_nml
+ coupled_to_ocean            = .TRUE.
+ coupled_to_aero             = .FALSE.
+ coupled_to_o3               = .FALSE.
+/
+!
+&parallel_nml
+ nproma                  = 8
+ p_test_run              = .false.
+ l_fast_sum              = .false.
+ l_test_openmp           = .false.
+ l_log_checks            = .false.
+ num_io_procs            = 4
+ pio_type                = 1                   ! default 1: asynchron io
+ num_restart_procs       = 8 ! number of procs for multifile restart
+ num_dist_array_replicas = 1 ! can be 1 iff passive or active (see HAVE_SLOW_PASSIVE_TARGET_ONESIDED) target RMA works well
+/
+&grid_nml
+ dynamics_grid_filename  = "iconR2B04_DOM01.nc"
+ dynamics_parent_grid_id = 0,1
+ !lredgrid_phys           = .true.
+ lredgrid_phys           = .false.,.false.
+ !radiation_grid_filename = "icon_grid_0011_R02B03_R.nc" 
+ radiation_grid_filename = " "
+ lfeedback               = .false.
+/ 
+&run_nml
+ num_lev                 = 90,90      ! number of full levels of vertical grid
+ dtime                   = 450             ! [s] timestep in seconds
+ modelTimeStep           = "PT450S"
+ ldynamics               = .TRUE.               ! dynamics
+ ltransport              = .TRUE.               ! transport
+ iforcing                = 3          !
+ ntracer                 =  5                   ! number of tracers - default 0
+ ltimer                  = .true.               ! 
+ ltestcase               = .false.              ! initialize with real data
+ timers_level            = 10
+ msg_level               = 7                    ! detailed report during integration (5-7 or 13 incl. seaice prints)
+ output                  = 'nml'
+ check_uuid_gracefully   = .true.
+ restart_filename        = "asd0094_restart_atm_<rsttime>.mfr"
+/
+&dynamics_nml
+ iequations              = 3
+ lcoriolis               = .TRUE.
+ divavg_cntrwgt          = 0.50
+/
+&diffusion_nml
+ hdiff_order             = 5
+ hdiff_efdt_ratio        = 24.0
+ hdiff_smag_fac          = 0.025
+ lhdiff_vn               = .TRUE.
+ lhdiff_temp             = .TRUE.
+ hdiff_multfac           = 1.0
+ hdiff_tv_ratio          = 1.0
+/
+&nwp_phy_nml
+ inwp_gscp               = 1
+ inwp_convection         = 1
+ inwp_radiation          = 4
+ inwp_cldcover           = 1
+ inwp_satad              = 1
+ inwp_sso                = 1
+ inwp_gwd                = 1
+ latm_above_top          = .false.
+ efdt_min_raylfric       = 7200.
+ itype_z0                = 2
+ icapdcycl               = 3
+ icpl_aero_conv          = 0           ! 1 if irad_aero=6 or 9 is used - 0 for irad_aero=12
+ icpl_aero_gscp          = 0           ! 1 if irad_aero=6 or 9 is used - 0 for irad_aero=12
+ icpl_o3_tp              = 1
+ !lshallow_liquid_only   = .true.
+ dt_rad                  = 3600.
+ dt_conv                 = 1800.       ! time step for convection in s (domain specific)
+ dt_sso                  = 1800.       ! time step for SSO parameterization
+ dt_gwd                  = 1800.       ! time step for gravity wave drag parameterization
+ !                                     ! parameters for jsbach/vdiff land model:
+ inwp_surface            = 2           ! 1 = terra; 2 = JSBACH
+ inwp_turb               = 6           ! 1 = terra; 6 = VDIFF
+/
+&nwp_tuning_nml
+ itune_albedo            = 0                         ! somewhat reduced albedo (w.r.t. MODIS data) over Sahara 
+ tune_zceff_min          = 0.025                     ! ** default value to be used for R3B7; use 0.025 for R2B6
+ tune_gkdrag             = 0.075                     ! R2B6: 0.075  
+ tune_gkwake             = 1.5                       ! R2B6: 1.5
+ tune_gfrcrit            = 0.425                     ! R2B6: 0.425
+ tune_dust_abs           = 0.
+ tune_box_liq_asy        = 3.5                       ! oper global: 3.0 , oper D2: 3.25, default: 2.5
+ tune_box_liq            = 0.05
+ tune_rcucov             = 0.075
+ tune_rhebc_land         = 0.825
+ tune_gust_factor        = 7.0
+ icpl_turb_clc           = 1
+ lcalib_clcov            = .false.                   ! turn off TCC, HCC, MCC, LCC tuning
+ tune_eiscrit            = 7.0                       ! to switch off conv param in stratocumulus regions
+ tune_zvz0i              = 0.85    ! 1.2 !  0.6      ! default: 0.85   ; Terminal fall velocity of ice
+ tune_entrorg            = 2.9e-3  !sl 3.0e-3 ! 2.2e-3 ! default: 1.95e-3; Entrainment parameter valid for dx=20 km
+ tune_sc_eis             = 7.            !  7.       ! default: 1000. - exec newer 633d375ad0
+/
+&turbdiff_nml
+ tkhmin                  = 0.6
+ tkhmin_strat            = 1.0
+ tkmmin                  = 0.75
+ tkmmin_strat            = 4
+ alpha0                  = 0.0123
+ alpha0_max              = 0.0335
+ alpha1                  = 0.125
+ pat_len                 = 750.
+ c_diff                  = 0.2
+ rlam_heat               = 10.0
+ rat_sea                 = 0.8
+ ltkesso                 = .true.                    ! SSO dissipation energy used in TKE equation
+ frcsmot                 = 0.2                       ! these 2 switches together apply vertical smoothing of the TKE source terms
+ imode_frcsmot           = 2                         ! in the tropics (only), which reduces the moist bias in the tropical lower troposphere
+ itype_sher              = 3                         ! use horizontal shear production terms with 1/SQRT(Ri) scaling to prevent unwanted side effects
+ ltkeshs                 = .true.                   
+ a_hshr                  = 2.0	                    
+ icldm_turb              = 1                         ! 2: Gauss clouds for turbulence    1: grid scale clouds
+ icldm_tran              = 2                         ! 2: Gauss clouds for surface layer 1: grid scale clouds
+/
+&transport_nml
+ ivadv_tracer            = 3,3,3,3,3
+ itype_hlimit            = 3,4,4,4,4,0
+ ihadv_tracer            = 32,2,2,2,2,0
+/
+&interpol_nml
+nudge_zone_width         = 8
+l_intp_c2l               = .true.
+rbf_scale_mode_ll        = 2
+! l_mono_c2l             = .true.
+! lsq_high_ord           = 3
+! support_baryctr_intp XS  =.true.,
+/
+&nonhydrostatic_nml
+ iadv_rhotheta           = 2
+ ivctype                 = 2
+ itime_scheme            = 4
+ exner_expol             = 0.333
+ vwind_offctr            = 0.2                       ! 0.2 for R2B6 and higher resolution, 0.3 for lower resolution
+ damp_height             = 44000.                    
+ rayleigh_coeff          = 0.5001                       ! default: 0.05
+ divdamp_order           = 24                        ! 2 ass, 24 fc
+ divdamp_type            = 32                        ! optional: 2 assimilation cycle, 32 forecast
+ divdamp_fac             = 0.004                     ! 0.004 for R2B6; recommendation for R3B7: 0.003
+ divdamp_trans_start     = 12500                     
+ divdamp_trans_end       = 17500                     
+ !!!l_open_ubc              = .false.                   
+ igradp_method           = 3	                     
+ l_zdiffu_t              = .true.                    
+ thslp_zdiffu            = 0.02	                     
+ thhgtd_zdiffu           = 125.	                     
+ htop_moist_proc         = 22500.                    
+ hbot_qvsubstep          = 16000.                    
+/
+&sea_ice_nml
+ albedoW_sim             = 0.066_wp         ! albedo of the ocean used in sea ice model
+ albedoW                 = 0.085_wp         ! 0.066 albedo of the ocean water
+ albs                    = 0.83_wp          !0.85_wp Albedo of snow (not melting)
+ albsm                   = 0.77_wp          !0.70_wp Albedo of snow (melting)
+ albi                    = 0.70_wp         ! 0.75_wp Albedo of ice (not melting)
+ albim                   = 0.68_wp         ! 0.70_wp Albedo of ice (melting)
+ Cd_ia                   = 1.20e-3_wp      ! Ice-atmosphere drag coefficient			
+ t_heat_base             = -2.0_wp         ! -5.0 arbitrary temperature used as basis for
+! hci_layer               = 0.25_wp         ! 0.10 Thickness of stabilizing constant heat capacity layer
+/
+&sleve_nml			                     
+ min_lay_thckn           = 20.                       ! lowest level thickness (between half-levels)
+ max_lay_thckn           = 400.                      ! maximum layer thickness below htop_thcknlimit
+ htop_thcknlimit         = 14000.                    
+ top_height              = 75000.                    
+ stretch_fac             = 0.9	                     
+ decay_scale_1           = 4000.                     
+ decay_scale_2           = 2500.                     
+ decay_exp               = 1.2	                     
+ flat_height             = 16000.                    
+/
+&io_nml				                     
+ lflux_avg               = .FALSE.                   ! true: averaged (ashfl_s), false: accumulated fluxes (accshfl_s)
+ itype_pres_msl          = 5                         ! (1) 3: IFS-type extrapolation
+ itype_rh                = 1                         ! (1) 2: mixed phase (water and ice)
+ inextra_3d              = 3                         ! 3D extra variables 
+ inextra_2d              = 10                        ! 2D extra variables 
+ restart_write_mode      = "joint procs multifile"   ! asynchron multifile restart handling; 'sync' for single file writing
+ lkeep_in_sync           = .TRUE.                    ! sync after each timestep
+ lnetcdf_flt64_output    = .FALSE.                   ! T: 64 bit output in all files
+/
+&initicon_nml
+ ifs2icon_filename     = "ifs2icon.nc"
+ filetype              = 4
+/
+&output_nml
+ filetype                = 4
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "1958-01-01T00:00:00Z"
+ output_interval         = "P1D"
+ file_interval           = "P50Y"
+ mode                    = 1
+ remap                   = 0
+ output_grid             = .FALSE. 
+ output_filename         = "icon_zmc_ml"
+ filename_format         = "<output_filename>_<datetime2>"
+ ml_varlist              = 'z_mc', 'z_ifc'
+/
+&output_nml
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1D"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ mode                    = 1                         ! 1: forecast mode (relative t-axis)
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_grid             = .FALSE.                   ! flag whether grid information is added to output.
+ output_filename         = "icon_atm_mon"      ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ ml_varlist              = 'tas_gmean','rsdt_gmean','rsut_gmean','rlut_gmean','radtop_gmean','prec_gmean','evap_gmean','pme_gmean'
+/
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1D"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_2d_ml"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'pres_msl', 'pres_sfc', 'sod_t', 'sou_t', 'thb_t', 't_s', 'clct', 'tot_prec_rate',
+                           'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m',
+                           'sob_t', 'thb_t', 'sob_s', 'thb_s', 'shfl_s', 'lhfl_s', 'qhfl_s', 
+                           'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate', 'qifl_s',
+                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 't_ice', 'h_ice',
+                           'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
+/
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1D"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_3d_ml"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv', 'rh', 'clc', 'tot_qc_dia', 'tot_qi_dia'
+/
+&dbg_index_nml
+  idbg_mxmn              = 1                          ! initialize MIN/MAX  debug output
+  idbg_val               = 0                          ! initialize one cell debug output
+  idbg_slev              = 1                          ! initialize start level for debug output
+  idbg_elev              = 3                          ! initialize start level for debug output
+/
+&extpar_nml
+ itopo                   = 1
+ n_iter_smooth_topo      = 1
+ heightdiff_threshold    = 3000.
+/
+&lnd_nml
+ nlev_snow               = 3
+ lmulti_snow             = .false.
+ itype_heatcond          = 3
+ idiag_snowfrac          = 20
+ lsnowtile               = .true.
+ llake                   = .true.
+ itype_lndtbl            = 4
+ itype_evsl              = 4
+ itype_trvg              = 3
+ itype_root              = 2
+ cwimax_ml               = 5.e-4
+ c_soil                  = 1.25
+ c_soil_urb              = 0.5
+ itype_snowevap          = 2
+ lprog_albsi             = .true. 
+ lseaice                 = .true.
+ hice_min                = 0.05        ! default of nwp sea-ice model - 0.05 in sea-ice model of icon-o
+ hice_max                = 10.0        ! must correspont to seaice_limit in icon-o in % of upper layer thickness
+ sstice_mode             = 1           ! 1 for coupled 
+ !                                     ! parameters for jsbach land model:
+ ntiles                  = 1           ! 1 for jsbach, 3 for terra?
+/
+&turb_vdiff_nml
+ fsl                     = 0.8         ! for lowest model layer thickness of 20m
+ pr0                     = 0.68   !0.85! default: 0.68; neutral limit Prandtl number (0.6 to 1.0)
+ f_theta_limit_fraction  = 0.25
+ f_theta_decay           = 1.0         ! default: 4.0
+/
+
+&radiation_nml
+ irad_o3                 = 7
+ irad_aero               = 12
+ izenith                 = 4           ! 4: NWP default, 3: no annual cycle
+! albedo_type             = 2 ! Modis albedo
+ vmr_co2                 = 284.3e-06   ! 1137.2e-6   ! piCTL : 284.3e-06   !
+ vmr_ch4                 = 808.2e-09   ! values for 1850 CE
+ vmr_n2o                 = 273.0e-09   ! values for 1850 CE
+ vmr_o2                  = 0.20946
+ vmr_cfc11               = 0.0
+ vmr_cfc12               = 0.0
+ direct_albedo           = 4
+ direct_albedo_water     = 3
+ albedo_whitecap         = 1
+ ecrad_llw_cloud_scat    = .true.
+ ecRad_data_path         = '/work/k20200/k202160/icon-fesom/icon/build/externals/ecrad/data'
+/
+&meteogram_output_nml
+  lmeteogram_enabled     = .false., .false.
+  n0_mtgrm               = 0                          ! meteogram initial time step (0 is first step!)
+  ninc_mtgrm             = 2, 4 ! meteogram output interval (in terms of time steps)
+  ldistributed           = .false., .false.
+  stationlist_tot        =  50.0,       8.6,    'Frankfurt-Flughafen',
+                            52.260,    14.313,  'Lindenberg_Obs',
+                            52.1873,   13.9894, 'Waldstation_Kehrigk',
+                            52.1215,   14.1077, 'Falkenberg',
+/

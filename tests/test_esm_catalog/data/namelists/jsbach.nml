@@ -1,0 +1,3 @@
+&jsbach_ctl
+    use_dynveg = .true.
+/

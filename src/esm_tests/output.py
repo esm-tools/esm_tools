@@ -1,5 +1,6 @@
 import copy
 import difflib
+import json
 import os
 import re
 import shutil
@@ -19,11 +20,16 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists"],
+    "run": [".run", "finished_config", "namelists", "hostfile_"],
 }
 
 
-def print_diff(info, sfile, tfile, name, ignore_lines):
+def _sort_yaml_lines(lines):
+    data = yaml.safe_load("".join(lines))
+    return yaml.dump(data, sort_keys=True, default_flow_style=False).splitlines(keepends=True)
+
+
+def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     """
     Prints the differences between two equivalent configuration files. Ignores the
     provenance comments.
@@ -40,6 +46,9 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
         Relative path to the file, for printing purposes.
     ignore_lines : list
         List of strings for lines containing them to be ignored in the comparison.
+    protected_strings : list, optional
+        Strings that must not be modified during cleanup (e.g. hardcoded
+        test-data paths in runscripts).
     """
     file_s = open(sfile).readlines()
     file_t = open(tfile).readlines()
@@ -49,10 +58,11 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
         file_t = del_ignore_dicts(info, file_t)
 
     # Substitute user lines in target string
-    file_t = clean_user_specific_info(info, file_t)
+    file_t = clean_user_specific_info(info, file_t, protected_strings)
 
-    # Pattern of provenance
-    provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
+    # Pattern of provenance. Use \s+ (not \s*) so the # must be preceded by at
+    # least one space — prevents matching # inside quoted yaml values like '#SBATCH'.
+    provenance_pattern = r'\s+#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
 
     # Check for ignored lines
     new_file_s = []
@@ -76,6 +86,10 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
             new_file_t.append(line_no_prov)
     file_t = new_file_t
 
+    if sfile.endswith(".yaml"):
+        file_s = _sort_yaml_lines(file_s)
+        file_t = _sort_yaml_lines(file_t)
+
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)
     differences = ""
     if diffobj.ratio() == 1:
@@ -93,6 +107,48 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
         identical = False
 
     return identical, differences
+
+
+def write_results_file(info):
+    """
+    Writes the errors and differences found during the tests to
+    ``info["results_file"]`` as a JSON list with one item per test: ``computer``,
+    ``model``, ``runscript``, ``errors`` (list of ``message`` and, optionally,
+    ``excerpt`` of the output) and ``differences`` (dictionary of file path and unified
+    diff). Colors are removed. Used in GitHub to build a summary of all tests.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+    """
+    ansi_colors = re.compile(r"\x1b\[[0-9;]*m")
+    tests = []
+    for model, scripts in info["scripts"].items():
+        if model == "general":
+            continue
+        for script, v in scripts.items():
+            differences = {}
+            for mode_differences in v.get("differences", {}).values():
+                for path, diff in mode_differences.items():
+                    differences[path] = ansi_colors.sub("", diff)
+            errors = [
+                {key: ansi_colors.sub("", value) for key, value in error.items()}
+                for error in v.get("errors", [])
+            ]
+            tests.append(
+                {
+                    "computer": info["this_computer"],
+                    "model": model,
+                    "runscript": os.path.basename(v["path"]),
+                    "errors": errors,
+                    "differences": differences,
+                }
+            )
+
+    with open(info["results_file"], "w") as f:
+        json.dump(tests, f, indent=1)
+    logger.info(f"Results written to '{info['results_file']}'")
 
 
 def del_ignore_dicts(info, yaml_file):
@@ -217,6 +273,7 @@ def save_files(info, user_choice):
             logger.error(f"'{model_config}' not found!")
         with open(model_config, "r") as c:
             config_test = yaml.load(c, Loader=yaml.FullLoader)
+        protected_strings = config_test.get("protected_strings", [])
         # Get name patters from the files to be compared
         compare_files_comp = copy.deepcopy(compare_files["comp"])
         compare_files_comp.extend(
@@ -263,7 +320,7 @@ def save_files(info, user_choice):
 
                         # Modify lines containing user-specific information
                         with open(target_path) as f:
-                            stext = clean_user_specific_info(info, f.read())
+                            stext = clean_user_specific_info(info, f.read(), protected_strings)
                         with open(target_path, "w") as f:
                             f.write(stext)
 
@@ -381,6 +438,60 @@ def print_results(results, info):
                         f"{first_tab}        {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}{date}"
                     )
     logger.info(f"{colorama.Fore.WHITE}")
+    logger.info("")
+
+
+def print_list(tests, info):
+    """
+    Prints the tests that would run (``--list``) with the same structure as
+    ``print_results`` (``model`` > ``version`` > ``runscript`` > ``computer``). The
+    ``bulletpoints`` and ``in_github`` items in ``info`` control the format as in
+    ``print_results``.
+
+    Parameters
+    ----------
+    tests : list
+        List of dictionaries with the keys ``computer``, ``model``, ``version`` and
+        ``runscript``, as returned by ``list_tests``.
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+    """
+    colorama.init(autoreset=True)
+
+    if info.get("bulletpoints", False):
+        bp = "- "
+    else:
+        bp = ""
+
+    if info["in_github"]:
+        first_tab = "|   "
+    else:
+        first_tab = "    "
+
+    # Nest the tests as ``model`` > ``version`` > ``runscript`` > [``computers``]
+    nested = {}
+    for test in tests:
+        script = test["runscript"].replace(".yaml", "")
+        nested.setdefault(test["model"], {}).setdefault(test["version"], {}).setdefault(
+            script, []
+        ).append(test["computer"])
+
+    logger.info("")
+    logger.info("")
+    logger.info(f"{bs}TESTS{be}")
+    logger.info("")
+    for model, versions in sorted(nested.items()):
+        logger.info(f"{bp}{colorama.Fore.CYAN}{model}:")
+        for version, scripts in sorted(versions.items()):
+            logger.info(f"{first_tab}{bp}{colorama.Fore.MAGENTA}{version}:")
+            for script, computers in sorted(scripts.items()):
+                logger.info(f"{first_tab}    {bp}{colorama.Fore.WHITE}{script}:")
+                for computer in computers:
+                    logger.info(
+                        f"{first_tab}        {bp}{colorama.Fore.WHITE}{computer}"
+                    )
+    logger.info(f"{colorama.Fore.WHITE}")
+    logger.info(f"{len(tests)} tests")
     logger.info("")
 
 

@@ -155,9 +155,9 @@ def test_reg_choose_1():
     description: conflict between nested `choose_execution_mode` and
         `choose_computer.execution_mode`
     """
-    config = yaml_file_to_dict(f"{ESM_PARSER_TESTS_DIR}/data/reg_choose_1.yaml")
+    config = yaml_file_to_dict(f"{ESM_PARSER_TESTS_DIR}/data/reg_choose_1.yaml", register_sections=False)
     expected_config = yaml_file_to_dict(
-        f"{ESM_PARSER_TESTS_DIR}/data/expected_reg_choose_1.yaml"
+        f"{ESM_PARSER_TESTS_DIR}/data/expected_reg_choose_1.yaml", register_sections=False
     )
     config = prepare_config(config)
 

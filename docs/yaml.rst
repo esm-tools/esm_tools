@@ -115,6 +115,84 @@ syntax for `YAML` files including calendar and math operations (see
 The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
+Sections
+~~~~~~~~
+
+Every root-level key in an ESM-Tools YAML file is a **section** (short for *yaml section*). Sections
+group variables related to the same aspect of the configuration and trigger specific functionality
+for the type of component that that section is associated to. The most common sections are named
+after models, coupled setups, or computers, all considered also categories of components. For example:
+
+.. code-block:: yaml
+
+   fesom:
+       time_step: 1800
+       mesh_dir: /pool/meshes/CORE2
+
+   echam:
+       resolution: T63
+
+``fesom`` and ``echam`` are sections in the example above, associated to the model components ``fesom``
+and ``echam`` respectively.
+
+Different functionality is triggered for the variables nested under these sections, depending on their
+component's type (e.g. model, coupled-setup, computer, system, etc.).
+
+Sections in yaml files are validated by the `esm_parser`, that raises an error if an unrecognised
+key is found at the root level. See this example for an invalid section (in contrast with the valid
+one above):
+
+.. code-block:: yaml
+
+   # Wrong: time_step must be nested under a section
+   time_step: 1800
+
+   # Correct
+   fesom:
+       time_step: 1800
+
+Include new sections
+--------------------
+
+Valid sections are derived from the existing components defined in the experiment configuration,
+and include:
+
+1. the coupled-setup section (e.g. ``awicm``, ``foci``, ``awiesm3``, ``icon-fesom``, etc.)
+2. model sections (e.g. ``oifs``, ``fesom``, ``echam``, ``pism``, ``oasis3mct``, ``icon``, etc.)
+3. HPC machine sections (``computer``)
+4. system sections (``general``, ``dask``)
+
+To **add a model section** include the model component into ``general.valid_model_names`` in one of
+the yaml files:
+
+.. code-block:: yaml
+
+   general:
+       add_valid_model_names:
+           - <my_model>
+
+   <my_model>:
+       [ ... ]
+
+Model sections are special in that there is additional functionality that is triggered for
+each of them, such as possible model compilation with ``esm_master``, and in ``esm_runscripts``
+creation of directories with their names inside the experiment dirs, file operations/tidying up after
+the simulation chunks, etc.
+
+If instead you just need to **add a new yaml section** to the configuration, without triggering any
+additional functionality for that section, use ``general.other_components``:
+
+.. code-block:: yaml
+
+   general:
+       other_components:
+           - <my_new_section>
+
+   <my_new_section>:
+       [ ... ]
+
+See :ref:`esm_variables:Tool-Specific Elements/Variables` for details on ``valid_model_names`` and ``other_components``.
+
 Variable Calls
 ~~~~~~~~~~~~~~
 

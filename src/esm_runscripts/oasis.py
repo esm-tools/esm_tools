@@ -553,6 +553,7 @@ class oasis:
             gconfig["run_number"] == 1
             and config["lresume"]
             and gconfig["jobtype"] == "prepcompute"
+            and config.get("norestart", "F") == "F"
         ):
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
@@ -569,12 +570,18 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{restart_file_path}*"
+                    f"{config['ini_restart_dir']}{restart_file}*"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"
                 )
             else:
+                glob_search_file = restart_file_path
+
+            # add support for oasis_date_stamp (which for some reason does
+            # not work anymore after awi-geomar merge in 2025 without the two lines below)
+            # reason unknown, but the entire section here should be revised soon anyways 
+            if config.get('oasis_date_stamp'):
                 glob_search_file = restart_file_path
 
             glob_restart_file = glob.glob(glob_search_file)
@@ -585,7 +592,13 @@ class oasis:
                     restart_file = os.path.basename(glob_restart_file[0])
                 elif len(glob_restart_file) == 0:
                     restart_file = restart_file_path
-                    if not os.path.isfile(restart_file):
+                    # in case config["restart_in_sources"] are given explicitely 
+                    # AND are not absolute paths as e.g in FOCI
+                    # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                    #    restart_in_sources: sstocean_${parent_expid}_...
+                    # we need to check for the full path as well 
+                    # btw it was a nightmare to track this down
+                    if not os.path.isfile(restart_file) and not os.path.isfile(f"{config['ini_restart_dir']}/{restart_file}"):
                         user_error(
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file_label}`` found "

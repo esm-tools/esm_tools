@@ -14,6 +14,7 @@ class TestAllowedMissingFiles(unittest.TestCase):
                 },
             },
             "foo_model": {},
+            "dask": {},
         }
         return super().setUp()
 

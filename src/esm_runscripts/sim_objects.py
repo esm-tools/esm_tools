@@ -243,3 +243,5 @@ class SimulationSetup(object):
         )
         if "prev_chunk_objs" in self.config["general"]:
             del self.config["general"]["prev_chunk_objs"]
+
+        self.config["general"]["system_components"].extend(self.config.prev_objects)

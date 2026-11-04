@@ -1,33 +1,31 @@
 yac:
     model: yac
-
+    version: icon-internal
     available_versions:
-    - 1.5.5
-    clean_command: make clean
-    comp_command: make
-    conf_command: autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2
-      --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack
-      --disable-lib-only --enable-silent-rules
-    destination: yac
+        - 1.5.5
+        - icon-internal
+    clean_command: 
+    comp_command: 
+    conf_command: 
     choose_version:
-            1.5.5:
-                    branch: v1.5.5
-                    repo_tag: v1.5.5
-    git-repository: https://gitlab.dkrz.de/dkrz-sw/yac.git
+        1.5.5:
+            branch: v1.5.5
+            repo_tag: v1.5.5
+            clean_command: make clean
+            comp_command: make
+            conf_command: autoreconf -iv; ./configure LDFLAGS=-Wl,-rpath,$NETCDFROOT/lib --with-xml2-include=/usr/include/libxml2 --with-xml2-lib=/usr/lib64/ --with-netcdf-root=$NETCDFROOT --with-clapack-root=${model_dir}/clapack --disable-lib-only --enable-silent-rules
+            git-repository: https://gitlab.dkrz.de/dkrz-sw/yac.git
+            destination: yac
+        icon-internal:
+            clean_command: echo "Nothing to clean if compiled with ICON" 
+            comp_command: echo "Nothing to clean if compiled with ICON" 
+            conf_command: echo "Nothing to clean if compiled with ICON" 
 
     metadata:
         Information: "For more information about YAC please go to the webpage: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html"
 
+    input_sources:
+        coupling_yaml: ${icon.input_dir}/coupling.yaml
+    input_files:
+        coupling_yaml: coupling_yaml 
 
-    config_files:
-        coupling_xsd:  coupling_xsd
-
-computer:
-    choose_computer.name:
-            mistral:
-                    add_module_actions:
-                            - "load autoconf/2.69"
-                            - "load automake/1.16.1"
-            ollie:
-                    add_module_actions:
-                            - "load automake"

@@ -152,3 +152,11 @@ pack
 unpack
 jsbach_init_file
 calnoro
+
+# esm_catalog
+*.duckdb
+*.duckdb.wal
+
+# Local test-data artifacts (large binary DBs, never committed)
+tests/data/
+.claude/

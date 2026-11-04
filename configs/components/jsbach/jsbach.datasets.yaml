@@ -10,8 +10,8 @@ jsbach:
 
     input_sources:
             lctlib: "${echam.model_dir}/lctlib_nlct21.def"
-            "jsbach_1850": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
-            "jsbach_1976": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1976${jsbachnc_file_ending}.nc"
+            "jsbach_1850": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_${tiles}tiles_5layers_1850${jsbachnc_file_ending}.nc"
+            "jsbach_1976": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_${tiles}tiles_5layers_1976${jsbachnc_file_ending}.nc"
 
             # FOCI specific input sources
             "cpools_foci": "${adj_input_dir}/cpools_${echam.resolution}${echam.ocean_resolution}_pdv0002_51251231.nc"
@@ -63,9 +63,9 @@ jsbach:
                     hist_fold: "hist"
                     add_forcing_sources:
                             "cover_fract_HIST":
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_11tiles_1850.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_${tiles}tiles_1850.nc":
                                             to: 1850
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_11tiles_@YEAR@.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_${tiles}tiles_@YEAR@.nc":
                                             from: 1851
             r0009:
                     add_forcing_sources:
@@ -74,9 +74,9 @@ jsbach:
                             "lightning": "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}.nc"
                             "popdens":   "${input_dir}/${echam.resolution}/spitfire/population_density_HYDE_${echam.resolution}.nc"
                             "cover_fract_HIST":
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_11tiles_1850.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_${tiles}tiles_1850.nc":
                                             to: 1850
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_11tiles_@YEAR@.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}${echam.ocean_resolution}_${tiles}tiles_@YEAR@.nc":
                                             from: 1851
             r0010:
                     add_forcing_sources:
@@ -90,18 +90,20 @@ jsbach:
                                     "${input_dir_couple}/${echam.resolution}/spitfire/population_density_${ssp_num}_${echam.resolution}.nc": # see README.md in this dir
                                             from: 1850
                                             to: 2100
+
+                            # land cover fractions
                             "cover_fract_HIST":
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}_${tiles}tiles_1850.nc":
                                             to: 1850
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}_${tiles}tiles_@YEAR@.nc":
                                             from: 1851
                             "cover_fract_hist_scenario":
-                                    "${cover_fract_dir}/cover_fract_11tiles_1850.nc":
+                                    "${cover_fract_dir}/cover_fract_${tiles}tiles_1850.nc":
                                             to: 1850
-                                    "${cover_fract_dir}/cover_fract_11tiles_@YEAR@.nc":
+                                    "${cover_fract_dir}/cover_fract_${tiles}tiles_@YEAR@.nc":
                                             from: 1851
                                             to: 2014
-                                    "${cover_fract_dir}/${echam.scenario}/cover_fract_11tiles_@YEAR@.nc":
+                                    "${cover_fract_dir}/${echam.scenario}/cover_fract_${tiles}tiles_@YEAR@.nc":
                                             from: 2015
                             "LU_trans_hist_scenario":
                                     "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
@@ -109,9 +111,9 @@ jsbach:
                                     "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc":
                                             from: 2015
                             "cover_fract_ssp":
-                                    "${cover_fract_dir}/cover_fract_${echam.resolution}_11tiles_1850.nc":
+                                    "${cover_fract_dir}/cover_fract_${echam.resolution}_${tiles}tiles_1850.nc":
                                             to: 2014
-                                    "${input_dir}/${echam.resolution}/land_use_maps/${echam.scenario}/cover_fract_${echam.resolution}_11tiles_@YEAR@.nc":
+                                    "${input_dir}/${echam.resolution}/land_use_maps/${echam.scenario}/cover_fract_${echam.resolution}_${tiles}tiles_@YEAR@.nc":
                                             from: 2015
                                             to: 2300
 

@@ -1,0 +1,66 @@
+computer:
+    use_hyperthreading: True
+    additional_flags: "--threads-per-core=2"
+   # launcher_flags: -l --kill-on-bad-exit=1 --nodes=${SLURM_JOB_NUM_NODES:-1} --distribution=plane --hint=nomulti     thread --ntasks=$((no_of_nodes * mpi_procs_pernode)) --ntasks-per-node=${mpi_procs_pernode} --cpus-per-task=${OMP_NUM_THREADS}
+    launcher_flags: "-l --kill-on-bad-exit=1"  # --distribution=plane 
+    check_error:
+      "srun: error:" :
+          frequency: 30
+          method: "warn" # default is kill
+          message: "SLURM ERROR: slurm ended with an error, good luck."
+          file: "stdout"
+      "Lookup table problem" :
+          frequency: 30
+          method: "kill" # default is kill
+          message: "The good old lookup table overflow."
+          file: "stdout"
+general:
+   use_venv: false
+   homedir: !ENV ${HOME}
+   setup_name: icon-fesom
+   compute_time: "01:05:00"
+   account: bb0519
+   # monthly restart
+   #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   #final_date: "1850-04-01T00:00:00"         # Final date of the experiment
+   #nmonth: 1
+   # yearly restart
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1853-01-01T00:00:00"         # Final date of the experiment
+   nmonth: 12
+   
+   base_dir: ${homedir}/esm/esm-experiments/ 
+   model_dir: /work/bb0519/b350071/models/icon-fesom-intel/icon-fesom-v1.0
+   version: "v1.0"
+
+icon:
+   # As icon insist on having the restart files in link that points to a directory
+   # we have to run this pre_run_command, this can hopefully change in the future
+   pre_run_commands: "cd ${work_dir} && ln -sf ${icon.parent_restart_dir}/${parent_expid}_restart_atm_${start_rsttime}.mfr multifile_restart_atmo.mfr"
+   version: "2024.10-public"
+   #nproc: 256
+   #omp_num_threads: 8
+   nproc: 1488
+   omp_num_threads: 1
+   
+   dtime: 450 # 900 is the current default in icon.yaml
+   # monthly restart and output interval
+   #checkpoint_interval: P01M
+   #restart_interval: P01M
+   #output_interval: P01M
+   # yearly restart and output interval
+   checkpoint_interval: P01Y
+   restart_interval: P01Y
+   output_interval: P01Y
+
+   # example, change a namelist parameter
+   # be aware of typos, use the exact name as in the namelist 
+   # otherwise a new namelist parameter will be created which will 
+   # not be recognized by ICON.
+   #add_namelist_changes:
+   #   NAMELIST_atm:
+   #      nwp_tuning_nml:
+   #         tune_entrorg: 2.2e-3
+fesom:
+   version: "2.6.2-yac"
+   nproc: 432 

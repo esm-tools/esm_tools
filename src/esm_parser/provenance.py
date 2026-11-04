@@ -1056,7 +1056,7 @@ def keep_provenance_in_recursive_function(func):
 # ========
 # HELPERS
 # ========
-def clean_provenance(data):
+def clean_provenance(data, nested=False):
     """
     Returns the values of provenance mappings in their original classes (without the
     provenance). Recurs through mappings. Make sure you copy.deepcopy the data mapping
@@ -1074,17 +1074,31 @@ def clean_provenance(data):
         Values in their original format, or lists and dictionaries containing provenance
         values.
     """
-    if hasattr(data, "value"):
+    if not nested:
+        data = copy.deepcopy(data)
+
+    if hasattr(data, "provenance") and hasattr(data, "value"):
         assert (
             data == data.value
         ), "The provenance object's value and the original value do not match!"
         return data.value
     elif isinstance(data, list):
-        return [clean_provenance(item) for item in data]
+        return [clean_provenance(item, nested=True) for item in data]
     elif isinstance(data, dict):
-        return {
-            clean_provenance(key): clean_provenance(value)
-            for key, value in data.items()
-        }
+        result = {}
+        for key, value in data.items():
+            cleaned_key = clean_provenance(key, nested=True)
+            # Use the internal _key attribute for f90nml cogroups (e.g.
+            # for ICON's output_nml that can be duplicated in the same namelist file
+            # use the '_key' '_grp_output_nml_0' instead of 'output_naml') when present
+            # to keep each group as a separate entry
+            dict_key = getattr(cleaned_key, "_key", cleaned_key)
+            result[dict_key] = clean_provenance(value, nested=True)
+        return result
+    # Clean vars in objects
+    elif hasattr(data, "__dict__"):
+        for key, value in vars(data).items():
+            setattr(data, key, clean_provenance(value, nested=True))
+        return data
     else:
         return data

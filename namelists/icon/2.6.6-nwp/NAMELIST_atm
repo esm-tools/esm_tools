@@ -1,0 +1,388 @@
+!
+&parallel_nml
+ nproma            = 752
+ p_test_run        = .FALSE.
+ num_io_procs      =  2
+ num_restart_procs =  0
+ iorder_sendrecv   =  1
+ proc0_shift       =  1
+ use_omp_input     = .TRUE.
+/
+
+&grid_nml
+ dynamics_grid_filename = 'icon_grid_0012_R02B04_G.nc'
+ dynamics_parent_grid_id = 0
+ lredgrid_phys           = .FALSE.
+/
+
+&run_nml
+ num_lev          = 90          ! number of full levels
+ dtime            = 360.0 
+ ltestcase        = .FALSE.     ! run testcase
+ ldynamics        = .TRUE.      ! dynamics
+ ltransport       = .TRUE.      ! transport
+ ntracer          = 5
+ iforcing         = 3           ! 0: none, 1: HS, 2: ECHAM, 3: NWP
+ output           = 'nml'
+ msg_level        = 20          ! level of details report during integration 
+ debug_check_level = 0          ! 20
+ restart_filename = "ICON_restart_atm_<rsttime>.mfr"
+ ltimer            = .FALSE.
+ timers_level      = 4
+ check_uuid_gracefully = .TRUE. ! to avoid error with unmachted UUID
+/
+
+&initicon_nml
+ init_mode        = 2           ! 2: initialize from IFS analysis
+ zpbl1            = 500.
+ zpbl2            = 1000.
+ ifs2icon_filename= "ifs2icon.nc"
+ ! TODO: check if really need this translation file, see e.g. /pool/data/ICON/mch/input/icon-1/map_file.ana
+ !ana_varnames_map_file   = "map_file.ana"
+/
+
+! TODO: understand restart mechanism, is there a single file 
+! restart mechanism for a start
+&io_nml
+ itype_pres_msl   = 4
+ itype_rh         = 1
+ ! TODO: check consistency with output_nml settings, search HOUT_INC in Trang's scripts
+ maxt_interval    = "P01D"
+ precip_interval  = "P01D"
+ ! vardict.txt is used to map ICON add_var names with desired 
+ ! variable names in output file
+ !output_nml_dict  = "vardict.txt"
+ !netcdf_dict      = "vardict.txt"
+ restart_write_mode = "joint procs multifile"
+/
+
+! output settings, one namelist per output file
+!
+&output_nml
+ filetype               =  4      ! output format: 2=GRIB2, 4=NETCDFv2
+ output_start           = "to_be_set_by_esm_tools" 
+ output_end             = "to_be_set_by_esm_tools"
+ output_interval        = "P1M"
+ ! use file interval OR steps_per_file
+ !file_interval         = "to_be_set_by_esm_tools"
+ steps_per_file         =  1
+ include_last           = .FALSE.
+ !steps_per_file_inclfirst  = .FALSE.
+ mode                   =  1      ! 1: forecast mode (relative t-axis)
+                                  ! 2: climate mode (absolute t-axis)
+ operation              = 'mean'
+ output_filename        = 'ICON_atm_mon'
+ filename_format        = '<output_filename>_<datetime2>'
+ ml_varlist             = 'tas_gmean','rsdt_gmean','rsut_gmean','rlut_gmean','radtop_gmean',
+                          'prec_gmean','evap_gmean', 'pme_gmean' !,'fwfoce_gmean'
+ ! output_grid          =  .FALSE.
+ ! remap                =  0
+ output_grid            = .TRUE.
+ remap                  = 1
+ reg_lat_def            = -90.0,181,90.0 
+ reg_lon_def            = 0.0,360,360.0 
+/
+
+&output_nml
+ filetype               =  4      ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                    =  1      ! write all domains
+ output_start           = "to_be_set_by_esm_tools" 
+ output_end             = "to_be_set_by_esm_tools"
+ output_interval        = "P1M"
+ ! use file interval OR steps_per_file
+ !file_interval         = "to_be_set_by_esm_tools"
+ steps_per_file         =  1
+ include_last           = .FALSE.
+ !steps_per_file_inclfirst  = .FALSE.
+ mode                   =  1      ! 1: forecast mode (relative t-axis)
+                                  ! 2: climate mode (absolute t-axis)
+ operation              = 'mean'
+ output_filename        = 'ICON_atm_2d_ml'
+ filename_format        = '<output_filename>_<datetime2>'
+ ml_varlist             = 'pres_msl', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m', 't_s', 't_seasfc',
+                          'tot_prec_rate', 'clct', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'sou_t'
+                          'sob_t', 'thb_t', 'sob_s', 'thb_s', 'shfl_s', 'lhfl_s', 'qhfl_s',
+                          'fr_land', 'fr_seaice'
+ output_grid            =  .TRUE.
+ ! remap                =  0
+ remap                  = 1
+ reg_lat_def            = -90.0,181,90.0 
+ reg_lon_def            = 0.0,360,360.0 
+/
+
+&output_nml
+ filetype               =  4      ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                    =  1      ! write all domains
+ output_start           = "to_be_set_by_esm_tools" 
+ output_end             = "to_be_set_by_esm_tools"
+ output_interval        = "P1M"
+ ! use file interval OR steps_per_file
+ !file_interval         = "to_be_set_by_esm_tools"
+ steps_per_file         =  1
+ include_last           = .FALSE.
+ !steps_per_file_inclfirst  = .FALSE.
+ mode                   =  1      ! 1: forecast mode (relative t-axis)
+                                  ! 2: climate mode (absolute t-axis)
+ operation              = 'mean'
+ output_filename        = 'ICON_atm_3d_ml'
+ filename_format        = '<output_filename>_<datetime2>'
+ ml_varlist             = 'pres', 'geopot', 'rho', 'temp', 'u', 'v', 'w', 'qv', 'rh', 'clc', 'qi', 'qr', 'qs', 'tot_qc_dia', 'tot_qi_dia', 'o3'
+ output_grid            =  .TRUE.
+ ! remap                =  0
+ remap                  = 1
+ reg_lat_def            = -90.0,181,90.0 
+ reg_lon_def            = 0.0,360,360.0 
+/
+
+&output_nml
+ filetype               =  4      ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                    =  1      ! write all domains
+ output_start           = "to_be_set_by_esm_tools" 
+ output_end             = "to_be_set_by_esm_tools"
+ output_interval        = "P1M"
+ ! use file interval OR steps_per_file
+ !file_interval         = "to_be_set_by_esm_tools"
+ steps_per_file         =  1
+ include_last           = .FALSE.
+ !steps_per_file_inclfirst  = .FALSE.
+ mode                   =  1      ! 1: forecast mode (relative t-axis)
+                                  ! 2: climate mode (absolute t-axis)
+ operation              = 'mean'
+ output_filename        = 'ICON_jsb_2d_ml'
+ filename_format        = '<output_filename>_<datetime2>'
+ ml_varlist             = 'group:jsb_seb_basic','hydro_w_soil_sl_box','hydro_w_soil_fc_sl_box','hydro_w_soil_sat_sl_box', 'hydro_soil_depth_sl_box'
+ output_grid            =  .TRUE.
+ ! remap                =  0
+ remap                  = 1
+ reg_lat_def            = -90.0,181,90.0 
+ reg_lon_def            = 0.0,360,360.0 
+/
+
+! namelist settings from first tests with ICON-AES
+!&output_nml
+ !output_filename  = "ICON" ! overwritten by esm-tools with expid, see icon.yaml
+ !filename_format  = "<output_filename>_DOM<physdom>_<levtype_l>_<datetime2>"
+ !filetype         = 5
+ !remap            = 1
+ !reg_lat_def      = -90.0,181,90.0 
+ !reg_lon_def      = 0.0,360,360.0 
+ !output_grid      = .TRUE.
+ !output_start     = "to_be_set_by_esm_tools" 
+ !output_end       = "to_be_set_by_esm_tools""
+ !output_interval  = "to_be_set_by_esm_tools""
+ !file_interval    = "to_be_set_by_esm_tools""
+ !include_last     = .FALSE.
+ !p_levels         = 10,50,100,200,300,400,500,600,700,800,
+                    1000,2000,3000,4000,5000,6000,7000,8000,10000,15000,20000,
+										25000,30000,40000,50000,60000,70000,75000,80000,85000,
+										90000,92500,95000,97500,100000
+ !pl_varlist       = 'group:atmo_pl_vars'
+ ! TODO: better use taveraged version of precipitation?
+ !pl_varlist       = 'qv','prec_con','prec_gsp','psl_m','rh','rh_2m',
+ !                   'sob_s','sob_t','sou_s','sou_t','t_2m','t_seasfc','temp',
+ !									'thb_s','thb_t','tmax_2m','tmin_2m','tot_prec','u_10m','v_10m','u','v',
+ ! 3D and 2D vars
+ !pl_varlist       = 'zg','rho','ta','ua','va','wap','hus','clw','cli','hur','cl'
+ !ml_varlist       = 'orog','cosmu0','rsdt','rsut','rsutcs','rlut','rlutcs','rsds','rsdscs','rlds','rldscs','rsus','rsuscs','rlus','ts','sic','sit','albedo','clt','prlr','prls','prcr','prcs','pr','prw','cllvi','clivi','hfls','hfss','evspsbl','tauu','tauv','sfcwind','uas','vas','tas','dew2','ptp'
+!/
+
+&nwp_phy_nml
+    !icalc_reff=100
+    !icpl_rad_reff=0
+    !icpl_aero_gscp=1
+          inwp_gscp         = 1
+          inwp_convection   = 1
+          inwp_radiation    = 4   !ecRad
+          inwp_cldcover     = 1
+          inwp_turb         = 6 ! vdiff
+          inwp_satad        = 1
+          inwp_sso          = 1
+          inwp_gwd          = 1
+          inwp_surface      = 2 ! JSBACH
+          latm_above_top    = .FALSE.
+          itype_z0          = 2
+          dt_rad            = 3600.
+          dt_conv           = 900.
+          dt_sso            = 900.
+          dt_gwd            = 900.
+          efdt_min_raylfric = 7200.
+          icapdcycl         = 3
+          !icpl_aero_conv    = 1
+          !icpl_aero_gscp    = 1
+          icpl_o3_tp        = 1
+/
+
+&nwp_tuning_nml
+          tune_gust_factor = 7
+          max_calibfac_clcl= 2.0
+          itune_albedo     = 0
+          tune_zceff_min   = 0.025   ! ** default value to be used for R3B7; use 0.025 for R2B6
+                                     ! in order to get similar temperature biases in upper troposphere **
+          tune_gkdrag      = 0.05    ! R3B7: 0.09 , R2B6: 0.075, R2B4: estimate 0.05-0.055
+          tune_gkwake      = 1       ! R3B7: 1.8  , R2B6: 1.5  , R2B4: estimate 1.0 -1.1
+          tune_gfrcrit     = 0.55    ! R3B7: 0.333, R2B6: 0.425, R2B4: estimate 0.55-0.6
+          tune_dust_abs    = 1.
+          tune_zvz0i       = 0.77    !basexp: 0.85
+          tune_box_liq_asy = 3.25    ! oper global: 3.0 , oper D2: 3.25, default: 2.5
+          tune_box_liq     = 0.05
+          lcalib_clcov     = .false. ! turn off TCC, HCC, MCC, LCC tuning
+          tune_rcucov      = 0.075
+          tune_rhebc_land  = 0.825
+tune_entrorg=0.0015         !basexp: 0.00185
+        /
+
+&turbdiff_nml
+! is kept here in case TERRA is used. With inwp_turb=6, turbdiff is not used
+          tkhmin           = 0.6     ! iref: 0.75
+          tkmmin_strat     = 1.0     ! iref: 4
+          alpha0           = 0.0123
+          alpha0_max       = 0.0335
+          alpha1           = 0.125   ! iref: 0.5
+          pat_len          = 750.
+          c_diff           = 0.2
+          rat_sea          = 0.8     ! iref: 7.0
+          ltkesso          = .true.  ! SSO dissipation energy used in TKE equation
+          frcsmot          = 0.2     ! these 2 switches together apply vertical smoothing of the TKE source terms
+          imode_frcsmot    = 2       ! in the tropics (only), which reduces the moist bias in the tropical lower troposphere
+          itype_sher       = 3       ! use horizontal shear production terms with 1/SQRT(Ri) scaling to prevent unwanted side effects
+          ltkeshs          = .true.
+          a_hshr           = 2.0
+          icldm_turb       = 1       ! 2: Gauss clouds for turbulence    1: grid scale clouds
+          icldm_tran       = 2       ! 2: Gauss clouds for surface layer 1: grid scale clouds
+          rlam_heat        = 10.0    ! iref: 10.0
+/
+
+&lnd_nml
+          ! JSBACH settings
+          ntiles           =     1         ! number of tiles
+          lseaice          = .TRUE.        ! .TRUE. for use of sea-ice model
+          lprog_albsi      = .TRUE.        ! sea-ice albedo is computed prognostically
+          sstice_mode      =     4         !
+          # TODO: adjust from icon.yaml once I know the real paths
+          sst_td_filename  = "SST_<year>_<month>_iconR2B04_DOM01.nc"
+          ci_td_filename  = "CI_<year>_<month>_iconR2B04_DOM01.nc"
+          ! TERRA settings below kept as reference
+          !ntiles         = 3
+          !nlev_snow      = 3
+          !lmulti_snow    = .FALSE.
+          !itype_heatcond = 3       ! 1: fixed heatcond, 2: moisture dependent heatcond
+          !idiag_snowfrac = 20
+          !lsnowtile      = .TRUE.
+          !lseaice        = .TRUE.
+          !llake          = .TRUE.
+          !itype_lndtbl   = 4       ! 2: tuned stomata resistance rsmin
+          !itype_root     = 2       ! 2: exponetial root distribution, 1: roots at level 3
+          !itype_evsl     = 4
+          !itype_trvg     = 3
+          !cwimax_ml      = 5.e-4
+          !c_soil         = 1.25
+          !c_soil_urb     = 0.5
+          !sstice_mode    = 4
+          !itype_snowevap = 3
+          !zml_soil       = 0.005,0.02,0.06,0.18,0.54,1.62,4.86,14.58
+/
+
+&radiation_nml
+          isolrad     = 2
+          ecrad_data_path     =  'set by esm-tools to srcdir/externals/ecrad/data/'
+          !llw_cloud_scat=.true.
+          direct_albedo_water = 3
+          albedo_whitecap     = 1
+          ghg_filename =  'bc_greenhouse_gases.nc'
+          irad_o3     = 5
+          irad_co2    = 4           ! 4: from greenhouse gas scenario
+          irad_ch4    = 4           ! 4: from greenhouse gas scenario
+          irad_n2o    = 4           ! 4: from greenhouse gas scenario
+          irad_cfc11  = 4           ! 4: from greenhouse gas scenario
+          irad_cfc12  = 4           ! 4: from greenhouse gas scenario
+          irad_aero   = 18
+          izenith     = 4           ! 4: NWP default, 3: no annual cycle
+          albedo_type = 2           ! Modis albedo
+/
+
+&nonhydrostatic_nml
+          iadv_rhotheta       = 2
+          ivctype             = 2
+          itime_scheme        = 4
+          exner_expol         = 0.333
+          vwind_offctr        = 0.3         ! 0.2 for R2B6 and higher resolution, 0.3 for lower resolution
+          damp_height         = 50000.
+          rayleigh_coeff      = 0.10
+          ndyn_substeps       = 5
+          lhdiff_rcf          = .TRUE.
+          divdamp_order       = 24          ! 2 ass, 24 fc
+          divdamp_type        = 32          ! optional: 2 assimilation cycle, 32 forecast
+          divdamp_fac         = 0.004       ! 0.004 for R2B6; recommendation for R3B7: 0.003
+          divdamp_trans_start = 12500
+          divdamp_trans_end   = 17500
+          l_open_ubc          = .FALSE.
+          igradp_method       = 3
+          l_zdiffu_t          = .TRUE.
+          thslp_zdiffu        = 0.02
+          thhgtd_zdiffu       = 125.
+          htop_moist_proc     = 22500.
+          hbot_qvsubstep      = 16000.
+/
+
+&sleve_nml
+          min_lay_thckn       = 20.         ! lowest level thickness (between half-levels)
+          max_lay_thckn       = 400.        ! maximum layer thickness below htop_thcknlimit
+          htop_thcknlimit     = 14000.
+          top_height          = 75000.
+          stretch_fac         = 0.9
+          decay_scale_1       = 4000.
+          decay_scale_2       = 2500.
+          decay_exp           = 1.2
+          flat_height         = 16000.
+/
+
+&dynamics_nml
+          iequations     = 3
+          idiv_method    = 1
+          divavg_cntrwgt = 0.50
+          lcoriolis      = .TRUE.
+/
+
+&turb_vdiff_nml
+         f_theta_decay          = 1 !basexp:4
+         fsl                    = 0.8       ! Fraction of the bottom level height where fluxes are formally evaluated.
+         pr0                    = 0.85      ! basexp: 0.68
+         f_theta_limit_fraction = 0.25
+/
+
+&transport_nml
+          ivadv_tracer   = 3,3,3,3,3
+          itype_hlimit   = 3,4,4,4,4,0
+          ihadv_tracer   = 52,2,2,2,2,0
+/
+
+&diffusion_nml
+          hdiff_order         = 5
+          itype_vn_diffu      = 1
+          itype_t_diffu       = 2
+          hdiff_efdt_ratio    = 24.0   ! for R2B6; recommendation for R3B7: 30.0
+          hdiff_smag_fac      = 0.025  ! for R2B6; recommendation for R3B7: 0.02
+          lhdiff_vn           = .TRUE.
+          lhdiff_temp         = .TRUE.
+/
+
+&interpol_nml
+          nudge_zone_width       = 8
+          lsq_high_ord           = 3
+          l_intp_c2l             = .TRUE.
+          l_mono_c2l             = .TRUE.
+          !support_baryctr_intp  = .TRUE.
+          rbf_scale_mode_ll      = 1       ! workaround for RBF lat lon interpolation problems at R2B5
+/
+
+&extpar_nml
+          ! These do not matter for JSBACH but kept here as reference when TERRA is used
+          itopo                   = 1
+          n_iter_smooth_topo      = 1
+          heightdiff_threshold    = 3000.
+          hgtdiff_max_smooth_topo = 750.,750.,
+          extpar_filename         = 'icon_extpar_tiles.nc'
+          itype_lwemiss = 1   ! (erfordert also neue Extpar-Daten mit LW-Emissivität)
+          read_nc_via_cdi         = .TRUE.
+/
+

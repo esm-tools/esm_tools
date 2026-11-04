@@ -2,10 +2,12 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.60.2"
+__version__ = "6.71.2"
 
 from .batch_system import *
 from .chunky_parts import *
+from .conda_env import *
+from .dask_cluster import *
 from .database import *
 from .database_actions import *
 from .dataprocess import *

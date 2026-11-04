@@ -1,0 +1,150 @@
+#computer:
+#  additional_flags: "--reservation=maintenance_dkrz_infrastructure"
+    
+general:
+   # machine specific setup 
+   account: bb0519
+   base_dir: /work/bb0519/b350071/SOLVE/esm-experiments/
+
+   use_venv: False
+   verbose: False
+   setup_name: "foci"
+   version: "moz"
+   homedir: !ENV ${HOME}
+
+   compute_time: "03:00:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "2014-01-01T00:00:00"         # Final date of the experiment
+   postprocessing: true
+   scenario: "no_scenario" 
+   perpetual_year: "2020"
+   # in 2100 we use 2099 for some forcing files
+   choose_general.perpetual_year:
+       "2020":
+           pyear_m1: "2020"
+       "2100":
+           pyear_m1: "2099"
+   nmonth: 12
+   clean_runs: 3
+
+   lresume: True
+   ini_parent_exp_id: "FOCI3.0-SW103"
+   ini_parent_date: "20191231"
+   ini_nemo_restart_steps: 0 # to be defined 
+   ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+
+foci:
+    model_dir: /work/bb0519/b350071/SOLVE/models/foci-moz/ 
+
+oasis3mct:
+    coupling_time_step: 3600 
+
+echam:
+   resolution: "T63"
+   use_moz: true
+   lresume: ${general.lresume}
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   scenario: ${general.scenario}
+   nproca: 32
+   nprocb: 24
+   nprocio: 12  
+
+   namelist_dir: "${general.esm_namelist_dir}/echam/${version}/PI-CTRL"
+   choose_general.perpetual_year:
+       "2020":
+          co2vmr: 415.15496826171e-06
+          ch4vmr: 1921.44104003906e-09
+          n2ovmr: 332.16397094726e-09
+          cfcvmr1: 218.234710693359e-12
+          cfcvmr2: 495.019897460938e-12
+       "2100":
+          co2vmr: 867.19091796875e-06
+          ch4vmr: 3372.18115234375e-09
+          n2ovmr: 421.828979492188e-09
+          cfcvmr1: 52.5617866516113e-12
+          cfcvmr2: 211.545959472656e-12
+   namelist_changes:
+      namelist.echam:
+         radctl:
+             yr_perp: "remove_from_namelist"
+             co2vmr: ${co2vmr} 
+             ch4vmr: ${co2vmr} 
+             n2ovmr: ${co2vmr} 
+             cfcvmr(1): ${cfcvmr1} 
+             cfcvmr(2): ${cfcvmr2} 
+         runctl:
+             nproma: 32
+             ltimer: true
+         parctl:
+             iomode: 2
+             nprocio: ${nprocio}
+
+   add_forcing_sources:
+      # ${general.perpetual_year} control forcing
+      moz_lbc_perpetual_year: "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_perpetual_${general.perpetual_year}_CMIP6_CCMI2_${echam.resolution}.nc"
+      moz_sad_sulf_perpetual_year: "${input_dir}/HAMMOZ_${echam.resolution}/moz_sad_sulf_perpetual_${general.perpetual_year}_c080220_${echam.resolution}${echam.levels}.nc"
+      ozone_perpetual_year: "${forcing_dir}/ozone/${resolution}_ozone_ssp370_${general.pyear_m1}.nc"
+
+   add_forcing_files:
+      moz_lbc: moz_lbc_perpetual_year
+      moz_sad_sulf: moz_sad_sulf_perpetual_year
+      ozone: ozone_perpetual_year
+      aerocoarse: piaerocoarse
+      aerofin: piaerofin
+      aerofarir: piaerofarir
+   add_forcing_in_work:
+      moz_lbc: "moz_lbc.${echam.resolution}.nc"
+      moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
+
+jsbach:
+   namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/PI-CTRL/dynveg-moz"
+   add_forcing_sources:
+      # ${general.perpetual_year} control forcing
+      Ndepo_perpetual_year: "${input_dir}/${echam.resolution}/ndepo/Ndepo_ssp370.${general.pyear_m1}.nc"
+      LU_perpetual_year: "${input_dir}/${echam.resolution}/New_Hampshire_LCC/ssp370_harvest/LUH_harvest_${echam.resolution}_${general.pyear_m1}.nc" 
+
+   add_forcing_files:
+      Ndepo: Ndepo_perpetual_year
+      LU: LU_perpetual_year 
+      LU_trans: LU_trans_none
+      a_nd_file: a_nd_file
+nemo:
+   pre_run_commands: "cp -f ~/FOCI3.0-SW101_hostfile ${work_dir}/hostfile_srun"
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW_OASISMCT4"
+   jpni: 32
+   jpnj: 18
+   nproca: ${jpni} 
+   nprocb: ${jpnj} 
+   nproc: 576 
+   add_namelist_changes:
+       namelist_cfg:
+           namrun:
+               nn_euler: 1
+           namsbc:
+               nn_fsbc: 2
+                   #namdyn_ldf:
+                   #rn_ahm_0_blp: -1.709e12
+           namtra_ldf:
+               rn_aht_0: 300
+                   #rn_aeiv_scale: 0.5
+           namsbc_cpl:
+               sn_rcv_rnf: ['none', 'no', '', '', '']
+               sn_rcv_emp: ['kcm_lim_2', 'no', '', '', '']
+           #namdyn_hpg:
+                   #ln_hpg_zps: false    #  z-coordinate - partial steps (interpolation), f if NLFS t else
+                   #ln_hpg_sco: true   #  s-coordinate (standard jacobian formulation), t if NLFS f else
+                   #ln_dynhpg_imp: false #  time stepping: semi-implicit time scheme  (T), f if NLFS t else
+           namdyn_hpg:
+                   ln_hpg_zps: true    #  z-coordinate - partial steps (interpolation), f if NLFS t else
+                   ln_hpg_sco: false  #  s-coordinate (standard jacobian formulation), t if NLFS f else
+                   ln_dynhpg_imp: true #  time stepping: semi-implicit time scheme  (T), f if NLFS t else
+       namelist_top_cfg:
+           namtrc_rad:
+               ln_trcrad: true
+           namtrc_ldf:
+               rn_ahtrc_0: 600 
+   
+xios:
+   nproc: 12

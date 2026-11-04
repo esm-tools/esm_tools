@@ -295,7 +295,13 @@ class Namelist:
         Namelist.nmls_check_changes(namelist_changes)
 
         for namelist, changes in namelist_changes.items():
-            mconfig["namelists"][namelist].patch(changes)
+            try:
+                mconfig["namelists"][namelist].patch(changes)
+            except Exception as e:
+                logger.error(f"An error occured patching namelist {namelist}")
+                logger.error(changes)
+                logger.error(e)
+                sys.exit(1)
         return mconfig
 
     @staticmethod

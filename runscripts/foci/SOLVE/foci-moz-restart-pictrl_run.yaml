@@ -1,0 +1,96 @@
+#computer:
+#  additional_flags: "--reservation=maintenance_dkrz_infrastructure"
+    
+general:
+   # machine specific setup 
+   account: bb0519
+   base_dir: /work/bb0519/b350071/SOLVE/esm-experiments/
+
+   use_venv: False
+   verbose: False
+   setup_name: "foci"
+   version: "moz"
+   homedir: !ENV ${HOME}
+
+   compute_time: "03:00:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "2014-01-01T00:00:00"         # Final date of the experiment
+   postprocessing: true
+   scenario: "PI-CTRL" 
+   nmonth: 12
+   clean_runs: 3
+
+   lresume: True
+   ini_parent_exp_id: "FOCI1.16-SW111"
+   ini_parent_date: "24991231"
+   ini_nemo_restart_steps: 11395584
+   ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+   #ini_parent_exp_id: "FOCI2.2-SW220"
+   #ini_parent_date: "26991231"
+   #ini_nemo_restart_steps: 14901888
+   #ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+
+foci:
+    model_dir: /work/bb0519/b350071/SOLVE/models/foci-moz/ 
+
+oasis3mct:
+    coupling_time_step: 3600 
+
+echam:
+   resolution: "T63"
+   use_moz: true
+   lresume: ${general.lresume}
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   scenario: ${general.scenario}
+   nproca: 32
+   nprocb: 24
+   nprocio: 12  
+   namelist_changes:
+      namelist.echam:
+         runctl:
+            nproma: 32
+            ltimer: true
+         parctl:
+            iomode: 2
+            nprocio: ${nprocio}
+   
+nemo:
+   pre_run_commands: "cp -f ~/FOCI3.0-SW101_hostfile ${work_dir}/hostfile_srun"
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW_OASISMCT4"
+   jpni: 32
+   jpnj: 18
+   nproca: ${jpni} 
+   nprocb: ${jpnj} 
+   nproc: 576 
+   add_namelist_changes:
+       namelist_cfg:
+           namrun:
+               nn_euler: 1
+           namsbc:
+               nn_fsbc: 2
+                   #namdyn_ldf:
+                   #rn_ahm_0_blp: -1.709e12
+           namtra_ldf:
+               rn_aht_0: 300
+                   #rn_aeiv_scale: 0.5
+           namsbc_cpl:
+               sn_rcv_rnf: ['none', 'no', '', '', '']
+               sn_rcv_emp: ['kcm_lim_2', 'no', '', '', '']
+           #namdyn_hpg:
+                   #ln_hpg_zps: false    #  z-coordinate - partial steps (interpolation), f if NLFS t else
+                   #ln_hpg_sco: true   #  s-coordinate (standard jacobian formulation), t if NLFS f else
+                   #ln_dynhpg_imp: false #  time stepping: semi-implicit time scheme  (T), f if NLFS t else
+           namdyn_hpg:
+                   ln_hpg_zps: true    #  z-coordinate - partial steps (interpolation), f if NLFS t else
+                   ln_hpg_sco: false  #  s-coordinate (standard jacobian formulation), t if NLFS f else
+                   ln_dynhpg_imp: true #  time stepping: semi-implicit time scheme  (T), f if NLFS t else
+       namelist_top_cfg:
+           namtrc_rad:
+               ln_trcrad: true
+           namtrc_ldf:
+               rn_ahtrc_0: 600 
+   
+xios:
+   nproc: 12

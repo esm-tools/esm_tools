@@ -4,5 +4,5 @@ channels:
 dependencies:
   - python=3.11
   - ipykernel
-  - pip=23.0.1
+  - pip=26.1
   - setuptools=67.6.1

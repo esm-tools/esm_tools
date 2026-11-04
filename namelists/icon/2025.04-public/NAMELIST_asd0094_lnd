@@ -1,0 +1,75 @@
+&jsb_model_nml
+  usecase              = 'jsbach_pfts'
+  use_lakes            = .TRUE.
+  !enforce_water_budget = .FALSE.              !  general parameter for all tests
+  fract_filename       = 'bc_land_frac.nc'
+  !output_tiles         =      ! List of tiles to output
+  init_from_ifs        = .FALSE.
+  !init_from_ifs        = .TRUE.               ! needs ifs_filename
+  !ifs_filename         = 'ifs2icon_R2B04_DOM01.nc'
+/
+&jsb_seb_nml
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_rad_nml
+  use_alb_veg_simple   = .FALSE.          ! Use TRUE for jsbach_lite, FALSE for jsbach_pfts
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_turb_nml
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_sse_nml
+  l_heat_cap_map       = .FALSE.
+  l_heat_cond_map      = .FALSE.
+  l_heat_cap_dyn       = .FALSE.
+  l_heat_cond_dyn      = .FALSE.
+  l_snow               = .TRUE.
+  l_dynsnow            = .TRUE.
+  l_freeze             = .TRUE.
+  l_supercool          = .TRUE.
+  bc_filename          = 'bc_land_soil.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_hydro_nml
+  l_organic            = .FALSE.
+  bc_filename          = 'bc_land_soil.nc'
+  ic_filename          = 'ic_land_soil.nc'
+  bc_sso_filename      = 'bc_land_sso.nc'
+/
+&jsb_assimi_nml
+  active               = .TRUE.              ! Use FALSE for jsbach_lite, TRUE for jsbach_pfts
+/
+&jsb_pheno_nml
+  active               = .TRUE.
+  scheme               = 'logrop'            ! scheme = logrop / climatology; use climatology for jsbach_lite
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_carbon_nml
+  active               = .FALSE.
+  bc_filename          = ''
+  ic_filename          = ''
+/
+&jsb_fuel_nml
+  active               = .FALSE.
+  fuel_algorithm       = 1
+/
+&jsb_disturb_nml
+  active               = .FALSE.
+  ic_filename          = 'ic_land_soil.nc'
+  bc_filename          = 'bc_land_phys.nc'
+  fire_algorithm       = 1
+  windbreak_algorithm  = 1
+  lburn_pasture        = .FALSE.
+/
+&jsb_hd_nml
+  active               = .TRUE.          ! ??
+  routing_scheme       = 'full'               ! 'zero' no HD, runoff=0; 'full' incl. full HD model; 'weighted_to_coast'
+  bc_filename          = 'bc_land_hd.nc'
+  diag_water_budget    = .FALSE.
+  debug_hd             = .FALSE.
+!  enforce_water_budget = .TRUE.          ! specific for HD, TRUE: stop in case of water conservation problem
+/

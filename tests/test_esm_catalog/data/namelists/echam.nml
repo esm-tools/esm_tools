@@ -1,0 +1,5 @@
+&runctl
+    delta_time = 450
+    lcouple = .true.
+    co2vmr = 0.000284
+/

@@ -4,7 +4,6 @@ import pathlib
 import re
 import shutil
 import sys
-import time
 
 import psutil
 from loguru import logger
@@ -40,7 +39,13 @@ def copy_stuff_back_from_work(config):
 
 def tidy_coupler(config):
     if config["general"]["standalone"] == False:
-        config["general"]["coupler"].tidy(config)
+        # A coupled_setup need not have a coupler: two executables sharing
+        # MPI_COMM_WORLD and nothing else (standalone FESOM with detached XIOS
+        # servers, for one) get here with no coupler among the models. See
+        # prepare.initialize_coupler, which sets this key.
+        this_coupler = config["general"].get("coupler", None)
+        if this_coupler is not None:
+            this_coupler.tidy(config)
     return config
 
 

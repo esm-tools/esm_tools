@@ -11,6 +11,7 @@ from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
 from . import dataprocess, helpers, prepare
+from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
 
@@ -353,6 +354,178 @@ class batch_system:
         return echo_command
 
     @staticmethod
+    def get_post_run_commands(config):
+        """
+        Collect ``post_run_commands`` from ``config["computer"]``.
+
+        The ``computer`` section may define ``post_run_commands`` as a string
+        or a list of strings. These are shell commands appended to the job
+        script after the model execution and before the resubmission call.
+
+        The special token ``@conda_activate@`` may appear in the list and is
+        expanded by :meth:`get_conda_activate_commands` into the appropriate
+        ``conda activate`` shell commands. It is injected by default via
+        ``configs/esm_software/esm_runscripts/defaults.yaml``.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        extras : list of str
+            Collected shell commands from the computer section.
+        """
+        extras = []
+
+        post_run_commands = config.get("computer", {}).get("post_run_commands")
+        if isinstance(post_run_commands, list):
+            for pr_command in post_run_commands:
+                if isinstance(pr_command, str):
+                    extras.append(pr_command)
+                else:
+                    user_error(
+                        'Invalid type for "post_run_commands"',
+                        (
+                            f'"{type(pr_command)}" type is not supported for '
+                            + f'elements of the "post_run_commands", defined in '
+                            + f'"computer". Please, define '
+                            + '"post_run_commands" as a "list" of "strings" or a "list".'
+                        ),
+                    )
+        elif isinstance(post_run_commands, str):
+            extras.append(post_run_commands)
+        elif post_run_commands is not None:
+            user_error(
+                'Invalid type for "post_run_commands"',
+                (
+                    f'"{type(post_run_commands)}" type is not supported for '
+                    + f'"post_run_commands" defined in "computer". Please, define '
+                    + '"post_run_commands" as a "string" or a "list" of "strings".'
+                ),
+            )
+
+        # Add conda activate if necessary
+        old_extras = extras
+        extras = []
+        for command in old_extras:
+            if command == "@conda_activate@":
+                extras.extend(batch_system.get_conda_activate_commands(config))
+            else:
+                extras.append(command)
+
+        return extras
+
+    @staticmethod
+    def get_conda_activate_commands(config):
+        """
+        Build the shell commands needed to activate the conda environment in the job script.
+
+        The conda environment to activate is determined in the following priority order:
+
+        1. ``conda.env`` (and optionally ``conda.root``) set explicitly in the runscript
+           or machine config.
+        2. The ``conda_info.yaml`` file written to the run config directory by
+           :func:`~esm_runscripts.conda_env.write_conda_info_file` during
+           ``prepexp``, which captures the environment that was active when
+           ESM-Tools was launched.
+
+        Returns an empty list when no conda environment can be determined or when
+        ``general.use_venv`` is ``True`` (to avoid mixing virtual environments).
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        commands : list of str
+            Shell lines to source the conda initialisation script (if a conda
+            root is known) and to run ``conda activate <env>``. Empty if conda
+            is not in use.
+        """
+        commands = []
+
+        # Do not mix conda and venvs
+        if config["general"].get("use_venv", False):
+            return commands
+
+        conda_env = config.get("conda", {}).get("env", False)
+        conda_root = config.get("conda", {}).get("root", None)
+        if not conda_env:
+            conda_env, conda_root = get_conda_info_from_file(config)
+        if conda_env:
+            commands.append("# Activate conda environment")
+            if conda_root:
+                commands.append(f"source {conda_root}/bin/activate")
+            commands.append(f"conda activate {conda_env}")
+
+        return commands
+
+    @staticmethod
+    def get_env_capture_commands(config):
+        """
+        Return shell lines that capture batch system env vars to a file.
+
+        Reads ``save_batch_env_patterns`` from the batch system config (e.g.
+        ``["SLURM"]`` or ``["PBS"]``) and builds a ``declare -p | grep -E``
+        command that dumps matching variables into
+        ``{thisrun_work_dir}/batch_system.env``.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        list of str
+            Shell lines to write into the job script, or ``[]`` if no
+            patterns are configured.
+        """
+        patterns = config["computer"].get("save_batch_env_patterns", [])
+        if not patterns:
+            return []
+        grep_pattern = "|".join(patterns)
+        env_file = f'{config["general"]["thisrun_work_dir"]}/batch_system.env'
+        return [
+            "# Store batch system environment variables for later sourcing",
+            f'declare -p | grep -E "({grep_pattern})" > {env_file}',
+            "",
+        ]
+
+    @staticmethod
+    def get_env_recovery_commands(config):
+        """
+        Return shell lines that restore batch system env vars from a file.
+
+        Sources the env file written by :meth:`get_env_capture_commands` and
+        removes it afterwards. This is needed before resubmission because
+        subprocesses spawned during the job may have cleared these variables.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        list of str
+            Shell lines to write into the job script, or ``[]`` if no
+            patterns are configured.
+        """
+        patterns = config["computer"].get("save_batch_env_patterns", [])
+        if not patterns:
+            return []
+        env_file = f'{config["general"]["thisrun_work_dir"]}/batch_system.env'
+        return [
+            "# Recover batch system environment variables",
+            f"source {env_file}; rm {env_file}",
+        ]
+
+    @staticmethod
     def append_start_statement(config, subjob):
         return batch_system.get_bash_command_to_print_in_progress_log(
             config, subjob, "start"
@@ -454,13 +627,12 @@ class batch_system:
             if batch_or_shell == "batch":
 
                 config = batch_system.calculate_requirements(config, cluster)
-                # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if cluster in reserved_jobtypes and config["computer"].get(
-                    "taskset", False
-                ):
-                    config = config["general"]["batch"].write_het_par_wrappers(config)
-                # Prepare launcher
-                config = config["general"]["batch"].prepare_launcher(config, cluster)
+                if cluster in reserved_jobtypes:
+                    # TODO: remove it once it's not needed anymore (substituted by packjob)
+                    if config["computer"].get("taskset", False):
+                        config = config["general"]["batch"].write_het_par_wrappers(config)
+                    # Prepare launcher (writes hostfile_srun for srun --multi-prog)
+                    config = config["general"]["batch"].prepare_launcher(config, cluster)
                 # Initiate the header
                 header = batch_system.get_batch_header(config, cluster)
 
@@ -474,6 +646,10 @@ class batch_system:
                     runfile.write(line + "\n")
                 runfile.write("\n")
 
+            # Save batch env vars (e.g. SLURM_*, PBS_*) so they can be
+            # restored before resubmission
+            for line in batch_system.get_env_capture_commands(config):
+                runfile.write(line + "\n")
             if clusterconf:
                 for subjob in clusterconf["subjobs"]:
 
@@ -550,6 +726,9 @@ class batch_system:
                 if "--task-log-files" in config["general"]["original_command"]:
                     observe_call += " --task-log-files"
 
+                if config["general"].get("computer_name"):
+                    observe_call += f" --computer {config['general']['computer_name']}"
+
                 subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
                     cluster
                 ]["next_submit"]
@@ -557,7 +736,18 @@ class batch_system:
                 runfile.write("\n")
                 runfile.write("# Call to esm_runscript to start subjobs:\n")
                 runfile.write("# " + str(subjobs_to_launch) + "\n")
-                runfile.write("process=$! \n")
+                runfile.write("process=$!\n\n")
+
+                # Restore batch env vars before resubmission
+                for line in batch_system.get_env_recovery_commands(config):
+                    runfile.write(line + "\n")
+
+                # extra entries for each subjob
+                post_run_commands = batch_system.get_post_run_commands(config)
+                for line in post_run_commands:
+                    runfile.write(line + "\n")
+
+                runfile.write("\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

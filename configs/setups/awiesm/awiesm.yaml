@@ -434,7 +434,9 @@ fesom:
                                 K_hor: ${K_hor}
                         oce_dyn:
                                 K_gm: ${K_gm}
-                                K_gm_max: ${K_gm_max}
+                                # K_gm_max no longer set here: with zstar the value from the
+                                # experiment's namelist.oce (namelist_dir) is kept. linfs still
+                                # removes it, see choose_ALE_scheme below.
                         boundary:
                                 restore_s_surf: 0.0
 
@@ -472,11 +474,15 @@ fesom:
         # Settings for Gent/McWilliams based upon the selected ALE scheme.
         choose_ALE_scheme:
             linfs:
-                K_gm_max: "remove_from_namelist"
                 K_hor: 5000.0
                 K_gm: 5000.0
+                add_namelist_changes:
+                    namelist.oce:
+                        oce_dyn:
+                            K_gm_max: "remove_from_namelist"
             zstar:
-                K_gm_max: 1000.0
+                # K_gm_max: 1000.0 removed -- it silently overrode K_GM_max from the
+                # experiment's own namelist.oce (e.g. 2000 in PI_2.7_GM2000_Redi1000).
                 K_hor: 0.0
                 K_gm: remove_from_namelist
             "*":

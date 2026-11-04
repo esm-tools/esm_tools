@@ -654,7 +654,12 @@ class oasis:
 
         logger.info("Preparing oasis restart files from initial run...")
         # Assign an exe per model
-        exes = [config[model]["executable"] for model in models]
+        # EXPOUT files are named after the OASIS component, which can differ from
+        # the executable (e.g. amip -> AMIPFORC); oasis_component_name overrides it
+        exes = [
+            config[model].get("oasis_component_name", config[model]["executable"])
+            for model in models
+        ]
         logger.info(f"{restart_file}, {all_fields}, {models}, {exes}")
         cwd = os.getcwd()
         os.chdir(config["general"]["thisrun_work_dir"])

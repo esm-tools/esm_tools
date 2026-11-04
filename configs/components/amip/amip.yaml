@@ -5,6 +5,8 @@
 amip:
     model: amip
     executable: amip
+    # Name the AMIP forcing reader registers with OASIS; EXPOUT files use it
+    oasis_component_name: AMIPFORC
     execution_command: amip
 
     description: |

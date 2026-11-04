@@ -1175,7 +1175,7 @@ fesom:
             ini_iceberg_dir: "${general.experiment_couple_dir}"
             icb_default_rate: 1100.0      # Gt/yr, 2475 calving - 1378 basal melt in PICAL 2200-2209
             icb_relax_years: 20.0         # a ledger imbalance is paid back over this time
-            icb_rate_memory_years: 10.0   # memory of the rate, so one short leg does not set it
+            icb_rate_memory_years: 1.0    # each leg seeds the previous leg's budget, not a smoothed rate
             icb_init_rate_file: "${pool_dir}/icebergs_ini/${resolution}/iceberg_rate_init.json"
             icb_leg: "--start ${general.start_date!syear}-${general.start_date!smonth}-${general.start_date!sday} --end ${general.end_date!syear}-${general.end_date!smonth}-${general.end_date!sday}"
             icb_dirs: "--couple-dir ${general.experiment_couple_dir} --mesh-dir ${mesh_dir} --oifs-outdata ${oifs.experiment_outdata_dir} --fesom-outdata ${experiment_outdata_dir}"

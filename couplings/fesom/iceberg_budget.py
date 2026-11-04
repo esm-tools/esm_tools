@@ -12,13 +12,14 @@ steps, because the amount is known at the END of a leg and the seed files depend
 the NEXT one, which may change between restarts.
 
   budget   after a leg: measure calving and basal melt of that leg from its output, move the
-           running rate [Gt/yr] towards it (memory --rate-memory-years, so one noisy year of a short
-           leg does not set it) and add the leg to the ledger of mass owed against mass seeded.
+           running rate [Gt/yr] towards it (memory --rate-memory-years; 1 year, the default, takes
+           the leg's budget as it is) and add the leg to the ledger of mass owed against mass seeded.
            Independent of the length of any other leg.
   seed     before a leg, when its dates are known: turn the rate into icb_*.dat for exactly that
-           leg. Bergs are released at the rate, evenly from the first to the last day; a ledger
-           imbalance (from a changed rate or a changed leg length) is paid back over --relax-years,
-           so that seeded mass follows owed mass in the long run whatever the leg lengths were.
+           leg. Every calendar year of the leg gets its share of the bergs; within the year the
+           small ones calve mostly in austral summer, the large ones on any day (release_days). A
+           ledger imbalance (from a changed rate or a changed leg length) is paid back over
+           --relax-years, so that seeded mass follows owed mass whatever the leg lengths were.
 
 State lives in <couple_dir>/icb_ledger.json. First leg: the rate comes from --init-rate-file if that
 exists (a JSON with "rate_gt_yr", e.g. from the pool), else from --default-rate (1100 Gt/yr).
@@ -62,6 +63,8 @@ ALPHA, A_MIN, A_MAX = 1.52, 0.01, 400.0          # power law of berg area [km2]
 BINS = [0.1, 1.0, 10.0, 100.0, 1000.0]           # km2, upper edges of the size classes
 SCALING = [100, 50, 10, 1, 1, 1]                 # real bergs per model berg, per class
 GT = 1.0e12                                      # kg
+# release season (release_days): bergs below SEASONAL_AREA [km2] calve mostly in austral summer
+SEASONAL_AREA, SEASONAL_PEAK_DAY, SEASONAL_KAPPA = 10.0, 15.0, 1.5
 
 # Sector, longitude range [E], latitude range, observed ice-front flux [Gt/yr].
 # Rignot et al. (2013) Table 1, column "Ice front", summed over the listed shelves. Total 1088.4.
@@ -205,9 +208,10 @@ def _budget(a):
     calv = measure_calving(a.oifs_outdata, y0, y1)
     melt = measure_basal_melt(a.fesom_outdata, a.mesh_dir, y0, y1)
     target = max(calv - melt, 0.0)
-    # the rate follows the measured target with a memory, so that a single noisy year of a short leg
-    # does not set it; the ledger makes up the difference
-    led["rate_gt_yr"] += (target - led["rate_gt_yr"]) * min(1.0, years / a.rate_memory_years)
+    # the rate follows the measured target with a memory (1 year: the target itself, so the bergs
+    # follow the budget's year-to-year changes one leg later); the ledger makes up any difference.
+    # 365 days count as a full year here.
+    led["rate_gt_yr"] += (target - led["rate_gt_yr"]) * min(1.0, years / (0.995 * a.rate_memory_years))
     led["owed_gt"] = led.get("owed_gt", 0.0) + target * years
     led.setdefault("legs", []).append(dict(step="budget", start=a.start, end=a.end, years=round(years, 4),
                                            calving_gt_yr=round(calv, 2), basal_melt_gt_yr=round(melt, 2),
@@ -276,6 +280,43 @@ def draw_bergs(volume_km3, rng):
             L.append(np.sqrt(grp.mean()) * 1000.0)                      # one model berg of the mean size
             S.append(len(grp))
     return np.array(L), np.array(S, int)
+
+
+def release_days(start, end, length_m, mass, rng):
+    """calving_day for each berg, in days from the start of the leg (FESOM's istep restarts every leg).
+
+    The bergs are shared out over the calendar years of the leg by mass, in proportion to each year's
+    days inside it, so a long leg calves the same mass every year (to within one large berg). Within its year a small berg
+    (< SEASONAL_AREA) calves preferably in austral summer, from a von Mises distribution around
+    mid-January; a large one on any day. As in Finn Heukamp's AWIESM3-v3.4.x-CAV-ICB plugin.
+    The last day of the leg is left free: FESOM releases on istep > step_per_day*calving_day, and a
+    berg that never leaves the front corrupts the restart."""
+    n = len(length_m)
+    days = (end - start).days + 1
+    years = list(range(start.year, end.year + 1))
+    lo = [max(start, dt.date(y, 1, 1)) for y in years]                   # part of each year in the leg
+    hi = [min(end, dt.date(y, 12, 31)) for y in years]
+    w = np.array([(h - l).days + 1 for l, h in zip(lo, hi)], float)
+    edges = np.concatenate([[0.0], np.cumsum(w / w.sum())])
+    pos = (np.cumsum(mass) - 0.5 * mass) / max(np.sum(mass), 1e-30)       # mass midpoint of each berg
+    k = np.minimum(np.searchsorted(edges, pos, side="right") - 1, len(years) - 1)
+    small = (length_m / 1000.0) ** 2 < SEASONAL_AREA
+    out = np.empty(n)
+    for i in range(n):
+        y = years[k[i]]
+        ylen = (dt.date(y, 12, 31) - dt.date(y, 1, 1)).days + 1
+        for _ in range(1000):                                              # a draw outside the leg's part of the year is redrawn
+            if small[i]:
+                doy = (rng.vonmises(2 * np.pi * (SEASONAL_PEAK_DAY - 0.5) / ylen, SEASONAL_KAPPA) % (2 * np.pi)) / (2 * np.pi) * ylen
+            else:
+                doy = rng.random() * ylen
+            d = (dt.date(y, 1, 1) - start).days + doy                      # days since the leg start
+            if (lo[k[i]] - start).days <= d < (hi[k[i]] - start).days + 1:
+                break
+        else:
+            d = (lo[k[i]] - start).days + rng.random() * ((hi[k[i]] - lo[k[i]]).days + 1)
+        out[i] = d
+    return np.clip(out, 1.0, days - 1.01)
 
 
 def cmd_seed(a):
@@ -352,9 +393,7 @@ def _seed(a):
     n = len(LON)
     order = rng.permutation(n)                                           # sizes and sectors mixed over the leg
     LON, LAT, LEN, SCA, FEL = (np.array(x)[order] for x in (LON, LAT, LEN, SCA, FEL))
-    # release days counted from the start of the leg; the last day is left free (FESOM releases on
-    # istep > step_per_day*calving_day, and a berg that never leaves the front corrupts the restart)
-    day = 1.0 + (days - 2.0) * (np.arange(n) + 0.5) / max(n, 1)
+    day = release_days(s, e, LEN, SCA * LEN * LEN * BERG_HEIGHT * RHO_ICE / GT, rng)
     seeded = float(np.sum(SCA * LEN * LEN * BERG_HEIGHT * RHO_ICE) / GT)
 
     def w_(name, arr, fmt):
@@ -392,11 +431,11 @@ def main(argv=None):
         q.add_argument("--couple-dir", required=True); q.add_argument("--mesh-dir", required=True)
         q.add_argument("--start", required=True); q.add_argument("--end", required=True)
     b.add_argument("--oifs-outdata", required=True); b.add_argument("--fesom-outdata", required=True)
-    b.add_argument("--rate-memory-years", type=float, default=10.0)
+    b.add_argument("--rate-memory-years", type=float, default=1.0)
     s.add_argument("--restart-ism", default=""); s.add_argument("--init-rate-file", default="")
     s.add_argument("--default-rate", type=float, default=1100.0); s.add_argument("--relax-years", type=float, default=20.0)
     s.add_argument("--oifs-outdata", default="", help="with --fesom-outdata: take the previous leg's budget first if it is missing")
-    s.add_argument("--fesom-outdata", default=""); s.add_argument("--rate-memory-years", type=float, default=10.0)
+    s.add_argument("--fesom-outdata", default=""); s.add_argument("--rate-memory-years", type=float, default=1.0)
     a = p.parse_args(argv)
     (cmd_budget if a.cmd == "budget" else cmd_seed)(a)
 

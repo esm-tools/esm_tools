@@ -255,10 +255,22 @@ xios:
         interpolation_order: 1
         compression_level: 1
 
-        add_config_sources:
-                context_ifs: ${xml_dir}/context_ifs.xml.j2
-                domain_def: ${xml_dir}/domain_def.xml.j2
-                file_def: ${xml_dir}/file_def.xml.j2
+        # CMIP7 CMOR-ready OIFS output, as in awiesm3.yaml (switch: oifs.cmip7_cmor_output)
+        cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
+        choose_cmip7_cmor_output:
+                True:
+                        add_config_sources:
+                                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                                domain_def: ${xml_dir}/domain_def.xml.j2
+                                file_def: ${xml_dir}/cmip7/file_def_oifs_cmip7_spinup.xml.j2
+                                field_def: ${xml_dir}/cmip7/field_def_cmip7.xml.j2
+                                axis_def: ${xml_dir}/cmip7/axis_def.xml
+                                grid_def: ${xml_dir}/cmip7/grid_def.xml
+                "*":
+                        add_config_sources:
+                                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                                domain_def: ${xml_dir}/domain_def.xml.j2
+                                file_def: ${xml_dir}/file_def.xml.j2
 
 
 # Settings for OASIS

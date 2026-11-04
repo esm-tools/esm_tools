@@ -1,0 +1,112 @@
+# Standalone ICON (2025.10-public) AMIP production runscript, R02B05 (grid 0030),
+# levante, 1979-01-01 to 2024-12-31.
+#
+# Model settings follow Trang's ICON-XPP CAP7 AMIP setup (mkexp, icon-mpim):
+#   - icon.amip: True       prescribed daily SST/sea ice, no ocean coupling, no HD,
+#                           namelists/icon/2025.10-public/R02B05/amip
+#   - icon.amip_sst         hadisst1p1: HadISST1.1 (CMIP7 CFMIP), mid-month adjusted
+#                           by GEOMAR, 1949-2024 (alternatives see icon.yaml)
+#   - icon.scenario: cmip7hist  transient CMIP7 forcing (GHG, ozone, volcanic and
+#                           MACv2-SP aerosol, solar, land use change), extended
+#                           to 2024 with ScenarioMIP 'm' / observations (icon.yaml,
+#                           READMEs in /work/bb0519/foci_input2/ICON-FESOM/icon-xpp/*_geomar)
+# Process layout and performance settings are those of ICON-FESOM.
+#
+# Compile first with: esm_master comp-icon-2025.10-public
+#
+# Run length: 5 year slabs, 1979-2023 (9 runs), then 2024 as one run:
+#   ESM-Tools does not shorten the last run to final_date and the SST/sea ice
+#   data end on 2025-01-16, so a 2024-2028 run would fail. After the 9th run
+#   set runlength: 1, nyear: 1 (choose_unit) and final_date: "2025-01-01"
+#   and resubmit, the experiment continues from the 2024-01-01 restart.
+# One model year takes ~1.5 h with the current output streams (5 years ~7.3 h of
+# the 8 h limit), reduce runlength if the output is increased.
+# The yearly forcing files (ozone, volcanic aerosol, land use) of all years of a
+# run are linked by need_all_years_of_run (icon.yaml forcing_additional_information).
+computer:
+    use_hyperthreading: True
+    additional_flags:
+        - "--tasks-per-node=128"
+    launcher_flags: "-l --kill-on-bad-exit=1 --hint=nomultithread --distribution=plane"
+    check_error:
+      "srun: error:" :
+          frequency: 30
+          method: "kill"
+          message: "SLURM ERROR: slurm ended with an error, good luck."
+          file: "stdout"
+
+general:
+   use_venv: False
+   account: bb0519
+   setup_name: icon
+   compute_time: "08:00:00"
+
+   initial_date: "1979-01-01T00:00:00"       # Initial exp. date
+   final_date: "2024-01-01T00:00:00"         # Final date of the experiment, see above for 2024
+   # set length and unit of each run (= restart interval), both are used
+   # to set the ESM-Tools run length and the ICON restart intervals
+   runlength: 5
+   unit: 'y' # 'd' for day, 'm' for month, 'y' for year
+   # needs fixing, esm_tools can't resolve ${runlength} here
+   # https://github.com/esm-tools/esm_tools/issues/1453
+   # so set nday/nmonth/nyear to the same value as runlength
+   choose_unit:
+      'd':
+         nday: 5
+         unitUpper: 'D'
+      'm':
+         nmonth: 5
+         unitUpper: 'M'
+      'y':
+         nyear: 5
+         unitUpper: 'Y'
+
+   # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to
+   # the job with the full value of the line (e.g. HOME=<model_dir>)
+   homedir: !ENV ${HOME}
+   base_dir: ${homedir}/esm/esm-experiments # links to /work/bb0519
+   model_dir: ${homedir}/esm/models/icon-2025.10-public
+
+icon:
+   version: 2025.10-public
+   resolution: R02B05
+   grid_id: '0030'
+
+   amip: True
+   amip_sst: hadisst1p1
+   scenario: 'cmip7hist'
+   cmip7_scenario: m
+
+   # as in ICON-FESOM
+   nproc: 2560
+   omp_num_threads: 1
+   dtime: 450
+
+   # restart after each run, output intervals are set per stream in the
+   # amip NAMELIST_atm
+   checkpoint_interval: P${general.runlength}${general.unitUpper}
+   restart_interval: ${checkpoint_interval}
+
+   pre_run_commands:
+       - "ulimit -c 0"
+       - "cd ${work_dir}"
+       # ICON reads the restart from a link that points to the multifile restart directory
+       - "rm -f multifile_restart_atmo.mfr"
+       - "ln -sf ${icon.parent_restart_dir}/${parent_expid}_restart_atm_${start_rsttime}.mfr multifile_restart_atmo.mfr"
+       # overcome limitation of f90nml who cannot handle the duplicate namelists output_nml in NAMELIST_atm correctly
+       - sed -i s/\'icon_/\'${general.expid}_/ NAMELIST_*
+       # Only needed if the geomar (coupled ICON-FESOM) namelist templates are used
+       # (icon.namelist_dir: .../geomar/): their output streams contain the sea-ice
+       # diagnostics condhf_ice and meltpot_ice, which ICON only allocates when
+       # coupled to an ocean (is_coupled_to_ocean), so standalone ICON stops with
+       # "no source variable: condhf_ice". The amip templates no longer contain them.
+       #- sed -i -e "s/'condhf_ice', *//g" -e "s/'meltpot_ice', *//g" NAMELIST_atm
+
+   add_namelist_changes:
+      NAMELIST_atm:
+         run_nml:
+            msg_level: 10
+         output_nml:
+            # yearly files, as in icon-fesom-pictl-r2b5-core2-levante_multiyear_geomar.yaml
+            # (f90nml applies this to all output_nml groups)
+            file_interval: "P01YT1S"

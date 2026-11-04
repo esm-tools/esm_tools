@@ -519,7 +519,17 @@ def replace_year_placeholder(config):
                         filetype + "_additional_information"
                     ]:
                         if file_category in config[model][filetype + "_targets"]:
-                            all_years = [config["general"]["current_date"].year]
+                            info = config[model][filetype + "_additional_information"][
+                                file_category
+                            ]
+                            first_year = config["general"]["current_date"].year
+                            last_year = first_year
+                            # need_all_years_of_run: link the files of every year of a
+                            # multi-year run (e.g. 5 year slabs), the year offsets below
+                            # then refer to the first/last year of the run
+                            if "need_all_years_of_run" in info:
+                                last_year = config["general"]["end_date"].year
+                            all_years = list(range(first_year, last_year + 1))
 
                             if (
                                 "need_timestep_before"
@@ -541,18 +551,14 @@ def replace_year_placeholder(config):
                                     file_category
                                 ]
                             ):
-                                all_years.append(
-                                    config["general"]["current_date"].year - 1
-                                )
+                                all_years.append(first_year - 1)
                             if (
                                 "need_year_after"
                                 in config[model][filetype + "_additional_information"][
                                     file_category
                                 ]
                             ):
-                                all_years.append(
-                                    config["general"]["current_date"].year + 1
-                                )
+                                all_years.append(last_year + 1)
 
                             if (
                                 "need_2years_before"
@@ -560,9 +566,7 @@ def replace_year_placeholder(config):
                                     file_category
                                 ]
                             ):
-                                all_years.append(
-                                    config["general"]["current_date"].year - 2
-                                )
+                                all_years.append(first_year - 2)
 
                             if (
                                 "need_2years_after"
@@ -570,9 +574,7 @@ def replace_year_placeholder(config):
                                     file_category
                                 ]
                             ):
-                                all_years.append(
-                                    config["general"]["current_date"].year + 2
-                                )
+                                all_years.append(last_year + 2)
 
                             all_years = list(
                                 dict.fromkeys(all_years)

@@ -258,10 +258,13 @@ icon:
                    radiation_nml:
                        irad_aero: 12
                        irad_o3: ${with_ozone}
-                   nwp_phy_nml:
-                       # scaling of the external (modis) cdnc by the simple plumes,
-                       # 2: piControl scaling factor fixed to 1850
-                       scale_cdnc_mode: 2
+           # AMIP only (see choose_amip), the coupled setups keep the values
+           # of their namelist templates:
+           # scaling of the external (modis) cdnc by the simple plumes,
+           # 2: piControl scaling factor fixed to 1850
+           amip_scale_cdnc_mode: 2
+           # no transient land use change
+           amip_land_use_change: false
            add_forcing_files:
                swflux: swflux_picontrol
                ozone: ozone_picontrol
@@ -282,21 +285,13 @@ icon:
                        irad_cfc12: 4
                    ccycle_nml:
                        ccycle_config%ico2conc: 4
-                   nwp_phy_nml:
-                       # scaling of the external (modis) cdnc by the simple plumes,
-                       # 1: transient (historical) scaling factor
-                       scale_cdnc_mode: 1
-               NAMELIST_lnd:
-                   # transient land use change, reads bc_land_frac_${pfts}pfts_<year>.nc
-                   # (see bc_land_frac_hist in forcing_sources)
-                   jsb_alcc_nml:
-                       active: true
-                       lrestart_cont: true
-                       alcc_filename_prefix: bc_land_frac_${pfts}pfts_
-                   jsb_pplcc_nml:
-                       active: true
-                       lrestart_cont: true
-
+           # AMIP only (see choose_amip), the coupled setups keep the values
+           # of their namelist templates:
+           # 1: transient (historical) cdnc scaling factor
+           amip_scale_cdnc_mode: 1
+           # transient land use change, reads bc_land_frac_${pfts}pfts_<year>.nc
+           # (see bc_land_frac_hist in forcing_sources)
+           amip_land_use_change: true
            add_forcing_files:
                swflux: swflux_hist
                ozone: ozone_hist
@@ -320,6 +315,9 @@ icon:
             NAMELIST_atm:
                coupling_mode_nml:
                   coupled_to_ocean: false
+               nwp_phy_nml:
+                  # set in choose_scenario: 2 (PI-CTRL), 1 (cmip7hist)
+                  scale_cdnc_mode: ${amip_scale_cdnc_mode}
                lnd_nml:
                   # 6: SST and sea ice from (daily) files
                   sstice_mode: 6
@@ -332,6 +330,14 @@ icon:
                jsb_model_nml:
                   # stop in case of water conservation problem
                   enforce_water_budget: error
+               # transient land use change (set in choose_scenario)
+               jsb_alcc_nml:
+                  active: ${amip_land_use_change}
+                  lrestart_cont: true
+                  alcc_filename_prefix: bc_land_frac_${pfts}pfts_
+               jsb_pplcc_nml:
+                  active: ${amip_land_use_change}
+                  lrestart_cont: true
          add_input_files:
             sst: sst
             sic: sic
@@ -603,14 +609,19 @@ icon:
       bc_aeropt_kinne_sw_b14_fin_yearly: bc_aeropt_kinne_sw_b14_fin_@YEAR@.nc 
       greenhouse_gases: bc_greenhouse_gases.nc
 
+   # need_all_years_of_run: link the yearly files of all years of a multi-year
+   # run (e.g. 5 year slabs), the year offsets refer to its first/last year
    forcing_additional_information:
       ozone:
+         - need_all_years_of_run
          - need_year_before
          - need_year_after
       volc_hist:
+         - need_all_years_of_run
          - need_year_before
          - need_year_after
       bc_land_frac_hist:
+         - need_all_years_of_run
          - need_year_after
          - need_2years_after
 

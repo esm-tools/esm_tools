@@ -18,6 +18,9 @@ fesom:
     wiso_code: false
     with_wiso: false
     with_recom: false
+    use_ciso: false
+    recom_cold_start: false
+    recom_restart_flag: true
 
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
@@ -35,6 +38,13 @@ fesom:
         branch: "main"
         repo_options: "--recurse-submodules"
         namelist_dir: "${model_dir}/config/"
+      "2.8-recom":
+        branch: "tp_branch"
+        repo_options: "--recurse-submodules"
+        namelist_dir: "${model_dir}/config/bin_2p1z1d/"
+        with_recom: true
+        fesom_Dflags: "-DRECOM_COUPLED=ON"
+        mpi_num_groups: 1
       # Same source as 2.8.0, built against XIOS. FESOM then routes its output
       # through XIOS instead of its own writer. Install XIOS first, from the
       # same directory, so that it lands in the sibling ``xios`` that the
@@ -595,6 +605,70 @@ fesom:
                             whichEVP: ${whichEVP}
                             alpha_evp: ${alpha_evp}
                             beta_evp: ${beta_evp}
+
+    choose_with_recom:
+            true:
+                    add_namelists:
+                            - namelist.recom
+                    add_config_files:
+                            recom: recom
+                    add_config_sources:
+                            recom: "${namelist_dir}/namelist.recom${namelist_ciso_sufix}"
+                            tra: "${namelist_dir}/namelist.tra${namelist_ciso_sufix}"
+                    add_config_in_work:
+                            recom: namelist.recom
+                    remove_namelist_changes.namelist.config: [inout]
+                    add_namelist_changes:
+                            namelist.config:
+                                    run_config:
+                                            num_fesom_groups: "${mpi_num_groups}"
+                            namelist.recom:
+                                    pavariables:
+                                            recom_restart: "${recom_restart_flag}"
+                    choose_use_ciso:
+                            True:
+                                    namelist_ciso_sufix: ".ciso"
+                            False:
+                                    namelist_ciso_sufix: ""
+                    choose_general.run_number:
+                            1:
+                                    choose_recom_cold_start:
+                                            True:
+                                                    recom_restart_flag: false
+                                                    remove_restart_in_files: [par_bio_restart, par_bio_restart_legacy]
+                                                    remove_restart_in_in_work: [par_bio_restart, par_bio_restart_legacy]
+                                                    remove_restart_in_sources: [par_bio_restart, par_bio_restart_legacy]
+                    allowed_missing_files:
+                            - "fesom\\..*\\.(oce|ice|bio)\\.restart.*"
+                    add_restart_in_files:
+                            par_oce_restart_legacy: par_oce_restart_legacy
+                            par_ice_restart_legacy: par_ice_restart_legacy
+                            par_bio_restart: par_bio_restart
+                            par_bio_restart_legacy: par_bio_restart_legacy
+                    add_restart_in_in_work:
+                            par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+                            par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
+                            par_bio_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.bio.restart/*.nc
+                            par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
+                            par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
+                            par_bio_restart_legacy: fesom.${parent_date!syear}.bio.restart/*.nc
+                    add_restart_in_sources:
+                            par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+                            par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
+                            par_bio_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.bio.restart/*.nc
+                            par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
+                            par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
+                            par_bio_restart_legacy: fesom.${parent_date!syear}.bio.restart/*.nc
+                    add_restart_out_files:
+                            par_bio_restart: par_bio_restart
+                    add_restart_out_in_work:
+                            par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+                            par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
+                            par_bio_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.bio.restart/*.nc
+                    add_restart_out_sources:
+                            par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+                            par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
+                            par_bio_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.bio.restart/*.nc
 
     with_cavity: false
     choose_with_cavity:

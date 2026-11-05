@@ -96,8 +96,14 @@ general:
         - '2.6-recom'
         - '2.6.1'
         - '2.6.2'
+        - '2.8-recom'
 
         choose_version:
+          '2.8-recom':
+            couplings:
+            - fesom-2.8-recom+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON -DOASIS_WAITGROUP=OFF -DCMAKE_INSTALL_PREFIX=../"
+            with_recom: true
           '2.6-recom':
             couplings:
             - fesom2.6_recom_tp+echam-6.3.05p2-awiesm-2.1+recom-2.0
@@ -222,6 +228,10 @@ echam:
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.6":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
+                "2.8-recom":
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
@@ -354,6 +364,25 @@ fesom:
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
         choose_general.version:
+                "2.8-recom":
+                        version: "2.8-recom"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d/
+                        remove_namelist_changes.namelist.oce.oce_tra:
+                                - surf_relax_s
+                                - K_hor
+                        remove_namelist_changes.namelist.oce.oce_dyn:
+                                - K_gm
+                        remove_namelist_changes.namelist.oce.boundary:
+                                - restore_s_surf
+                        remove_namelist_changes.namelist.config.paths:
+                                - OpbndPath
+                                - TideForcingPath
+                                - ForcingDataPath
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
                 "2.6-recom":
                         version: "2.6-recom"
                         ALE_scheme: 'zstar'

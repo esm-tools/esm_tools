@@ -25,7 +25,7 @@ general:
    # operational settings: yearly restarts
    compute_time: "01:30:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2022-01-01T00:00:00"
+   final_date: "1855-01-01T00:00:00"
    nmonth: 12
    clean_runs: 2
    # test settings, daily restarts (replace nmonth, do not enable both)

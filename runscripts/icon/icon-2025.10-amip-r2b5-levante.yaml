@@ -64,6 +64,12 @@ icon:
    amip: True
    scenario: 'cmip7hist'
 
+   # after each run: daily 3d model-level output -> 26 pressure levels
+   # (configs/components/icon/interp_to_pressure_levels.py, postprocessing job);
+   # the model-level files are moved to outdata/icon/3d_ml once the pressure-level file passed its check
+   interp_to_plev: True
+   interp_to_plev_ml_files: move
+
    # as in ICON-FESOM
    nproc: 2560
    omp_num_threads: 1

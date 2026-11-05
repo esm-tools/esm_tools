@@ -61,6 +61,15 @@ icon:
          amip_sst_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
          amip_sst_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
    monitoring: False
+   # interpolate the daily 3d model-level output to pressure levels after each
+   # run (postprocessing job after tidy, see choose_interp_to_plev below)
+   interp_to_plev: False
+   # what happens to the model-level files once their pressure-level file
+   # passed the check: move (to outdata/icon/3d_ml) | remove | keep
+   interp_to_plev_ml_files: move
+   interp_to_plev_pattern: "${general.expid}_atm_3d_ml_daily_*T000000Z.nc"
+   # further options of interp_to_pressure_levels.py, e.g. "--plevels 85000,50000,20000"
+   interp_to_plev_args: ""
 
    compile_infos:
       choose_version:
@@ -647,6 +656,33 @@ icon:
                       -p ${general.base_dir}
                       "
                       #-o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
+                  nproc: 1
+
+   # Only the files of the run that just finished are processed (--start-date,
+   # --end-date), the next run may already be running. The script runs with the
+   # python3 of the job environment (the esm-tools conda env activated by
+   # esm_runscripts), which needs numpy and netCDF4.
+   choose_interp_to_plev:
+      True:
+         workflow:
+            next_run_triggered_by: tidy
+            subjobs:
+               icon_interp_to_plev:
+                  batch_or_shell: shell
+                  order_in_cluster: concurrent
+                  run_on_queue: ${computer.partitions.pp.name}
+                  run_after: tidy
+                  script_dir: ${general.esm_configs_dir}/components/icon
+                  submit_to_batch_system: True
+                  script: "
+                      interp_to_pressure_levels.py
+                      --path ${icon.experiment_outdata_dir}
+                      --pattern '${icon.interp_to_plev_pattern}'
+                      --start-date ${start_date!syear!smonth!sday}
+                      --end-date ${end_date!syear!smonth!sday}
+                      --ml-files ${icon.interp_to_plev_ml_files}
+                      ${icon.interp_to_plev_args}
+                      "
                   nproc: 1
 
 # This section takes care of dealing with environment changes you might want to do, to

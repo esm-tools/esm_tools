@@ -69,7 +69,7 @@ computer:
             pool: "/gxfs_work/geomar/smomw580/foci_input2/"
             focipool: "/gxfs_work/geomar/smomw580/foci_input2/"
 
-    pool_dir: "/not/available/on/nesh/"
+    pool_dir: "/gxfs_work/geomar/smomw580/foci_input2/" 
 
     # Set default compiler and MPI
     # NOTE: Many models set a default compiler_mpi in e.g. configs/setups/focioifs.yaml
@@ -90,6 +90,7 @@ computer:
 
     additional_flags:
           - --constraint=sapphire
+          - --mem=0
 
     # Now choose the compiler_mpi
     # Note: We must set the environment first, oneapi or gcc

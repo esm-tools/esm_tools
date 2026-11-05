@@ -61,13 +61,21 @@ icon:
          amip_sst_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
          amip_sst_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
    monitoring: False
-   # interpolate the daily 3d model-level output to pressure levels after each
-   # run (postprocessing job after tidy, see choose_interp_to_plev below)
+   # interpolate the monthly and the daily 3d model-level output to pressure
+   # levels after each run (postprocessing job after tidy, see
+   # choose_interp_to_plev below; interp_to_plev.sh calls
+   # interp_to_pressure_levels.py for the monthly, then for the daily files)
    interp_to_plev: False
    # what happens to the model-level files once their pressure-level file
    # passed the check: move (to outdata/icon/3d_ml) | remove | keep
+   # daily (atm_3d_ml_daily -> atm_3d_pl_daily)
    interp_to_plev_ml_files: move
    interp_to_plev_pattern: "${general.expid}_atm_3d_ml_daily_*T000000Z.nc"
+   # monthly (atm_3d_ml -> atm_3d_pl); [0-9] excludes the daily files. Keep the
+   # monthly model-level files (move or keep): the CERESMIP aec needs them.
+   # An empty pattern ("") skips the monthly step.
+   interp_to_plev_monthly_ml_files: move
+   interp_to_plev_monthly_pattern: "${general.expid}_atm_3d_ml_[0-9]*T000000Z.nc"
    # further options of interp_to_pressure_levels.py, e.g. "--plevels 85000,50000,20000"
    interp_to_plev_args: ""
 
@@ -675,12 +683,14 @@ icon:
                   script_dir: ${general.esm_configs_dir}/components/icon
                   submit_to_batch_system: True
                   script: "
-                      interp_to_pressure_levels.py
-                      --path ${icon.experiment_outdata_dir}
-                      --pattern '${icon.interp_to_plev_pattern}'
-                      --start-date ${start_date!syear!smonth!sday}
-                      --end-date ${end_date!syear!smonth!sday}
-                      --ml-files ${icon.interp_to_plev_ml_files}
+                      interp_to_plev.sh
+                      ${icon.experiment_outdata_dir}
+                      ${start_date!syear!smonth!sday}
+                      ${end_date!syear!smonth!sday}
+                      '${icon.interp_to_plev_monthly_pattern}'
+                      ${icon.interp_to_plev_monthly_ml_files}
+                      '${icon.interp_to_plev_pattern}'
+                      ${icon.interp_to_plev_ml_files}
                       ${icon.interp_to_plev_args}
                       "
                   nproc: 1

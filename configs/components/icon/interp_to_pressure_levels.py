@@ -382,6 +382,9 @@ def main():
                               'subdirectory of --path (default), remove it, or keep it')
     parser.add_argument('--keep-ml-files', action='store_true',
                          help='Same as --ml-files keep')
+    parser.add_argument('--missing-ok', action='store_true',
+                         help='Exit with status 0 if no input file matches (e.g. monthly '
+                              'output of a run that ends within a month)')
     parser.add_argument('--dry-run', action='store_true',
                          help='Do not write, move or remove anything; only report '
                               'what would be done (existing output files are checked)')
@@ -414,7 +417,13 @@ def main():
     if not args.dry_run:
         os.makedirs(outdir, exist_ok=True)
 
-    files = find_files(args.path, args.pattern, args.start_date, args.end_date)
+    try:
+        files = find_files(args.path, args.pattern, args.start_date, args.end_date)
+    except FileNotFoundError as e:
+        if not args.missing_ok:
+            raise
+        print(f'{e}: nothing to do (--missing-ok)')
+        return
     print(f'Found {len(files)} input file(s) for pattern {args.pattern!r} in {args.path!r}'
           f' (ml files: {args.ml_files}{", DRY RUN" if args.dry_run else ""})')
 

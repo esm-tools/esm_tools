@@ -19,6 +19,14 @@ if [ $# -lt 7 ]; then
     exit 2
 fi
 
+# ESM-Tools starts this script with the machine's launcher. mpirun without -np (nesh)
+# starts one copy per slot of the exclusive node, and the copies overwrite each other's
+# output. Only the first copy (rank 0) works, the others exit at once.
+rank=${OMPI_COMM_WORLD_RANK:-${PMI_RANK:-${PMIX_RANK:-${SLURM_PROCID:-0}}}}
+if [ "$rank" != 0 ]; then
+    exit 0
+fi
+
 path=$1 start_date=$2 end_date=$3
 monthly_pattern=$4 monthly_ml_files=$5
 daily_pattern=$6 daily_ml_files=$7

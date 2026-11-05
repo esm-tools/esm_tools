@@ -1,9 +1,10 @@
 # Standalone ICON (2025.10-public) AMIP test runscript, R02B05 (grid 0030), nesh.
-# Test for icon-2025.10-amip-r2b5-nesh_1979-2024.yaml (same settings): 2 days
-# starting 1979-01-01 with a restart after 1 day, pressure-level interpolation
-# after each day (model-level files moved to outdata/icon/3d_ml).
+# Test for icon-2025.10-amip-r2b5-nesh_1979-2024.yaml (same settings): 10 days
+# starting 1979-01-01 with a restart after 5 days, pressure-level interpolation
+# after each run (model-level files moved to outdata/icon/3d_ml).
 # Gives the time per model day (log/*_compute_*.log) to choose the production
 # runlength: time per model year = 365 x time per day (+ ~2 min initialisation per run).
+# icon-2025.10-amip-r2b5-nesh_12nodes.yaml: the same with 384 tasks (12 nodes).
 computer:
     use_hyperthreading: False
     additional_flags:
@@ -27,17 +28,17 @@ general:
    compute_time: "02:00:00"
 
    initial_date: "1979-01-01T00:00:00"       # Initial exp. date
-   final_date: "1979-01-03T00:00:00"         # Final date of the experiment
+   final_date: "1979-01-11T00:00:00"         # Final date of the experiment
    # set length and unit of each run (= restart interval), both are used
    # to set the ESM-Tools run length and the ICON restart intervals
-   runlength: 1
+   runlength: 5
    unit: 'd' # 'd' for day, 'm' for month, 'y' for year
    # needs fixing, esm_tools can't resolve ${runlength} here
    # https://github.com/esm-tools/esm_tools/issues/1453
    # so set nday/nmonth/nyear to the same value as runlength
    choose_unit:
       'd':
-         nday: 1
+         nday: 5
          unitUpper: 'D'
       'm':
          nmonth: 1

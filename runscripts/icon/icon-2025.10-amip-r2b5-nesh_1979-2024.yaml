@@ -9,19 +9,22 @@
 #     ${computer.pool_directories.focipool}/ICON-FESOM/icon-xpp (see ceresmip/nesh/README.md)
 #   - compile: cd ~/esm/models && esm_master install-icon-2025.10-public, then
 #     check out the commit used on levante (69ef5cda9, tag icon-2025.10-2), see ceresmip/nesh/README.md
-#   - run icon-2025.10-amip-r2b5-nesh.yaml (2 days) first: it checks the setup and
-#     gives the time per model day, needed to choose runlength below
+#   - run icon-2025.10-amip-r2b5-nesh.yaml (10 days) first: it checks the setup and
+#     gives the time per model day
 #
-# Run length: 5 year slabs, 1979-2023 (9 runs), then 2024 as one run:
-#   ESM-Tools does not shorten the last run to final_date and the SST/sea ice
-#   data end on 2025-01-16, so a 2024-2028 run would fail. After the 9th run
-#   set runlength: 1, nyear: 1 (choose_unit) and final_date: "2025-01-01"
+# Run length: 15 year chunks, 1979-2023 (3 runs: 1979-1993, 1994-2008, 2009-2023),
+#   then 2024 as one run, started by hand: ESM-Tools does not shorten the last
+#   run to final_date and the SST/sea ice data end on 2025-01-16. After the 3rd
+#   run set runlength: 1, nyear: 1 (choose_unit) and final_date: "2025-01-01"
 #   and resubmit, the experiment continues from the 2024-01-01 restart.
-# The time per model year on nesh is not known yet (levante: 1.44 h on 2560 cores).
-# A 5 year run must fit into the 48 h limit (incl. ~10 % margin), i.e. one model
-# year must take < 8.5 h. Check with the 2-day test and reduce runlength if needed.
-# Disk: a 5 year run writes ~700 GB of daily 3d model-level output before the
-# interpolation job deletes it (interp_to_plev_ml_files: remove).
+# Time: 24 nodes take ~21 s per model day = ~2.1 h per model year (10-day test
+#   amip_nesh_24n, 2026-11-05), so a 15 year run takes ~32 h (48 h limit).
+# Restart files: written every 3 years (checkpoint_interval), the run stops after
+#   15 years (restart_interval). Only the restart at the end of a run is copied to
+#   restart/icon; the 3-yearly ones stay in run_*/work (as in the ICON-FESOM runscripts).
+# Disk: a 15 year run writes ~2.1 TB of daily 3d model-level output before the
+#   interpolation job deletes it (interp_to_plev_ml_files: remove, ~2 s per model
+#   day, i.e. ~3 h per 15 years, runs while the next run already computes).
 computer:
     use_hyperthreading: False
     additional_flags:
@@ -46,22 +49,22 @@ general:
 
    initial_date: "1979-01-01T00:00:00"       # Initial exp. date
    final_date: "2024-01-01T00:00:00"         # Final date of the experiment, see above for 2024
-   # set length and unit of each run (= restart interval), both are used
-   # to set the ESM-Tools run length and the ICON restart intervals
-   runlength: 5
+   # set length and unit of each run, both are used to set the ESM-Tools run
+   # length and the ICON restart_interval (end of the run)
+   runlength: 15
    unit: 'y' # 'd' for day, 'm' for month, 'y' for year
    # needs fixing, esm_tools can't resolve ${runlength} here
    # https://github.com/esm-tools/esm_tools/issues/1453
    # so set nday/nmonth/nyear to the same value as runlength
    choose_unit:
       'd':
-         nday: 5
+         nday: 15
          unitUpper: 'D'
       'm':
-         nmonth: 5
+         nmonth: 15
          unitUpper: 'M'
       'y':
-         nyear: 5
+         nyear: 15
          unitUpper: 'Y'
 
    # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to
@@ -92,10 +95,11 @@ icon:
    omp_num_threads: 1
    dtime: 450
 
-   # restart after each run, output intervals are set per stream in the
-   # amip NAMELIST_atm
-   checkpoint_interval: P${general.runlength}${general.unitUpper}
-   restart_interval: ${checkpoint_interval}
+   # restart files every 3 years (checkpoint_interval), the run stops after
+   # runlength (restart_interval), as in the ICON-FESOM runscripts. runlength must
+   # be a multiple of 3 years. Output intervals are set per stream in the amip NAMELIST_atm
+   checkpoint_interval: P03Y
+   restart_interval: P${general.runlength}${general.unitUpper}
 
    pre_run_commands:
        - "ulimit -c 0"

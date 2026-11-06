@@ -208,6 +208,19 @@ def test_subplan_coerces_bool_with_provenance():
     assert type(sub_plan.submit_to_batch_system) is bool
 
 
+def test_subplan_accepts_none_with_provenance():
+    # A YAML ``null`` arrives as NoneWithProvenance, which pydantic rejects
+    # for Optional[str] fields unless the provenance is stripped first.
+    from esm_parser.provenance import NoneWithProvenance
+
+    sub_plan = SubPlan(
+        name="postprocessing",
+        parent_plan="postprocessing",
+        run_on_queue=NoneWithProvenance(None, provenance=None),
+    )
+    assert sub_plan.run_on_queue is None
+
+
 def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
     # The actual bug this test guards against: configs/setups/awicm3/
     # awicm3.yaml's choose_general.postprocessing: True: workflow: {...}

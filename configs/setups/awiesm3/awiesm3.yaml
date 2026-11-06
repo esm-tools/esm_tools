@@ -1299,7 +1299,6 @@ fesom:
                         nm_erosion_data_file: '${recom_input_path}/${resolution}/ErosionInput.nc'
                         nm_co2_data_file: '${recom_input_path}/MonthlyAtmCO2_gcb2023.nc' # not used but searched for by bin. TODO: test removing.
                     pavariables:
-                        REcoMDataPath: '${recom_input_path}/${resolution}' 
                         recom_restart: "${fesom.recom_restart_flag}"
         false:
             recom_comp_flag: ""

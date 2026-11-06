@@ -23,11 +23,17 @@ general:
         # the cavities have melted their share (icb_from_budget, see
         # couplings/fesom/iceberg_budget.py), and the runoff mapper drops that
         # calving from the Southern Ocean surface (ism_freshwater_return). Needs
-        # cavities and runoff mapper v1.4. Off by default; with_icb: true in a
-        # runscript switches them on. Legs have to be a year or longer.
+        # cavities and runoff mapper v1.4. Off by default; with_icb_default: true in
+        # a runscript switches them on for legs of a year or longer, shorter legs
+        # run without them (icb_leg_long_enough, as in awiesm3).
         with_pism: false
+        nyear: 0
+        nmonth: 0
+        nday: 0
+        nhour: 0
+        icb_leg_long_enough: "$(( ${general.nyear} >= 1 or ${general.nmonth} >= 12 or ${general.nday} >= 360 or ${general.nyear} + ${general.nmonth} + ${general.nday} + ${general.nhour} == 0 ))"
         with_icb_default: false
-        with_icb: "$(( ${general.with_icb_default} ))"
+        with_icb: "$(( ${general.with_icb_default} and ${general.icb_leg_long_enough} ))"
         ism_freshwater_return: "$(( ${general.with_icb} ))"
         icb_from_budget: "$(( ${general.with_icb} and not ${general.with_pism} ))"
 

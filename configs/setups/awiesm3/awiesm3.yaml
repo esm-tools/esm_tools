@@ -112,10 +112,19 @@ general:
     # The iceberg module. On by default in v3.5.0(-cc) and v3.5.1(-cc): choose_version
     # below sets with_icb_default, not with_icb itself, because a value set in a
     # choose_ block cannot be overridden from the runscript. So with_icb: false in
-    # a runscript switches the icebergs off (needed for legs shorter than a year).
-    # The ice-sheet runscripts set with_icb themselves.
+    # a runscript switches the icebergs off. The ice-sheet runscripts set with_icb
+    # themselves.
+    # Legs shorter than a year, such as 1-day tests, run without icebergs: the seeding
+    # spreads an annual rate over the leg and the budget reads monthly output of whole
+    # years (couplings/fesom/iceberg_budget.py). The leg length comes from the
+    # runscript; all four zero is esm_runscripts' default leg of one year.
+    nyear: 0
+    nmonth: 0
+    nday: 0
+    nhour: 0
+    icb_leg_long_enough: "$(( ${general.nyear} >= 1 or ${general.nmonth} >= 12 or ${general.nday} >= 360 or ${general.nyear} + ${general.nmonth} + ${general.nday} + ${general.nhour} == 0 ))"
     with_icb_default: false
-    with_icb: "$(( ${general.with_icb_default} ))"
+    with_icb: "$(( ${general.with_icb_default} and ${general.icb_leg_long_enough} ))"
 
     # Wetland CH4-C into the coupled CO2 flux (ifch4tocpl) closes the carbon cycle.
     # On with LPJ-GUESS CO2 coupling and the CO2 tracer, except in v3.5.0-cc

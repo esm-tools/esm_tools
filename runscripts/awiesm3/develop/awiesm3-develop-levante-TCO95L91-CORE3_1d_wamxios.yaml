@@ -63,10 +63,12 @@ oifs:
     scenario: piControl
 
 oasis3mct:
+    # lresume true: start from the coupler restarts in the pool. With lresume false
+    # esm_tools writes every coupling field as EXPOUT, one NetCDF record per field and
+    # coupling step (47 GB after 57 days in wamcmip7y, five times slower from day 49).
     use_lucia: true
-    lresume: false
+    lresume: true
     time_step: 7200
-    norestart: T
 
 xios:
     with_model:

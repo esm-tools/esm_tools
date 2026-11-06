@@ -130,6 +130,7 @@ oifs:
     - 48r1v5
     - 48r1v6
     - 48r1v7
+    - 48r1v8
     - 48r1-develop
     - 48r1-foci5
 
@@ -447,6 +448,29 @@ oifs:
         # tracer starts at the namelist value instead of zero. Since 2026-10-27 also ECE_CPL_EMIS_CO2
         # (CMIP7 CO2 emissions from the emissions reader, off by default).
         branch: '48r1v7'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository:  https://git.smhi.se/jan.streffing/oifs48r1.1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+        co2_veg_emis_nml: namcompo_emis_co2_veg_fco2.nml
+      # Release tag in oifs48r1.1 (awiesm3-develop at 53391a7), used by awiesm3 v3.5.2: 48r1v7 plus
+      # the consortium's ecearth up to 73b2a86 (O3 time interpolation, CO2 indexing in the radiation,
+      # stratospheric aerosol profile, tuning constants in namelists, M7 optical properties and the sync
+      # with oifs48r1-lts), WAM output through XIOS (oifs.wam_xios), the dEBM2 forcing of the ice-sheet
+      # coupling and the land-ice albedo constants in NAMSURFTUNE.
+      48r1v8:
+        # Release tag in oifs48r1.1 (76fdce0: e65d859 plus the emissions reader), used by awiesm3 v3.5.1: 48r1v6 plus the
+        # consortium's ecearth up to 562ebfd (the CO2 tracer indexing in the radiation interface, the
+        # MACv2-SP year held at NCMIPFIXYR from the module variable, the land-ice coupling of the
+        # ice-sheet variant, the consolidated M7 interface, the upstream form of the sea-level
+        # pressure coupling), and REFVALI honoured on the GRIB cold start for NREQIN = -1, so the CO2
+        # tracer starts at the namelist value instead of zero. Since 2026-10-27 also ECE_CPL_EMIS_CO2
+        # (CMIP7 CO2 emissions from the emissions reader, off by default).
+        branch: '48r1v8'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS

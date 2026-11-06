@@ -54,6 +54,12 @@ fesom:
       "2.8.3":
         branch: "2.8.3"
         repo_options: "--recurse-submodules"
+      # main at 8a1af1c (2026-11-06): 2.8.3 plus single-precision tracers with REcoM (#1242), ballasting
+      # once per step (#1246), restarts that reproduce a continuous run (#1249), the sinking-speed
+      # output (#1250), the online BGC budget (#1251) and the bug fixes since. The tag of awiesm3 v3.5.2.
+      "2.8.4":
+        branch: "2.8.4"
+        repo_options: "--recurse-submodules"
 
     destination: "fesom-2.8"
     install_bins: bin/fesom.x

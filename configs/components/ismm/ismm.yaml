@@ -22,6 +22,7 @@ ismm:
     available_versions:
     - "ece4"
     - "4.1.8-awi.1"
+    - "4.1.8-awi.2"
 
     version: "ece4"
     git-repository: https://git.smhi.se/jan.streffing/ecearth4.git
@@ -41,6 +42,13 @@ ismm:
         "4.1.8-awi.1":
             branch: "4.1.8-awi.1"
             destination: ismm-ece4
+        # Release tag of debm2 (4dfacd7), used by awiesm3 v3.5.2-is: 4.1.8-awi.1 plus the
+        # dEBM2 region mode and the cold start's first sample left out of the means.
+        # Built against libdebm2.so as ece4.
+        "4.1.8-awi.2":
+            branch: "4.1.8-awi.2"
+            destination: ismm-ece4
+            comp_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make coupling && cd ${model_dir}/sources/ism-mapper/src && make FC=mpif90 LD=mpif90 OASIS_BASE_DIR=${model_dir}/../oasis/arch_ecearth OASIS_LIBS="-lpsmile -lmct -lmpeu -lscrip" EBMWORLD_DIR=${model_dir}/sources/ism-mapper/src/CISSEMBEL/src NETCDF_INC_DIR="-I$NETCDFFROOT/include -I$NETCDFROOT/include" NETCDF_LIB_DIR="-L$NETCDFFROOT/lib -L$NETCDFROOT/lib" DEBM2_DIR=${model_dir}/../debm2'
 
     # The committed Makefile carries ECMWF HPC2020 paths and mpifort. Every setting
     # it needs is a plain make variable, and command-line macros override file

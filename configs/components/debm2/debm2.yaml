@@ -14,11 +14,16 @@ debm2:
 
     available_versions:
     - "capi"
+    - "1.0"
 
     version: "capi"
     git-repository: git@github.com:JanStreffing/dEBM2.git
     branch: capi
     destination: debm2
+    # 1.0 is the release tag of capi (bea70ac), used by awiesm3 v3.5.2-is.
+    choose_version:
+        "1.0":
+            branch: "1.0"
 
     comp_command: "python3 capi/build_libdebm2.py"
     clean_command: "rm -rf capi/lib"

@@ -17,39 +17,15 @@ covers structural read access.
 
 from __future__ import annotations
 
-from typing import Annotated, Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from loguru import logger
-from pydantic import BaseModel, BeforeValidator, ConfigDict
+from pydantic import ConfigDict
+
+from esm_parser.pydantic_models import ProvenanceFreeModel
 
 
-def _coerce_bool(value):
-    """Coerce esm_parser's ``BoolWithProvenance`` (and similar truthy/falsy
-    wrappers) into a real ``bool``.
-
-    ``BoolWithProvenance`` wraps a bool with YAML-provenance tracking but
-    is not itself a ``bool`` subclass, so pydantic's lax bool validator
-    rejects it outright (``bool_type`` error) even though the value is
-    unambiguously ``True``/``False``. Config values sourced straight from a
-    runscript/setup YAML (e.g. a choose-block's
-    ``submit_to_batch_system: True``) carry this wrapper; literals built in
-    Python (``Workflow.default``'s ``.get(..., True)``) don't -- so this
-    must tolerate both.
-    """
-    # `BoolWithProvenance` makes `isinstance(v, bool)` lie (True) via its own
-    # `__subclasshook__`-style trickery, even though it is not the literal
-    # C-level `bool` type pydantic-core's Rust validator checks against --
-    # an `isinstance` guard here would silently pass the wrapper through
-    # unconverted. `type(value) is bool` is the only reliable check.
-    if type(value) is bool:
-        return value
-    return bool(value)
-
-
-ProvenanceBool = Annotated[bool, BeforeValidator(_coerce_bool)]
-
-
-class Step(BaseModel):
+class Step(ProvenanceFreeModel):
     """A single recipe step (``p-plan:Step``) -- a function or bash script
     that makes up a :class:`SubPlan`, run sequentially."""
 
@@ -61,7 +37,7 @@ class Step(BaseModel):
         return f"<Step {self.name}>"
 
 
-class SubPlan(BaseModel):
+class SubPlan(ProvenanceFreeModel):
     """A phase/jobtype recipe (``p-plan:MultiStep``).
 
     The finer-grained level inside a :class:`Plan` cluster -- e.g.
@@ -76,7 +52,7 @@ class SubPlan(BaseModel):
     nproc: int = 1
     preceded_by: List[str] = []
     run_only: Optional[str] = None
-    submit_to_batch_system: ProvenanceBool = False
+    submit_to_batch_system: bool = False
     run_on_queue: Optional[str] = None
     batch_or_shell: Optional[str] = None
     steps: List[Step] = []
@@ -91,7 +67,7 @@ class SubPlan(BaseModel):
         return f"<SubPlan {self.name}  {' '.join(bits)}>"
 
 
-class Plan(BaseModel):
+class Plan(ProvenanceFreeModel):
     """A batch-submission cluster (``p-plan:Plan`` + ``esm:Cluster``), or the
     root workflow itself.
 
@@ -110,7 +86,7 @@ class Plan(BaseModel):
     next_submit: List[str] = []
     nproc: Optional[int] = None
     batch_or_shell: Optional[str] = None
-    submit_to_batch_system: ProvenanceBool = False
+    submit_to_batch_system: bool = False
     order_in_cluster: Optional[str] = None
     runs_on: Optional[Literal["login_node", "sbatch"]] = None
     cycling: Optional[dict] = None
@@ -124,7 +100,7 @@ class Plan(BaseModel):
         return f"<Plan {self.name}  {' '.join(bits)}>"
 
 
-class Workflow(BaseModel):
+class Workflow(ProvenanceFreeModel):
     """The root plan (``p-plan:Plan``): the whole per-chunk workflow.
 
     Two parallel namespaces, matching ``config["workflow"]``:

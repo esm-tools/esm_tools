@@ -165,25 +165,74 @@ def test_workflow_resolve_uses_default_when_no_custom_block():
     assert wf.entry_point == "prepcompute"
 
 
-def test_workflow_resolve_raises_for_custom_general_workflow_block():
+def test_workflow_resolve_raises_when_general_workflow_defines_its_own_entry_point():
+    # A genuine attempt to replace the root chain (not just add a sub-plan
+    # alongside it) is still out of scope -- this must keep failing loudly.
+    config = _no_custom_workflow_config()
+    config["general"]["workflow"] = {"entry_point": "something_else", "plans": {}}
+
+    try:
+        Workflow.resolve(config)
+        raised = False
+    except NotImplementedError:
+        raised = True
+    assert raised, "resolve() should refuse to replace the root chain entirely"
+
+
+def test_workflow_resolve_does_not_raise_for_an_empty_supplemental_block():
+    # A workflow: block with no actual sub_plans in it (no entry_point/plans
+    # either) has nothing to merge or replace -- it's not a reason to fail.
     config = _no_custom_workflow_config()
     config["general"]["workflow"] = {"sub_plans": {}}
 
-    try:
-        Workflow.resolve(config)
-        raised = False
-    except NotImplementedError:
-        raised = True
-    assert raised, "resolve() should refuse to silently ignore a custom block"
+    wf = Workflow.resolve(config)
+
+    assert wf.entry_point == "prepcompute"
 
 
-def test_workflow_resolve_raises_for_custom_model_workflow_block():
+def test_subplan_coerces_bool_with_provenance():
+    # Real cluster crash: esm_parser YAML values aren't plain bool/int/str --
+    # they're wrapped (e.g. BoolWithProvenance) to carry provenance info.
+    # BoolWithProvenance fakes isinstance(v, bool) == True in pure Python
+    # but isn't the literal C-level bool pydantic-core's Rust validator
+    # checks, so an isinstance-based coercion guard silently passes it
+    # through unconverted and pydantic-core rejects it (bool_type error).
+    from esm_parser.provenance import BoolWithProvenance
+
+    sub_plan = SubPlan(
+        name="postprocessing",
+        parent_plan="postprocessing",
+        submit_to_batch_system=BoolWithProvenance(True, provenance=None),
+    )
+    assert sub_plan.submit_to_batch_system is True
+    assert type(sub_plan.submit_to_batch_system) is bool
+
+
+def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
+    # The actual bug this test guards against: configs/setups/awicm3/
+    # awicm3.yaml's choose_general.postprocessing: True: workflow: {...}
+    # block (legacy vocab: subjobs/run_after/next_run_triggered_by) must
+    # merge into the default chain as an extra sub-plan, not raise.
     config = _no_custom_workflow_config()
-    config["fesom"]["workflow"] = {"sub_plans": {}}
+    config["fesom"]["workflow"] = {
+        "next_run_triggered_by": "tidy",
+        "subjobs": {
+            "postprocessing": {
+                "run_after": "tidy",
+                "run_on_queue": "pp",
+                "submit_to_batch_system": True,
+                "nproc": 1,
+            }
+        },
+    }
+    config["computer"]["partitions"]["pp"] = {"name": "pp"}
 
-    try:
-        Workflow.resolve(config)
-        raised = False
-    except NotImplementedError:
-        raised = True
-    assert raised, "resolve() should refuse to silently ignore a custom block"
+    wf = Workflow.resolve(config)
+
+    assert wf.entry_point == "prepcompute"
+    assert "postprocessing" in wf.sub_plans
+    assert wf.sub_plans["postprocessing"].preceded_by == ["tidy"]
+    assert wf.sub_plans["postprocessing"].run_on_queue == "pp"
+    assert "postprocessing" in wf.plans
+    # Fan-out: tidy still triggers the next cycle AND the new sub-plan.
+    assert wf.resubmit_triggers["tidy"] == ["prepcompute", "postprocessing"]

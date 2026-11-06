@@ -17,10 +17,36 @@ covers structural read access.
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional
+from typing import Annotated, Dict, List, Literal, Optional
 
 from loguru import logger
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, BeforeValidator, ConfigDict
+
+
+def _coerce_bool(value):
+    """Coerce esm_parser's ``BoolWithProvenance`` (and similar truthy/falsy
+    wrappers) into a real ``bool``.
+
+    ``BoolWithProvenance`` wraps a bool with YAML-provenance tracking but
+    is not itself a ``bool`` subclass, so pydantic's lax bool validator
+    rejects it outright (``bool_type`` error) even though the value is
+    unambiguously ``True``/``False``. Config values sourced straight from a
+    runscript/setup YAML (e.g. a choose-block's
+    ``submit_to_batch_system: True``) carry this wrapper; literals built in
+    Python (``Workflow.default``'s ``.get(..., True)``) don't -- so this
+    must tolerate both.
+    """
+    # `BoolWithProvenance` makes `isinstance(v, bool)` lie (True) via its own
+    # `__subclasshook__`-style trickery, even though it is not the literal
+    # C-level `bool` type pydantic-core's Rust validator checks against --
+    # an `isinstance` guard here would silently pass the wrapper through
+    # unconverted. `type(value) is bool` is the only reliable check.
+    if type(value) is bool:
+        return value
+    return bool(value)
+
+
+ProvenanceBool = Annotated[bool, BeforeValidator(_coerce_bool)]
 
 
 class Step(BaseModel):
@@ -50,7 +76,7 @@ class SubPlan(BaseModel):
     nproc: int = 1
     preceded_by: List[str] = []
     run_only: Optional[str] = None
-    submit_to_batch_system: bool = False
+    submit_to_batch_system: ProvenanceBool = False
     run_on_queue: Optional[str] = None
     batch_or_shell: Optional[str] = None
     steps: List[Step] = []
@@ -84,7 +110,7 @@ class Plan(BaseModel):
     next_submit: List[str] = []
     nproc: Optional[int] = None
     batch_or_shell: Optional[str] = None
-    submit_to_batch_system: bool = False
+    submit_to_batch_system: ProvenanceBool = False
     order_in_cluster: Optional[str] = None
     runs_on: Optional[Literal["login_node", "sbatch"]] = None
     cycling: Optional[dict] = None
@@ -243,40 +269,109 @@ class Workflow(BaseModel):
 
     @classmethod
     def resolve(cls, config: dict) -> "Workflow":
-        """Pick the right constructor for ``config``.
+        """Build the default chain, then fold in any per-model supplemental
+        ``workflow:`` blocks (e.g. ``configs/setups/awicm3/awicm3.yaml``'s
+        ``choose_general.postprocessing: True: workflow: {...}``, or
+        similar blocks in ``oifs.yaml``/``icon.yaml``/``foci.yaml``/etc.).
 
-        If no section anywhere defines a raw ``workflow:`` block, the
-        common case (e.g. the AWICM3 test runscript), use
-        :meth:`default`. If one exists, fail loudly rather than silently
-        ignoring it -- :meth:`default` would otherwise synthesize the
-        generic chain and discard the user's actual configuration without
-        a word. Resolving a custom block natively isn't implemented yet
-        (that's the rest of ``workflow.assemble_workflow``'s job: per-model
-        merging, ordering/completion validation, ``newrun`` wiring -- out
-        of scope per this pass's agreed scope).
+        These are not "a custom workflow the user wrote to replace the
+        default chain" -- they're framework-authored, added by a
+        component/setup's own config via a choose-block once some flag
+        (``postprocessing``, ``tripyview``, ...) resolves true, and they
+        only ever *add* one or more extra sub-plans alongside the default
+        prepcompute/compute/tidy chain (via ``resubmit_triggers`` fan-out),
+        never replace it. Translates the legacy vocabulary first (pure
+        rename, reusing ``workflow.translate_legacy_workflow_keys`` --
+        not the dict engine's structural assembly) so ``subjobs``/
+        ``run_after``/``next_run_triggered_by`` read the same as native
+        P-Plan nouns.
+
+        Only raises if ``general.workflow`` itself tries to define its
+        own ``entry_point``/``plans`` -- i.e. genuinely replace the root
+        chain, not just add a sub-plan to it. That case is still not
+        implemented natively.
         """
-        if _has_custom_workflow_block(config):
+        from .workflow import translate_legacy_workflow_keys
+
+        translate_legacy_workflow_keys(config)
+
+        general_workflow = config.get("general", {}).get("workflow")
+        if isinstance(general_workflow, dict) and (
+            "entry_point" in general_workflow or "plans" in general_workflow
+        ):
             raise NotImplementedError(
-                "A custom 'workflow:' block was found in this runscript, but "
-                "the native pplan engine only supports the default "
-                "prepcompute/compute/tidy synthesis today (Workflow.default). "
-                "Resolving a custom workflow block natively is not "
-                "implemented yet."
+                "general.workflow defines its own 'entry_point'/'plans', "
+                "trying to replace the native default chain entirely -- "
+                "resolving that natively is not implemented yet."
             )
-        return cls.default(config)
+
+        wf = cls.default(config)
+        extra_sub_plans, extra_plans, extra_triggers = _collect_extra_sub_plans(
+            config
+        )
+        if not extra_sub_plans:
+            return wf
+
+        merged_triggers = {name: list(targets) for name, targets in wf.resubmit_triggers.items()}
+        for trigger_point, names in extra_triggers.items():
+            bucket = merged_triggers.setdefault(trigger_point, [])
+            for name in names:
+                if name not in bucket:
+                    bucket.append(name)
+
+        return cls(
+            entry_point=wf.entry_point,
+            resubmit_triggers=merged_triggers,
+            plans={**wf.plans, **extra_plans},
+            sub_plans={**wf.sub_plans, **extra_sub_plans},
+        )
 
 
-def _has_custom_workflow_block(config: dict) -> bool:
-    """Whether any section of ``config`` defines a raw ``workflow:`` block.
+def _collect_extra_sub_plans(config: dict):
+    """Collect extra sub-plans from every section's (post-translation)
+    ``workflow.sub_plans`` block -- e.g. a setup's framework-authored
+    ``postprocessing``/``tripyview`` sub-plan. Each becomes its own
+    singleton cluster (matching :meth:`Workflow.default`'s convention),
+    wired into the chain via ``resubmit_triggers`` fan-out off of each
+    sub-plan's own ``preceded_by``, rather than any special-casing of
+    ``next_iteration_trigger`` (redundant with ``preceded_by`` for this
+    single-sub-plan-per-block shape, and ``preceded_by`` is the more
+    granular, reliable source).
 
-    Same detection shape as ``workflow.translate_legacy_workflow_keys``'s
-    walk over ``config.values()`` -- a section can be ``general`` or any
-    model name; only ``dict``-valued ``workflow`` keys count.
+    Returns ``(extra_sub_plans, extra_plans, extra_triggers)``.
     """
-    return any(
-        isinstance(section, dict) and isinstance(section.get("workflow"), dict)
-        for section in config.values()
-    )
+    extra_sub_plans: Dict[str, SubPlan] = {}
+    extra_plans: Dict[str, Plan] = {}
+    extra_triggers: Dict[str, List[str]] = {}
+
+    for section in config.values():
+        if not isinstance(section, dict):
+            continue
+        w_config = section.get("workflow")
+        if not isinstance(w_config, dict):
+            continue
+        for name, conf in w_config.get("sub_plans", {}).items():
+            preceded_by = _as_list(conf.get("preceded_by"))
+            sub_plan = SubPlan(
+                name=name,
+                parent_plan=name,
+                preceded_by=preceded_by,
+                **_only_known_fields(
+                    SubPlan, conf, exclude=frozenset({"preceded_by"})
+                ),
+            )
+            extra_sub_plans[name] = sub_plan
+            extra_plans[name] = Plan(
+                name=name,
+                sub_plan_names=[name],
+                nproc=sub_plan.nproc,
+                preceded_by=preceded_by,
+                submit_to_batch_system=sub_plan.submit_to_batch_system,
+            )
+            for predecessor in preceded_by:
+                extra_triggers.setdefault(predecessor, []).append(name)
+
+    return extra_sub_plans, extra_plans, extra_triggers
 
 
 def _as_list(value) -> List[str]:

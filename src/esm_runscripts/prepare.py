@@ -684,8 +684,13 @@ def initialize_coupler(config):
                 )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)
                 break
-        if config["general"]["coupler"].name == 'oasis3mct':
-            config["general"]["coupler"].add_files(config)
+        # A coupled_setup does not have to have a coupler: two executables
+        # sharing MPI_COMM_WORLD and nothing else (standalone FESOM with
+        # detached XIOS servers, for one) go through here with none of the
+        # known couplers among the models.
+        this_coupler = config["general"].get("coupler", None)
+        if this_coupler is not None and this_coupler.name == 'oasis3mct':
+            this_coupler.add_files(config)
     return config
 
 

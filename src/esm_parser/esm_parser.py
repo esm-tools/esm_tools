@@ -2648,9 +2648,15 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     return rhs
 
 
-def determine_computer_yaml_from_hostname():
+def determine_computer_yaml_from_hostname(computer=None):
     """
     Determines which yaml config file is needed for this computer
+
+    Parameters
+    ----------
+    computer : str, optional
+        Name of the machine (``configs/machines/<computer>.yaml``) to use instead of
+        detecting it from the hostname (e.g. from the ``--computer`` CLI flag).
 
     Notes
     -----
@@ -2662,6 +2668,21 @@ def determine_computer_yaml_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
+    if computer:
+        computer_file = f"{CONFIG_PATH}/machines/{computer}.yaml"
+        if not os.path.isfile(computer_file):
+            available = sorted(
+                f.replace(".yaml", "")
+                for f in os.listdir(f"{CONFIG_PATH}/machines")
+                if f.endswith(".yaml") and f != "all_machines.yaml"
+            )
+            user_error(
+                "Unknown computer",
+                f"The computer ``{computer}`` does not exist. Available computers: "
+                f"{', '.join(available)}",
+            )
+        return computer_file
+
     machine, node = determine_computer_and_node_from_hostname()
     if machine:
         return CONFIG_PATH + "/machines/" + machine + ".yaml"
@@ -3273,7 +3294,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # construct the `defaults` section of the configuration
         user_config["defaults"].update(default_infos)
 
-        computer_file = determine_computer_yaml_from_hostname()
+        computer_file = determine_computer_yaml_from_hostname(
+            user_config["general"].get("computer_name")
+        )
         computer_config = yaml_file_to_dict(computer_file)
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):

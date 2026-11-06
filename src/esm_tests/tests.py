@@ -111,6 +111,8 @@ def comp_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     this_computer = info["this_computer"]
+    # Pass the computer to ``esm_master`` if it was given with ``--computer``
+    computer_flag = f" --computer {this_computer}" if info["computer_explicit"] else ""
 
     # Set the regex formats for check compilations
     cd_format = re.compile("         cd (.*)")
@@ -135,9 +137,11 @@ def comp_test(info):
             # Define variables from the runscript
             version = v["version"]
             if v["comp_command"]:
-                comp_command = f"{v['comp_command']} --no-motd -k"
+                comp_command = f"{v['comp_command']} --no-motd -k{computer_flag}"
             else:
-                comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
+                comp_command = (
+                    f"esm_master comp-{model}-{version} --no-motd -k{computer_flag}"
+                )
             general_model_dir = f"{user_info['test_dir']}/comp/{model}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
             title = f"COMPILING ({progress}%) {bs}{model}-{version}{be}"
@@ -193,7 +197,9 @@ def comp_test(info):
                     # If download of the source code is required, run
                     # ``esm_master get-<model>-<version>``
                     else:
-                        get_command = f"esm_master get-{model}-{version} --no-motd"
+                        get_command = (
+                            f"esm_master get-{model}-{version} --no-motd{computer_flag}"
+                        )
                         logger.info("\t\tDownloading")
                         out = sh(get_command)
                         if "Traceback (most recent call last):" in out:
@@ -224,6 +230,11 @@ def comp_test(info):
                     if len(folders) == 0:
                         logger.warning(
                             f'NOT TESTING {model}{version}: "cd" command not found'
+                        )
+                        add_error(
+                            v,
+                            f"Not tested: 'cd' command not found in the "
+                            f"'{comp_command} -c' output",
                         )
                         continue
 
@@ -286,6 +297,10 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
+    # Pass the computer to ``esm_runscripts`` if it was given with ``--computer``
+    computer_flag = (
+        f" --computer {info['this_computer']}" if info["computer_explicit"] else ""
+    )
     run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0
@@ -343,7 +358,7 @@ def run_test(info):
                                 f"echo {'='*10}; echo {imodel}; echo {'='*10}; "
                                 f"esm_runscripts "
                                 f"{os.path.dirname(v['path'])}/{mdata['script']} "
-                                f"-e {script} --open-run {check_flag}"
+                                f"-e {script} --open-run {check_flag}{computer_flag}"
                             )
                 # Export test variables and run the simulation
                 env_vars = [
@@ -353,7 +368,7 @@ def run_test(info):
                 ]
                 run_command = (
                     f"esm_runscripts {v['path']} -e {script} --open-run "
-                    f"{check_flag}{additional_actions}"
+                    f"{check_flag}{computer_flag}{additional_actions}"
                 )
                 out = sh(run_command, env_vars)
 
@@ -482,6 +497,45 @@ def run_test(info):
 #######################################################################################
 # CHECKS
 #######################################################################################
+def add_error(v, message, out="", pattern=""):
+    """
+    Stores an error of this test in ``v["errors"]`` (written with ``--results-file``).
+    If ``pattern`` is found in ``out``, an excerpt of ``out`` is stored too: all the
+    complete tracebacks (up to the exception line) for ``Traceback`` patterns, or 15
+    lines starting at the line containing ``pattern`` otherwise.
+
+    Parameters
+    ----------
+    v : dict
+        Dictionary containing script variables such as ``version``, ``comp_command``, ...
+    message : str
+        Description of the error.
+    out : str
+        Output of the shell operation where the error was found.
+    pattern : str
+        Error string found in ``out``.
+    """
+    error = {"message": message}
+    if pattern and pattern in out:
+        if pattern.startswith("Traceback"):
+            excerpt = []
+            in_traceback = False
+            for line in out.splitlines():
+                if pattern in line:
+                    in_traceback = True
+                    excerpt.append(line)
+                elif in_traceback:
+                    excerpt.append(line)
+                    # The first not indented line is the exception, end of traceback
+                    if line and not line[0].isspace():
+                        in_traceback = False
+            error["excerpt"] = "\n".join(excerpt[:200])
+        else:
+            start = out.rfind("\n", 0, out.index(pattern)) + 1
+            error["excerpt"] = "\n".join(out[start:].splitlines()[:15])
+    v.setdefault("errors", []).append(error)
+
+
 def check(info, mode, model, version, out, script, v):
     """
     Checks for errors, missing files and compares current files with previous files in
@@ -596,6 +650,7 @@ def check(info, mode, model, version, out, script, v):
         for error in errors:
             if error in out and script not in error_exceptions.get(error, []):
                 logger.error(f"\t\tError during {mode_name[mode]}!\n\n{out}")
+                add_error(v, f"Error during {mode_name[mode]} ('{error}')", out, error)
                 success = False
         if mode != "run":
             v["state"][mode] = success
@@ -613,6 +668,8 @@ def check(info, mode, model, version, out, script, v):
             version,
         )
         v["state"][f"{mode}_files"] = files_checked
+        if not files_checked:
+            add_error(v, f"Missing files after {mode_name[mode]}")
         success = success and files_checked
 
     # Compare scripts with previous, if existing
@@ -639,6 +696,7 @@ def check(info, mode, model, version, out, script, v):
             # Check if the source exists (this simulation file)
             if not os.path.isfile(f"{user_info['test_dir']}/{sp}"):
                 logger.error(f"\t\t'{sp}' file is missing!")
+                add_error(v, f"'{sp}' file is missing")
                 identical = False
             else:
                 # Check if the target exists (in last_tested folder)
@@ -714,6 +772,7 @@ def experiment_state_action(
         logger.info(f"\t\t{message}")
     else:
         logger.error(f"\t\t{message}")
+        add_error(v, f"Run: {message}")
     finished_runs.append(cc)
     subc += 1
     v["state"]["run_finished"] = no_err

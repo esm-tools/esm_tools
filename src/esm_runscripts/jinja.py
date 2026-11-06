@@ -1,5 +1,6 @@
 import os
 
+import jinja2.debug  # pre-import to avoid circular-import race in threaded rendering
 from jinja2 import (StrictUndefined, Template, TemplateSyntaxError,
                     UndefinedError)
 from loguru import logger

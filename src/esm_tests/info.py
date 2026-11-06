@@ -46,7 +46,23 @@ class Info(dict):
     - ``script_dir``: directory of the ``esm_tests`` code, useful to call the
       ``resources`` and the ``resources/runscripts``.
 
-    - ``this_computer``: name of the current computer
+    - ``this_computer``: name of the current computer (from ``--computer`` or from the
+      hostname)
+
+    - ``computers``: computers given with ``--computer`` (``None`` if not given).
+
+    - ``computer_explicit``: ``True`` if the computer was given with ``--computer``,
+      then ``esm_master`` and ``esm_runscripts`` are also called with ``--computer``.
+
+    - ``model`` / ``runscript``: selection given with ``--model`` / ``--runscript``.
+      When given, ``test_config.yaml`` is not read.
+
+    - ``list``: print the tests that would run and exit (``--list``).
+
+    - ``json``: print the ``--list`` output as JSON to stdout (``--json``).
+
+    - ``results_file``: absolute path of the file to write the errors and differences
+      to (``--results-file``), or ``None``.
 
     - ``user``: ``esm_tests`` configurations specific to the user, as read from
       ``<PATH>/esm_tools/src/esm_tests/user_config.yaml``.
@@ -158,8 +174,54 @@ class Info(dict):
             help="use the given esm_tests_info branch",
             default="release",
         )
+        parser.add_argument(
+            "--computer",
+            action="append",
+            default=None,
+            help="test for this computer (name as in 'configs/machines/<name>.yaml') "
+            + "instead of detecting it from the hostname. It can be given several "
+            + "times only together with --list",
+        )
+        parser.add_argument(
+            "--model",
+            default=None,
+            help="only test this model (folder name in 'resources/runscripts'), "
+            + "instead of the selection in 'test_config.yaml'",
+        )
+        parser.add_argument(
+            "--runscript",
+            default=None,
+            help="only test this runscript of --model (e.g. 'pi.yaml')",
+        )
+        parser.add_argument(
+            "--list",
+            default=False,
+            help="print the tests (model, version, runscript, computer) that would run "
+            + "and exit",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--json",
+            default=False,
+            help="with --list, print the tests as JSON (list of computer, model, "
+            + "runscript) to stdout",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--results-file",
+            default=None,
+            help="write the errors and the differences with 'last_tested' of each test "
+            + "to this file (JSON)",
+        )
 
         args = vars(parser.parse_args())
+
+        if args["json"] and not args["list"]:
+            parser.error("--json requires --list")
+        if args["runscript"] and not args["model"]:
+            parser.error("--runscript requires --model")
+        if args["computer"] and len(args["computer"]) > 1 and not args["list"]:
+            parser.error("--computer can only be given several times with --list")
 
         save_flag = args["save"]
         print_state = args["state"]
@@ -174,10 +236,23 @@ class Info(dict):
         self["in_github"] = args["github"]
         self["system_exit_on_errors"] = args["system_exit_on_errors"]
         self["resources_branch"] = args["branch"]
+        self["computers"] = args["computer"]
+        self["computer_explicit"] = bool(args["computer"])
+        self["model"] = args["model"]
+        self["runscript"] = args["runscript"]
+        self["list"] = args["list"]
+        self["json"] = args["json"]
+        # Absolute, because ``esm_tests`` changes directory while testing
+        self["results_file"] = args["results_file"] and os.path.abspath(
+            args["results_file"]
+        )
 
-        if self["in_github"]:
-            self["group_output"] = {"startg": "::group::{0}", "endg": "::endgroup::"}
-        else:
-            self["group_output"] = {"startg": "{0}", "endg": ""}
+        # No ``::group::`` in GitHub either: GitHub collapses groups and they cannot be
+        # expanded by default, which hides the differences of each test behind a click
+        # if self["in_github"]:
+        #     self["group_output"] = {"startg": "::group::{0}", "endg": "::endgroup::"}
+        # else:
+        #     self["group_output"] = {"startg": "{0}", "endg": ""}
+        self["group_output"] = {"startg": "{0}", "endg": ""}
 
         return save_flag, print_state, delete_tests

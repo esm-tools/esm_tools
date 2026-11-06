@@ -71,6 +71,8 @@ enabled via:
 The commands syntax is as follows::
 
     esm_tests [-h] [-n] [-c] [-u] [-d] [-s SAVE] [-t] [-o] [-b] [-g] [-e] [-r BRANCH]
+              [--computer COMPUTER] [--model MODEL] [--runscript RUNSCRIPT] [--list] [--json]
+              [--results-file RESULTS_FILE]
 
 Arguments
 ---------
@@ -93,12 +95,42 @@ Optional arguments                                     Description
   -b, --bulletpoints                                   Bullet points for printing the state and copy/paste as
                                                        markdown text
   -g, --github                                         Use this flag when running in GitHub servers (i.e.
-                                                       adds syntax for collapsing compare sections of the
-                                                       output for GitHub Actions)
+                                                       uses GitHub paths and ignores in the comparisons)
   -e, --system-exit-on-errors                          Trigger a system exit on errors or file differences
                                                        so that GitHub actions can catch that as a failing test
   -r BRANCH, --branch BRANCH                           use the given esm_tests_info branch
+  --computer COMPUTER                                  Test for this computer (name as in
+                                                       ``configs/machines/<name>.yaml``) instead of detecting it
+                                                       from the hostname. ``esm_master`` and ``esm_runscripts``
+                                                       are then also called with ``--computer``. Can be given
+                                                       several times only together with ``--list``
+  --model MODEL                                        Only test this model (folder name in
+                                                       ``resources/runscripts``). When given,
+                                                       ``test_config.yaml`` is not read
+  --runscript RUNSCRIPT                                Only test this runscript of ``--model`` (e.g.
+                                                       ``pi.yaml``)
+  --list                                               Print the tests that would run (same layout as
+                                                       ``--state``: model, version, runscript, computer) and
+                                                       exit
+  --json                                               With ``--list``, print the tests as JSON to stdout
+                                                       (list of ``computer``, ``model``, ``runscript``). Used
+                                                       by the GitHub Actions to build the test matrix
+  --results-file RESULTS_FILE                          Write the errors and the differences with
+                                                       ``last_tested`` of each test to this file (JSON).
+                                                       Used by the GitHub Actions to show the problems of all
+                                                       tests in the run summary
 ====================================================== ==========================================================
+
+The ``computers``, ``ignore_runscripts`` and ``ignore_scripts`` of the
+:ref:`esm_tests:Model control file (\`\`config.yaml\`\`)` are always applied, also
+when using ``--model``/``--runscript``. For example, to run a single check test for
+`Levante` from any machine::
+
+    esm_tests -c --computer levante --model fesom --runscript fesom2.0-initial-monthly.yaml
+
+and to see which tests would run on `Levante` and `Albedo`::
+
+    esm_tests --list --computer levante --computer albedo
 
 Last-state
 ----------
@@ -261,6 +293,11 @@ supported runscripts for all supported models in this platform, but still keep t
 file around (i.e. commented most of the contents), make the file content be an empty
 dictionary (``{}``).
 
+.. note:: To run a single model or runscript you don't need this file:
+   ``--model``/``--runscript`` take precedence over it (see
+   :ref:`esm_tests:Arguments`), e.g.
+   ``esm_tests -c --model fesom --runscript fesom2.0-initial-monthly.yaml``.
+
 **Example**
 
     .. code-block:: yaml
@@ -318,7 +355,12 @@ How to include a new model/runscript
    content
 7. If you are using the :ref:`Local test configuration (\`\`test_config.yaml\`\`)`
    to exclude some models, make sure the current model is included, so that your
-   tests can be run locally.
+   tests can be run locally. Alternatively, run only the new tests with
+   ``esm_tests -c --model <model> [--runscript <runscript>.yaml]``.
+8. Check that the new runscripts are selected for the computers you expect with
+   ``esm_tests --list --computer <computer1> --computer <computer2>``. This is the
+   same list the GitHub Actions use to create one ``esm_tests`` job per runscript and
+   computer.
 
 How to include a new platform for in an existing model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -330,40 +372,69 @@ How to include a new platform for in an existing model
    (``esm_tools/src/esm_tests/resources/runscripts/<model>/<runscript>.yaml``), add
    the necessary case to the ``choose_computer.name`` to specify pool directories,
    forcing files, ``nproc``, etc.
+3. Create the ``last_tested/<computer>/`` files of the new platform with
+   ``-s True``. For check mode (``-c``) this can be done from any machine with
+   ``--computer <computer>``; actual runs need to be done on that platform.
+4. For the tests to also run in the GitHub Actions, the computer needs to be in the
+   ``COMPUTERS`` list of ``.github/workflows/esm_tests_discover.yml``.
 
 How to approve changes on a GitHub Pull-Request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. In the pull-request, if all the tests passed you don't need to approve any
    changes, you can jump directly to step 4.
-2. If any of the tests labelled as ``esm_tests`` failed (click on the triangles to
-   expand screen captures):
+2. If any of the tests labelled as ``esm_tests`` failed, review the results of all
+   tests in the summary of the workflow run (click on the triangles to expand screen
+   captures). Each ``esm_tests`` job tests one runscript on one computer, and the
+   ``summary`` job collects the results of all of them in a single page:
 
-   .. collapse:: Click on Details
+   .. collapse:: Click on any of the esm_tests checks
 
       .. image:: images/esm_tests1.png
 
-   .. collapse:: Find the names of the runscripts with differences (in yellow)
+   .. collapse:: Click on Summary, at the top of the left sidebar
 
-      .. image:: images/esm_tests2.png
+      .. image:: images/esm_tests_summary1.png
 
-   .. collapse:: Scroll up and expand the lines starting with COMPILE/SUBMITTING (for
-      compilation and runtime checks respectively) followed by the script with
-      differences
+   .. collapse:: Scroll down below the jobs graph to the esm_tests results
 
-      .. image:: images/esm_tests3.png
+      .. image:: images/esm_tests_summary2.png
 
-   .. collapse:: Review the differences with special attention to namelists and
-      namcouple files
+   The ``esm_tests results`` section contains:
 
-      .. image:: images/esm_tests4.png
+   - **Problems**: tests with errors (e.g. a ``Traceback`` during the submission, with
+     the traceback itself) or with a failed job without an explanation (e.g.
+     ``esm_tests`` crashed), each with a link to its job log. These are not caused by
+     differences in the files and always need to be fixed before approving.
+   - **Differences**: one collapsible section per computer with the differences
+     between the files of the PR and the ``last_tested`` ones (``-`` last tested,
+     ``+`` this PR). Review them with special attention to namelists and namcouple
+     files. Compilation files shared by several runscripts are only shown once.
 
+   The full output of a test, including its differences, is also in the log of its
+   job (``run esm_tests`` step). If the summary is too large for GitHub (1 MiB), it is
+   truncated and the remaining differences are only in the job logs.
 
 
 3. If there are no problematic differences, and the pull-request has been already
    reviewed and is just ready to be merged, write a message on the PR containing
    ``#approve-changes``. This will commit the new files from the tests as the
    ``last-state``, in the ``esm_tests_info`` repository.
+
+   - Only users with write permission in the ``esm_tools`` repository can approve.
+     Comments from other users start the ``approve esm_tests changes`` workflow but it
+     fails in its ``authorize`` job.
+   - The approved commit is the last commit of the PR at the moment of the comment
+     (shown in the run summary). Commits pushed afterwards are not approved, comment
+     ``#approve-changes`` again if needed.
+   - The same tests as in the PR checks are run, without access to any secret, and
+     all the new files are pushed to ``esm_tests_info`` in a single commit by a
+     separate ``push`` job, that references the PR and the approved commit.
+   - Nothing is pushed if any of the test jobs fails. The run summary contains the
+     same problems and differences as in step 2, i.e. what is being approved.
+   - To try the approval without pushing, go to ``Actions`` > ``approve esm_tests
+     changes`` > ``Run workflow``, and give the PR number. ``dry_run`` is selected
+     by default: the ``push`` job only shows the changes it would commit.
 
    .. warning:: Currently, ``#approve-changes`` does not update the test status
       on GitHub, once the operation finishes. If you want to see whether

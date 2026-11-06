@@ -65,11 +65,12 @@ def check_resources(info, verbose=True):
     """
     resources_folder = f"{info['script_dir']}/resources/"
     dir_resources = os.listdir(resources_folder)
-    if not (
-        "last_tested" in dir_resources
-        and "runscripts" in dir_resources
-        and not info.get("repo_update", False)
-    ):
+    resources_missing = not (
+        "last_tested" in dir_resources and "runscripts" in dir_resources
+    )
+    # With ``-u`` (``repo_update``) the submodule is installed/updated anyway, no need
+    # to ask
+    if resources_missing and not info.get("repo_update", False):
         install_resources = questionary.confirm(
             "The resources submodule for esm_tests is not installed yet (i.e. the "
             f"{resources_folder} folder does not include the last_tested or the "

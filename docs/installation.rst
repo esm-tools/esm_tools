@@ -7,7 +7,7 @@ Installation
 Prerequisite
 ------------
 
-Make sure you have installed or loaded a python version that is 3.7 or later but not newer than 3.10 (see also :ref:`before_you_continue:Before you continue`). Use a pip version that is up-to-date (to update run ``pip install -U pip``). Also make sure that the location to which the python binaries of `ESM-Tools` will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
+Make sure you have installed or loaded a python version that is 3.10 or later but not newer than 3.12 (see also :ref:`before_you_continue:Before you continue`). Use a pip version that is up-to-date (to update run ``pip install -U pip``). Also make sure that the location to which the python binaries of `ESM-Tools` will be installed (which is ``~/.local/bin`` by default) is in your ``PATH``. For that purpose, add the following lines to one of your login or profile files, i.e. ``~/.bash_profile``, ``~/.bashrc``, ``~/.profile``, etc.::
 
     $ export PATH=$PATH:~/.local/bin
     $ export LC_ALL=en_US.UTF-8

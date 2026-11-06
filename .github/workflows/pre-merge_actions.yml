@@ -4,6 +4,8 @@
 #   1. merges `release` into the PR-branch (updates bumpversion values and makes sure whatever we tag in the next step has everything until that version number)
 #   2. bumps the version according to the PR-branch name (`hotfix/`, `fix/` , `feature/` and `feat/` are understood)
 #   3. merges PR-branch into `develop`
+# Only comments from users with write (or admin) permission in the repository trigger
+# these steps.
 
 name: pre-merge automation
 
@@ -14,6 +16,12 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  # To push the merge, the version bump and the tag to the PR-branch
+  contents: write
+  # To find the PR-branch (``hub pr checkout``)
+  pull-requests: read
 
 jobs:
   # This workflow contains a single job called "bump_and_merge2dev"
@@ -27,7 +35,21 @@ jobs:
 
     # Sequence of tasks that will be executed as part of the job
     steps:
-      
+
+      # Stop if the commenter does not have write permission in the repository
+      - name: check permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.event.comment.user.login }}
+        run: |
+          # ``maintain`` is reported as ``write``, ``triage`` as ``read``
+          permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$ACTOR/permission" --jq .permission)
+          echo "'$ACTOR' has '$permission' permission";
+          case "$permission" in
+            admin|write) ;;
+            *) echo "::error::Only users with write permission can #bump ('$ACTOR' has '$permission')"; exit 1;;
+          esac
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it (`release` branch)
       - uses: actions/checkout@v2
         with:

@@ -1,0 +1,74 @@
+# ESM-Tests discovery of the tests to run
+# =======================================
+#
+# Lists every (computer, model, runscript) combination with ``esm_tests --list``, which
+# applies the ``computers``, ``ignore_runscripts`` and ``ignore_scripts`` of the model
+# control files (src/esm_tests/resources/runscripts/*/config.yaml) exactly as in a real
+# run. The output ``matrix`` is meant for ``strategy.matrix`` of a job calling
+# ``esm_tests_computer_workflow.yml``.
+
+name: esm_tests_discover
+
+on:
+  workflow_call:
+    inputs:
+      # Commit of esm_tools to list the tests for (empty: the commit of the event)
+      ref:
+        type: string
+        default: ""
+      # Branch of esm_tests_info (``esm_tests -r``)
+      resources_branch:
+        type: string
+        default: release
+    outputs:
+      matrix:
+        value: ${{ jobs.discover.outputs.matrix }}
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    env:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      # Computers with a CI runner (names as in configs/machines/<name>.yaml). Any
+      # other computer listed in the model control files is skipped.
+      COMPUTERS: ollie levante juwels aleph albedo
+    container:
+      image: mandresm/ubuntu-miniforge-esm_tests:v2.0
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.ref }}
+
+      - name: install esm-tools
+        run: |
+          source /opt/conda/etc/profile.d/conda.sh;
+          conda activate esm_tools;
+          ./install.sh;
+          echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
+        shell: bash
+
+      - id: discover
+        name: list tests
+        env:
+          RESOURCES_BRANCH: ${{ inputs.resources_branch }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE";
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/src/esm_tests/resources";
+          computer_flags="";
+          for computer in $COMPUTERS; do
+            computer_flags="$computer_flags --computer $computer";
+          done
+          # ``-u`` so that the list matches the resources used by the test jobs
+          tests=$(esm_tests --list --json -u -r "$RESOURCES_BRANCH" $computer_flags);
+          echo "matrix={\"include\":$tests}" >> "$GITHUB_OUTPUT";
+          echo "Discovered $(echo "$tests" | python -c 'import json,sys; print(len(json.load(sys.stdin)))') (computer, model, runscript) jobs";
+        shell: bash

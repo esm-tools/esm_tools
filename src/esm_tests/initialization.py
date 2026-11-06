@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import yaml
 
 from loguru import logger
@@ -128,10 +129,29 @@ def get_scripts(info):
 
     # Load test info
     test_config = f"{info.get('script_dir', os.getcwd())}/test_config.yaml"
+    # The selection from the command line (``--model``/``--runscript``) takes
+    # precedence over the ``test_config.yaml``.
     # Check if there is a user-defined dictionary, where the user has specified which
     # runscripts to run. If the file exists load it into the ``test_info`` dictionary,
     # if not, set ``test_info`` as an empty dictionary.
-    if os.path.isfile(test_config):
+    if info.get("model"):
+        if not os.path.isdir(f"{runscripts_dir}/{info['model']}"):
+            logger.error(f"Model '{info['model']}' not found in '{runscripts_dir}'")
+            sys.exit(1)
+        if info.get("runscript"):
+            runscript = info["runscript"]
+            if not runscript.endswith(".yaml"):
+                runscript += ".yaml"
+            if not os.path.isfile(f"{runscripts_dir}/{info['model']}/{runscript}"):
+                logger.error(
+                    f"Runscript '{runscript}' not found in "
+                    f"'{runscripts_dir}/{info['model']}'"
+                )
+                sys.exit(1)
+            test_info = {info["model"]: [runscript]}
+        else:
+            test_info = {info["model"]: "all"}
+    elif os.path.isfile(test_config):
         with open(test_config, "r") as t:
             test_info = yaml.load(t, Loader=yaml.FullLoader)
     else:
@@ -198,6 +218,69 @@ def get_scripts(info):
     info["scripts"] = scripts_info
 
     return info
+
+
+def get_computer_name(computer=None):
+    """
+    Returns the name of the computer to test for: ``computer`` if given (raises an
+    error if ``configs/machines/<computer>.yaml`` does not exist), otherwise the
+    computer detected from the hostname.
+
+    Parameters
+    ----------
+    computer : str or None
+        Computer name given with ``--computer``.
+
+    Returns
+    -------
+    str
+        Computer name, as in ``configs/machines/<name>.yaml``.
+    """
+    return (
+        determine_computer_yaml_from_hostname(computer)
+        .split("/")[-1]
+        .replace(".yaml", "")
+    )
+
+
+def list_tests(info):
+    """
+    Lists the tests that would run for each computer in ``info["computers"]`` (or for
+    the computer detected from the hostname). The selection is done by calling
+    ``get_scripts`` for each computer.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary that contains the testing info.
+
+    Returns
+    -------
+    tests : list
+        List of dictionaries with the keys ``computer``, ``model``, ``version`` and
+        ``runscript`` (runscript file name, e.g. ``pi.yaml``).
+    """
+    tests = []
+    for computer in info["computers"] or [None]:
+        computer = get_computer_name(computer)
+        info["this_computer"] = computer
+        scripts_info = read_info_from_rs(get_scripts(info))["scripts"]
+        for model in sorted(scripts_info):
+            if model == "general":
+                continue
+            for script in sorted(scripts_info[model]):
+                tests.append(
+                    {
+                        "computer": computer,
+                        "model": model,
+                        "version": str(scripts_info[model][script]["version"]),
+                        "runscript": os.path.basename(
+                            scripts_info[model][script]["path"]
+                        ),
+                    }
+                )
+
+    return tests
 
 
 def read_info_from_rs(info):

@@ -58,11 +58,18 @@ This will trigger a download, if needed a configuration, and a compilation proce
 
 The download and installation will always occur in the **current working directory**.
 
+By default, ``esm_master`` detects the machine from the hostname. To use the
+configuration of a specific machine instead (name as in
+``configs/machines/<name>.yaml``), use the ``--computer`` flag. Use this feature
+for testing purposes only (e.g. to test in your local computer). See this example::
+
+    $ esm_master comp-fesom-2.0 --check --computer levante
+
 You can get further help with::
 
     $ esm_master --help
-    
- 
+
+
 Logging
 -------
 

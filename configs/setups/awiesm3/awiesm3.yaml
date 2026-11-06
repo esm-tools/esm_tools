@@ -49,7 +49,7 @@ general:
     # REcoM uses for the air-sea gas exchange instead of a constant atmosphere.
     # Needs with_co2_oce_coupling, an OpenIFS that declares A_MSLP for FESOM, a
     # FESOM with use_atm_mslp, and A_MSLP in the coupler restart rst_co2_ao.nc.
-    # On for every carbon-cycle version (develop-cc, v3.5-cc, v3.5.0-cc, v3.5.1-cc); the
+    # On for every carbon-cycle version (develop-cc, v3.5-cc, v3.5.0-cc, v3.5.1-cc, v3.5.2-cc); the
     # field exists from OpenIFS 48r1v6 and FESOM 2.8.2.
     with_mslp_oce_coupling: false
 
@@ -109,7 +109,8 @@ general:
     # true in the ice-sheet variants (choose_version below).
     with_pism: false
 
-    # The iceberg module. On by default in v3.5.0(-cc) and v3.5.1(-cc): choose_version
+    # The iceberg module. On by default in develop(-cc), v3.5(-cc), v3.5.0(-cc), v3.5.1(-cc)
+    # and v3.5.2(-cc): choose_version
     # below sets with_icb_default, not with_icb itself, because a value set in a
     # choose_ block cannot be overridden from the runscript. So with_icb: false in
     # a runscript switches the icebergs off. The ice-sheet runscripts set with_icb
@@ -196,6 +197,9 @@ general:
         - 'v3.5.1'
         - 'v3.5.1-cc'
         - 'v3.5.1-is'
+        - 'v3.5.2'
+        - 'v3.5.2-cc'
+        - 'v3.5.2-is'
         - 'develop'
         - 'develop-cc'
         - 'develop-is'
@@ -260,6 +264,7 @@ general:
             with_co2_veg_coupling: false
         develop:
             major_version: v3.5
+            with_icb_default: true
             couplings:
                 - awiesm3_develop
             add_include_models:
@@ -272,6 +277,7 @@ general:
             
         develop-cc:
             major_version: v3.5
+            with_icb_default: true
             couplings:
                 - awiesm3_develop
             add_include_models:
@@ -332,6 +338,7 @@ general:
         # ------------------------------------------------------------------
         v3.5:
             major_version: v3.5
+            with_icb_default: true
             couplings:
                 - awiesm3_develop
             add_include_models:
@@ -350,6 +357,7 @@ general:
         # and 2.8.0 carries the coupling.
         v3.5-cc:
             major_version: v3.5
+            with_icb_default: true
             couplings:
                 - awiesm3_develop
             add_include_models:
@@ -472,6 +480,56 @@ general:
                 - xios
             add_other_components:
                 - debm
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            honor_final_date: true
+
+        # ------------------------------------------------------------------
+        # v3.5.2: v3.5.1 on new tags (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.5, runoff
+        # mapper 1.5; the ice-sheet variant adds dEBM2 1.0 and ismm 4.1.8-awi.2).
+        # FESOM is single precision in all three variants, -cc included (#1242),
+        # and WAM writes through XIOS with the CMIP7 output (oifs section).
+        # Frozen: a later fix is v3.5.3, made from develop again.
+        # ------------------------------------------------------------------
+        v3.5.2:
+            major_version: v3.5
+            with_icb_default: true
+            couplings:
+                - awiesm3_v3.5.2
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        v3.5.2-cc:
+            major_version: v3.5
+            with_icb_default: true
+            couplings:
+                - awiesm3_v3.5.2
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: true
+            with_co2_oce_coupling: true
+            with_mslp_oce_coupling: true
+            with_co2_veg_coupling: true
+        v3.5.2-is:
+            major_version: v3.5
+            with_pism: true
+            couplings:
+                - awiesm3_v3.5.2-is
+            ism_orog_coupled: true
+            add_include_models:
+                - xios
+            add_other_components:
+                - debm
+                - debm2
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -686,6 +744,14 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+            # WAM output through XIOS with the CMIP7 output. Only where OpenIFS has it
+            # (feat/wam-xios, 48r1v8 on): not v3.5.0 or v3.5.1.
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
         develop-cc:
             add_add_namelist_changes:
                 fort.4:
@@ -693,6 +759,12 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
         develop-is:
             add_add_namelist_changes:
                 fort.4:
@@ -700,6 +772,12 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
         v3.5:
             add_add_namelist_changes:
                 fort.4:
@@ -707,6 +785,12 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
         v3.5-cc:
             add_add_namelist_changes:
                 fort.4:
@@ -714,6 +798,12 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
         v3.5-is:
             add_add_namelist_changes:
                 fort.4:
@@ -721,6 +811,12 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
         v3.5.0:
             add_add_namelist_changes:
                 fort.4:
@@ -764,6 +860,46 @@ oifs:
                         LNEMOLIMTEMP: ".false."
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
+
+        v3.5.2:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
+        v3.5.2-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
+        v3.5.2-is:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+            choose_cmip7_cmor_output:
+                True:
+                    wam_xios: true
+                    wam_xios_level: cmip7
+                monthly:
+                    wam_xios: true
 
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -1663,11 +1799,8 @@ fesom:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop-cc:
-            # Double precision: REcoM hardcodes its own WP = 8
-            # (src/recom/recom_modules.F90), so with FESOM's WP = real32 every
-            # REcoM array handed to a FESOM reader is a type mismatch and
-            # gen_surface_forcing.F90 does not compile.
-            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF" # ON OFF; recom not SP ready
+            # Single precision: REcoM runs in real64 views on single-precision tracers (FESOM #1242).
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         # -is (ice-sheet coupled) variant additionally builds the native FESOM
@@ -1687,9 +1820,8 @@ fesom:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5-cc:
-            # Double precision, as develop-cc: REcoM hardcodes its own WP = 8 and does
-            # not compile against a single-precision FESOM. Was ON until 2026-10-05.
-            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=OFF"
+            # Single precision: REcoM runs in real64 views on single-precision tracers (FESOM #1242).
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5-is:
@@ -1726,6 +1858,22 @@ fesom:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         v3.5.1-is:
             branch: "2.8.3"
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
+        # v3.5.2: FESOM 2.8.4, single precision in all three variants: REcoM runs in
+        # real64 views on single-precision tracers (#1242).
+        v3.5.2:
+            branch: "2.8.4"
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5.2-cc:
+            branch: "2.8.4"
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5.2-is:
+            branch: "2.8.4"
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
@@ -2181,6 +2329,26 @@ rnfmap:
             version: v1.4
         v3.5.1-is:
             version: v1.4
+        v3.5.2:
+            version: v1.5
+        v3.5.2-cc:
+            version: v1.5
+        v3.5.2-is:
+            version: v1.5
+        # The develop line builds the mapper's development branch, debm2-runoff, from
+        # which the release tags come.
+        develop:
+            version: v1.4-ismm
+        develop-cc:
+            version: v1.4-ismm
+        develop-is:
+            version: v1.4-ismm
+        v3.5:
+            version: v1.4-ismm
+        v3.5-cc:
+            version: v1.4-ismm
+        v3.5-is:
+            version: v1.4-ismm
 
     # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
     # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean

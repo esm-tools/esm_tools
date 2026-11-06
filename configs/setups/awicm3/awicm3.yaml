@@ -81,6 +81,7 @@ general:
         - 'v3.5'
         - 'v3.5.0'
         - 'v3.5.1'
+        - 'v3.5.2'
         - 'develop'
         - 'frontiers-xios'
 
@@ -225,6 +226,17 @@ general:
             major_version: v3.5
             couplings:
             - awicm3_v3.5.1
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          # v3.5.2: v3.5.1 on new tags, those of awiesm3 v3.5.2 without LPJ-GUESS
+          # (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.5, runoff mapper 1.5), and WAM
+          # writes through XIOS with the CMIP7 output.
+          v3.5.2:
+            major_version: v3.5
+            couplings:
+            - awicm3_v3.5.2
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -408,6 +420,30 @@ oifs:
                         # (oifs48.cmip.yaml), so the fort.4 matches awiesm3's.
                         mip: "cmip7"
                         wam: true
+                        # WAM output through XIOS with the CMIP7 output. Only where OpenIFS
+                        # has it (feat/wam-xios, 48r1v8 on): not v3.5.0 or v3.5.1.
+                        choose_general.version:
+                                develop:
+                                        choose_cmip7_cmor_output:
+                                                True:
+                                                        wam_xios: true
+                                                        wam_xios_level: cmip7
+                                                monthly:
+                                                        wam_xios: true
+                                v3.5:
+                                        choose_cmip7_cmor_output:
+                                                True:
+                                                        wam_xios: true
+                                                        wam_xios_level: cmip7
+                                                monthly:
+                                                        wam_xios: true
+                                v3.5.2:
+                                        choose_cmip7_cmor_output:
+                                                True:
+                                                        wam_xios: true
+                                                        wam_xios_level: cmip7
+                                                monthly:
+                                                        wam_xios: true
                         restart_type: "ifs_default"
                         # The ICMGG files made for the v3.5 meshes carry the _v2
                         # suffix, as awiesm3 takes them (general.icmgg_suffix there).
@@ -1036,6 +1072,8 @@ fesom:
                         branch: "2.8.2"
                 v3.5.1:
                         branch: "2.8.3"
+                v3.5.2:
+                        branch: "2.8.4"
                 develop:
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
@@ -1151,12 +1189,19 @@ rnfmap:
                 "v3.4":
                         version: v1.1
                 "v3.5":
-                        # All v3.5 versions build the runoff mapper tag 1.4 (their
-                        # couplings), which reads the NAMRNFMAPARRAYS group and so needs
-                        # the 1.4 namelist. With NumCoupledRegions 0 it maps as v1.1, and
-                        # it is the version that can drop calving per basin, which the
-                        # icebergs need. awiesm3 develop still builds v1.1.
+                        # The v3.5 versions read the 1.4 namelist (NAMRNFMAPARRAYS) and can
+                        # drop calving per basin, which the icebergs need; with
+                        # NumCoupledRegions 0 they map as v1.1. v3.5.0 and v3.5.1 build the
+                        # tag 1.4, v3.5.2 the tag 1.5, and the develop line the mapper's
+                        # development branch debm2-runoff (v1.4-ismm), as awiesm3.
                         version: v1.4
+                        choose_general.version:
+                                v3.5.2:
+                                        version: v1.5
+                                develop:
+                                        version: v1.4-ismm
+                                v3.5:
+                                        version: v1.4-ismm
 
         # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
         # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean

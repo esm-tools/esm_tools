@@ -18,6 +18,45 @@ general:
                 - rnfmap
                 - oasis3mct
 
+        # Icebergs, as in awiesm3. awicm3 has no ice sheet model, so the icebergs
+        # carry what is left of the atmosphere's Antarctic snow-cap calving after
+        # the cavities have melted their share (icb_from_budget, see
+        # couplings/fesom/iceberg_budget.py), and the runoff mapper drops that
+        # calving from the Southern Ocean surface (ism_freshwater_return). Needs
+        # cavities and runoff mapper v1.4. Off by default; with_icb: true in a
+        # runscript switches them on. Legs have to be a year or longer.
+        with_pism: false
+        with_icb_default: false
+        with_icb: "$(( ${general.with_icb_default} ))"
+        ism_freshwater_return: "$(( ${general.with_icb} ))"
+        icb_from_budget: "$(( ${general.with_icb} and not ${general.with_pism} ))"
+
+        # Counting the generated icebergs into icebergs%ib_num has to go in the
+        # general recipe, before modify_namelists, as in awiesm3.
+        choose_general.with_icb:
+                true:
+                        prepcompute_recipe:
+                        - "compile_model"
+                        - "_show_simulation_info"
+                        - "create_new_files"
+                        - "create_empty_folders"
+                        - "prepare_coupler_files"
+                        - "assemble"
+                        - "log_used_files"
+                        - "_write_finalized_config"
+                        - "wait_for_iterative_coupling"
+                        - "copy_files_to_thisrun"
+                        - "write_env"
+                        - "preprocess"
+                        - "count_icebergs_into_namelist"
+                        - "modify_namelists"
+                        - "append_to_namelist"
+                        - "modify_files"
+                        - "copy_files_to_work"
+                        - "report_missing_files"
+                        - "compute_and_log_file_checksums"
+                        - "database_entry"
+
         available_versions:
         - 'v3.0'
         - 'v3.1'
@@ -192,6 +231,7 @@ general:
             add_include_models:
             - xios
             oasis_with_yac: False
+            xios_interp_order: 1
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -244,7 +284,14 @@ general:
 oifs:
         version: "43r3"
 
-        add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
+        # oasis_rmp_rst_to_input copies a run's freshly generated OASIS rmp/rst
+        # weights back into the shared pool (${pool}/<nproc>/). As in awiesm3,
+        # only for runs without cavities: a cavity run's weights belong to its
+        # own mesh and must not overwrite the canonical fixed-mesh pool.
+        choose_fesom.with_cavity:
+                false:
+                        add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
+                true: {}
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
@@ -348,9 +395,12 @@ oifs:
                         version: "48r1"
                         with_xios: True
                         build_type: 'release'
-                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.5
-                        mip: "cmip6"
+                        # CMIP7 forcing, as awiesm3 v3.5 (oifs.mip there). This also sets
+                        # NFRPOS/NFRHIS = 1 (oifs.yaml output_step_freq) and LRDALB = F
+                        # (oifs48.cmip.yaml), so the fort.4 matches awiesm3's.
+                        mip: "cmip7"
                         wam: true
                         restart_type: "ifs_default"
                         # The ICMGG files made for the v3.5 meshes carry the _v2
@@ -552,6 +602,62 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
+
+        # Icebergs (general.with_icb). From here to icb_budget: copied from the
+        # fesom section of awiesm3.yaml; keep the two in step.
+        with_icb: ${general.with_icb}
+        choose_general.ism_freshwater_return:
+                true:
+                        # Cavities are open, so the iceberg generator has to know not to place
+                        # icebergs under the shelves.
+                        use_cav: true
+                        # Per size bin ([0.1, 1, 10, 100, 1000] km2): how many real icebergs one
+                        # model iceberg stands for. The awiesm-2.1 values, which have been run.
+                        # Not a free cost knob: icb_thermo scales the fluxes to the ocean by
+                        # scaling(ib) but not the melt, and melt is non-linear in size.
+                        scaling_factor: [100, 50, 10, 1, 1, 1]
+        # Icebergs from the calving minus basal melt budget (general.icb_from_budget).
+        # Two workflow jobs around couplings/fesom/iceberg_budget.py:
+        #   icb_seed    before prepcompute: writes icb_*.dat for exactly this leg into
+        #               the couple dir, from the rate and ledger kept there.
+        #   icb_budget  after tidy: measures the leg's calving and basal melt.
+        # A starting rate can be put into the pool as
+        # ${pool_dir}/icebergs_ini/<mesh>/iceberg_rate_init.json ({"rate_gt_yr": ...});
+        # without it the first leg uses icb_default_rate.
+        choose_general.icb_from_budget:
+                true:
+                        ini_iceberg_dir: "${general.experiment_couple_dir}"
+                        icb_default_rate: 1100.0      # Gt/yr, 2475 calving - 1378 basal melt in PICAL 2200-2209
+                        icb_relax_years: 20.0         # a ledger imbalance is paid back over this time
+                        icb_rate_memory_years: 1.0    # each leg seeds the previous leg's budget, not a smoothed rate
+                        icb_init_rate_file: "${pool_dir}/icebergs_ini/${resolution}/iceberg_rate_init.json"
+                        icb_leg: "--start ${general.start_date!syear}-${general.start_date!smonth}-${general.start_date!sday} --end ${general.end_date!syear}-${general.end_date!smonth}-${general.end_date!sday}"
+                        icb_dirs: "--couple-dir ${general.experiment_couple_dir} --mesh-dir ${mesh_dir} --oifs-outdata ${oifs.experiment_outdata_dir} --fesom-outdata ${experiment_outdata_dir}"
+                        # survivors of the previous leg: the parent's on a branched first leg.
+                        # ini_restart_dir needs a value here: esm_master resolves this block without
+                        # a runscript, and a cold start has no parent. A runscript's own
+                        # ini_restart_dir takes precedence.
+                        ini_restart_dir: "${experiment_restart_in_dir}"
+                        choose_general.run_number:
+                                1:
+                                        icb_restart_ism: "${ini_restart_dir}/iceberg.restart.ISM"
+                                "*":
+                                        icb_restart_ism: "${experiment_restart_in_dir}/iceberg.restart.ISM"
+                        add_workflow:
+                                add_subjobs:
+                                        icb_seed:
+                                                batch_or_shell: shell
+                                                run_before: prepcompute
+                                                nproc: 1
+                                                script_dir: ${general.esm_couplings_dir}/fesom
+                                                script: "iceberg_budget.sh seed ${fesom.icb_dirs} ${fesom.icb_leg} --restart-ism ${fesom.icb_restart_ism} --init-rate-file ${fesom.icb_init_rate_file} --default-rate ${fesom.icb_default_rate} --relax-years ${fesom.icb_relax_years} --rate-memory-years ${fesom.icb_rate_memory_years}"
+                                        icb_budget:
+                                                batch_or_shell: shell
+                                                run_after: tidy
+                                                nproc: 1
+                                                script_dir: ${general.esm_couplings_dir}/fesom
+                                                script: "iceberg_budget.sh budget ${fesom.icb_dirs} ${fesom.icb_leg} --rate-memory-years ${fesom.icb_rate_memory_years}"
+
         build_type: "Release"    # Available options: Release, Debug, Bit
         # Single-precision FESOM (-DUSE_SINGLE_PRECISION=ON) is opt-in per major
         # version. Default off (double precision) so every released version up to
@@ -1039,16 +1145,23 @@ rnfmap:
                 "v3.4":
                         version: v1.1
                 "v3.5":
-                        # v3.5.0 builds the runoff mapper tag 1.4 (its coupling), which
-                        # reads the NAMRNFMAPARRAYS group and so needs the 1.4 namelist.
-                        # As awiesm3 v3.5.0; with NumCoupledRegions 0 it maps as v1.1.
-                        choose_general.version:
-                                "v3.5.0":
-                                        version: v1.4
-                                "v3.5.1":
-                                        version: v1.4
-                                "*":
-                                        version: v1.1
+                        # All v3.5 versions build the runoff mapper tag 1.4 (their
+                        # couplings), which reads the NAMRNFMAPARRAYS group and so needs
+                        # the 1.4 namelist. With NumCoupledRegions 0 it maps as v1.1, and
+                        # it is the version that can drop calving per basin, which the
+                        # icebergs need. awiesm3 develop still builds v1.1.
+                        version: v1.4
+
+        # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
+        # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean
+        # surface and leaves the rest of the world alone. The icebergs carry it
+        # instead (general.icb_from_budget). As awiesm3.
+        choose_general.ism_freshwater_return:
+                true:
+                        add_namelist_changes:
+                                namelist.runoffmapper:
+                                        NAMRNFMAP:
+                                                IgnoreCalvingBasins: 66
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}

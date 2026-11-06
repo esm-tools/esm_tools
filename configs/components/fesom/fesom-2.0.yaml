@@ -90,6 +90,10 @@ fesom:
     old_mesh_format: false
     with_part_format: false
     time_dimension: "time"
+    # xios.yaml chooses on these for every FESOM-bearing setup. FESOM 2.0
+    # cannot write through XIOS, so both stay off.
+    with_xios: false
+    cmip7_cmor_output: false
 
     pool_dir: ${computer.pool_directories.pool}
     #model_dir: "${esm_master_dir}/fesom-${version}/"

@@ -1,6 +1,8 @@
 import os
+import shutil
 import stat
 import subprocess
+import tempfile
 import time
 
 from loguru import logger
@@ -27,6 +29,106 @@ def run_job(config):
     return config
 
 
+def snapshot_model_source(config, model, version):
+    """
+    Ensures that a per-experiment, immutable copy of the source tree used to
+    build ``model`` exists under ``config["general"]["experiment_src_dir"]``.
+
+    This directory is normally shared between many experiments and users (it
+    is the central, mutable model checkout/build used by ``esm_master``), so
+    anything that reads from it directly (e.g. for VCS provenance) is at the
+    mercy of unrelated activity on that shared directory between segments of
+    the same experiment. By snapshotting it once per experiment and then
+    reusing that snapshot for every subsequent segment, later code (notably
+    ``add_vcs_info``/``check_vcs_info_against_last_run``) can rely on the
+    source tree being frozen for the lifetime of the experiment.
+
+    If the snapshot already exists on disk, it is reused unchanged -- no
+    re-copy happens, even if the shared source directory has since moved on.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+    model : str
+        Name of the model/component to snapshot
+    version : str
+        Version string of the model/component, used to build the snapshot
+        directory name
+
+    Returns
+    -------
+    str or None
+        The path to the (now guaranteed to exist) snapshot directory, or
+        ``None`` if no shared source directory could be found for ``model``.
+    """
+    experiment_src_dir = config["general"]["experiment_src_dir"]
+    snapshot_dir = os.path.join(experiment_src_dir, f"{model}-{version}")
+
+    if os.path.isdir(snapshot_dir):
+        # Already snapshotted for this experiment -- freeze in place.
+        return snapshot_dir
+
+    try:
+        shared_dir = config[model]["model_dir"]
+    except KeyError:
+        logger.debug(f"No model_dir known for {model}, cannot snapshot its source.")
+        return None
+
+    if not shared_dir or not os.path.isdir(shared_dir):
+        logger.warning(
+            f"Cannot snapshot source for {model}: {shared_dir} does not exist."
+        )
+        return None
+
+    os.makedirs(experiment_src_dir, exist_ok=True)
+
+    # Copy into a uniquely-named temp directory first, then atomically
+    # rename it into place. This means that a crash mid-copy never leaves a
+    # half-populated snapshot_dir behind, and if another process/segment
+    # wins the race to create snapshot_dir first, we simply discard our copy
+    # and use theirs -- no separate lockfile needed.
+    tmp_parent = tempfile.mkdtemp(
+        prefix=f".{model}-{version}.snapshot-", dir=experiment_src_dir
+    )
+    tmp_snapshot = os.path.join(tmp_parent, f"{model}-{version}")
+    try:
+        logger.info(f"Snapshotting source of {model} ({shared_dir} -> {snapshot_dir})")
+        shutil.copytree(shared_dir, tmp_snapshot, symlinks=True)
+        try:
+            os.rename(tmp_snapshot, snapshot_dir)
+        except OSError:
+            # Someone else finished first; that's fine, use theirs.
+            if not os.path.isdir(snapshot_dir):
+                raise
+    finally:
+        shutil.rmtree(tmp_parent, ignore_errors=True)
+
+    return snapshot_dir
+
+
+def snapshot_model_sources(config):
+    """
+    Snapshots the source tree of every model/component in
+    ``config["general"]["models"]`` (see :func:`snapshot_model_source`) and
+    repoints ``config[model]["model_dir"]`` at the snapshot.
+
+    This runs on every segment, not just the first: the snapshot is only
+    populated once (on whichever segment first finds it missing), but every
+    segment needs to repoint ``model_dir`` at it, since ``config`` is
+    rebuilt from scratch each run and would otherwise keep resolving
+    ``model_dir`` back to the shared, mutable location.
+    """
+    for model in config.get("general", {}).get("models", []):
+        version = config.get(model, {}).get("version")
+        if not version:
+            continue
+        snapshot_dir = snapshot_model_source(config, model, version)
+        if snapshot_dir:
+            config[model]["model_dir"] = snapshot_dir
+    return config
+
+
 def compile_model(config):
     """Compiles the desired model before the run starts"""
     model = config["general"]["setup_name"]
@@ -45,6 +147,7 @@ def compile_model(config):
             config["general"]["model_dir"] = (
                 config["general"]["experiment_src_dir"] + f"/{model}-{version}"
             )
+    config = snapshot_model_sources(config)
     return config
 
 

@@ -2,7 +2,7 @@
 # every one pinned to a release tag. The moving line is
 # awiesm3_develop-is (v3.5-is, develop-is).
 components:
-- xios-2.5.5
+- xios-2.5.6
 - rnfmap-v1.5
 - oifs-48r1v8
 - fesom-2.8.4

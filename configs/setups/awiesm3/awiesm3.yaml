@@ -488,7 +488,7 @@ general:
             honor_final_date: true
 
         # ------------------------------------------------------------------
-        # v3.5.2: v3.5.1 on new tags (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.5, runoff
+        # v3.5.2: v3.5.1 on new tags (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.6, runoff
         # mapper 1.5; the ice-sheet variant adds dEBM2 1.0 and ismm 4.1.8-awi.2).
         # FESOM is single precision in all three variants, -cc included (#1242),
         # and WAM writes through XIOS with the CMIP7 output (oifs section).

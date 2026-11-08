@@ -231,7 +231,7 @@ general:
             oasis_with_yac: False
             xios_interp_order: 1
           # v3.5.2: v3.5.1 on new tags, those of awiesm3 v3.5.2 without LPJ-GUESS
-          # (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.5, runoff mapper 1.5), and WAM
+          # (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.6, runoff mapper 1.5), and WAM
           # writes through XIOS with the CMIP7 output.
           v3.5.2:
             major_version: v3.5

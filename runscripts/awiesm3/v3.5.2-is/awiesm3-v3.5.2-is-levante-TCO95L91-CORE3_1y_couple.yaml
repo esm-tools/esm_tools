@@ -1,0 +1,34 @@
+# AWI-ESM3 v3.5.2-is on levante: one cycle of 1 ocean year + 1 PISM year with dEBM2 in the
+# ISM-mapper, branched from dbm3 at ocean 1905 / ice 62420.
+#   esm_runscripts awiesm3-v3.5.2-is-levante-TCO95L91-CORE3_1y_couple.yaml -e <expid> --coupling-chain all
+general:
+        coupling_mode: concurrent
+        coupling_launcher_time: "00:30:00"
+        coupling_launcher_qos: devel
+        add_other_components:
+                - model1
+                - model2
+        iterative_coupling: True
+        ism_orog_coupled: True
+        use_venv: False
+        user: !ENV ${USER}
+        # Literals: esm_tools reads account and base_dir while initializing the iterative
+        # coupling, before any choose_ block is resolved.
+        account: bb1469
+        base_dir: "/work/bb1469/${general.user}/runtime/awiesm3-v3.5.2-is/"
+        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+        with_recom: False
+        with_icb: True
+
+model1:
+        setup_name: awiesm3
+        runscript: awiesm3-v3.5.2-is-levante-TCO95L91-CORE3_1y_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: awiesm3-v3.5.2-is-levante-TCO95L91-CORE3_1y_pism.yaml
+        # PISM years per ocean year; a multiple of general.nyear in the pism runscript.
+        chunk_size: 1
+        chunk_unit: "years"

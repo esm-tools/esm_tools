@@ -1,0 +1,138 @@
+# AWI-ESM3 v3.5.2-is on levante, PISM chain of awiesm3-v3.5.2-is-levante-TCO95L91-CORE3_1y_couple.yaml.
+# PISM restarts from dbm3's end of 62419 and runs 62420 with dbm3's 1904 forcing (bundle
+# coupled_bootstrap/branch_dbm3_1904, see its README.md), which keeps the one-chunk lag.
+general:
+        setup_name: pism
+        # The leg also runs the next awiesm3 chunk's couple_in in this allocation.
+        compute_time: "00:30:00"
+        initial_date: "62420-01-01"
+        # Must end on the same cycle as the ocean runscript's final_date.
+        final_date: "62420-12-31"
+        user: !ENV ${USER}
+        # The same variables as the ocean runscript: the two chains do not see each other's general.
+        antfill_root: "/work/ab0246/a270234"
+        model_code_dir: "/work/bb1469/${general.user}/model_codes/awiesm3-v3.5.2-is"
+        conda_env_dir: "/work/ab0246/a270234/conda/envs"
+        shared_a270092: "/work/ab0246/a270092"
+        shared_a270234: "/work/ab0246/a270234"
+        base_dir: "/work/bb1469/${general.user}/runtime/awiesm3-v3.5.2-is/"
+        script_dir: "${general.esm_configs_dir}/../couplings/"
+        nyear: 1
+        change_ocean: 1
+        files_to_wait_for:
+            - "latest_atmo_forcing_file.nc"
+            - "latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism:
+        python_binary: "${general.conda_env_dir}/ocp-tool2/bin/python"
+        # Mesh of the chunk-1 ocean forcing.
+        fesom_mesh_dir: "/work/ab0246/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/submesh_1904-12-31T00:00:00"
+        # Chunk 1 conserves the cavity melt over PISM's own floating mask, read from the first
+        # record of this file: PISM's mask at the branch point.
+        initial_mask_file: "/work/ab0246/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904/initial_mask_62419.nc"
+        version: "github1.2.1"
+        resolution: "08km"
+        domain: "antarct_cr"
+        model_dir: "${general.model_code_dir}/pism-github1.2.1/"
+        lresume: 1
+        # Chunk-1 atmosphere/ocean forcing: dbm3's 1904 harvest.
+        bootstrap_forcing_dir: "/work/ab0246/a270092/input/pism/coupled_bootstrap/branch_dbm3_1904"
+
+        nx: 761
+        ny: 761
+        choose_computer.partitions.compute.cores_per_node:
+                128:
+                        nnodes: 4
+                        nproca: 512
+                        nprocb: 1
+
+        downscale_precip: 0
+        debm_path: "${general.model_code_dir}/bin/debm"
+        debm_beta: 10
+        lapse_rate: -0.005
+        ablation_method: "DEBM2"
+        regrid_method: "NONE"
+        iceberg_coupling: 1
+        thk_threshold: 5.0
+        select_min_glacial_depth: 1
+        account_all_fw_input: 1
+        change_emiss: 0
+        change_emiss_by: 0
+        multi_year_mean: 0
+        change_ocean: 1
+        oce2ice_method: "DIRECT"
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+
+        # dbm3's restart at the end of 62419, read as a full state (no bootstrap).
+        spinup_file: "/work/ab0246/a270092/runtime/awiesm3-develop-is/dbm3/restart/pism/dbm3_pismr_restart_624100101-624191231.nc"
+        pool_dir: "${general.shared_a270092}/input/pism/"
+        ts_interval: "1"
+        ex_interval: "yearly"
+        force_bootstrap_first_run: False
+        orog_reference_pism: "1"
+
+        # The values the tillphi was inverted with: do not retune without redoing the inversion.
+        kv_pairs:
+            stress_balance.model: "ssa+sia"
+            stress_balance.sia.max_diffusivity: 64000
+            sia_e: 1.3
+            ssa_e: 0.6
+            sia_n: 3.0
+            ssa_n: 3.0
+            hydrology.tillwat_max: 2
+            hydrology.tillwat_decay_rate: 1
+            basal_resistance.pseudo_plastic.q: 0.25
+            basal_resistance.pseudo_plastic.u_threshold: 100
+            basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.02
+            basal_yield_stress.mohr_coulomb.till_phi_default: 30
+            bed_deformation.model: "none"
+            calving.methods: 'eigen_calving,thickness_calving'
+            calving.eigen_calving.K: "1.0e17"
+            calving.thickness_calving.threshold: 75
+            ocean.pik_melt_factor: "1e-2"
+            atmosphere.elevation_change.precip_lapse_rate: 0.0
+            atmosphere.elevation_change.smb_lapse_rate: 0.0
+            dt_max: 0.02
+        flags:
+            - "pik"
+            - "basal_resistance.pseudo_plastic.enabled"
+            - "basal_yield_stress.slippery_grounding_lines"
+            - "no_subgl_basal_melt"
+            # Ocean enclosed by floating ice is a hole, so calving does not eat the shelf from inside.
+            - "label_floating_holes"
+        couplers:
+            surface:
+                given:
+                    files:
+                        surface_given_file: "latest_atmo_forcing_file.nc"
+                    kv_pairs:
+                        surface_given_period: 1
+            ocean:
+                given:
+                    files:
+                        ocean_given_file: "latest_ocean_forcing_file.nc"
+        workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: real_esm2pism.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: esm2pism
+                        env_preparation: env_pism.py
+                        run_only: first_run_in_chunk
+                couple_out:
+                        nproc: 1
+                        run_after: tidy
+                        script: coupling_pism2esm.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: pism2esm
+                        env_preparation: env_pism2awiesm.py
+                        run_only: last_run_in_chunk
+
+computer:
+        additional_flags: [ --qos=devel ]

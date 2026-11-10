@@ -2307,15 +2307,11 @@ rnfmap:
     runoff_maps_name: _${fesom.resolution}
     version: v1.1
 
-    # The runoff mapper is where the two freshwater returns are reconciled, so
-    # the ice-sheet-aware version comes in with smb_coupled. It behaves exactly
-    # as before while NumCoupledRegions is 0.
-    choose_general.smb_coupled:
-        true:
-            version: v1.4-ismm
-
     # The release builds and runs the tagged ice-sheet-aware mapper in all three
     # variants (one tag set). With NumCoupledRegions 0 it maps as v1.1 / v1.3 do.
+    # Versions without a pinned mapper get the ice-sheet-aware one with
+    # smb_coupled, in the "*" arm: set next to this block it is a "Choose conflict"
+    # for every version listed here.
     choose_general.version:
         v3.5.0:
             version: v1.4
@@ -2349,6 +2345,10 @@ rnfmap:
             version: v1.4-ismm
         v3.5-is:
             version: v1.4-ismm
+        "*":
+            choose_general.smb_coupled:
+                true:
+                    version: v1.4-ismm
 
     # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
     # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean

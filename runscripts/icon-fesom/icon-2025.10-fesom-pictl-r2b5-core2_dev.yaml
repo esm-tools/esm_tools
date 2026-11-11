@@ -34,7 +34,7 @@ general:
    #nmonth: 1
    # yearly restart
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1853-01-01T00:00:00"         # Final date of the experiment
    # set length and unit, both are used to set ICON and FESOM
    # time intervals correctly
    runlength: 1
@@ -54,14 +54,14 @@ general:
          #nyear: ${runlength}
          unitUpper: 'Y'
    
-   base_dir: ${homedir}/esm/esm-experiments/ 
+   base_dir: ${homedir}/esm/bm1514-experiments/ 
    #model_dir: /work/bb0519/b350071/models/icon-fesom-v3.0
    model_dir: ${homedir}/esm/models/icon-fesom-v2.0
    version: "v2.0"
 
-yac:
-    input_sources:
-        coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/ICON/coupling.yaml  
+      #yac:
+      #input_sources:
+      #  coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/ICON/coupling.yaml  
 
 icon:
    monitoring: True 
@@ -117,7 +117,7 @@ fesom:
    version: "2.7.7-yac"
    time_step: 1800
    resolution: "CORE2"
-   nproc: 512 
+   nproc: 432 
    #nproc: 4096
    #nproc: 1280
    #nproc: 1920

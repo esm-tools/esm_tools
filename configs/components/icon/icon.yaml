@@ -65,9 +65,10 @@ icon:
    # and the JSBACH files must belong together (same land-sea mask; JSBACH
    # notsea = extpar FR_LAND + FR_LAKE in every cell):
    #   xpp:   ICON-XPP, as Trang's CAP7 AMIP setup: extpar
-   #          ${grid_id}/land/r0002/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
-   #          (data identical to r0003) and the JSBACH files of
-   #          ${grid_id}/land/r0002, sea-ice snow albedo 0.81/0.71 (Trang)
+   #          ${grid_id}/land/r0003/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
+   #          and the JSBACH files of ${grid_id}/land/r0003 (identical to
+   #          r0002 except ic_land_soil.nc, which r0003 takes from an ICON run,
+   #          i.e. spun-up soil moisture), sea-ice snow albedo 0.81/0.71 (Trang)
    #   core2: as ICON-FESOM (CORE2 mesh): extpar
    #          ${grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${grid_id}_20250306_tiles_jsb_cdnc.nc
    #          (land-sea mask from the FESOM CORE2 mesh, CDNC climatology of the
@@ -388,10 +389,10 @@ icon:
          # extpar, JSBACH land files and sea-ice snow albedo, see amip_surface above
          choose_amip_surface:
             xpp:
-               extpar_file: ${input_dir}/${grid_id}/land/r0002/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
-               jsbach_ic_dir: ${input_dir}/${grid_id}/land/r0002
-               jsbach_forcing_dir: ${input_dir}/${grid_id}/land/r0002
-               ic_land_soil_file: ${input_dir}/${grid_id}/land/r0002/ic_land_soil.nc
+               extpar_file: ${input_dir}/${grid_id}/land/r0003/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
+               jsbach_ic_dir: ${input_dir}/${grid_id}/land/r0003
+               jsbach_forcing_dir: ${input_dir}/${grid_id}/land/r0003
+               ic_land_soil_file: ${input_dir}/${grid_id}/land/r0003/ic_land_soil.nc
                amip_albsi_snow_max: 0.81
                amip_albsi_snow_min: 0.71
             core2:

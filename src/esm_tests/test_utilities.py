@@ -321,7 +321,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         Relative paths of the file in the ``last_tested`` folder
     """
     # File types to check
-    some_compare_files = [".run", "finished_config", "hostfile_"]
+    some_compare_files = [".run", "finished_config", "hostfile_", "rank_placement"]
     # Load relevant variables from ``info``
     user_info = info["user"]
     # Initialize ``subpaths`` list
@@ -346,6 +346,8 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         files_to_folders = {
             ".run": "scripts",
             "hostfile_": "scripts",
+            # taskset rank placement, only written for taskset runs
+            "rank_placement": "work",
             "finished_config": "config",
             "prepcompute_filelist": "log",
         }

@@ -264,7 +264,7 @@ class Slurm:
             # One ``node_index first_core`` line per global rank. The hostlist and the
             # taskset calls below both read it, so node and cores always agree.
             table, _ = placement.compute_placement(config, cores_per_node)
-            placement.write_placement(table, scriptfolder + "rank_placement")
+            placement.write_placement(table, f"{scriptfolder}{placement.PLACEMENT_FILE}")
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
                     continue
@@ -308,7 +308,7 @@ class Slurm:
                     # first core of this rank on its node, from the placement table
                     f.write(
                         "slot=$(awk -v r=$((PMI_RANK + 1)) 'NR == r {print $2; exit}' "
-                        "rank_placement)" + "\n"
+                        f"{placement.PLACEMENT_FILE})\n"
                     )
                     f.write(
                         "echo "
@@ -352,7 +352,7 @@ class Slurm:
         # prog_<model>.sh wrappers (placement.py)
         runfile.write("while read node_index first_core; do" + "\n")
         runfile.write("    echo ${listnodes[${node_index}]} >> hostlist" + "\n")
-        runfile.write(f"done < {work_dir}/rank_placement" + "\n\n")
+        runfile.write(f"done < {work_dir}/{placement.PLACEMENT_FILE}\n\n")
 
     ############# MULTI SRUN STUFF ##############
 

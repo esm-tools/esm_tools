@@ -79,6 +79,10 @@ icon:
    grid_id: '0030'
 
    amip: True
+   # extpar, JSBACH land files and sea-ice snow albedo (see amip_surface in icon.yaml):
+   # mixed = as icon-amip-01 (CORE2 extpar with the 0030/land/r0002 JSBACH files),
+   # consistent alternatives: xpp (Trang, ICON-XPP) or core2 (ICON-FESOM)
+   amip_surface: mixed
    amip_sst: hadisst1p1
    scenario: 'cmip7hist'
    cmip7_scenario: m

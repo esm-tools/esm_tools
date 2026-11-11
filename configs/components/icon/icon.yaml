@@ -60,6 +60,28 @@ icon:
       pcmdi-1-1-10:
          amip_sst_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
          amip_sst_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
+   # extpar file, JSBACH land files and surface namelist settings used if
+   # amip: True (see choose_amip_surface in choose_amip below). The extpar file
+   # and the JSBACH files must belong together (same land-sea mask; JSBACH
+   # notsea = extpar FR_LAND + FR_LAKE in every cell):
+   #   xpp:   ICON-XPP, as Trang's CAP7 AMIP setup: extpar
+   #          ${grid_id}/land/r0002/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
+   #          (data identical to r0003) and the JSBACH files of
+   #          ${grid_id}/land/r0002, sea-ice snow albedo 0.81/0.71 (Trang)
+   #   core2: as ICON-FESOM (CORE2 mesh): extpar
+   #          ${grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${grid_id}_20250306_tiles_jsb_cdnc.nc
+   #          (land-sea mask from the FESOM CORE2 mesh, CDNC climatology of the
+   #          GEOMAR tuning) and the JSBACH files of ${grid_id}-CORE2/land/r00xx,
+   #          sea-ice snow albedo 0.80/0.69 (ICON-FESOM namelist templates)
+   #   mixed: as icon-amip-01 (nesh, 1979-2024, 2026-11): CORE2 extpar with the
+   #          ${grid_id}/land/r0002 JSBACH files, sea-ice snow albedo 0.81/0.71.
+   #          Inconsistent land-sea mask (R2B5: 5145 cells), only to reproduce
+   #          icon-amip-01.
+   # All three use the same atmosphere tuning: the namelist templates in
+   # namelists/icon/<version>/<resolution>/amip are the ICON-FESOM GEOMAR
+   # templates, which are identical to Trang's namelist apart from the AMIP
+   # settings set in choose_amip.
+   amip_surface: xpp
    monitoring: False
    # interpolate the monthly and the daily 3d model-level output to pressure
    # levels after each run (postprocessing job after tidy, see
@@ -123,7 +145,9 @@ icon:
    ozone_dir: ${computer.ozone_dir} 
    aerosol_dir: ${computer.aerosol_dir} 
    jsbach_ic_dir: ${computer.jsbach_ic_dir} 
-   jsbach_forcing_dir: ${computer.jsbach_forcing_dir} 
+   jsbach_forcing_dir: ${computer.jsbach_forcing_dir}
+   # JSBACH initial soil state (overwritten in choose_amip_surface)
+   ic_land_soil_file: ${jsbach_ic_dir}/../r0002/ic_land_soil.nc
    # format start_date/end_date according to ISO_8601 standard used by ICON
    start_rsttime: ${parent_date!syear!smonth!sday}T${parent_date!shour!sminute!ssecond}Z
    #start_rsttime: ${start_date!syear!smonth!sday}T${start_date!shour!sminute!ssecond}Z
@@ -340,9 +364,9 @@ icon:
                   sstice_mode: 6
                   sst_td_filename: bc_sst.nc
                   ci_td_filename: bc_sic.nc
-                  # NWP sea ice model is active in AMIP
-                  albsi_snow_max: 0.81
-                  albsi_snow_min: 0.71
+                  # NWP sea ice model is active in AMIP (set in choose_amip_surface)
+                  albsi_snow_max: ${amip_albsi_snow_max}
+                  albsi_snow_min: ${amip_albsi_snow_min}
             NAMELIST_lnd:
                jsb_model_nml:
                   # stop in case of water conservation problem
@@ -361,6 +385,29 @@ icon:
          # IFS analysis for the initial date (available for 1970 and 1979)
          ifs2icon_dir: ${input_dir}/${grid_id}/initial_conditions/r0002
          ifs2icon_date: ${general.initial_date!syear}010100
+         # extpar, JSBACH land files and sea-ice snow albedo, see amip_surface above
+         choose_amip_surface:
+            xpp:
+               extpar_file: ${input_dir}/${grid_id}/land/r0002/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
+               jsbach_ic_dir: ${input_dir}/${grid_id}/land/r0002
+               jsbach_forcing_dir: ${input_dir}/${grid_id}/land/r0002
+               ic_land_soil_file: ${input_dir}/${grid_id}/land/r0002/ic_land_soil.nc
+               amip_albsi_snow_max: 0.81
+               amip_albsi_snow_min: 0.71
+            core2:
+               extpar_file: ${input_dir}/${grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${grid_id}_20250306_tiles_jsb_cdnc.nc
+               jsbach_ic_dir: ${input_dir}/${grid_id}-CORE2/land/r00xx
+               jsbach_forcing_dir: ${input_dir}/${grid_id}-CORE2/land/r00xx
+               ic_land_soil_file: ${input_dir}/${grid_id}-CORE2/land/r00xx/ic_land_soil.nc
+               amip_albsi_snow_max: 0.80
+               amip_albsi_snow_min: 0.69
+            mixed:
+               extpar_file: ${input_dir}/${grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${grid_id}_20250306_tiles_jsb_cdnc.nc
+               jsbach_ic_dir: ${input_dir}/${grid_id}/land/r0002
+               jsbach_forcing_dir: ${input_dir}/${grid_id}/land/r0002
+               ic_land_soil_file: ${input_dir}/${grid_id}/land/r0002/../r0002/ic_land_soil.nc
+               amip_albsi_snow_max: 0.81
+               amip_albsi_snow_min: 0.71
 
    #
    # output data settings
@@ -578,7 +625,7 @@ icon:
 
       # JSBACH
       # ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc
-      ic_land_soil: ${jsbach_ic_dir}/../r0002/ic_land_soil.nc
+      ic_land_soil: ${ic_land_soil_file}
       bc_land_sso: ${jsbach_ic_dir}/bc_land_sso.nc
       bc_land_phys: ${jsbach_ic_dir}/bc_land_phys.nc
       bc_land_soil: ${jsbach_ic_dir}/bc_land_soil.nc

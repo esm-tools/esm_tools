@@ -1,0 +1,134 @@
+# RERUN of icon-amip-01 from the 2012-01-01 checkpoint (2026-11-09): run 3
+# (2009-2023, job 24850964) lost node nesh-srp242 at 2014-04-27, but mpirun exited 0,
+# so ESM-Tools did not notice. Prepared by hand: 2012-2014 output of run 3 moved to
+# outdata/icon_run3_crashed_2012-2014, restart 20120101 copied from
+# run_20090101-20231231/work to restart/icon, date file set to 2012-01-01 (run 4).
+# Differences to icon-2025.10-amip-r2b5-nesh_1979-2024.yaml: runlength 13 and
+# final_date 2025-01-01, i.e. 2012-2024 in one run (~29.5 h), so 2024 needs no
+# separate run. Restarts 2015, 2018, 2021 (checkpoint_interval) and 2025-01-01.
+#
+# Standalone ICON (2025.10-public) AMIP production runscript, R02B05 (grid 0030),
+# nesh, 1979-01-01 to 2024-12-31. Same model setup as
+# icon-2025.10-amip-r2b5-levante_1979-2024.yaml (see there and icon.yaml for the
+# details), machine settings as in
+# ../icon-fesom/icon-fesom-pictl-r2b5-core2-nesh_multiyear_geomar.yaml.
+#
+# Before the first run:
+#   - input data: the files listed in ceresmip/nesh/amip_input_files.txt must be in
+#     ${computer.pool_directories.focipool}/ICON-FESOM/icon-xpp (see ceresmip/nesh/README.md)
+#   - compile: cd ~/esm/models && esm_master install-icon-2025.10-public, then
+#     check out the commit used on levante (69ef5cda9, tag icon-2025.10-2), see ceresmip/nesh/README.md
+#   - run icon-2025.10-amip-r2b5-nesh.yaml (10 days) first: it checks the setup and
+#     gives the time per model day
+#
+# Run length: 15 year chunks, 1979-2023 (3 runs: 1979-1993, 1994-2008, 2009-2023),
+#   then 2024 as one run, started by hand: ESM-Tools does not shorten the last
+#   run to final_date and the SST/sea ice data end on 2025-01-16. After the 3rd
+#   run set runlength: 1, nyear: 1 (choose_unit) and final_date: "2025-01-01"
+#   and resubmit, the experiment continues from the 2024-01-01 restart.
+# Time: 24 nodes take ~21 s per model day = ~2.1 h per model year (10-day test
+#   amip_nesh_24n, 2026-11-05), so a 15 year run takes ~32 h (48 h limit).
+# Restart files: written every 3 years (checkpoint_interval), the run stops after
+#   15 years (restart_interval). Only the restart at the end of a run is copied to
+#   restart/icon; the 3-yearly ones stay in run_*/work (as in the ICON-FESOM runscripts).
+# Disk: a 15 year run writes ~2.1 TB of daily 3d model-level output before the
+#   interpolation job deletes it (interp_to_plev_ml_files: remove, ~2 s per model
+#   day, i.e. ~3 h per 15 years, runs while the next run already computes).
+computer:
+    use_hyperthreading: False
+    additional_flags:
+        - "--tasks-per-node=32"
+        - "--constraint=sapphire"
+        # nesh-srp224-227 run hot (87-95 C) on 2026-11-09, srp225-227 throttle (srp227 ~1.4 GHz),
+        # which made job 24871320 2x slower
+        - "--exclude=nesh-srp[224-227]"
+    launcher: mpirun
+    launcher_flags: ""
+    check_error:
+      "srun: error:" :
+          frequency: 30
+          method: "kill"
+          message: "SLURM ERROR: slurm ended with an error, good luck."
+          file: "stdout"
+    post_run_commands:
+       - "jobinfo"
+
+general:
+   use_venv: False
+   account: None
+   setup_name: icon
+   compute_time: "48:00:00"
+
+   initial_date: "1979-01-01T00:00:00"       # Initial exp. date
+   final_date: "2025-01-01T00:00:00"         # Final date of the experiment (rerun includes 2024)
+   # set length and unit of each run, both are used to set the ESM-Tools run
+   # length and the ICON restart_interval (end of the run)
+   runlength: 13
+   unit: 'y' # 'd' for day, 'm' for month, 'y' for year
+   # needs fixing, esm_tools can't resolve ${runlength} here
+   # https://github.com/esm-tools/esm_tools/issues/1453
+   # so set nday/nmonth/nyear to the same value as runlength
+   choose_unit:
+      'd':
+         nday: 15
+         unitUpper: 'D'
+      'm':
+         nmonth: 15
+         unitUpper: 'M'
+      'y':
+         nyear: 13
+         unitUpper: 'Y'
+
+   # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to
+   # the job with the full value of the line (e.g. HOME=<model_dir>)
+   homedir: !ENV ${HOME}
+   base_dir: ${homedir}/esm/esm-experiments
+   model_dir: ${homedir}/esm/models/icon-2025.10-public
+
+icon:
+   version: 2025.10-public
+   resolution: R02B05
+   grid_id: '0030'
+
+   amip: True
+   amip_sst: hadisst1p1
+   scenario: 'cmip7hist'
+   cmip7_scenario: m
+
+   # after each run: monthly and daily 3d model-level output -> 26 pressure levels
+   # (configs/components/icon/interp_to_plev.sh, postprocessing job). The daily
+   # model-level files are deleted (140 GB per year) once the pressure-level file
+   # passed its check, the monthly ones are moved to outdata/icon/3d_ml (needed for aec)
+   interp_to_plev: True
+   interp_to_plev_ml_files: remove
+
+   # as in ICON-FESOM on nesh (24 nodes)
+   nproc: 768
+   omp_num_threads: 1
+   dtime: 450
+
+   # restart files every 3 years (checkpoint_interval), the run stops after
+   # runlength (restart_interval), as in the ICON-FESOM runscripts. runlength must
+   # be a multiple of 3 years. Output intervals are set per stream in the amip NAMELIST_atm
+   checkpoint_interval: P03Y
+   restart_interval: P${general.runlength}${general.unitUpper}
+
+   pre_run_commands:
+       - "ulimit -c 0"
+       # libfyaml, as in the nesh ICON-FESOM runscripts
+       - "LD_LIBRARY_PATH=/gxfs_work/geomar/smomw235/sw/libfyaml-0.9.6/lib:$LD_LIBRARY_PATH"
+       - "cd ${work_dir}"
+       # ICON reads the restart from a link that points to the multifile restart directory
+       - "rm -f multifile_restart_atmo.mfr"
+       - "ln -sf ${icon.parent_restart_dir}/${parent_expid}_restart_atm_${start_rsttime}.mfr multifile_restart_atmo.mfr"
+       # overcome limitation of f90nml who cannot handle the duplicate namelists output_nml in NAMELIST_atm correctly
+       - sed -i s/\'icon_/\'${general.expid}_/ NAMELIST_*
+
+   add_namelist_changes:
+      NAMELIST_atm:
+         run_nml:
+            msg_level: 2
+         output_nml:
+            # yearly files, as in icon-fesom-pictl-r2b5-core2-levante_multiyear_geomar.yaml
+            # (f90nml applies this to all output_nml groups)
+            file_interval: "P01YT1S"

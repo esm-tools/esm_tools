@@ -11,8 +11,13 @@ threading dict-key strings through by hand.
 
 This is the "models" step of the vocabulary rename's staged plan (see
 esm-tools/esm_tools#1519): rename -> models -> REPL -> execution/provenance.
-The REPL and execution/provenance layers are future work; this module only
-covers structural read access.
+REPL is also done (``cli.py``'s ``--wf-engine=pplan`` drops into an
+IPython/pdb session bound to the resolved ``Workflow``); only
+execution/provenance is still future work. This module itself only covers
+structural read access -- ``Step``/``SubPlan.steps``/``run_steps()`` exist
+in the type system (P-Plan vocabulary) but nothing populates or executes
+them for real yet; that belongs to the execution/provenance stage, not
+here.
 """
 
 from __future__ import annotations

@@ -12,8 +12,9 @@ import esm_parser
 import esm_tools.esm_warnings  # noqa: F401  installs the deprecation visibility filter
 from esm_tools import __version__
 
-from . import (config_initialization, helpers, last_minute, logfiles, plan,
+from . import (config_initialization, helpers, last_minute, logfiles,
                prepare, prepexp, prev_run, resubmit, workflow)
+from .pplan import plan
 from .simulation_config import ConfigBuilder, RunStateBuilder
 
 # SimulationSetup's deprecation schedule. Reuses the same values as

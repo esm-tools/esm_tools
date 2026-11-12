@@ -427,10 +427,16 @@ def _collect_extra_sub_plans(config: dict):
             extra_sub_plans[name] = sub_plan
             # run_on_queue/submit_to_batch_system are cluster-level facts
             # (same Plan, same batch submission) -- read off the raw conf,
-            # not the SubPlan, which no longer carries them.
+            # not the SubPlan, which no longer carries them. Default False,
+            # matching the legacy dict engine's own default for a sub-plan
+            # that omits the key (workflow.py: "if 'submit_to_batch_system'
+            # not in plan_conf: plan_conf['submit_to_batch_system'] = False";
+            # resubmit.py's get_submission_type same default) -- unlike
+            # Workflow.default()'s "compute" sub-plan below, which legacy
+            # always batch-submits by default.
             executor = (
                 Executor.BATCH
-                if conf.get("submit_to_batch_system", True)
+                if conf.get("submit_to_batch_system", False)
                 else Executor.LOCAL
             )
             extra_plans[name] = Plan(

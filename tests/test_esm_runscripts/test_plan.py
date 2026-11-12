@@ -5,7 +5,7 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.plan import Plan, Step, SubPlan, Workflow, run_steps
+from esm_runscripts.pplan.plan import Executor, Plan, Step, SubPlan, Workflow, run_steps
 
 
 def _assembled_config(workflow_block):
@@ -105,11 +105,49 @@ def test_subplan_defaults_for_new_fields():
 def test_plan_defaults_for_new_fields():
     cluster = Plan(name="initialization")
 
-    assert cluster.runs_on is None
+    assert cluster.executor is None
     assert cluster.cycling is None
 
 
-def test_run_steps_logs_each_step_and_does_not_mutate_config():
+def test_run_steps_is_a_noop_for_an_empty_steps_list():
+    sub_plan = SubPlan(name="prepare", parent_plan="initialization")
+    config = {"general": {"setup_name": "awicm3"}}
+
+    result = run_steps(sub_plan, config)
+
+    assert result is config
+
+
+def test_run_steps_resolves_and_runs_via_esm_plugin_manager(monkeypatch):
+    # run_steps is a thin adapter over esm_plugin_manager -- the same
+    # read_plugin_information + check_plugin_availability +
+    # work_through_recipe sequence helpers.evaluate already uses for the
+    # legacy engine. Verify the adapter wiring (recipe shape, call order)
+    # without running real plugin functions.
+    calls = []
+
+    def fake_read_plugin_information(plugins_bare, recipe):
+        calls.append(("read_plugin_information", plugins_bare, recipe))
+        return {"fake_plugins": True}
+
+    def fake_check_plugin_availability(plugins):
+        calls.append(("check_plugin_availability", plugins))
+
+    def fake_work_through_recipe(recipe, plugins, config):
+        calls.append(("work_through_recipe", recipe, plugins, config))
+        return {**config, "ran": True}
+
+    import esm_plugin_manager
+    monkeypatch.setattr(
+        esm_plugin_manager, "read_plugin_information", fake_read_plugin_information
+    )
+    monkeypatch.setattr(
+        esm_plugin_manager, "check_plugin_availability", fake_check_plugin_availability
+    )
+    monkeypatch.setattr(
+        esm_plugin_manager, "work_through_recipe", fake_work_through_recipe
+    )
+
     sub_plan = SubPlan(
         name="prepare",
         parent_plan="initialization",
@@ -119,8 +157,17 @@ def test_run_steps_logs_each_step_and_does_not_mutate_config():
 
     result = run_steps(sub_plan, config)
 
-    assert result is config
-    assert result == {"general": {"setup_name": "awicm3"}}
+    assert result == {"general": {"setup_name": "awicm3"}, "ran": True}
+    assert [name for name, *_ in calls] == [
+        "read_plugin_information",
+        "check_plugin_availability",
+        "work_through_recipe",
+    ]
+    recipe = calls[0][2]
+    assert recipe == {
+        "recipe": ["_read_date_file", "check_model_lresume"],
+        "job_type": "prepare",
+    }
 
 
 def test_workflow_default_synthesizes_prepcompute_compute_tidy():
@@ -141,7 +188,11 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
     assert set(wf.sub_plans) == {"prepcompute", "compute", "tidy"}
     assert wf.sub_plans["compute"].nproc == 128 + 8 * 16
     assert wf.sub_plans["compute"].preceded_by == ["prepcompute"]
-    assert wf.sub_plans["compute"].run_on_queue == "compute"
+    assert wf.sub_plans["compute"].launch_mode == "background"
+    assert wf.plans["compute"].run_on_queue == "compute"
+    assert wf.plans["compute"].executor == Executor.BATCH
+    assert wf.plans["prepcompute"].executor == Executor.IN_PROCESS
+    assert wf.plans["tidy"].executor == Executor.IN_PROCESS
     assert wf.sub_plans["tidy"].preceded_by == ["compute"]
     assert wf.parent_plan_of("compute").name == "compute"
     # Each sub-plan is its own singleton cluster.
@@ -202,23 +253,22 @@ def test_subplan_coerces_bool_with_provenance():
     sub_plan = SubPlan(
         name="postprocessing",
         parent_plan="postprocessing",
-        submit_to_batch_system=BoolWithProvenance(True, provenance=None),
+        concurrent=BoolWithProvenance(True, provenance=None),
     )
-    assert sub_plan.submit_to_batch_system is True
-    assert type(sub_plan.submit_to_batch_system) is bool
+    assert sub_plan.concurrent is True
+    assert type(sub_plan.concurrent) is bool
 
 
-def test_subplan_accepts_none_with_provenance():
+def test_plan_accepts_none_with_provenance():
     # A YAML ``null`` arrives as NoneWithProvenance, which pydantic rejects
     # for Optional[str] fields unless the provenance is stripped first.
     from esm_parser.provenance import NoneWithProvenance
 
-    sub_plan = SubPlan(
+    plan = Plan(
         name="postprocessing",
-        parent_plan="postprocessing",
         run_on_queue=NoneWithProvenance(None, provenance=None),
     )
-    assert sub_plan.run_on_queue is None
+    assert plan.run_on_queue is None
 
 
 def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
@@ -245,7 +295,30 @@ def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
     assert wf.entry_point == "prepcompute"
     assert "postprocessing" in wf.sub_plans
     assert wf.sub_plans["postprocessing"].preceded_by == ["tidy"]
-    assert wf.sub_plans["postprocessing"].run_on_queue == "pp"
     assert "postprocessing" in wf.plans
+    assert wf.plans["postprocessing"].run_on_queue == "pp"
+    assert wf.plans["postprocessing"].executor == Executor.BATCH
     # Fan-out: tidy still triggers the next cycle AND the new sub-plan.
     assert wf.resubmit_triggers["tidy"] == ["prepcompute", "postprocessing"]
+
+
+def test_collect_extra_sub_plans_defaults_executor_to_local_when_omitted():
+    # Matches the legacy dict engine's own default: workflow.py sets
+    # plan_conf["submit_to_batch_system"] = False when the key is absent,
+    # and resubmit.py's get_submission_type reads the same False default --
+    # a supplemental sub-plan that doesn't mention submit_to_batch_system
+    # at all must get Executor.LOCAL, not Executor.BATCH.
+    config = _no_custom_workflow_config()
+    config["fesom"]["workflow"] = {
+        "next_run_triggered_by": "tidy",
+        "subjobs": {
+            "inline_postprocessing": {
+                "run_after": "tidy",
+                "nproc": 1,
+            }
+        },
+    }
+
+    wf = Workflow.resolve(config)
+
+    assert wf.plans["inline_postprocessing"].executor == Executor.LOCAL

@@ -2,7 +2,6 @@ import copy
 
 from esm_runscripts.simulation_config import (
     ConfigBuilder,
-    RunState,
     RunStateBuilder,
     SimulationConfig,
 )
@@ -65,12 +64,12 @@ def test_run_state_builder_from_config_does_not_mutate_original(tmp_path):
     assert config.data["general"]["expid"] == "test"  # the deepcopy requirement from Global Constraints
 
 
-def test_run_state_builder_build_returns_run_state():
+def test_run_state_builder_build_returns_simulation_config():
     config = ConfigBuilder.from_user_config(
         {"general": {"setup_name": "dummy", "expid": "test", "valid_model_names": []}}
     ).build()
     run_state = RunStateBuilder.from_config(config).build()
-    assert isinstance(run_state, RunState)
+    assert isinstance(run_state, SimulationConfig)
 
 
 def test_run_state_builder_from_config_deepcopies_nested_dicts_too():

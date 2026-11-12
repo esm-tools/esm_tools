@@ -5,10 +5,8 @@ Extracts config-building logic from SimulationSetup.__init__ into a clean,
 chainable Builder/Product pair. ConfigBuilder provides a fluent interface for
 building configurations step-by-step, while SimulationConfig holds the final result.
 
-Also provides RunStateBuilder and RunState, which wrap the per-invocation,
-pplan-only steps (dates, calendar, folders, prev_date, parent_info) that
-today run inside prepare.py's recipe. The legacy engine never touches this
-code; it keeps calling prepare.run_job wholesale.
+Also provides RunStateBuilder (see its docstring for why it returns a
+SimulationConfig too, rather than a separate product type).
 """
 
 import copy
@@ -291,32 +289,6 @@ class ConfigBuilder:
         return SimulationConfig(self._data)
 
 
-class RunState:
-    """
-    Immutable product of the per-invocation run-state building process.
-
-    Holds the final configuration dictionary produced by RunStateBuilder.
-    Same shape as SimulationConfig: the data property exposes the
-    underlying dict by convention (not enforced).
-    """
-
-    def __init__(self, data):
-        """
-        Initialize a RunState with the final run-state data.
-
-        Parameters
-        ----------
-        data : dict
-            The final run-state configuration dictionary.
-        """
-        self._data = data
-
-    @property
-    def data(self):
-        """Return the underlying configuration dictionary (read-only by convention)."""
-        return self._data
-
-
 class RunStateBuilder:
     """
     Mutable builder for per-invocation run state.
@@ -331,8 +303,13 @@ class RunStateBuilder:
     last_minute.py, conda_env.py, and batch_system.py. Each method mutates
     self._data in place and returns self for chaining.
 
+    ``.build()`` returns a ``SimulationConfig`` -- the same product type
+    ``ConfigBuilder.build()`` returns, not a separate ``RunState`` type --
+    because a ``Simulation`` only ever has one config, enriched further by
+    this builder, not a second object tracked alongside it.
+
     Usage:
-        run_state = (
+        config = (
             RunStateBuilder.from_config(config)
             .with_date_file()
             .with_run_in_chunk_updated()
@@ -347,6 +324,7 @@ class RunStateBuilder:
             .with_prev_date()
             .with_parent_info()
             .with_finalized_config()
+            .with_missing_plugins_installed()
             .build()
         )
     """
@@ -551,11 +529,13 @@ class RunStateBuilder:
 
     def build(self):
         """
-        Finalize the run state and return a RunState product.
+        Finalize the run state and return a SimulationConfig product (see
+        class docstring for why this isn't a separate product type).
 
         Returns
         -------
-        RunState
-            The final, immutable run state object.
+        SimulationConfig
+            The final, immutable configuration object, now including
+            per-invocation facts (dates, calendar, folders, ...).
         """
-        return RunState(self._data)
+        return SimulationConfig(self._data)

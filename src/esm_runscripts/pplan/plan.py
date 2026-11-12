@@ -1,28 +1,79 @@
-"""Read-only pydantic view onto an assembled workflow graph (P-Plan nouns).
+"""Read-only pydantic view onto an assembled workflow graph (P-Plan vocabulary).
 
 ``workflow.py`` assembles and mutates the workflow as a plain nested dict
 (``config["general"]["workflow"]``) -- that stays the execution engine's
-working representation, unchanged by this module. ``Plan.from_config``
+working representation, unchanged by this module. ``Workflow.from_config``
 snapshots the *result* of that assembly (after
 :func:`esm_runscripts.workflow.assemble_workflow`, or at minimum
 ``complete_plans`` + ``order_plans``) into typed, read-only objects so calling
 code can navigate it as ``sim.plan.sub_plans["compute"].nproc`` instead of
 threading dict-key strings through by hand.
 
-This is the "models" step of the vocabulary rename's staged plan (see
-esm-tools/esm_tools#1519): rename -> models -> REPL -> execution/provenance.
-The REPL and execution/provenance layers are future work; this module only
-covers structural read access.
+``Step``/``SubPlan.steps``/``run_steps()`` model a sub-plan's individual
+recipe steps, resolved and run through ``esm_plugin_manager`` exactly like
+the legacy engine's recipes. No ``SubPlan`` built here is given a
+non-empty ``steps`` list yet, though -- the per-invocation work that
+exists today still runs through ``RunStateBuilder``'s hardcoded method
+chain instead (``simulation_config.py``); wiring real step lists onto
+``prepcompute``/``compute``/``tidy`` is future work.
 """
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional
+import enum
+from typing import Dict, List, Optional
 
-from loguru import logger
+import esm_plugin_manager
+import esm_tools
+from esm_parser.pydantic_models import ProvenanceFreeModel
+from esm_tools._compat import StrEnum
 from pydantic import ConfigDict
 
-from esm_parser.pydantic_models import ProvenanceFreeModel
+
+class SubPlanKind(StrEnum):
+    """What a :class:`SubPlan` fundamentally is, orthogonal to how or where
+    it runs (that's :attr:`SubPlan.launch_mode`/:attr:`SubPlan.concurrent`,
+    and the :class:`Plan` it belongs to)."""
+
+    ESM_SUBPLAN = enum.auto()
+    """A Python recipe -- steps resolved and executed one at a time through
+    the plugin mechanism (e.g. an ``observe`` sub-plan's
+    ``init_observe_logs`` -> ``wait_and_observe`` -> ``wake_up_call``)."""
+
+    BASH = enum.auto()
+    """A raw script file, run directly -- not driven through Python steps."""
+
+
+class LaunchMode(StrEnum):
+    """How a :class:`SubPlan` launches relative to the rest of its running
+    job script (POSIX job-control vocabulary: does it block the script, or
+    get kicked off and watched independently)."""
+
+    FOREGROUND = enum.auto()
+    """Blocks the job script -- runs as the next instruction, and the
+    script waits for it to finish."""
+
+    BACKGROUND = enum.auto()
+    """Launched without blocking the job script -- ``&``, PID captured
+    (e.g. ``{{SUBJOB_COMMAND}} & {{SUBJOB_NAME}}_PID=$!``). Whether and how
+    anything watches that PID afterward is a separate concern, not implied
+    by this value."""
+
+
+class Executor(StrEnum):
+    """Where/how a :class:`Plan`'s work actually runs."""
+
+    IN_PROCESS = enum.auto()
+    """No new OS process at all -- the currently-running ``esm_runscripts``
+    process calls straight into Python for the next sub-plan."""
+
+    LOCAL = enum.auto()
+    """Spawns a new process, run directly (no scheduler)."""
+
+    BATCH = enum.auto()
+    """Spawns a new process, submitted to whatever scheduler
+    ``computer.batch_system`` names (SLURM, PBS, ...) -- never a literal
+    scheduler command name, since esm_tools supports more than one."""
 
 
 class Step(ProvenanceFreeModel):
@@ -51,19 +102,22 @@ class SubPlan(ProvenanceFreeModel):
     parent_plan: str
     nproc: int = 1
     preceded_by: List[str] = []
-    run_only: Optional[str] = None
-    submit_to_batch_system: bool = False
-    run_on_queue: Optional[str] = None
-    batch_or_shell: Optional[str] = None
     steps: List[Step] = []
-    kind: Literal["esm_subplan", "bash"] = "esm_subplan"
+    kind: SubPlanKind = SubPlanKind.ESM_SUBPLAN
+    launch_mode: Optional[LaunchMode] = None
+    concurrent: bool = False
+    # Legacy's conditional-skip mechanism (workflow.skip_plan: run_only,
+    # skip_chunk_number, skip_run_number) is cycling-condition territory --
+    # belongs in Plan.cycling once that's shaped, not modeled here.
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         bits = [f"nproc={self.nproc}"]
         if self.preceded_by:
             bits.append(f"preceded_by={','.join(self.preceded_by)}")
-        if self.submit_to_batch_system:
-            bits.append("submit_to_batch_system=True")
+        if self.launch_mode:
+            bits.append(f"launch_mode={self.launch_mode.value}")
+        if self.concurrent:
+            bits.append("concurrent=True")
         return f"<SubPlan {self.name}  {' '.join(bits)}>"
 
 
@@ -85,10 +139,9 @@ class Plan(ProvenanceFreeModel):
     preceded_by: List[str] = []
     next_submit: List[str] = []
     nproc: Optional[int] = None
-    batch_or_shell: Optional[str] = None
-    submit_to_batch_system: bool = False
     order_in_cluster: Optional[str] = None
-    runs_on: Optional[Literal["login_node", "sbatch"]] = None
+    executor: Optional[Executor] = None
+    run_on_queue: Optional[str] = None
     cycling: Optional[dict] = None
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
@@ -216,24 +269,45 @@ class Workflow(ProvenanceFreeModel):
                 parent_plan="compute",
                 nproc=tasks,
                 preceded_by=["prepcompute"],
-                submit_to_batch_system=config["general"].get(
-                    "submit_to_batch_system", True
-                ),
-                run_on_queue=config["computer"]["partitions"]["compute"]["name"],
+                launch_mode=LaunchMode.BACKGROUND,
             ),
             "tidy": SubPlan(
                 name="tidy", parent_plan="tidy", nproc=1, preceded_by=["compute"]
             ),
         }
+
+        # Matches legacy's own default dispatch (resubmit.get_submission_type):
+        # prepcompute/tidy run in-process (the daemon calls straight into
+        # Python) unless something marks the whole run batch-submitted;
+        # compute always spawns, either local or scheduled.
+        compute_executor = (
+            Executor.BATCH
+            if config["general"].get("submit_to_batch_system", True)
+            else Executor.LOCAL
+        )
         plans = {
-            name: Plan(
-                name=name,
-                sub_plan_names=[name],
-                nproc=sub_plan.nproc,
-                preceded_by=sub_plan.preceded_by,
-                submit_to_batch_system=sub_plan.submit_to_batch_system,
-            )
-            for name, sub_plan in sub_plans.items()
+            "prepcompute": Plan(
+                name="prepcompute",
+                sub_plan_names=["prepcompute"],
+                nproc=sub_plans["prepcompute"].nproc,
+                preceded_by=sub_plans["prepcompute"].preceded_by,
+                executor=Executor.IN_PROCESS,
+            ),
+            "compute": Plan(
+                name="compute",
+                sub_plan_names=["compute"],
+                nproc=sub_plans["compute"].nproc,
+                preceded_by=sub_plans["compute"].preceded_by,
+                executor=compute_executor,
+                run_on_queue=config["computer"]["partitions"]["compute"]["name"],
+            ),
+            "tidy": Plan(
+                name="tidy",
+                sub_plan_names=["tidy"],
+                nproc=sub_plans["tidy"].nproc,
+                preceded_by=sub_plans["tidy"].preceded_by,
+                executor=Executor.IN_PROCESS,
+            ),
         }
 
         return cls(
@@ -267,7 +341,7 @@ class Workflow(ProvenanceFreeModel):
         chain, not just add a sub-plan to it. That case is still not
         implemented natively.
         """
-        from .workflow import translate_legacy_workflow_keys
+        from ..workflow import translate_legacy_workflow_keys
 
         translate_legacy_workflow_keys(config)
 
@@ -337,12 +411,27 @@ def _collect_extra_sub_plans(config: dict):
                 ),
             )
             extra_sub_plans[name] = sub_plan
+            # run_on_queue/submit_to_batch_system are cluster-level facts
+            # (same Plan, same batch submission) -- read off the raw conf,
+            # not the SubPlan, which no longer carries them. Default False,
+            # matching the legacy dict engine's own default for a sub-plan
+            # that omits the key (workflow.py: "if 'submit_to_batch_system'
+            # not in plan_conf: plan_conf['submit_to_batch_system'] = False";
+            # resubmit.py's get_submission_type same default) -- unlike
+            # Workflow.default()'s "compute" sub-plan below, which legacy
+            # always batch-submits by default.
+            executor = (
+                Executor.BATCH
+                if conf.get("submit_to_batch_system", False)
+                else Executor.LOCAL
+            )
             extra_plans[name] = Plan(
                 name=name,
                 sub_plan_names=[name],
                 nproc=sub_plan.nproc,
                 preceded_by=preceded_by,
-                submit_to_batch_system=sub_plan.submit_to_batch_system,
+                executor=executor,
+                run_on_queue=conf.get("run_on_queue"),
             )
             for predecessor in preceded_by:
                 extra_triggers.setdefault(predecessor, []).append(name)
@@ -375,13 +464,30 @@ def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> d
 
 
 def run_steps(sub_plan: SubPlan, config: dict) -> dict:
-    """Stub executor for a :class:`SubPlan`'s :attr:`steps`.
+    """Resolve and run a :class:`SubPlan`'s :attr:`steps`, in order.
 
-    Logs each step name in order and returns ``config`` unchanged -- proves
-    the native pplan execution mechanism without resolving or calling any
-    real plugin function yet (that's ``esm_plugin_manager``'s job, for a
-    later pass).
+    Reuses ``esm_plugin_manager`` wholesale -- the same
+    ``read_plugin_information`` + ``check_plugin_availability`` +
+    ``work_through_recipe`` sequence ``helpers.evaluate`` already uses for
+    the legacy engine's recipes -- rather than re-resolving step names to
+    callables natively. Every step function already has the uniform
+    ``fn(config) -> config`` signature (the same shape every
+    ``RunStateBuilder.with_*()`` method wraps), and there is no separate
+    success/failure return value to model: a step either returns normally
+    (success) or raises (failure propagates to the caller), exactly like
+    the legacy engine.
     """
-    for step in sub_plan.steps:
-        logger.info(f"[pplan stub] would run: {step.name}")
-    return config
+    if not sub_plan.steps:
+        return config
+
+    recipe = {
+        "recipe": [step.name for step in sub_plan.steps],
+        "job_type": sub_plan.name,
+    }
+    plugins_bare = (
+        esm_tools.get_config_filepath()
+        + "/esm_software/esm_runscripts/esm_plugins.yaml"
+    )
+    plugins = esm_plugin_manager.read_plugin_information(plugins_bare, recipe)
+    esm_plugin_manager.check_plugin_availability(plugins)
+    return esm_plugin_manager.work_through_recipe(recipe, plugins, config)

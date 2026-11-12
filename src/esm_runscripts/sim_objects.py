@@ -12,9 +12,10 @@ import esm_parser
 import esm_tools.esm_warnings  # noqa: F401  installs the deprecation visibility filter
 from esm_tools import __version__
 
-from . import (config_initialization, helpers, last_minute, logfiles, plan,
+from . import (config_initialization, helpers, last_minute, logfiles,
                prepare, prepexp, prev_run, resubmit, workflow)
-from .simulation_config import ConfigBuilder, RunState, RunStateBuilder
+from .pplan import plan
+from .simulation_config import ConfigBuilder, RunStateBuilder
 
 # SimulationSetup's deprecation schedule. Reuses the same values as
 # workflow.py's legacy-key deprecations
@@ -41,9 +42,9 @@ class Simulation(object):
         the ``prev_run`` object, then dispatches on the configured workflow
         engine:
 
-        - ``pplan`` (native pydantic-plan engine): builds the per-invocation
-          ``RunState`` via ``RunStateBuilder`` (all steps, in the order Task 2
-          fixed), snapshots the resolved ``Workflow``, and runs the pplan tail
+        - ``pplan`` (native pydantic-plan engine): layers the per-invocation
+          facts onto the config via ``RunStateBuilder`` (see its docstring),
+          snapshots the resolved ``Workflow``, and runs the pplan tail
           steps. Legacy ``prepare.run_job`` never runs in this case.
         - anything else (default ``legacy``): runs ``prepare.run_job`` wholesale,
           exactly as before.
@@ -56,8 +57,8 @@ class Simulation(object):
         Returns
         -------
         Simulation
-            A new instance with ``.config`` always set, and ``.run_state`` /
-            ``.plan`` set only for the ``pplan`` engine.
+            A new instance with ``.config`` always set, and ``.plan`` set
+            only for the ``pplan`` engine.
         """
         self = cls()
         self.config = config.data
@@ -77,7 +78,7 @@ class Simulation(object):
             or "legacy"
         )
         if wf_engine == "pplan":
-            self.run_state = (
+            config = (
                 RunStateBuilder.from_config(config)
                 .with_date_file()
                 .with_run_in_chunk_updated()
@@ -95,17 +96,8 @@ class Simulation(object):
                 .with_missing_plugins_installed()
                 .build()
             )
-            # The pplan engine's per-invocation facts (dates, calendar,
-            # folders, modify_config_memo, ...) live only on
-            # ``self.run_state.data`` -- ``RunStateBuilder.from_config``
-            # deepcopies before computing them, and by design never syncs
-            # them back into ``self.config``. The downstream consumers must
-            # therefore read ``self.run_state.data``, not ``self.config``:
-            # e.g. ``restore_protected_last_minute_changes`` (first tail step)
-            # reads ``config["general"]["modify_config_memo"]``, a key only
-            # ``with_last_minute_changes()`` sets, and only on the run_state.
-            self.plan = plan.Workflow.resolve(self.run_state.data)
-            self.run_state = RunState(self._run_pplan_tail_steps(self.run_state.data))
+            self.plan = plan.Workflow.resolve(config.data)
+            self.config = self._run_pplan_tail_steps(config.data)
         else:
             self.config = prepare.run_job(self.config)
 
@@ -121,7 +113,7 @@ class Simulation(object):
         ``check_config_for_warnings_errors``.
 
         ``restore_protected_last_minute_changes`` lives in ``last_minute.py``,
-        not ``prepare.py``. It is included here because Task 2's
+        not ``prepare.py``. It is included here because
         ``RunStateBuilder.with_last_minute_changes()`` only calls
         ``last_minute.apply_last_minute_changes`` -- it never restores
         ``config["general"]["modify_config"]`` from the memo, nor deletes the

@@ -14,7 +14,7 @@ from esm_tools import __version__
 
 from . import (config_initialization, helpers, last_minute, logfiles, plan,
                prepare, prepexp, prev_run, resubmit, workflow)
-from .simulation_config import ConfigBuilder, RunState, RunStateBuilder
+from .simulation_config import ConfigBuilder, RunStateBuilder
 
 # SimulationSetup's deprecation schedule. Reuses the same values as
 # workflow.py's legacy-key deprecations
@@ -41,10 +41,13 @@ class Simulation(object):
         the ``prev_run`` object, then dispatches on the configured workflow
         engine:
 
-        - ``pplan`` (native pydantic-plan engine): builds the per-invocation
-          ``RunState`` via ``RunStateBuilder`` (all steps, in the order Task 2
-          fixed), snapshots the resolved ``Workflow``, and runs the pplan tail
-          steps. Legacy ``prepare.run_job`` never runs in this case.
+        - ``pplan`` (native pydantic-plan engine): layers the per-invocation
+          facts onto the config via ``RunStateBuilder`` (all steps, in the
+          order Task 2 fixed), snapshots the resolved ``Workflow``, and runs
+          the pplan tail steps. Legacy ``prepare.run_job`` never runs in this
+          case. The enriched config becomes ``self.config`` -- there is no
+          separate run-state object to track; a ``Simulation``'s config is
+          the same kind of thing throughout its life, just enriched further.
         - anything else (default ``legacy``): runs ``prepare.run_job`` wholesale,
           exactly as before.
 
@@ -56,8 +59,8 @@ class Simulation(object):
         Returns
         -------
         Simulation
-            A new instance with ``.config`` always set, and ``.run_state`` /
-            ``.plan`` set only for the ``pplan`` engine.
+            A new instance with ``.config`` always set, and ``.plan`` set
+            only for the ``pplan`` engine.
         """
         self = cls()
         self.config = config.data
@@ -77,7 +80,7 @@ class Simulation(object):
             or "legacy"
         )
         if wf_engine == "pplan":
-            self.run_state = (
+            run_state = (
                 RunStateBuilder.from_config(config)
                 .with_date_file()
                 .with_run_in_chunk_updated()
@@ -95,17 +98,18 @@ class Simulation(object):
                 .with_missing_plugins_installed()
                 .build()
             )
-            # The pplan engine's per-invocation facts (dates, calendar,
-            # folders, modify_config_memo, ...) live only on
-            # ``self.run_state.data`` -- ``RunStateBuilder.from_config``
-            # deepcopies before computing them, and by design never syncs
-            # them back into ``self.config``. The downstream consumers must
-            # therefore read ``self.run_state.data``, not ``self.config``:
-            # e.g. ``restore_protected_last_minute_changes`` (first tail step)
-            # reads ``config["general"]["modify_config_memo"]``, a key only
-            # ``with_last_minute_changes()`` sets, and only on the run_state.
-            self.plan = plan.Workflow.resolve(self.run_state.data)
-            self.run_state = RunState(self._run_pplan_tail_steps(self.run_state.data))
+            # RunStateBuilder.from_config deepcopies config.data before
+            # layering on the per-invocation facts (dates, calendar, folders,
+            # modify_config_memo, ...), so nothing here can alias back into
+            # the SimulationConfig this Simulation was built from. The
+            # result becomes self.config directly below -- there is no
+            # separate run-state object left dangling with stale facts for
+            # a caller to accidentally read instead (e.g.
+            # ``restore_protected_last_minute_changes``, the first tail
+            # step, reads ``config["general"]["modify_config_memo"]``, a key
+            # only ``with_last_minute_changes()`` just set).
+            self.plan = plan.Workflow.resolve(run_state.data)
+            self.config = self._run_pplan_tail_steps(run_state.data)
         else:
             self.config = prepare.run_job(self.config)
 

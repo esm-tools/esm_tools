@@ -5,10 +5,13 @@ Extracts config-building logic from SimulationSetup.__init__ into a clean,
 chainable Builder/Product pair. ConfigBuilder provides a fluent interface for
 building configurations step-by-step, while SimulationConfig holds the final result.
 
-Also provides RunStateBuilder and RunState, which wrap the per-invocation,
-pplan-only steps (dates, calendar, folders, prev_date, parent_info) that
-today run inside prepare.py's recipe. The legacy engine never touches this
-code; it keeps calling prepare.run_job wholesale.
+Also provides RunStateBuilder, which wraps the per-invocation, pplan-only
+steps (dates, calendar, folders, prev_date, parent_info) that today run
+inside prepare.py's recipe. The legacy engine never touches this code; it
+keeps calling prepare.run_job wholesale. RunStateBuilder.build() returns a
+SimulationConfig too -- a Simulation's config is the same kind of thing
+throughout its life, just enriched in two stages (recipe assembly, then
+per-invocation facts), not two different kinds of object.
 """
 
 import copy
@@ -291,32 +294,6 @@ class ConfigBuilder:
         return SimulationConfig(self._data)
 
 
-class RunState:
-    """
-    Immutable product of the per-invocation run-state building process.
-
-    Holds the final configuration dictionary produced by RunStateBuilder.
-    Same shape as SimulationConfig: the data property exposes the
-    underlying dict by convention (not enforced).
-    """
-
-    def __init__(self, data):
-        """
-        Initialize a RunState with the final run-state data.
-
-        Parameters
-        ----------
-        data : dict
-            The final run-state configuration dictionary.
-        """
-        self._data = data
-
-    @property
-    def data(self):
-        """Return the underlying configuration dictionary (read-only by convention)."""
-        return self._data
-
-
 class RunStateBuilder:
     """
     Mutable builder for per-invocation run state.
@@ -551,11 +528,16 @@ class RunStateBuilder:
 
     def build(self):
         """
-        Finalize the run state and return a RunState product.
+        Finalize the run state and return a SimulationConfig product.
+
+        Same product type as ConfigBuilder.build() -- a Simulation's config
+        is the same kind of thing before and after per-invocation facts are
+        layered on, just further enriched.
 
         Returns
         -------
-        RunState
-            The final, immutable run state object.
+        SimulationConfig
+            The final, immutable configuration object, now including
+            per-invocation facts (dates, calendar, folders, ...).
         """
-        return RunState(self._data)
+        return SimulationConfig(self._data)

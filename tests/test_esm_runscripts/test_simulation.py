@@ -28,11 +28,10 @@ def _minimal_config(wf_engine="legacy"):
     return ConfigBuilder.from_user_config(user_config).build()
 
 
-def test_from_config_legacy_never_builds_run_state(monkeypatch):
+def test_from_config_legacy_never_builds_plan(monkeypatch):
     import esm_runscripts.prepare as prepare
     monkeypatch.setattr(prepare, "run_job", lambda config: config)
     sim = Simulation.from_config(_minimal_config("legacy"))
-    assert not hasattr(sim, "run_state")
     assert not hasattr(sim, "plan")
 
 
@@ -80,36 +79,38 @@ def test_pplan_tail_steps_called_in_recipe_order(monkeypatch):
 def test_pplan_branch_runs_real_crash_path_without_raising(tmp_path, monkeypatch):
     """Regression test for the Task 2 <-> Task 4 cross-task seam bug.
 
-    ``RunStateBuilder.from_config`` deepcopies ``config.data`` and, by design,
-    the per-invocation facts it computes (dates, calendar, folders, and -- the
-    one that bites -- ``general.modify_config_memo``) land ONLY on
-    ``self.run_state.data``, never on ``self.config``. The downstream consumers
-    in ``Simulation.from_config``'s ``pplan`` branch (``Workflow.resolve`` and
-    ``_run_pplan_tail_steps``) must therefore read ``self.run_state.data``.
+    ``RunStateBuilder.from_config`` deepcopies ``config.data`` before
+    computing the per-invocation facts (dates, calendar, folders, and --
+    the one that bites -- ``general.modify_config_memo``), so nothing it
+    does can alias back into the ``SimulationConfig`` ``Simulation.from_config``
+    was given. The result becomes ``self.config`` directly -- there is no
+    separate run-state object for a downstream consumer to misread instead.
 
-    The original bug passed ``self.config`` instead. The very first tail step,
+    The original bug passed the *original*, pre-``RunStateBuilder``
+    ``self.config`` to ``Workflow.resolve``/``_run_pplan_tail_steps`` instead
+    of the ``RunStateBuilder`` output. The very first tail step,
     ``last_minute.restore_protected_last_minute_changes``, does
     ``if config["general"]["modify_config_memo"]:`` -- an unconditional
-    subscript of a key that ``with_last_minute_changes()`` sets only on the
-    run_state deepcopy. Against ``self.config`` that is a guaranteed KeyError on
-    every ``--wf-engine=pplan`` run.
+    subscript of a key that ``with_last_minute_changes()`` only sets on the
+    ``RunStateBuilder`` deepcopy. Against the un-enriched config that is a
+    guaranteed KeyError on every ``--wf-engine=pplan`` run.
 
     This test drives the whole real ``pplan`` branch. The bug-critical trio is
     genuinely UNSTUBBED:
 
     * ``last_minute.apply_last_minute_changes`` (via
       ``RunStateBuilder.with_last_minute_changes()``) -- the step that attaches
-      ``modify_config_memo`` to the run_state deepcopy, and ONLY to it.
+      ``modify_config_memo`` to the deepcopy, and ONLY to it.
     * ``plan.Workflow.resolve`` / ``Workflow.default`` -- the real resolver.
     * ``last_minute.restore_protected_last_minute_changes`` -- the exact crash
       site, which reads ``modify_config_memo`` and then deletes it.
 
     So the regression guard is sharp: if a future change re-points either
-    consumer back at ``self.config`` (which never receives the memo key), the
-    real ``restore_protected_last_minute_changes`` raises KeyError here and the
-    test fails -- exactly the class of bug (wrong object handed to a downstream
-    consumer) the over-mocked ``test_pplan_tail_steps_called_in_recipe_order``
-    could not catch.
+    consumer back at the pre-``RunStateBuilder`` config (which never receives
+    the memo key), the real ``restore_protected_last_minute_changes`` raises
+    KeyError here and the test fails -- exactly the class of bug (wrong
+    object handed to a downstream consumer) the over-mocked
+    ``test_pplan_tail_steps_called_in_recipe_order`` could not catch.
 
     The only things stubbed are the chain steps that genuinely need a real
     ``esm_parser.ConfigSetup`` (``choose_blocks`` needs ``config._blackdict``,
@@ -176,17 +177,14 @@ def test_pplan_branch_runs_real_crash_path_without_raising(tmp_path, monkeypatch
     sim = Simulation.from_config(sim_config)
 
     # The pplan branch was actually taken (not the legacy fallback).
-    assert hasattr(sim, "run_state")
     assert hasattr(sim, "plan")
 
-    # Proof the real crash path ran on run_state.data, not vacuously:
-    # with_last_minute_changes() set general.modify_config_memo on the
-    # run_state deepcopy, and the real restore_protected_last_minute_changes
-    # consumed and deleted it. If restore had received self.config (no memo),
-    # it would have raised instead of reaching this assertion.
-    assert "modify_config_memo" not in sim.run_state.data["general"]
-    # self.config never carried the memo -- it is the ConfigBuilder product,
-    # which RunState's facts are deliberately never synced back into.
+    # Proof the real crash path ran on the RunStateBuilder output, not
+    # vacuously: with_last_minute_changes() set general.modify_config_memo
+    # on the deepcopy, and the real restore_protected_last_minute_changes
+    # consumed and deleted it before the result became self.config. If
+    # restore had received the pre-RunStateBuilder config (no memo), it
+    # would have raised instead of reaching this assertion.
     assert "modify_config_memo" not in sim.config["general"]
     # The real resolver produced the default prepcompute -> compute -> tidy plan.
     assert sim.plan.entry_point == "prepcompute"

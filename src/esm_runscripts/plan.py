@@ -25,26 +25,10 @@ from loguru import logger
 from pydantic import ConfigDict
 
 from esm_parser.pydantic_models import ProvenanceFreeModel
+from esm_tools._compat import StrEnum
 
 
-class _NamedValueEnum(str, enum.Enum):
-    """Base for this module's string enums.
-
-    ``auto()`` values are the lowercased member name, and ``str()``/
-    f-string formatting yields the plain value instead of ``enum.Enum``'s
-    default ``"ClassName.MEMBER"`` -- stdlib's own ``StrEnum`` (3.11+)
-    fixes this same gotcha natively; this backports it since esm_tools
-    still supports 3.10.
-    """
-
-    def _generate_next_value_(name, start, count, last_values):
-        return name.lower()
-
-    def __str__(self) -> str:
-        return self.value
-
-
-class SubPlanKind(_NamedValueEnum):
+class SubPlanKind(StrEnum):
     """What a :class:`SubPlan` fundamentally is, orthogonal to how or where
     it runs (that's :attr:`SubPlan.launch_mode`/:attr:`SubPlan.concurrent`,
     and the :class:`Plan` it belongs to)."""
@@ -58,7 +42,7 @@ class SubPlanKind(_NamedValueEnum):
     """A raw script file, run directly -- not driven through Python steps."""
 
 
-class LaunchMode(_NamedValueEnum):
+class LaunchMode(StrEnum):
     """How a :class:`SubPlan` launches relative to the rest of its running
     job script (POSIX job-control vocabulary: does it block the script, or
     get kicked off and watched independently)."""
@@ -74,7 +58,7 @@ class LaunchMode(_NamedValueEnum):
     by this value."""
 
 
-class Executor(_NamedValueEnum):
+class Executor(StrEnum):
     """Where/how a :class:`Plan`'s work actually runs."""
 
     IN_PROCESS = enum.auto()

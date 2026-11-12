@@ -1,20 +1,9 @@
-"""Small compatibility shims for the Python version range esm_catalog targets."""
+"""Small compatibility shims for the Python version range esm_catalog targets.
 
-from __future__ import annotations
+Re-exports from esm_tools._compat (the shared, project-wide home for these)
+so existing ``from esm_catalog._compat import StrEnum`` imports keep working.
+"""
 
-import sys
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:  # pragma: no cover - py<3.11 fallback
-    from enum import Enum
-
-    class StrEnum(str, Enum):
-        __str__ = str.__str__
-
-        @staticmethod
-        def _generate_next_value_(name, start, count, last_values):
-            return name.lower()  # matches enum.StrEnum: auto() -> lowercase member name
-
+from esm_tools._compat import StrEnum
 
 __all__ = ["StrEnum"]

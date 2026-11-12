@@ -5,7 +5,7 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.plan import Plan, Step, SubPlan, Workflow, run_steps
+from esm_runscripts.plan import Executor, Plan, Step, SubPlan, Workflow, run_steps
 
 
 def _assembled_config(workflow_block):
@@ -105,7 +105,7 @@ def test_subplan_defaults_for_new_fields():
 def test_plan_defaults_for_new_fields():
     cluster = Plan(name="initialization")
 
-    assert cluster.runs_on is None
+    assert cluster.executor is None
     assert cluster.cycling is None
 
 
@@ -141,7 +141,11 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
     assert set(wf.sub_plans) == {"prepcompute", "compute", "tidy"}
     assert wf.sub_plans["compute"].nproc == 128 + 8 * 16
     assert wf.sub_plans["compute"].preceded_by == ["prepcompute"]
-    assert wf.sub_plans["compute"].run_on_queue == "compute"
+    assert wf.sub_plans["compute"].launch_mode == "background"
+    assert wf.plans["compute"].run_on_queue == "compute"
+    assert wf.plans["compute"].executor == Executor.BATCH
+    assert wf.plans["prepcompute"].executor == Executor.IN_PROCESS
+    assert wf.plans["tidy"].executor == Executor.IN_PROCESS
     assert wf.sub_plans["tidy"].preceded_by == ["compute"]
     assert wf.parent_plan_of("compute").name == "compute"
     # Each sub-plan is its own singleton cluster.
@@ -202,23 +206,22 @@ def test_subplan_coerces_bool_with_provenance():
     sub_plan = SubPlan(
         name="postprocessing",
         parent_plan="postprocessing",
-        submit_to_batch_system=BoolWithProvenance(True, provenance=None),
+        concurrent=BoolWithProvenance(True, provenance=None),
     )
-    assert sub_plan.submit_to_batch_system is True
-    assert type(sub_plan.submit_to_batch_system) is bool
+    assert sub_plan.concurrent is True
+    assert type(sub_plan.concurrent) is bool
 
 
-def test_subplan_accepts_none_with_provenance():
+def test_plan_accepts_none_with_provenance():
     # A YAML ``null`` arrives as NoneWithProvenance, which pydantic rejects
     # for Optional[str] fields unless the provenance is stripped first.
     from esm_parser.provenance import NoneWithProvenance
 
-    sub_plan = SubPlan(
+    plan = Plan(
         name="postprocessing",
-        parent_plan="postprocessing",
         run_on_queue=NoneWithProvenance(None, provenance=None),
     )
-    assert sub_plan.run_on_queue is None
+    assert plan.run_on_queue is None
 
 
 def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
@@ -245,7 +248,8 @@ def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
     assert wf.entry_point == "prepcompute"
     assert "postprocessing" in wf.sub_plans
     assert wf.sub_plans["postprocessing"].preceded_by == ["tidy"]
-    assert wf.sub_plans["postprocessing"].run_on_queue == "pp"
     assert "postprocessing" in wf.plans
+    assert wf.plans["postprocessing"].run_on_queue == "pp"
+    assert wf.plans["postprocessing"].executor == Executor.BATCH
     # Fan-out: tidy still triggers the next cycle AND the new sub-plan.
     assert wf.resubmit_triggers["tidy"] == ["prepcompute", "postprocessing"]

@@ -1102,3 +1102,35 @@ def clean_provenance(data, nested=False):
         return data
     else:
         return data
+
+
+def strip_provenance(data):
+    """
+    Returns ``data`` with every provenance wrapper replaced by its plain value,
+    recurring through dictionaries, lists and tuples. Unlike ``clean_provenance``
+    this does not deepcopy nor modify any object: containers are rebuilt and any
+    other object (e.g. a frozen pydantic model) is returned untouched.
+
+    Parameters
+    ----------
+    data : any
+        Mapping or values with provenance.
+
+    Returns
+    -------
+    value : any
+        Values in their original format, without provenance.
+    """
+    if hasattr(data, "provenance") and hasattr(data, "value"):
+        return data.value
+    elif isinstance(data, dict):
+        return {
+            strip_provenance(key): strip_provenance(value)
+            for key, value in data.items()
+        }
+    elif isinstance(data, list):
+        return [strip_provenance(item) for item in data]
+    elif isinstance(data, tuple):
+        return tuple(strip_provenance(item) for item in data)
+    else:
+        return data

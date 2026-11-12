@@ -5,7 +5,7 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.plan import Executor, Plan, Step, SubPlan, Workflow, run_steps
+from esm_runscripts.pplan.plan import Executor, Plan, Step, SubPlan, Workflow, run_steps
 
 
 def _assembled_config(workflow_block):

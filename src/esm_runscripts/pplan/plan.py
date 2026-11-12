@@ -2,7 +2,7 @@
 
 ``workflow.py`` assembles and mutates the workflow as a plain nested dict
 (``config["general"]["workflow"]``) -- that stays the execution engine's
-working representation, unchanged by this module. ``Plan.from_config``
+working representation, unchanged by this module. ``Workflow.from_config``
 snapshots the *result* of that assembly (after
 :func:`esm_runscripts.workflow.assemble_workflow`, or at minimum
 ``complete_plans`` + ``order_plans``) into typed, read-only objects so calling
@@ -341,7 +341,7 @@ class Workflow(ProvenanceFreeModel):
         chain, not just add a sub-plan to it. That case is still not
         implemented natively.
         """
-        from .workflow import translate_legacy_workflow_keys
+        from ..workflow import translate_legacy_workflow_keys
 
         translate_legacy_workflow_keys(config)
 

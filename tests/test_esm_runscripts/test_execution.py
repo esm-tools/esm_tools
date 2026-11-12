@@ -95,3 +95,46 @@ def test_advance_raises_for_a_non_in_process_trigger_target():
 
     with pytest.raises(NotImplementedError, match="postprocessing"):
         advance(workflow, "tidy", {"general": {}})
+
+
+def test_advance_dispatches_every_target_in_an_n_way_fan_out(monkeypatch):
+    # Real config-building never produces two IN_PROCESS targets off one
+    # trigger (only prepcompute/tidy ever get that executor, and they
+    # don't share a trigger) -- construct the Workflow directly to unit
+    # test advance()'s fan-out loop itself, independent of whether today's
+    # config-building code happens to produce this shape yet.
+    from esm_runscripts.pplan import plan as plan_module
+
+    calls = []
+    monkeypatch.setattr(
+        plan_module,
+        "run_steps",
+        lambda sub_plan, config: (calls.append(sub_plan.name), config)[1],
+    )
+
+    sub_plans = {
+        name: plan_module.SubPlan(name=name, parent_plan=name)
+        for name in ("alpha", "beta", "gamma")
+    }
+    plans = {
+        name: plan_module.Plan(
+            name=name,
+            sub_plan_names=[name],
+            executor=plan_module.Executor.IN_PROCESS,
+        )
+        for name in sub_plans
+    }
+    workflow = plan_module.Workflow(
+        entry_point="alpha",
+        resubmit_triggers={"alpha": ["beta", "gamma"]},
+        plans=plans,
+        sub_plans=sub_plans,
+    )
+
+    result = advance(workflow, "alpha", {"general": {}})
+
+    assert set(calls) == {"beta", "gamma"}
+    assert result == {
+        "beta": {"general": {}},
+        "gamma": {"general": {}},
+    }

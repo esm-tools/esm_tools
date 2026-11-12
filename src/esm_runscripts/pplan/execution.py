@@ -29,6 +29,16 @@ def dispatch_in_process(workflow: "plan_module.Workflow", sub_plan_name: str, co
     return plan_module.run_steps(sub_plan, config)
 
 
+# One dispatch strategy per Executor value. advance() looks a target's
+# executor up here rather than branching on it directly -- registering
+# Executor.LOCAL/Executor.BATCH dispatchers later (runscript generation +
+# submission) is then a one-line addition here, not an edit to advance()
+# itself.
+_DISPATCHERS = {
+    plan_module.Executor.IN_PROCESS: dispatch_in_process,
+}
+
+
 def advance(workflow: "plan_module.Workflow", finished_sub_plan_name: str, config: dict) -> dict:
     """Dispatch whatever ``finished_sub_plan_name`` triggers next.
 
@@ -37,11 +47,11 @@ def advance(workflow: "plan_module.Workflow", finished_sub_plan_name: str, confi
     ``Workflow.resubmit_triggers`` (the fan-out-capable native shape) in
     place of the legacy dict's per-plan ``next_submit`` list.
 
-    Only ``Executor.IN_PROCESS`` targets are actually dispatched here (via
-    :func:`dispatch_in_process`); a target whose parent ``Plan`` has any
-    other executor raises ``NotImplementedError`` naming it, rather than
-    silently doing nothing -- ``local``/``batch`` dispatch (runscript
-    generation + submission) doesn't exist yet.
+    Looks each target's parent ``Plan.executor`` up in ``_DISPATCHERS``; a
+    target whose executor has no registered dispatcher yet (``local``/
+    ``batch`` -- runscript generation + submission doesn't exist yet)
+    raises ``NotImplementedError`` naming it, rather than silently doing
+    nothing.
 
     Returns ``{next_sub_plan_name: resulting_config}`` for every target
     this call dispatched -- empty if ``finished_sub_plan_name`` triggers
@@ -54,11 +64,13 @@ def advance(workflow: "plan_module.Workflow", finished_sub_plan_name: str, confi
     results = {}
     for next_name in workflow.resubmit_triggers.get(finished_sub_plan_name, []):
         parent = workflow.parent_plan_of(next_name)
-        if parent.executor != plan_module.Executor.IN_PROCESS:
+        dispatch = _DISPATCHERS.get(parent.executor)
+        if dispatch is None:
             raise NotImplementedError(
                 f"advance() can't dispatch {next_name!r} yet -- its parent "
                 f"plan {parent.name!r} has executor={parent.executor!r}, and "
-                "only Executor.IN_PROCESS dispatch exists so far."
+                f"no dispatcher is registered for it (only "
+                f"{[e.value for e in _DISPATCHERS]} so far)."
             )
-        results[next_name] = dispatch_in_process(workflow, next_name, config)
+        results[next_name] = dispatch(workflow, next_name, config)
     return results

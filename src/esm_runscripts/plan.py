@@ -10,10 +10,12 @@ code can navigate it as ``sim.plan.sub_plans["compute"].nproc`` instead of
 threading dict-key strings through by hand.
 
 ``Step``/``SubPlan.steps``/``run_steps()`` model a sub-plan's individual
-recipe steps, but no ``SubPlan`` built here ever has a non-empty ``steps``
-list -- the real per-invocation work runs through ``RunStateBuilder``'s
-hardcoded method chain instead (``simulation_config.py``). Resolving and
-executing real steps through this vocabulary is unimplemented.
+recipe steps, resolved and run through ``esm_plugin_manager`` exactly like
+the legacy engine's recipes. No ``SubPlan`` built here is given a
+non-empty ``steps`` list yet, though -- the per-invocation work that
+exists today still runs through ``RunStateBuilder``'s hardcoded method
+chain instead (``simulation_config.py``); wiring real step lists onto
+``prepcompute``/``compute``/``tidy`` is future work.
 """
 
 from __future__ import annotations
@@ -21,10 +23,11 @@ from __future__ import annotations
 import enum
 from typing import Dict, List, Optional
 
-from pydantic import ConfigDict
-
+import esm_plugin_manager
+import esm_tools
 from esm_parser.pydantic_models import ProvenanceFreeModel
 from esm_tools._compat import StrEnum
+from pydantic import ConfigDict
 
 
 class SubPlanKind(StrEnum):
@@ -476,9 +479,6 @@ def run_steps(sub_plan: SubPlan, config: dict) -> dict:
     """
     if not sub_plan.steps:
         return config
-
-    import esm_plugin_manager
-    import esm_tools
 
     recipe = {
         "recipe": [step.name for step in sub_plan.steps],

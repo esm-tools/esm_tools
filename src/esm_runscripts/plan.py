@@ -27,13 +27,27 @@ from pydantic import ConfigDict
 from esm_parser.pydantic_models import ProvenanceFreeModel
 
 
-class SubPlanKind(str, enum.Enum):
-    """What a :class:`SubPlan` fundamentally is, orthogonal to how or where
-    it runs (that's :attr:`SubPlan.launch_mode`/:attr:`SubPlan.concurrent`,
-    and the :class:`Plan` it belongs to)."""
+class _NamedValueEnum(str, enum.Enum):
+    """Base for this module's string enums.
+
+    ``auto()`` values are the lowercased member name, and ``str()``/
+    f-string formatting yields the plain value instead of ``enum.Enum``'s
+    default ``"ClassName.MEMBER"`` -- stdlib's own ``StrEnum`` (3.11+)
+    fixes this same gotcha natively; this backports it since esm_tools
+    still supports 3.10.
+    """
 
     def _generate_next_value_(name, start, count, last_values):
         return name.lower()
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class SubPlanKind(_NamedValueEnum):
+    """What a :class:`SubPlan` fundamentally is, orthogonal to how or where
+    it runs (that's :attr:`SubPlan.launch_mode`/:attr:`SubPlan.concurrent`,
+    and the :class:`Plan` it belongs to)."""
 
     ESM_SUBPLAN = enum.auto()
     """A Python recipe -- steps resolved and executed one at a time through
@@ -44,13 +58,10 @@ class SubPlanKind(str, enum.Enum):
     """A raw script file, run directly -- not driven through Python steps."""
 
 
-class LaunchMode(str, enum.Enum):
+class LaunchMode(_NamedValueEnum):
     """How a :class:`SubPlan` launches relative to the rest of its running
     job script (POSIX job-control vocabulary: does it block the script, or
     get kicked off and watched independently)."""
-
-    def _generate_next_value_(name, start, count, last_values):
-        return name.lower()
 
     FOREGROUND = enum.auto()
     """Blocks the job script -- runs as the next instruction, and the
@@ -61,11 +72,8 @@ class LaunchMode(str, enum.Enum):
     other sub-plan in the same job watches it independently."""
 
 
-class Executor(str, enum.Enum):
+class Executor(_NamedValueEnum):
     """Where/how a :class:`Plan`'s work actually runs."""
-
-    def _generate_next_value_(name, start, count, last_values):
-        return name.lower()
 
     IN_PROCESS = enum.auto()
     """No new OS process at all -- the currently-running ``esm_runscripts``

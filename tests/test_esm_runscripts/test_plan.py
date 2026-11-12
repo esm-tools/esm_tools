@@ -109,7 +109,45 @@ def test_plan_defaults_for_new_fields():
     assert cluster.cycling is None
 
 
-def test_run_steps_logs_each_step_and_does_not_mutate_config():
+def test_run_steps_is_a_noop_for_an_empty_steps_list():
+    sub_plan = SubPlan(name="prepare", parent_plan="initialization")
+    config = {"general": {"setup_name": "awicm3"}}
+
+    result = run_steps(sub_plan, config)
+
+    assert result is config
+
+
+def test_run_steps_resolves_and_runs_via_esm_plugin_manager(monkeypatch):
+    # run_steps is a thin adapter over esm_plugin_manager -- the same
+    # read_plugin_information + check_plugin_availability +
+    # work_through_recipe sequence helpers.evaluate already uses for the
+    # legacy engine. Verify the adapter wiring (recipe shape, call order)
+    # without running real plugin functions.
+    calls = []
+
+    def fake_read_plugin_information(plugins_bare, recipe):
+        calls.append(("read_plugin_information", plugins_bare, recipe))
+        return {"fake_plugins": True}
+
+    def fake_check_plugin_availability(plugins):
+        calls.append(("check_plugin_availability", plugins))
+
+    def fake_work_through_recipe(recipe, plugins, config):
+        calls.append(("work_through_recipe", recipe, plugins, config))
+        return {**config, "ran": True}
+
+    import esm_plugin_manager
+    monkeypatch.setattr(
+        esm_plugin_manager, "read_plugin_information", fake_read_plugin_information
+    )
+    monkeypatch.setattr(
+        esm_plugin_manager, "check_plugin_availability", fake_check_plugin_availability
+    )
+    monkeypatch.setattr(
+        esm_plugin_manager, "work_through_recipe", fake_work_through_recipe
+    )
+
     sub_plan = SubPlan(
         name="prepare",
         parent_plan="initialization",
@@ -119,8 +157,17 @@ def test_run_steps_logs_each_step_and_does_not_mutate_config():
 
     result = run_steps(sub_plan, config)
 
-    assert result is config
-    assert result == {"general": {"setup_name": "awicm3"}}
+    assert result == {"general": {"setup_name": "awicm3"}, "ran": True}
+    assert [name for name, *_ in calls] == [
+        "read_plugin_information",
+        "check_plugin_availability",
+        "work_through_recipe",
+    ]
+    recipe = calls[0][2]
+    assert recipe == {
+        "recipe": ["_read_date_file", "check_model_lresume"],
+        "job_type": "prepare",
+    }
 
 
 def test_workflow_default_synthesizes_prepcompute_compute_tidy():

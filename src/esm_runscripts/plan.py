@@ -68,8 +68,10 @@ class LaunchMode(_NamedValueEnum):
     script waits for it to finish."""
 
     BACKGROUND = enum.auto()
-    """Launched without blocking the job script (e.g. with ``&``); some
-    other sub-plan in the same job watches it independently."""
+    """Launched without blocking the job script -- ``&``, PID captured
+    (e.g. ``{{SUBJOB_COMMAND}} & {{SUBJOB_NAME}}_PID=$!``). Whether and how
+    anything watches that PID afterward is a separate concern, not implied
+    by this value."""
 
 
 class Executor(_NamedValueEnum):

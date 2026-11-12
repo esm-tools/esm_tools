@@ -5,13 +5,8 @@ Extracts config-building logic from SimulationSetup.__init__ into a clean,
 chainable Builder/Product pair. ConfigBuilder provides a fluent interface for
 building configurations step-by-step, while SimulationConfig holds the final result.
 
-Also provides RunStateBuilder, which wraps the per-invocation, pplan-only
-steps (dates, calendar, folders, prev_date, parent_info) that today run
-inside prepare.py's recipe. The legacy engine never touches this code; it
-keeps calling prepare.run_job wholesale. RunStateBuilder.build() returns a
-SimulationConfig too -- a Simulation's config is the same kind of thing
-throughout its life, just enriched in two stages (recipe assembly, then
-per-invocation facts), not two different kinds of object.
+Also provides RunStateBuilder (see its docstring for why it returns a
+SimulationConfig too, rather than a separate product type).
 """
 
 import copy
@@ -308,8 +303,13 @@ class RunStateBuilder:
     last_minute.py, conda_env.py, and batch_system.py. Each method mutates
     self._data in place and returns self for chaining.
 
+    ``.build()`` returns a ``SimulationConfig`` -- the same product type
+    ``ConfigBuilder.build()`` returns, not a separate ``RunState`` type --
+    because a ``Simulation`` only ever has one config, enriched further by
+    this builder, not a second object tracked alongside it.
+
     Usage:
-        run_state = (
+        config = (
             RunStateBuilder.from_config(config)
             .with_date_file()
             .with_run_in_chunk_updated()
@@ -324,6 +324,7 @@ class RunStateBuilder:
             .with_prev_date()
             .with_parent_info()
             .with_finalized_config()
+            .with_missing_plugins_installed()
             .build()
         )
     """
@@ -528,11 +529,8 @@ class RunStateBuilder:
 
     def build(self):
         """
-        Finalize the run state and return a SimulationConfig product.
-
-        Same product type as ConfigBuilder.build() -- a Simulation's config
-        is the same kind of thing before and after per-invocation facts are
-        layered on, just further enriched.
+        Finalize the run state and return a SimulationConfig product (see
+        class docstring for why this isn't a separate product type).
 
         Returns
         -------

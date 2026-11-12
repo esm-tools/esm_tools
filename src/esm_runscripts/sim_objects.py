@@ -42,12 +42,9 @@ class Simulation(object):
         engine:
 
         - ``pplan`` (native pydantic-plan engine): layers the per-invocation
-          facts onto the config via ``RunStateBuilder``, snapshots the
-          resolved ``Workflow``, and runs the pplan tail steps. Legacy
-          ``prepare.run_job`` never runs in this case. The enriched config
-          becomes ``self.config`` -- there is no separate run-state object
-          to track; a ``Simulation``'s config is the same kind of thing
-          throughout its life, just enriched further.
+          facts onto the config via ``RunStateBuilder`` (see its docstring),
+          snapshots the resolved ``Workflow``, and runs the pplan tail
+          steps. Legacy ``prepare.run_job`` never runs in this case.
         - anything else (default ``legacy``): runs ``prepare.run_job`` wholesale,
           exactly as before.
 
@@ -80,7 +77,7 @@ class Simulation(object):
             or "legacy"
         )
         if wf_engine == "pplan":
-            run_state = (
+            config = (
                 RunStateBuilder.from_config(config)
                 .with_date_file()
                 .with_run_in_chunk_updated()
@@ -98,18 +95,8 @@ class Simulation(object):
                 .with_missing_plugins_installed()
                 .build()
             )
-            # RunStateBuilder.from_config deepcopies config.data before
-            # layering on the per-invocation facts (dates, calendar, folders,
-            # modify_config_memo, ...), so nothing here can alias back into
-            # the SimulationConfig this Simulation was built from. The
-            # result becomes self.config directly below -- there is no
-            # separate run-state object left dangling with stale facts for
-            # a caller to accidentally read instead (e.g.
-            # ``restore_protected_last_minute_changes``, the first tail
-            # step, reads ``config["general"]["modify_config_memo"]``, a key
-            # only ``with_last_minute_changes()`` just set).
-            self.plan = plan.Workflow.resolve(run_state.data)
-            self.config = self._run_pplan_tail_steps(run_state.data)
+            self.plan = plan.Workflow.resolve(config.data)
+            self.config = self._run_pplan_tail_steps(config.data)
         else:
             self.config = prepare.run_job(self.config)
 

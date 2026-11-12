@@ -2,7 +2,8 @@
 # ==============================
 # In a pull-request, if a comment contains #bump, the following steps are triggered:
 #   1. merges `release` into the PR-branch (updates bumpversion values and makes sure whatever we tag in the next step has everything until that version number)
-#   2. bumps the version according to the PR-branch name (`hotfix/`, `fix/` , `feature/` and `feat/` are understood)
+#   2. bumps the version according to `#patch`, `#minor` or `#major` in the comment or, if
+#      none is given, to the PR-branch name (`hotfix/`, `fix/` , `feature/` and `feat/` are understood)
 #   3. merges PR-branch into `develop`
 # Only comments from users with write (or admin) permission in the repository trigger
 # these steps.
@@ -94,70 +95,44 @@ jobs:
         run: |
           git status
           git merge release;
-      
-      # Bumping if `hotfix/` or `fix/` is part of the branch's name (patch)
-      - name: bump patch
-        if: ${{
-          (
-            contains(github.event.comment.body, '#patch') ||
-            (
-              contains(steps.vars.outputs.current_branch, 'fix/') &&
-              !contains(steps.vars.outputs.current_branch, 'feat/') &&
-              !contains(steps.vars.outputs.current_branch, 'feature/')
-            )
-          )
-          }}
-        uses: jasonamyers/github-bumpversion-action@v1.0.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BUMP: patch
 
-      # Bumping if `feature/` or `feat/` is part of the branch's name (minor)
-      - name: bump feature
-        if: ${{
-          (
-            (
-              contains(github.event.comment.body, '#minor') &&
-              !contains(github.event.comment.body, '#patch')
-            ) ||
-            (
-              (
-                contains(steps.vars.outputs.current_branch, 'feat/') ||
-                contains(steps.vars.outputs.current_branch, 'feature/')
-              ) &&
-              !contains(github.event.comment.body, '#patch')
-            )
-          )
-          }}
-        uses: jasonamyers/github-bumpversion-action@v1.0.4
+      # Install bumpversion (reads the ``[bumpversion]`` section of ``setup.cfg``).
+      # Python is pinned because ``bumpversion`` imports ``sre_constants``, which
+      # was removed in Python 3.15
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: install bumpversion
+        run: pip install bump2version
+
+      # Bump the version. The part to bump is, in order of priority:
+      #   1. ``#patch``, ``#minor`` or ``#major`` in the ``#bump`` comment (in that
+      #      order of priority if more than one is given)
+      #   2. the PR-branch name: ``feat/`` or ``feature/`` (minor), anything else,
+      #      e.g. ``fix/`` or ``hotfix/`` (patch)
+      # Skip if ``HEAD`` is already a version tag (no new commits since the last bump)
+      - name: bump
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BUMP: minor
-          
-      # Bumping if `feature/` or `feat/` is part of the branch's name (major)
-      - name: bump major
-        if: ${{
-          contains(github.event.comment.body, '#major') &&
-          !contains(github.event.comment.body, '#patch') &&
-          !contains(github.event.comment.body, '#minor')
-          }}
-        uses: jasonamyers/github-bumpversion-action@v1.0.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BUMP: major
-      
-      # Default bumping (patch unless #minor or #major is used in a comment of the PR)
-      - name: bump default
-        if: ${{
-          !contains(steps.vars.outputs.current_branch, 'feat/') &&
-          !contains(steps.vars.outputs.current_branch, 'feature/') &&
-          !contains(steps.vars.outputs.current_branch, 'fix/') &&
-          !contains(github.event.comment.body, '#major')
-          }}
-        uses: jasonamyers/github-bumpversion-action@v1.0.4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
-        
+          COMMENT: ${{ github.event.comment.body }}
+          BRANCH: ${{ steps.vars.outputs.current_branch }}
+        run: |
+          case "$COMMENT" in
+            *#patch*) part=patch;;
+            *#minor*) part=minor;;
+            *#major*) part=major;;
+            *)
+              case "$BRANCH" in
+                *feat/*|*feature/*) part=minor;;
+                *) part=patch;;
+              esac;;
+          esac
+          if [ -n "$(git tag --list --points-at HEAD 'v[0-9]*.[0-9]*.[0-9]*' '[0-9]*.[0-9]*.[0-9]*')" ]; then
+            echo "HEAD is already a version tag, skipping"
+            exit 0
+          fi
+          echo "Bumping $part (branch '$BRANCH')"
+          bumpversion "$part" --verbose
+
       # Push
       - name: push changes
         run: |

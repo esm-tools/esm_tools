@@ -253,3 +253,25 @@ def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
     assert wf.plans["postprocessing"].executor == Executor.BATCH
     # Fan-out: tidy still triggers the next cycle AND the new sub-plan.
     assert wf.resubmit_triggers["tidy"] == ["prepcompute", "postprocessing"]
+
+
+def test_collect_extra_sub_plans_defaults_executor_to_local_when_omitted():
+    # Matches the legacy dict engine's own default: workflow.py sets
+    # plan_conf["submit_to_batch_system"] = False when the key is absent,
+    # and resubmit.py's get_submission_type reads the same False default --
+    # a supplemental sub-plan that doesn't mention submit_to_batch_system
+    # at all must get Executor.LOCAL, not Executor.BATCH.
+    config = _no_custom_workflow_config()
+    config["fesom"]["workflow"] = {
+        "next_run_triggered_by": "tidy",
+        "subjobs": {
+            "inline_postprocessing": {
+                "run_after": "tidy",
+                "nproc": 1,
+            }
+        },
+    }
+
+    wf = Workflow.resolve(config)
+
+    assert wf.plans["inline_postprocessing"].executor == Executor.LOCAL

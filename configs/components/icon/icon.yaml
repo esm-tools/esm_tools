@@ -35,6 +35,10 @@ icon:
    # CMIP7 ScenarioMIP used to continue the historical forcing in 'cmip7hist'
    # (ozone from 2023, MACv2-SP simple plumes from 2024): vl, m, hl or h
    cmip7_scenario: m
+   # directory of the CMIP7 ScenarioMIP ozone files bc_ozone_cmip7_scenario_<scen>-1-0_<year>.nc
+   # (ozone_hist from 2023); the ICON-XPP pool has them for grid 0030 only, for 0012 see
+   # runscripts/icon/icon-2025.10-amip-r2b4-nesh_1979-2024.yaml (0012_geomar)
+   ozone_scenario_dir: ${input_dir}/${grid_id}/ozone/CMIP7/ScenarioMIP/${cmip7_scenario}/${cmip7_scenario}-1-0
    # amip: True runs ICON standalone with prescribed SST/sea ice (AMIP),
    # settings follow Trang's ICON-XPP CAP7 AMIP setup, see choose_amip below.
    # Combine with scenario: 'cmip7hist' for transient forcing.
@@ -548,7 +552,7 @@ icon:
          "${ozone_dir}/bc_ozone_cmip7_historical_v2-0_@YEAR@.nc":
             from: 1851
             to: 2022
-         "${input_dir}/${icon.grid_id}/ozone/CMIP7/ScenarioMIP/${cmip7_scenario}/${cmip7_scenario}-1-0/bc_ozone_cmip7_scenario_${cmip7_scenario}-1-0_@YEAR@.nc":
+         "${ozone_scenario_dir}/bc_ozone_cmip7_scenario_${cmip7_scenario}-1-0_@YEAR@.nc":
             from: 2023
             to: 2101
 

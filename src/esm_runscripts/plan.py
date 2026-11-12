@@ -10,10 +10,12 @@ code can navigate it as ``sim.plan.sub_plans["compute"].nproc`` instead of
 threading dict-key strings through by hand.
 
 ``Step``/``SubPlan.steps``/``run_steps()`` model a sub-plan's individual
-recipe steps, but no ``SubPlan`` built here ever has a non-empty ``steps``
-list -- the real per-invocation work runs through ``RunStateBuilder``'s
-hardcoded method chain instead (``simulation_config.py``). Resolving and
-executing real steps through this vocabulary is unimplemented.
+recipe steps, resolved and run through ``esm_plugin_manager`` exactly like
+the legacy engine's recipes. No ``SubPlan`` built here is given a
+non-empty ``steps`` list yet, though -- the per-invocation work that
+exists today still runs through ``RunStateBuilder``'s hardcoded method
+chain instead (``simulation_config.py``); wiring real step lists onto
+``prepcompute``/``compute``/``tidy`` is future work.
 """
 
 from __future__ import annotations
@@ -21,11 +23,11 @@ from __future__ import annotations
 import enum
 from typing import Dict, List, Optional
 
-from loguru import logger
-from pydantic import ConfigDict
-
+import esm_plugin_manager
+import esm_tools
 from esm_parser.pydantic_models import ProvenanceFreeModel
 from esm_tools._compat import StrEnum
+from pydantic import ConfigDict
 
 
 class SubPlanKind(StrEnum):
@@ -462,13 +464,30 @@ def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> d
 
 
 def run_steps(sub_plan: SubPlan, config: dict) -> dict:
-    """Stub executor for a :class:`SubPlan`'s :attr:`steps`.
+    """Resolve and run a :class:`SubPlan`'s :attr:`steps`, in order.
 
-    Logs each step name in order and returns ``config`` unchanged -- proves
-    the native pplan execution mechanism without resolving or calling any
-    real plugin function yet (that's ``esm_plugin_manager``'s job, for a
-    later pass).
+    Reuses ``esm_plugin_manager`` wholesale -- the same
+    ``read_plugin_information`` + ``check_plugin_availability`` +
+    ``work_through_recipe`` sequence ``helpers.evaluate`` already uses for
+    the legacy engine's recipes -- rather than re-resolving step names to
+    callables natively. Every step function already has the uniform
+    ``fn(config) -> config`` signature (the same shape every
+    ``RunStateBuilder.with_*()`` method wraps), and there is no separate
+    success/failure return value to model: a step either returns normally
+    (success) or raises (failure propagates to the caller), exactly like
+    the legacy engine.
     """
-    for step in sub_plan.steps:
-        logger.info(f"[pplan stub] would run: {step.name}")
-    return config
+    if not sub_plan.steps:
+        return config
+
+    recipe = {
+        "recipe": [step.name for step in sub_plan.steps],
+        "job_type": sub_plan.name,
+    }
+    plugins_bare = (
+        esm_tools.get_config_filepath()
+        + "/esm_software/esm_runscripts/esm_plugins.yaml"
+    )
+    plugins = esm_plugin_manager.read_plugin_information(plugins_bare, recipe)
+    esm_plugin_manager.check_plugin_availability(plugins)
+    return esm_plugin_manager.work_through_recipe(recipe, plugins, config)

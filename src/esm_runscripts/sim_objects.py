@@ -42,12 +42,12 @@ class Simulation(object):
         engine:
 
         - ``pplan`` (native pydantic-plan engine): layers the per-invocation
-          facts onto the config via ``RunStateBuilder`` (all steps, in the
-          order Task 2 fixed), snapshots the resolved ``Workflow``, and runs
-          the pplan tail steps. Legacy ``prepare.run_job`` never runs in this
-          case. The enriched config becomes ``self.config`` -- there is no
-          separate run-state object to track; a ``Simulation``'s config is
-          the same kind of thing throughout its life, just enriched further.
+          facts onto the config via ``RunStateBuilder``, snapshots the
+          resolved ``Workflow``, and runs the pplan tail steps. Legacy
+          ``prepare.run_job`` never runs in this case. The enriched config
+          becomes ``self.config`` -- there is no separate run-state object
+          to track; a ``Simulation``'s config is the same kind of thing
+          throughout its life, just enriched further.
         - anything else (default ``legacy``): runs ``prepare.run_job`` wholesale,
           exactly as before.
 
@@ -125,7 +125,7 @@ class Simulation(object):
         ``check_config_for_warnings_errors``.
 
         ``restore_protected_last_minute_changes`` lives in ``last_minute.py``,
-        not ``prepare.py``. It is included here because Task 2's
+        not ``prepare.py``. It is included here because
         ``RunStateBuilder.with_last_minute_changes()`` only calls
         ``last_minute.apply_last_minute_changes`` -- it never restores
         ``config["general"]["modify_config"]`` from the memo, nor deletes the

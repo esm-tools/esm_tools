@@ -1,4 +1,4 @@
-"""Read-only pydantic view onto an assembled workflow graph (P-Plan nouns).
+"""Read-only pydantic view onto an assembled workflow graph (P-Plan vocabulary).
 
 ``workflow.py`` assembles and mutates the workflow as a plain nested dict
 (``config["general"]["workflow"]``) -- that stays the execution engine's
@@ -9,15 +9,11 @@ snapshots the *result* of that assembly (after
 code can navigate it as ``sim.plan.sub_plans["compute"].nproc`` instead of
 threading dict-key strings through by hand.
 
-This is the "models" step of the vocabulary rename's staged plan (see
-esm-tools/esm_tools#1519): rename -> models -> REPL -> execution/provenance.
-REPL is also done (``cli.py``'s ``--wf-engine=pplan`` drops into an
-IPython/pdb session bound to the resolved ``Workflow``); only
-execution/provenance is still future work. This module itself only covers
-structural read access -- ``Step``/``SubPlan.steps``/``run_steps()`` exist
-in the type system (P-Plan vocabulary) but nothing populates or executes
-them for real yet; that belongs to the execution/provenance stage, not
-here.
+``Step``/``SubPlan.steps``/``run_steps()`` model a sub-plan's individual
+recipe steps, but no ``SubPlan`` built here ever has a non-empty ``steps``
+list -- the real per-invocation work runs through ``RunStateBuilder``'s
+hardcoded method chain instead (``simulation_config.py``). Resolving and
+executing real steps through this vocabulary is unimplemented.
 """
 
 from __future__ import annotations

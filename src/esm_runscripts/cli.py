@@ -219,8 +219,9 @@ def _build_config(command_line_config):
 
 def _run_observe(multi_step_name, workflow, config):
     """Watch the backgrounded PID this job's runscript captured
-    (``config["general"]["launcher_pid"]``), then dispatch whatever
-    ``multi_step_name`` triggers next.
+    (``config["general"]["launcher_pid"]``), advance the run date/number
+    for the next cycle, then dispatch whatever ``multi_step_name``
+    triggers next.
 
     Invoked via the ``-t observe_<multi_step_name>`` CLI re-entry a
     backgrounded command's runscript makes (see
@@ -228,7 +229,7 @@ def _run_observe(multi_step_name, workflow, config):
     cancellation and nonzero exit on a crash both happen right here, at
     the outer boundary, not inside the detection logic itself.
     """
-    from .execution import dispatch, observe
+    from .execution import cycle, dispatch, observe
     from .execution.errors import JobCrashedError
     from .runscript.generation import observe_log_path
 
@@ -243,6 +244,8 @@ def _run_observe(multi_step_name, workflow, config):
         subprocess.run(["scancel", str(config["general"]["jobid"])])
         sys.exit(42)
 
+    config = cycle.advance_date(config)
+    cycle.write_date_file(config)
     dispatch.advance(workflow, multi_step_name, config)
 
 

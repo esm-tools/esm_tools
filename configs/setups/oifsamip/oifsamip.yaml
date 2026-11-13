@@ -108,6 +108,10 @@ oifs:
         restart_firstlast: "last"
         restart_rate: 12
         with_xios: true
+        # Build OIFS with optimisation as in awiesm3 v3.4: without --build-type,
+        # openifs-bundle uses "Bit" (-O2), ~20 % slower than the coupled run (Release, -O3)
+        build_type: 'release'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --build-type=${build_type} --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
 
         mip: "cmip6"
         scenario: "historical"

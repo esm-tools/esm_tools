@@ -1,5 +1,9 @@
 # SLURM YAML CONFIGURATION FILE
 #
+# tasks_flag/partition_flag/nodes_flag/output_flags (via thisrun_logfile)
+# below are rendered as Jinja templates by esm_runscripts' runscript
+# generation -- the only variables available inside {{ }} there are:
+# tasks, nodes, partition, jobtype.
 #
 
 computer:
@@ -42,12 +46,12 @@ computer:
 
     notification_flag: "${mail1} ${mail2}"
     single_proc_submit_flag: "--ntasks-per-node=1"
-    tasks_flag: "--ntasks=@tasks@"
-    partition_flag: "--partition=@partition@"
-    nodes_flag: "--nodes=@nodes@"
+    tasks_flag: "--ntasks={{ tasks }}"
+    partition_flag: "--partition={{ partition }}"
+    nodes_flag: "--nodes={{ nodes }}"
     time_flag: "--time=${compute_time}"
     output_path: "${experiment_dir}/log/"
-    thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+    thisrun_logfile: "${output_path}${expid}_${general.setup_name}_{{ jobtype }}_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
     output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
     name_flag: "--job-name=${expid}"
 

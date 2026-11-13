@@ -116,7 +116,7 @@ from .simulation_config import ConfigBuilder
     help=(
         "Workflow engine to use. 'legacy' (default) runs the job as usual. "
         "'pplan' assembles the workflow, snapshots it into the pydantic "
-        "Plan/SubPlan/Workflow view, prints it, and drops into a debug "
+        "Plan/MultiStep/Workflow view, prints it, and drops into a debug "
         "session instead of submitting anything."
     ),
 )
@@ -124,7 +124,17 @@ def main(**command_line_config):
     """esm_runscripts: build a simulation's config, then run or debug it."""
     logger.add(sys.stdout, level="WARNING", format="{message}")
 
-    command_line_config["jobtype"] = command_line_config["task"]
+    task = command_line_config["task"]
+    observing_multi_step = (
+        task[len("observe_") :]
+        if command_line_config["wf_engine"] == "pplan" and task.startswith("observe_")
+        else None
+    )
+    # Build config/Workflow for the step actually being observed, not a
+    # synthetic "observe_<step>" jobtype that doesn't correspond to any
+    # real MultiStep -- Workflow.resolve() has no reason to know about
+    # "observe_compute", only "compute".
+    command_line_config["jobtype"] = observing_multi_step or task
     command_line_config["use_venv"] = _resolve_use_venv(command_line_config)
     command_line_config["motd"] = not command_line_config.pop("no_motd")
     command_line_config["original_command"] = " ".join(sys.argv[1:]).strip()
@@ -136,6 +146,9 @@ def main(**command_line_config):
     sim = Simulation.from_config(config)
 
     if command_line_config["wf_engine"] == "pplan":
+        if observing_multi_step is not None:
+            _run_observe(observing_multi_step, sim.plan, sim.config)
+            return
         drop_into_pplan_debug(sim.plan, sim.config)
         return
 
@@ -204,6 +217,44 @@ def _build_config(command_line_config):
     )
 
 
+def _run_observe(multi_step_name, workflow, config):
+    """Watch the backgrounded PID this job's runscript captured
+    (``config["general"]["launcher_pid"]``), advance the run date/number
+    for the next cycle, and -- unless the experiment is now over --
+    dispatch whatever ``multi_step_name`` triggers next.
+
+    Invoked via the ``-t observe_<multi_step_name>`` CLI re-entry a
+    backgrounded command's runscript makes (see
+    ``runscript.generation.observe_call_line``) -- on a crash, the
+    scheduler cancellation happens right here, at the outer boundary, and
+    ``JobCrashedError`` is then let through (no invented exit code --
+    an uncaught exception already gives a real traceback and a nonzero
+    exit).
+    """
+    from .execution import cycle, dispatch, observe
+    from .execution.errors import JobCrashedError
+    from .runscript.generation import observe_log_path
+
+    log_file = observe_log_path(config, multi_step_name)
+    try:
+        observe.wait_and_observe(config["general"]["launcher_pid"], config, log_file)
+    except JobCrashedError:
+        import subprocess
+
+        logger.error("Will kill the run now...")
+        subprocess.run(["scancel", str(config["general"]["jobid"])])
+        raise
+
+    config = cycle.advance_date(config)
+    config = cycle.advance_run_number(config)
+    config = cycle.sync_command_line_config(config)
+    cycle.write_date_file(config)
+    if cycle.is_experiment_over(config):
+        config["general"]["experiment_over"] = True
+        return
+    dispatch.advance(workflow, multi_step_name, config)
+
+
 def drop_into_pplan_debug(workflow, config):
     """Print the resolved ``Workflow`` that ``Simulation.from_config`` built
     for this job type, and drop into a debug session for poking around.
@@ -213,14 +264,14 @@ def drop_into_pplan_debug(workflow, config):
     ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
     ``Simulation.from_config``'s ``wf_engine`` branch); ``workflow`` is
     built natively by ``plan.Workflow.resolve`` instead -- there is no
-    separate ``SubPlan("prepare")`` stub anymore, ``workflow.sub_plans``
+    separate ``MultiStep("prepare")`` stub anymore, ``workflow.multi_steps``
     holds every phase (e.g. ``prepcompute``, ``compute``, ``tidy``)
     directly.
     """
     print(workflow)
-    for sub_plan in workflow.sub_plans.values():
-        print(" ", sub_plan)
-        for step in sub_plan.steps:
+    for multi_step in workflow.multi_steps.values():
+        print(" ", multi_step)
+        for step in multi_step.steps:
             print("   ", step)
 
     for cluster in workflow.plans.values():

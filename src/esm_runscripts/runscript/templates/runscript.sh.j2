@@ -1,0 +1,16 @@
+{% for line in context.header_lines %}
+{{ line }}
+{% endfor %}
+
+{% for line in context.env_lines %}
+{{ line }}
+{% endfor %}
+{% for line in context.extra_lines %}
+{{ line }}
+{% endfor %}
+
+{% for line in context.command_lines %}
+{{ line }}
+{% endfor %}
+
+wait

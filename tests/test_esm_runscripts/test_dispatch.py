@@ -2,7 +2,7 @@
 
 import pytest
 
-from esm_runscripts.pplan.execution import advance, dispatch_in_process
+from esm_runscripts.execution.dispatch import advance, run_in_process
 from esm_runscripts.pplan.plan import Executor
 
 
@@ -17,7 +17,7 @@ def _default_config():
     }
 
 
-def test_dispatch_in_process_runs_steps_for_an_in_process_multi_step(monkeypatch):
+def test_run_in_process_runs_steps_for_an_in_process_multi_step(monkeypatch):
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
@@ -30,20 +30,20 @@ def test_dispatch_in_process_runs_steps_for_an_in_process_multi_step(monkeypatch
     workflow = plan_module.Workflow.default(_default_config())
     assert workflow.plan_execution["prepcompute"].executor == Executor.IN_PROCESS
 
-    result = dispatch_in_process(workflow, "prepcompute", {"general": {}})
+    result = run_in_process(workflow, "prepcompute", {"general": {}})
 
     assert calls == ["prepcompute"]
     assert result == {"general": {}}
 
 
-def test_dispatch_in_process_rejects_a_batch_multi_step():
+def test_run_in_process_rejects_a_batch_multi_step():
     from esm_runscripts.pplan import plan as plan_module
 
     workflow = plan_module.Workflow.default(_default_config())
     assert workflow.plan_execution["compute"].executor == Executor.BATCH
 
     with pytest.raises(ValueError, match="compute"):
-        dispatch_in_process(workflow, "compute", {"general": {}})
+        run_in_process(workflow, "compute", {"general": {}})
 
 
 def test_advance_dispatches_the_triggered_in_process_multi_step(monkeypatch):
@@ -73,8 +73,16 @@ def test_advance_returns_empty_dict_for_a_multi_step_that_triggers_nothing():
     assert advance(workflow, "prepcompute", {"general": {}}) == {}
 
 
-def test_advance_raises_for_a_non_in_process_trigger_target():
+def test_advance_dispatches_a_batch_trigger_target(monkeypatch):
+    from esm_runscripts.execution import dispatch as dispatch_module
     from esm_runscripts.pplan import plan as plan_module
+
+    calls = []
+    monkeypatch.setitem(
+        dispatch_module._DISPATCHERS,
+        plan_module.Executor.BATCH,
+        lambda workflow, multi_step_name, config: calls.append(multi_step_name) or config,
+    )
 
     config = _default_config()
     config["fesom"]["workflow"] = {
@@ -92,6 +100,34 @@ def test_advance_raises_for_a_non_in_process_trigger_target():
 
     workflow = plan_module.Workflow.resolve(config)
     assert workflow.plan_execution["postprocessing"].executor == Executor.BATCH
+
+    result = advance(workflow, "tidy", {"marker": True})
+
+    assert "postprocessing" in calls
+    assert result["postprocessing"] == {"marker": True}
+
+
+def test_advance_raises_when_an_executor_has_no_registered_strategy(monkeypatch):
+    from esm_runscripts.execution import dispatch as dispatch_module
+    from esm_runscripts.pplan import plan as plan_module
+
+    monkeypatch.delitem(dispatch_module._DISPATCHERS, plan_module.Executor.BATCH)
+
+    config = _default_config()
+    config["fesom"]["workflow"] = {
+        "next_run_triggered_by": "tidy",
+        "subjobs": {
+            "postprocessing": {
+                "run_after": "tidy",
+                "run_on_queue": "pp",
+                "submit_to_batch_system": True,
+                "nproc": 1,
+            }
+        },
+    }
+    config["computer"]["partitions"]["pp"] = {"name": "pp"}
+
+    workflow = plan_module.Workflow.resolve(config)
 
     with pytest.raises(NotImplementedError, match="postprocessing"):
         advance(workflow, "tidy", {"general": {}})

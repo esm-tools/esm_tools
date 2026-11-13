@@ -10,23 +10,25 @@ esm-tools/esm_tools#1519): rename -> models -> REPL -> execution/provenance.
 from . import plan as plan_module
 
 
-def dispatch_in_process(workflow: "plan_module.Workflow", sub_plan_name: str, config: dict) -> dict:
-    """Run ``sub_plan_name``'s steps directly, in the current process.
+def dispatch_in_process(workflow: "plan_module.Workflow", multi_step_name: str, config: dict) -> dict:
+    """Run ``multi_step_name``'s steps directly, in the current process.
 
     Only valid for a sub-plan whose parent :class:`~plan.Plan` has
-    ``executor == Executor.IN_PROCESS`` -- no new OS process, no runscript,
-    just ``plan.run_steps()`` called right here. ``local``/``batch``
-    executors spawn a process and are handled elsewhere.
+    ``executor == Executor.IN_PROCESS`` (in :class:`~plan.PlanExecution`)
+    -- no new OS process, no runscript, just ``plan.run_steps()`` called
+    right here. ``local``/``batch`` executors spawn a process and are
+    handled elsewhere.
     """
-    sub_plan = workflow.sub_plans[sub_plan_name]
-    parent = workflow.parent_plan_of(sub_plan_name)
-    if parent.executor != plan_module.Executor.IN_PROCESS:
+    multi_step = workflow.multi_steps[multi_step_name]
+    parent = workflow.parent_plan_of(multi_step_name)
+    execution = workflow.execution_of(multi_step_name)
+    if execution.executor != plan_module.Executor.IN_PROCESS:
         raise ValueError(
-            f"dispatch_in_process called for {sub_plan_name!r}, whose parent "
-            f"plan {parent.name!r} has executor={parent.executor!r}, not "
+            f"dispatch_in_process called for {multi_step_name!r}, whose parent "
+            f"plan {parent.name!r} has executor={execution.executor!r}, not "
             f"{plan_module.Executor.IN_PROCESS!r}."
         )
-    return plan_module.run_steps(sub_plan, config)
+    return plan_module.run_steps(multi_step, config)
 
 
 # One dispatch strategy per Executor value. advance() looks a target's
@@ -39,8 +41,8 @@ _DISPATCHERS = {
 }
 
 
-def advance(workflow: "plan_module.Workflow", finished_sub_plan_name: str, config: dict) -> dict:
-    """Dispatch whatever ``finished_sub_plan_name`` triggers next.
+def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, config: dict) -> dict:
+    """Dispatch whatever ``finished_multi_step_name`` triggers next.
 
     Native replacement for legacy's ``resubmit_recursively``/
     ``maybe_resubmit`` (``resubmit.py``), reading
@@ -53,8 +55,8 @@ def advance(workflow: "plan_module.Workflow", finished_sub_plan_name: str, confi
     raises ``NotImplementedError`` naming it, rather than silently doing
     nothing.
 
-    Returns ``{next_sub_plan_name: resulting_config}`` for every target
-    this call dispatched -- empty if ``finished_sub_plan_name`` triggers
+    Returns ``{next_multi_step_name: resulting_config}`` for every target
+    this call dispatched -- empty if ``finished_multi_step_name`` triggers
     nothing. Each target is dispatched independently against the same
     ``config`` passed in (not threaded sequentially through each other's
     result) -- fan-out targets are independent resubmissions, matching
@@ -62,14 +64,15 @@ def advance(workflow: "plan_module.Workflow", finished_sub_plan_name: str, confi
     output into the next.
     """
     results = {}
-    for next_name in workflow.resubmit_triggers.get(finished_sub_plan_name, []):
+    for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, []):
         parent = workflow.parent_plan_of(next_name)
-        dispatch = _DISPATCHERS.get(parent.executor)
+        execution = workflow.execution_of(next_name)
+        dispatch = _DISPATCHERS.get(execution.executor)
         if dispatch is None:
             raise NotImplementedError(
                 f"advance() can't dispatch {next_name!r} yet -- its parent "
-                f"plan {parent.name!r} has executor={parent.executor!r}, and "
-                f"no dispatcher is registered for it (only "
+                f"plan {parent.name!r} has executor={execution.executor!r}, "
+                f"and no dispatcher is registered for it (only "
                 f"{[e.value for e in _DISPATCHERS]} so far)."
             )
         results[next_name] = dispatch(workflow, next_name, config)

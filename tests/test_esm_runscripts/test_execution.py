@@ -17,18 +17,18 @@ def _default_config():
     }
 
 
-def test_dispatch_in_process_runs_steps_for_an_in_process_sub_plan(monkeypatch):
+def test_dispatch_in_process_runs_steps_for_an_in_process_multi_step(monkeypatch):
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
     monkeypatch.setattr(
         plan_module,
         "run_steps",
-        lambda sub_plan, config: (calls.append(sub_plan.name), config)[1],
+        lambda multi_step, config: (calls.append(multi_step.name), config)[1],
     )
 
     workflow = plan_module.Workflow.default(_default_config())
-    assert workflow.plans["prepcompute"].executor == Executor.IN_PROCESS
+    assert workflow.plan_execution["prepcompute"].executor == Executor.IN_PROCESS
 
     result = dispatch_in_process(workflow, "prepcompute", {"general": {}})
 
@@ -36,24 +36,24 @@ def test_dispatch_in_process_runs_steps_for_an_in_process_sub_plan(monkeypatch):
     assert result == {"general": {}}
 
 
-def test_dispatch_in_process_rejects_a_batch_sub_plan():
+def test_dispatch_in_process_rejects_a_batch_multi_step():
     from esm_runscripts.pplan import plan as plan_module
 
     workflow = plan_module.Workflow.default(_default_config())
-    assert workflow.plans["compute"].executor == Executor.BATCH
+    assert workflow.plan_execution["compute"].executor == Executor.BATCH
 
     with pytest.raises(ValueError, match="compute"):
         dispatch_in_process(workflow, "compute", {"general": {}})
 
 
-def test_advance_dispatches_the_triggered_in_process_sub_plan(monkeypatch):
+def test_advance_dispatches_the_triggered_in_process_multi_step(monkeypatch):
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
     monkeypatch.setattr(
         plan_module,
         "run_steps",
-        lambda sub_plan, config: (calls.append(sub_plan.name), config)[1],
+        lambda multi_step, config: (calls.append(multi_step.name), config)[1],
     )
 
     workflow = plan_module.Workflow.default(_default_config())
@@ -65,7 +65,7 @@ def test_advance_dispatches_the_triggered_in_process_sub_plan(monkeypatch):
     assert result == {"prepcompute": {"general": {}}}
 
 
-def test_advance_returns_empty_dict_for_a_sub_plan_that_triggers_nothing():
+def test_advance_returns_empty_dict_for_a_multi_step_that_triggers_nothing():
     from esm_runscripts.pplan import plan as plan_module
 
     workflow = plan_module.Workflow.default(_default_config())
@@ -91,7 +91,7 @@ def test_advance_raises_for_a_non_in_process_trigger_target():
     config["computer"]["partitions"]["pp"] = {"name": "pp"}
 
     workflow = plan_module.Workflow.resolve(config)
-    assert workflow.plans["postprocessing"].executor == Executor.BATCH
+    assert workflow.plan_execution["postprocessing"].executor == Executor.BATCH
 
     with pytest.raises(NotImplementedError, match="postprocessing"):
         advance(workflow, "tidy", {"general": {}})
@@ -109,26 +109,32 @@ def test_advance_dispatches_every_target_in_an_n_way_fan_out(monkeypatch):
     monkeypatch.setattr(
         plan_module,
         "run_steps",
-        lambda sub_plan, config: (calls.append(sub_plan.name), config)[1],
+        lambda multi_step, config: (calls.append(multi_step.name), config)[1],
     )
 
-    sub_plans = {
-        name: plan_module.SubPlan(name=name, step_of_plan=name)
+    multi_steps = {
+        name: plan_module.MultiStep(name=name, step_of_plan=name)
         for name in ("alpha", "beta", "gamma")
     }
+    multi_step_execution = {
+        name: plan_module.MultiStepExecution() for name in multi_steps
+    }
     plans = {
-        name: plan_module.Plan(
-            name=name,
-            sub_plan_names=[name],
-            executor=plan_module.Executor.IN_PROCESS,
+        name: plan_module.Plan(name=name) for name in multi_steps
+    }
+    plan_execution = {
+        name: plan_module.PlanExecution(
+            multi_step_names=[name], executor=plan_module.Executor.IN_PROCESS
         )
-        for name in sub_plans
+        for name in multi_steps
     }
     workflow = plan_module.Workflow(
         entry_point="alpha",
         resubmit_triggers={"alpha": ["beta", "gamma"]},
         plans=plans,
-        sub_plans=sub_plans,
+        plan_execution=plan_execution,
+        multi_steps=multi_steps,
+        multi_step_execution=multi_step_execution,
     )
 
     result = advance(workflow, "alpha", {"general": {}})

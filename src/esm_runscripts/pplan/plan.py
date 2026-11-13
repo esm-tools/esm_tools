@@ -1,4 +1,4 @@
-"""Read-only pydantic view onto an assembled workflow graph (P-Plan vocabulary).
+"""Read-only pydantic view onto an assembled workflow graph.
 
 ``workflow.py`` assembles and mutates the workflow as a plain nested dict
 (``config["general"]["workflow"]``) -- that stays the execution engine's
@@ -6,12 +6,20 @@ working representation, unchanged by this module. ``Workflow.from_config``
 snapshots the *result* of that assembly (after
 :func:`esm_runscripts.workflow.assemble_workflow`, or at minimum
 ``complete_plans`` + ``order_plans``) into typed, read-only objects so calling
-code can navigate it as ``sim.plan.sub_plans["compute"].nproc`` instead of
-threading dict-key strings through by hand.
+code can navigate it as ``sim.plan.multi_steps["compute"].preceded_by`` instead
+of threading dict-key strings through by hand.
 
-``Step``/``SubPlan.steps``/``run_steps()`` model a sub-plan's individual
+``Plan``/``MultiStep``/``Step`` map exactly onto the real P-Plan ontology
+(``http://purl.org/net/p-plan#``) -- only the properties that ontology
+actually defines (``isStepOfPlan``, ``isPrecededBy``). Everything esm-
+specific about *how* a sub-plan actually runs (process count, executor,
+queue, launch mode, ...) lives separately in :class:`PlanExecution`/
+:class:`MultiStepExecution` -- openly esm-invented vocabulary, not claimed
+to align to any ontology (none has been selected for that side yet).
+
+``Step``/``MultiStep.steps``/``run_steps()`` model a sub-plan's individual
 recipe steps, resolved and run through ``esm_plugin_manager`` exactly like
-the legacy engine's recipes. No ``SubPlan`` built here is given a
+the legacy engine's recipes. No ``MultiStep`` built here is given a
 non-empty ``steps`` list yet, though -- the per-invocation work that
 exists today still runs through ``RunStateBuilder``'s hardcoded method
 chain instead (``simulation_config.py``); wiring real step lists onto
@@ -30,12 +38,11 @@ from esm_tools._compat import StrEnum
 from pydantic import ConfigDict
 
 
-class SubPlanKind(StrEnum):
-    """What a :class:`SubPlan` fundamentally is, orthogonal to how or where
-    it runs (that's :attr:`SubPlan.launch_mode` and the :class:`Plan` it
-    belongs to)."""
+class MultiStepKind(StrEnum):
+    """What a :class:`MultiStep` fundamentally is, orthogonal to how or
+    where it runs (that's :class:`MultiStepExecution`)."""
 
-    ESM_SUBPLAN = enum.auto()
+    ESM_MULTISTEP = enum.auto()
     """A Python recipe -- steps resolved and executed one at a time through
     the plugin mechanism (e.g. an ``observe`` sub-plan's
     ``init_observe_logs`` -> ``wait_and_observe`` -> ``wake_up_call``)."""
@@ -45,9 +52,9 @@ class SubPlanKind(StrEnum):
 
 
 class LaunchMode(StrEnum):
-    """How a :class:`SubPlan` launches relative to the rest of its running
-    job script (POSIX job-control vocabulary: does it block the script, or
-    get kicked off and watched independently)."""
+    """How a sub-plan launches relative to the rest of its running job
+    script (POSIX job-control vocabulary: does it block the script, or get
+    kicked off and watched independently)."""
 
     FOREGROUND = enum.auto()
     """Blocks the job script -- runs as the next instruction, and the
@@ -61,7 +68,7 @@ class LaunchMode(StrEnum):
 
 
 class Executor(StrEnum):
-    """Where/how a :class:`Plan`'s work actually runs."""
+    """Where/how a cluster's work actually runs."""
 
     IN_PROCESS = enum.auto()
     """No new OS process at all -- the currently-running ``esm_runscripts``
@@ -78,22 +85,22 @@ class Executor(StrEnum):
 
 class OrderInCluster(StrEnum):
     """How a cluster's sub-plans share their allocation (legacy
-    ``workflow.py``'s ``order_in_cluster``, controlling whether
-    :attr:`Plan.nproc` is the max or the sum of its sub-plans' ``nproc``)."""
+    ``workflow.py``'s ``order_in_cluster``, controlling whether a cluster's
+    total ``nproc`` is the max or the sum of its sub-plans' ``nproc``)."""
 
     SEQUENTIAL = enum.auto()
-    """Sub-plans run one after another, same allocation -- ``Plan.nproc``
-    is the max of its sub-plans' ``nproc``. Legacy default."""
+    """Sub-plans run one after another, same allocation -- cluster
+    ``nproc`` is the max of its sub-plans' ``nproc``. Legacy default."""
 
     CONCURRENT = enum.auto()
     """Sub-plans run side by side, sharing one allocation -- backgrounded
-    (``&``) with a trailing ``wait``. ``Plan.nproc`` is the sum of its
+    (``&``) with a trailing ``wait``. Cluster ``nproc`` is the sum of its
     sub-plans' ``nproc``."""
 
 
 class Step(ProvenanceFreeModel):
     """A single recipe step (``p-plan:Step``) -- a function or bash script
-    that makes up a :class:`SubPlan`, run sequentially."""
+    that makes up a :class:`MultiStep`, run sequentially."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -103,54 +110,82 @@ class Step(ProvenanceFreeModel):
         return f"<Step {self.name}>"
 
 
-class SubPlan(ProvenanceFreeModel):
-    """A phase/jobtype recipe (``p-plan:MultiStep``).
+class MultiStep(ProvenanceFreeModel):
+    """A phase/jobtype recipe (``p-plan:MultiStep``) -- the finer-grained
+    level inside a :class:`Plan` cluster, e.g. ``prepcompute``, ``compute``,
+    ``tidy``, or a coupling phase like ``couple_in``.
 
-    The finer-grained level inside a :class:`Plan` cluster -- e.g.
-    ``prepcompute``, ``compute``, ``tidy``, or a coupling phase like
-    ``couple_in``. ``step_of_plan`` is ``p-plan:isStepOfPlan`` (domain
-    ``Step``, range ``Plan``) -- MultiStep is also a Step, so this is the
-    property that names which cluster it's batched into.
+    Only the two real P-Plan properties that apply to a ``MultiStep`` (also
+    a ``Step``) are modeled here: ``step_of_plan`` (``isStepOfPlan``, domain
+    ``Step``, range ``Plan`` -- which cluster it's batched into) and
+    ``preceded_by`` (``isPrecededBy``, ``Step``-``Step``). Everything about
+    how it actually runs is :class:`MultiStepExecution`, looked up
+    separately by name.
     """
 
     model_config = ConfigDict(frozen=True)
 
     name: str
     step_of_plan: str
-    nproc: int = 1
     preceded_by: List[str] = []
     steps: List[Step] = []
-    kind: SubPlanKind = SubPlanKind.ESM_SUBPLAN
+
+    def __repr__(self) -> str:  # pragma: no cover - cosmetic
+        bits = []
+        if self.preceded_by:
+            bits.append(f"preceded_by={','.join(self.preceded_by)}")
+        return f"<MultiStep {self.name}  {' '.join(bits)}>"
+
+
+class MultiStepExecution(ProvenanceFreeModel):
+    """esm-specific execution metadata for a :class:`MultiStep`, looked up
+    by name in :attr:`Workflow.multi_step_execution`. Not ontology vocabulary
+    -- no ontology has been selected for this side yet."""
+
+    model_config = ConfigDict(frozen=True)
+
+    nproc: int = 1
+    kind: MultiStepKind = MultiStepKind.ESM_MULTISTEP
     launch_mode: Optional[LaunchMode] = None
     # Legacy's conditional-skip mechanism (workflow.skip_plan: run_only,
     # skip_chunk_number, skip_run_number) is cycling-condition territory --
-    # belongs in Plan.cycling once that's shaped, not modeled here.
-
-    def __repr__(self) -> str:  # pragma: no cover - cosmetic
-        bits = [f"nproc={self.nproc}"]
-        if self.preceded_by:
-            bits.append(f"preceded_by={','.join(self.preceded_by)}")
-        if self.launch_mode:
-            bits.append(f"launch_mode={self.launch_mode.value}")
-        return f"<SubPlan {self.name}  {' '.join(bits)}>"
+    # belongs in PlanExecution.cycling once that's shaped, not modeled here.
 
 
 class Plan(ProvenanceFreeModel):
-    """A batch-submission cluster (``p-plan:Plan`` + ``esm:Cluster``), or the
-    root workflow itself.
+    """A batch-submission cluster (``p-plan:Plan``), or the root workflow
+    itself.
 
-    Clusters (non-root) carry ``sub_plans`` (the phase names batched into this
-    one job) and are looked up by name in the root's :attr:`Workflow.plans`.
-    The *root* Plan is represented by :class:`Workflow` instead, since it has a
-    different shape (``plans`` + ``sub_plans`` pools, no ``preceded_by`` of its
-    own).
+    Looked up by name in the root's :attr:`Workflow.plans`. The *root* Plan
+    is represented by :class:`Workflow` instead, since it has a different
+    shape (``plans`` + ``multi_steps`` pools, no ``preceded_by`` of its own).
+    Only ``preceded_by`` is modeled here -- the cluster-level fact that one
+    cluster runs after another (for ordering clusters relative to each
+    other, not a direct P-Plan property at the ``Plan`` level; P-Plan's own
+    ``isPrecededBy`` is defined on ``Step``, not ``Plan``). Everything else
+    about a cluster's execution is :class:`PlanExecution`.
     """
 
     model_config = ConfigDict(frozen=True)
 
     name: str
-    sub_plan_names: List[str] = []
     preceded_by: List[str] = []
+
+    def __repr__(self) -> str:  # pragma: no cover - cosmetic
+        bits = []
+        if self.preceded_by:
+            bits.append(f"preceded_by={','.join(self.preceded_by)}")
+        return f"<Plan {self.name}  {' '.join(bits)}>"
+
+
+class PlanExecution(ProvenanceFreeModel):
+    """esm-specific execution metadata for a :class:`Plan`, looked up by
+    name in :attr:`Workflow.plan_execution`. Not ontology vocabulary -- no
+    ontology has been selected for this side yet."""
+
+    model_config = ConfigDict(frozen=True)
+
+    multi_step_names: List[str] = []
     next_submit: List[str] = []
     nproc: Optional[int] = None
     order_in_cluster: Optional[OrderInCluster] = None
@@ -158,24 +193,18 @@ class Plan(ProvenanceFreeModel):
     run_on_queue: Optional[str] = None
     cycling: Optional[dict] = None
 
-    def __repr__(self) -> str:  # pragma: no cover - cosmetic
-        bits = []
-        if self.nproc is not None:
-            bits.append(f"nproc={self.nproc}")
-        if self.preceded_by:
-            bits.append(f"preceded_by={','.join(self.preceded_by)}")
-        return f"<Plan {self.name}  {' '.join(bits)}>"
-
 
 class Workflow(ProvenanceFreeModel):
     """The root plan (``p-plan:Plan``): the whole per-chunk workflow.
 
-    Two parallel namespaces, matching ``config["workflow"]``:
+    Four parallel namespaces, all keyed by the same sub-plan/cluster names:
 
-    * :attr:`plans` -- clusters, keyed by cluster name.
-    * :attr:`sub_plans` -- phases, keyed by phase name (which may be
+    * :attr:`plans` -- clusters' ontology-mapped shape.
+    * :attr:`plan_execution` -- clusters' esm execution metadata.
+    * :attr:`multi_steps` -- phases' ontology-mapped shape (names may be
       section-qualified, e.g. ``prepcompute_echam``, for a model-specific
       phase collected from a coupled model's own workflow block).
+    * :attr:`multi_step_execution` -- phases' esm execution metadata.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -183,7 +212,9 @@ class Workflow(ProvenanceFreeModel):
     entry_point: str
     resubmit_triggers: Dict[str, List[str]] = {}
     plans: Dict[str, Plan]
-    sub_plans: Dict[str, SubPlan]
+    plan_execution: Dict[str, PlanExecution]
+    multi_steps: Dict[str, MultiStep]
+    multi_step_execution: Dict[str, MultiStepExecution]
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         triggers = (
@@ -193,45 +224,61 @@ class Workflow(ProvenanceFreeModel):
         )
         return f"<Plan 'workflow'  first={self.entry_point}{triggers}>"
 
-    def parent_plan_of(self, sub_plan_name: str) -> Plan:
+    def parent_plan_of(self, multi_step_name: str) -> Plan:
         """The cluster (:class:`Plan`) that a sub-plan is batched into."""
-        return self.plans[self.sub_plans[sub_plan_name].step_of_plan]
+        return self.plans[self.multi_steps[multi_step_name].step_of_plan]
+
+    def execution_of(self, multi_step_name: str) -> PlanExecution:
+        """The execution metadata of the cluster a sub-plan is batched
+        into."""
+        return self.plan_execution[self.multi_steps[multi_step_name].step_of_plan]
 
     @classmethod
     def from_config(cls, config: dict) -> "Workflow":
         """Snapshot ``config["workflow"]`` (top-level, not nested under
         ``general``) into a :class:`Workflow`.
 
-        Expects the assembled shape: every plan has ``sub_plans`` (list of
+        Expects the assembled shape: every plan has ``multi_steps`` (list of
         names) and ``preceded_by`` resolved (except the entry point), as
         produced by ``complete_plans`` + ``order_plans`` in ``workflow.py``.
         """
         gw_config = config["workflow"]
 
-        sub_plans = {
-            name: SubPlan(
+        multi_steps = {}
+        multi_step_execution = {}
+        for name, conf in gw_config["sub_plans"].items():
+            preceded_by = _as_list(conf.get("preceded_by"))
+            multi_steps[name] = MultiStep(
                 name=name,
                 step_of_plan=conf.get("parent_plan", name),
+                preceded_by=preceded_by,
                 **_only_known_fields(
-                    SubPlan,
+                    MultiStep,
                     conf,
                     exclude=frozenset({"preceded_by", "step_of_plan"}),
                 ),
-                preceded_by=_as_list(conf.get("preceded_by")),
             )
-            for name, conf in gw_config["sub_plans"].items()
-        }
-        plans = {
-            name: Plan(
+            multi_step_execution[name] = MultiStepExecution(
+                **_only_known_fields(MultiStepExecution, conf)
+            )
+
+        plans = {}
+        plan_execution = {}
+        for name, conf in gw_config["plans"].items():
+            preceded_by = _as_list(conf.get("preceded_by"))
+            plans[name] = Plan(
                 name=name,
-                sub_plan_names=conf.get("sub_plans", []),
+                preceded_by=preceded_by,
                 **_only_known_fields(
-                    Plan, conf, exclude=frozenset({"sub_plans", "preceded_by"})
+                    Plan, conf, exclude=frozenset({"preceded_by"})
                 ),
-                preceded_by=_as_list(conf.get("preceded_by")),
             )
-            for name, conf in gw_config["plans"].items()
-        }
+            plan_execution[name] = PlanExecution(
+                multi_step_names=conf.get("sub_plans", []),
+                **_only_known_fields(
+                    PlanExecution, conf, exclude=frozenset({"multi_step_names"})
+                ),
+            )
 
         # workflow.py's assembled dict is still single-trigger (exit_point
         # always resubmits to entry_point); resubmit_triggers generalizes
@@ -242,7 +289,9 @@ class Workflow(ProvenanceFreeModel):
             entry_point=gw_config["entry_point"],
             resubmit_triggers={exit_point: [gw_config["entry_point"]]},
             plans=plans,
-            sub_plans=sub_plans,
+            plan_execution=plan_execution,
+            multi_steps=multi_steps,
+            multi_step_execution=multi_step_execution,
         )
 
     @classmethod
@@ -277,20 +326,23 @@ class Workflow(ProvenanceFreeModel):
                     ):
                         tasks += model_conf["nprocar"] * model_conf["nprocbr"]
 
-        sub_plans = {
-            "prepcompute": SubPlan(
-                name="prepcompute", step_of_plan="prepcompute", nproc=1
-            ),
-            "compute": SubPlan(
+        multi_steps = {
+            "prepcompute": MultiStep(name="prepcompute", step_of_plan="prepcompute"),
+            "compute": MultiStep(
                 name="compute",
                 step_of_plan="compute",
-                nproc=tasks,
                 preceded_by=["prepcompute"],
-                launch_mode=LaunchMode.BACKGROUND,
             ),
-            "tidy": SubPlan(
-                name="tidy", step_of_plan="tidy", nproc=1, preceded_by=["compute"]
+            "tidy": MultiStep(
+                name="tidy", step_of_plan="tidy", preceded_by=["compute"]
             ),
+        }
+        multi_step_execution = {
+            "prepcompute": MultiStepExecution(nproc=1),
+            "compute": MultiStepExecution(
+                nproc=tasks, launch_mode=LaunchMode.BACKGROUND
+            ),
+            "tidy": MultiStepExecution(nproc=1),
         }
 
         # Matches legacy's own default dispatch (resubmit.get_submission_type):
@@ -304,25 +356,28 @@ class Workflow(ProvenanceFreeModel):
         )
         plans = {
             "prepcompute": Plan(
-                name="prepcompute",
-                sub_plan_names=["prepcompute"],
-                nproc=sub_plans["prepcompute"].nproc,
-                preceded_by=sub_plans["prepcompute"].preceded_by,
-                executor=Executor.IN_PROCESS,
+                name="prepcompute", preceded_by=multi_steps["prepcompute"].preceded_by
             ),
             "compute": Plan(
-                name="compute",
-                sub_plan_names=["compute"],
-                nproc=sub_plans["compute"].nproc,
-                preceded_by=sub_plans["compute"].preceded_by,
+                name="compute", preceded_by=multi_steps["compute"].preceded_by
+            ),
+            "tidy": Plan(name="tidy", preceded_by=multi_steps["tidy"].preceded_by),
+        }
+        plan_execution = {
+            "prepcompute": PlanExecution(
+                multi_step_names=["prepcompute"],
+                nproc=multi_step_execution["prepcompute"].nproc,
+                executor=Executor.IN_PROCESS,
+            ),
+            "compute": PlanExecution(
+                multi_step_names=["compute"],
+                nproc=multi_step_execution["compute"].nproc,
                 executor=compute_executor,
                 run_on_queue=config["computer"]["partitions"]["compute"]["name"],
             ),
-            "tidy": Plan(
-                name="tidy",
-                sub_plan_names=["tidy"],
-                nproc=sub_plans["tidy"].nproc,
-                preceded_by=sub_plans["tidy"].preceded_by,
+            "tidy": PlanExecution(
+                multi_step_names=["tidy"],
+                nproc=multi_step_execution["tidy"].nproc,
                 executor=Executor.IN_PROCESS,
             ),
         }
@@ -331,7 +386,9 @@ class Workflow(ProvenanceFreeModel):
             entry_point="prepcompute",
             resubmit_triggers={"tidy": ["prepcompute"]},
             plans=plans,
-            sub_plans=sub_plans,
+            plan_execution=plan_execution,
+            multi_steps=multi_steps,
+            multi_step_execution=multi_step_execution,
         )
 
     @classmethod
@@ -373,10 +430,14 @@ class Workflow(ProvenanceFreeModel):
             )
 
         wf = cls.default(config)
-        extra_sub_plans, extra_plans, extra_triggers = _collect_extra_sub_plans(
-            config
-        )
-        if not extra_sub_plans:
+        (
+            extra_multi_steps,
+            extra_multi_step_execution,
+            extra_plans,
+            extra_plan_execution,
+            extra_triggers,
+        ) = _collect_extra_multi_steps(config)
+        if not extra_multi_steps:
             return wf
 
         merged_triggers = {name: list(targets) for name, targets in wf.resubmit_triggers.items()}
@@ -390,13 +451,18 @@ class Workflow(ProvenanceFreeModel):
             entry_point=wf.entry_point,
             resubmit_triggers=merged_triggers,
             plans={**wf.plans, **extra_plans},
-            sub_plans={**wf.sub_plans, **extra_sub_plans},
+            plan_execution={**wf.plan_execution, **extra_plan_execution},
+            multi_steps={**wf.multi_steps, **extra_multi_steps},
+            multi_step_execution={
+                **wf.multi_step_execution,
+                **extra_multi_step_execution,
+            },
         )
 
 
-def _collect_extra_sub_plans(config: dict):
+def _collect_extra_multi_steps(config: dict):
     """Collect extra sub-plans from every section's (post-translation)
-    ``workflow.sub_plans`` block -- e.g. a setup's framework-authored
+    ``workflow.multi_steps`` block -- e.g. a setup's framework-authored
     ``postprocessing``/``tripyview`` sub-plan. Each becomes its own
     singleton cluster (matching :meth:`Workflow.default`'s convention),
     wired into the chain via ``resubmit_triggers`` fan-out off of each
@@ -405,10 +471,13 @@ def _collect_extra_sub_plans(config: dict):
     single-sub-plan-per-block shape, and ``preceded_by`` is the more
     granular, reliable source).
 
-    Returns ``(extra_sub_plans, extra_plans, extra_triggers)``.
+    Returns ``(extra_multi_steps, extra_multi_step_execution, extra_plans,
+    extra_plan_execution, extra_triggers)``.
     """
-    extra_sub_plans: Dict[str, SubPlan] = {}
+    extra_multi_steps: Dict[str, MultiStep] = {}
+    extra_multi_step_execution: Dict[str, MultiStepExecution] = {}
     extra_plans: Dict[str, Plan] = {}
+    extra_plan_execution: Dict[str, PlanExecution] = {}
     extra_triggers: Dict[str, List[str]] = {}
 
     for section in config.values():
@@ -419,43 +488,51 @@ def _collect_extra_sub_plans(config: dict):
             continue
         for name, conf in w_config.get("sub_plans", {}).items():
             preceded_by = _as_list(conf.get("preceded_by"))
-            sub_plan = SubPlan(
+            extra_multi_steps[name] = MultiStep(
                 name=name,
                 step_of_plan=name,
                 preceded_by=preceded_by,
                 **_only_known_fields(
-                    SubPlan,
+                    MultiStep,
                     conf,
                     exclude=frozenset({"preceded_by", "step_of_plan"}),
                 ),
             )
-            extra_sub_plans[name] = sub_plan
+            execution = MultiStepExecution(
+                **_only_known_fields(MultiStepExecution, conf)
+            )
+            extra_multi_step_execution[name] = execution
             # run_on_queue/submit_to_batch_system are cluster-level facts
             # (same Plan, same batch submission) -- read off the raw conf,
-            # not the SubPlan, which no longer carries them. Default False,
-            # matching the legacy dict engine's own default for a sub-plan
-            # that omits the key (workflow.py: "if 'submit_to_batch_system'
-            # not in plan_conf: plan_conf['submit_to_batch_system'] = False";
+            # not the MultiStep/MultiStepExecution. Default False, matching
+            # the legacy dict engine's own default for a sub-plan that
+            # omits the key (workflow.py: "if 'submit_to_batch_system' not
+            # in plan_conf: plan_conf['submit_to_batch_system'] = False";
             # resubmit.py's get_submission_type same default) -- unlike
-            # Workflow.default()'s "compute" sub-plan below, which legacy
-            # always batch-submits by default.
+            # Workflow.default()'s "compute" sub-plan, which legacy always
+            # batch-submits by default.
             executor = (
                 Executor.BATCH
                 if conf.get("submit_to_batch_system", False)
                 else Executor.LOCAL
             )
-            extra_plans[name] = Plan(
-                name=name,
-                sub_plan_names=[name],
-                nproc=sub_plan.nproc,
-                preceded_by=preceded_by,
+            extra_plans[name] = Plan(name=name, preceded_by=preceded_by)
+            extra_plan_execution[name] = PlanExecution(
+                multi_step_names=[name],
+                nproc=execution.nproc,
                 executor=executor,
                 run_on_queue=conf.get("run_on_queue"),
             )
             for predecessor in preceded_by:
                 extra_triggers.setdefault(predecessor, []).append(name)
 
-    return extra_sub_plans, extra_plans, extra_triggers
+    return (
+        extra_multi_steps,
+        extra_multi_step_execution,
+        extra_plans,
+        extra_plan_execution,
+        extra_triggers,
+    )
 
 
 def _as_list(value) -> List[str]:
@@ -482,8 +559,8 @@ def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> d
     return {k: v for k, v in conf.items() if k in known}
 
 
-def run_steps(sub_plan: SubPlan, config: dict) -> dict:
-    """Resolve and run a :class:`SubPlan`'s :attr:`steps`, in order.
+def run_steps(multi_step: MultiStep, config: dict) -> dict:
+    """Resolve and run a :class:`MultiStep`'s :attr:`steps`, in order.
 
     Reuses ``esm_plugin_manager`` wholesale -- the same
     ``read_plugin_information`` + ``check_plugin_availability`` +
@@ -496,12 +573,12 @@ def run_steps(sub_plan: SubPlan, config: dict) -> dict:
     (success) or raises (failure propagates to the caller), exactly like
     the legacy engine.
     """
-    if not sub_plan.steps:
+    if not multi_step.steps:
         return config
 
     recipe = {
-        "recipe": [step.name for step in sub_plan.steps],
-        "job_type": sub_plan.name,
+        "recipe": [step.name for step in multi_step.steps],
+        "job_type": multi_step.name,
     }
     plugins_bare = (
         esm_tools.get_config_filepath()

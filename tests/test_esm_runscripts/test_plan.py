@@ -5,7 +5,16 @@ import copy
 import yaml
 
 from esm_runscripts import workflow
-from esm_runscripts.pplan.plan import Executor, Plan, Step, SubPlan, Workflow, run_steps
+from esm_runscripts.pplan.plan import (
+    Executor,
+    MultiStep,
+    MultiStepExecution,
+    Plan,
+    PlanExecution,
+    Step,
+    Workflow,
+    run_steps,
+)
 
 
 def _assembled_config(workflow_block):
@@ -32,17 +41,17 @@ def test_workflow_from_config_default_chain(shared_datadir):
 
     assert isinstance(wf, Workflow)
     assert wf.entry_point == "prepcompute"
-    assert set(wf.sub_plans) == {"prepcompute", "compute", "tidy"}
+    assert set(wf.multi_steps) == {"prepcompute", "compute", "tidy"}
 
-    compute = wf.sub_plans["compute"]
-    assert isinstance(compute, SubPlan)
+    compute = wf.multi_steps["compute"]
+    assert isinstance(compute, MultiStep)
     assert compute.preceded_by == ["prepcompute"]
     assert compute.step_of_plan == "compute"
 
     parent = wf.parent_plan_of("compute")
     assert isinstance(parent, Plan)
     assert parent.name == "compute"
-    assert "compute" in parent.sub_plan_names
+    assert "compute" in wf.plan_execution["compute"].multi_step_names
 
 
 def test_workflow_from_config_coupled_chain(shared_datadir):
@@ -53,16 +62,16 @@ def test_workflow_from_config_coupled_chain(shared_datadir):
 
     assert wf.entry_point == "couple_in"
     assert wf.resubmit_triggers == {"couple_out": ["couple_in"]}
-    assert wf.sub_plans["compute"].nproc == 1
+    assert wf.multi_step_execution["compute"].nproc == 1
 
     # Walking the ordering chain via preceded_by should reach every sub-plan.
     order = [wf.entry_point]
-    remaining = set(wf.sub_plans) - {wf.entry_point}
+    remaining = set(wf.multi_steps) - {wf.entry_point}
     while remaining:
         nxt = next(
             name
             for name in remaining
-            if wf.sub_plans[name].preceded_by == [order[-1]]
+            if wf.multi_steps[name].preceded_by == [order[-1]]
         )
         order.append(nxt)
         remaining.remove(nxt)
@@ -77,7 +86,7 @@ def test_workflow_and_plan_repr_are_readable(shared_datadir):
 
     assert "first=prepcompute" in repr(wf)
     assert "resubmit_triggers={'tidy': ['prepcompute']}" in repr(wf)
-    assert "compute" in repr(wf.sub_plans["compute"])
+    assert "compute" in repr(wf.multi_steps["compute"])
 
 
 def test_models_are_frozen(shared_datadir):
@@ -86,34 +95,36 @@ def test_models_are_frozen(shared_datadir):
     )
     wf = Workflow.from_config(_assembled_config(block))
 
-    compute = wf.sub_plans["compute"]
+    compute = wf.multi_steps["compute"]
     try:
-        compute.nproc = 99
+        compute.preceded_by = []
         raised = False
     except Exception:
         raised = True
-    assert raised, "SubPlan should be immutable (frozen)"
+    assert raised, "MultiStep should be immutable (frozen)"
 
 
-def test_subplan_defaults_for_new_fields():
-    sub_plan = SubPlan(name="prepare", step_of_plan="initialization")
+def test_multi_step_defaults_for_new_fields():
+    multi_step = MultiStep(name="prepare", step_of_plan="initialization")
+    execution = MultiStepExecution()
 
-    assert sub_plan.steps == []
-    assert sub_plan.kind == "esm_subplan"
+    assert multi_step.steps == []
+    assert execution.kind == "esm_multistep"
 
 
 def test_plan_defaults_for_new_fields():
     cluster = Plan(name="initialization")
+    execution = PlanExecution()
 
-    assert cluster.executor is None
-    assert cluster.cycling is None
+    assert execution.executor is None
+    assert execution.cycling is None
 
 
 def test_run_steps_is_a_noop_for_an_empty_steps_list():
-    sub_plan = SubPlan(name="prepare", step_of_plan="initialization")
+    multi_step = MultiStep(name="prepare", step_of_plan="initialization")
     config = {"general": {"setup_name": "awicm3"}}
 
-    result = run_steps(sub_plan, config)
+    result = run_steps(multi_step, config)
 
     assert result is config
 
@@ -148,14 +159,14 @@ def test_run_steps_resolves_and_runs_via_esm_plugin_manager(monkeypatch):
         esm_plugin_manager, "work_through_recipe", fake_work_through_recipe
     )
 
-    sub_plan = SubPlan(
+    multi_step = MultiStep(
         name="prepare",
         step_of_plan="initialization",
         steps=[Step(name="_read_date_file"), Step(name="check_model_lresume")],
     )
     config = {"general": {"setup_name": "awicm3"}}
 
-    result = run_steps(sub_plan, config)
+    result = run_steps(multi_step, config)
 
     assert result == {"general": {"setup_name": "awicm3"}, "ran": True}
     assert [name for name, *_ in calls] == [
@@ -185,15 +196,15 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
 
     assert wf.entry_point == "prepcompute"
     assert wf.resubmit_triggers == {"tidy": ["prepcompute"]}
-    assert set(wf.sub_plans) == {"prepcompute", "compute", "tidy"}
-    assert wf.sub_plans["compute"].nproc == 128 + 8 * 16
-    assert wf.sub_plans["compute"].preceded_by == ["prepcompute"]
-    assert wf.sub_plans["compute"].launch_mode == "background"
-    assert wf.plans["compute"].run_on_queue == "compute"
-    assert wf.plans["compute"].executor == Executor.BATCH
-    assert wf.plans["prepcompute"].executor == Executor.IN_PROCESS
-    assert wf.plans["tidy"].executor == Executor.IN_PROCESS
-    assert wf.sub_plans["tidy"].preceded_by == ["compute"]
+    assert set(wf.multi_steps) == {"prepcompute", "compute", "tidy"}
+    assert wf.multi_step_execution["compute"].nproc == 128 + 8 * 16
+    assert wf.multi_steps["compute"].preceded_by == ["prepcompute"]
+    assert wf.multi_step_execution["compute"].launch_mode == "background"
+    assert wf.plan_execution["compute"].run_on_queue == "compute"
+    assert wf.plan_execution["compute"].executor == Executor.BATCH
+    assert wf.plan_execution["prepcompute"].executor == Executor.IN_PROCESS
+    assert wf.plan_execution["tidy"].executor == Executor.IN_PROCESS
+    assert wf.multi_steps["tidy"].preceded_by == ["compute"]
     assert wf.parent_plan_of("compute").name == "compute"
     # Each sub-plan is its own singleton cluster.
     assert set(wf.plans) == {"prepcompute", "compute", "tidy"}
@@ -231,29 +242,28 @@ def test_workflow_resolve_raises_when_general_workflow_defines_its_own_entry_poi
 
 
 def test_workflow_resolve_does_not_raise_for_an_empty_supplemental_block():
-    # A workflow: block with no actual sub_plans in it (no entry_point/plans
+    # A workflow: block with no actual multi_steps in it (no entry_point/plans
     # either) has nothing to merge or replace -- it's not a reason to fail.
     config = _no_custom_workflow_config()
-    config["general"]["workflow"] = {"sub_plans": {}}
+    config["general"]["workflow"] = {"multi_steps": {}}
 
     wf = Workflow.resolve(config)
 
     assert wf.entry_point == "prepcompute"
 
 
-def test_plan_accepts_none_with_provenance():
+def test_plan_execution_accepts_none_with_provenance():
     # A YAML ``null`` arrives as NoneWithProvenance, which pydantic rejects
     # for Optional[str] fields unless the provenance is stripped first.
     from esm_parser.provenance import NoneWithProvenance
 
-    plan = Plan(
-        name="postprocessing",
+    execution = PlanExecution(
         run_on_queue=NoneWithProvenance(None, provenance=None),
     )
-    assert plan.run_on_queue is None
+    assert execution.run_on_queue is None
 
 
-def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
+def test_workflow_resolve_merges_a_real_supplemental_multi_step():
     # The actual bug this test guards against: configs/setups/awicm3/
     # awicm3.yaml's choose_general.postprocessing: True: workflow: {...}
     # block (legacy vocab: subjobs/run_after/next_run_triggered_by) must
@@ -275,16 +285,16 @@ def test_workflow_resolve_merges_a_real_supplemental_sub_plan():
     wf = Workflow.resolve(config)
 
     assert wf.entry_point == "prepcompute"
-    assert "postprocessing" in wf.sub_plans
-    assert wf.sub_plans["postprocessing"].preceded_by == ["tidy"]
+    assert "postprocessing" in wf.multi_steps
+    assert wf.multi_steps["postprocessing"].preceded_by == ["tidy"]
     assert "postprocessing" in wf.plans
-    assert wf.plans["postprocessing"].run_on_queue == "pp"
-    assert wf.plans["postprocessing"].executor == Executor.BATCH
+    assert wf.plan_execution["postprocessing"].run_on_queue == "pp"
+    assert wf.plan_execution["postprocessing"].executor == Executor.BATCH
     # Fan-out: tidy still triggers the next cycle AND the new sub-plan.
     assert wf.resubmit_triggers["tidy"] == ["prepcompute", "postprocessing"]
 
 
-def test_collect_extra_sub_plans_defaults_executor_to_local_when_omitted():
+def test_collect_extra_multi_steps_defaults_executor_to_local_when_omitted():
     # Matches the legacy dict engine's own default: workflow.py sets
     # plan_conf["submit_to_batch_system"] = False when the key is absent,
     # and resubmit.py's get_submission_type reads the same False default --
@@ -303,4 +313,4 @@ def test_collect_extra_sub_plans_defaults_executor_to_local_when_omitted():
 
     wf = Workflow.resolve(config)
 
-    assert wf.plans["inline_postprocessing"].executor == Executor.LOCAL
+    assert wf.plan_execution["inline_postprocessing"].executor == Executor.LOCAL

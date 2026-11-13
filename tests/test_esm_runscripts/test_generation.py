@@ -108,6 +108,33 @@ def test_generate_runscript_for_in_process_plan_has_no_batch_header(monkeypatch)
     assert not any("#SBATCH" in line for line in context.header_lines)
 
 
+def test_command_lines_backgrounds_compute_and_appends_observe_call():
+    import esm_calendar
+
+    from esm_runscripts.pplan.plan import LaunchMode
+
+    config = _config()
+    config["computer"]["execution_command"] = "./fesom"
+    config["general"].update(
+        setup_name="awicm3",
+        jobid="42",
+        jobtype="compute",
+        scriptname="my.yaml",
+        run_number=3,
+        current_date=esm_calendar.Date("2026-01-01", calendar="proleptic_gregorian"),
+    )
+    workflow = Workflow.default(config)
+    assert workflow.multi_step_execution["compute"].launch_mode == LaunchMode.BACKGROUND
+
+    lines = generation.command_lines(workflow, "compute", config, is_batch=True)
+
+    assert lines[0] == "time ./fesom 2>&1 &"
+    assert lines[1] == "process=$!"
+    assert lines[2].startswith("esm_runscripts my.yaml -e test")
+    assert "-t observe_compute" in lines[2]
+    assert "-p ${process}" in lines[2]
+
+
 def test_write_runscript_writes_file_and_chmods_executable(tmp_path):
     context = generation.RunscriptContext(header_lines=["#!/bin/bash"], command_lines=["echo hi"])
     path = tmp_path / "test.run"

@@ -34,7 +34,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import ConfigDict
 
 from .. import dataprocess
-from ..pplan.plan import Executor, MultiStepKind, Workflow
+from ..pplan.plan import Executor, LaunchMode, MultiStepKind, Workflow
 from .batch_system import by_name as batch_system_by_name
 
 _TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -209,6 +209,30 @@ def extra_lines(config: dict) -> List[str]:
     return lines
 
 
+def observe_log_filename(config: dict, multi_step_name: str) -> str:
+    general = config["general"]
+    return (
+        f'{general["thisrun_log_dir"]}{general["expid"]}_{general["setup_name"]}_'
+        f'{multi_step_name}_{general["jobid"]}.log'
+    )
+
+
+def observe_call_line(config: dict, multi_step_name: str) -> str:
+    """The CLI re-entry line a backgrounded command's runscript appends
+    after it: a new ``esm_runscripts`` process that blocks on
+    ``${process}`` (the PID just captured) and watches for crashes --
+    see :mod:`esm_runscripts.execution.observe`. Legacy's equivalent is
+    ``batch_system.write_simple_runscript``'s inline ``observe_call``
+    construction."""
+    general = config["general"]
+    rundate = general["current_date"].format(form=9, givenph=False, givenpm=False, givenps=False)
+    return (
+        f'esm_runscripts {general["scriptname"]} -e {general["expid"]} '
+        f"--wf-engine=pplan -t observe_{multi_step_name} -p ${{process}} "
+        f'-s {rundate} -r {general["run_number"]}'
+    )
+
+
 def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_batch: bool) -> List[str]:
     execution = workflow.multi_step_execution[multi_step_name]
     if execution.kind != MultiStepKind.ESM_MULTISTEP:
@@ -218,12 +242,17 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     if multi_step_name != "compute":
         return []
 
-    commands = []
     computer = config["computer"]
-    if "execution_command" in computer:
-        write_log = computer.get("write_execution_log", "")
-        commands.append(f"time {computer['execution_command']} 2>&1{write_log} &")
-    return commands
+    if "execution_command" not in computer:
+        return []
+
+    write_log = computer.get("write_execution_log", "")
+    command = f"time {computer['execution_command']} 2>&1{write_log}"
+
+    if execution.launch_mode != LaunchMode.BACKGROUND:
+        return [command]
+
+    return [f"{command} &", "process=$!", observe_call_line(config, multi_step_name)]
 
 
 def generate_runscript(workflow: Workflow, multi_step_name: str, config: dict) -> RunscriptContext:

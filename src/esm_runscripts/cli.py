@@ -136,6 +136,10 @@ def main(**command_line_config):
     sim = Simulation.from_config(config)
 
     if command_line_config["wf_engine"] == "pplan":
+        task = command_line_config["task"]
+        if task.startswith("observe_"):
+            _run_observe(task[len("observe_") :], sim.plan, sim.config)
+            return
         drop_into_pplan_debug(sim.plan, sim.config)
         return
 
@@ -202,6 +206,35 @@ def _build_config(command_line_config):
         .remember_command_line()
         .build()
     )
+
+
+def _run_observe(multi_step_name, workflow, config):
+    """Watch the backgrounded PID this job's runscript captured
+    (``config["general"]["launcher_pid"]``), then dispatch whatever
+    ``multi_step_name`` triggers next.
+
+    Invoked via the ``-t observe_<multi_step_name>`` CLI re-entry a
+    backgrounded command's runscript makes (see
+    ``runscript.generation.observe_call_line``) -- the scheduler
+    cancellation and nonzero exit on a crash both happen right here, at
+    the outer boundary, not inside the detection logic itself.
+    """
+    from .execution import dispatch, observe
+    from .execution.errors import JobCrashedError
+    from .runscript.generation import observe_log_filename
+
+    log_file = observe_log_filename(config, multi_step_name)
+    try:
+        observe.wait_and_observe(config["general"]["launcher_pid"], config, log_file)
+    except JobCrashedError as exc:
+        import subprocess
+
+        logger.error(f"ERROR: {exc.message}")
+        logger.error("Will kill the run now...")
+        subprocess.run(["scancel", str(config["general"]["jobid"])])
+        sys.exit(42)
+
+    dispatch.advance(workflow, multi_step_name, config)
 
 
 def drop_into_pplan_debug(workflow, config):

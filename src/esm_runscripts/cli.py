@@ -116,7 +116,7 @@ from .simulation_config import ConfigBuilder
     help=(
         "Workflow engine to use. 'legacy' (default) runs the job as usual. "
         "'pplan' assembles the workflow, snapshots it into the pydantic "
-        "Plan/SubPlan/Workflow view, prints it, and drops into a debug "
+        "Plan/MultiStep/Workflow view, prints it, and drops into a debug "
         "session instead of submitting anything."
     ),
 )
@@ -213,14 +213,14 @@ def drop_into_pplan_debug(workflow, config):
     ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
     ``Simulation.from_config``'s ``wf_engine`` branch); ``workflow`` is
     built natively by ``plan.Workflow.resolve`` instead -- there is no
-    separate ``SubPlan("prepare")`` stub anymore, ``workflow.sub_plans``
+    separate ``MultiStep("prepare")`` stub anymore, ``workflow.multi_steps``
     holds every phase (e.g. ``prepcompute``, ``compute``, ``tidy``)
     directly.
     """
     print(workflow)
-    for sub_plan in workflow.sub_plans.values():
-        print(" ", sub_plan)
-        for step in sub_plan.steps:
+    for multi_step in workflow.multi_steps.values():
+        print(" ", multi_step)
+        for step in multi_step.steps:
             print("   ", step)
 
     for cluster in workflow.plans.values():

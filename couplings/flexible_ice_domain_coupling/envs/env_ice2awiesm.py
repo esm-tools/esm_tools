@@ -84,7 +84,6 @@ def prepare_environment(config):
         "last_year_in_chunk_restart": ice["restart_out_targets"]["restart"],
 
         "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
-        "account_all_fw_input": ice.get("account_all_fw_input", 0),
         "USE_YMONMEAN": ice.get("use_ymonmean", 0),
         "orog_reference_pism": ice.get("orog_reference_pism", 1),
         # surface height handed to the atmosphere: "physical" or the legacy

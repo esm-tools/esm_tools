@@ -1042,7 +1042,7 @@ distribute_total_discharge_over_ocean() {
         echo; echo "                *   integrate discharge over the ice grid(s)"
 
         typeset _hos_pairs=""
-        typeset _hos_domain _hos_dir _hos_disch _hos_area
+        typeset _hos_domain _hos_dir _hos_disch _hos_area _hos_excl
         for _hos_domain in $(ice_domain_list); do
                 _hos_dir=$(ice_domain_couple_dir "${_hos_domain}")
                 _hos_disch=${_hos_dir}/ice_discharge.nc
@@ -1056,6 +1056,28 @@ distribute_total_discharge_over_ocean() {
                 if [ ! -f "${_hos_disch}" ]; then
                         echo "            * domain ${_hos_domain}: no ice_discharge.nc, skipped"
                         continue
+                fi
+
+                # Calving has to reach the ocean exactly once: as FESOM
+                # icebergs, or inside this mass loss. pism2atmosphere takes it
+                # out (and says so in standard_name) when the domain has
+                # iceberg_coupling; FESOM seeds icebergs when it uses them.
+                if [ -f "${_hos_dir}/ice_file_for_atmosphere.nc" ]; then
+                        if ncdump -h "${_hos_dir}/ice_file_for_atmosphere.nc" | grep -q "excluding_calving"; then
+                                _hos_excl=1
+                        else
+                                _hos_excl=0
+                        fi
+                        if [ "x${_hos_excl}" != "x${FESOM_PREP_ICEBERG_DISCHARGE:-0}" ]; then
+                                echo ""
+                                echo " !!! Ice domain ${_hos_domain} and FESOM disagree about icebergs:"
+                                echo " !!!   FESOM icebergs (use_icebergs):              ${FESOM_PREP_ICEBERG_DISCHARGE:-0}"
+                                echo " !!!   calving taken out of the mass loss (iceberg_coupling): ${_hos_excl}"
+                                echo " !!! Calving would reach the ocean twice (1/0) or not at all (0/1)."
+                                echo " !!! Set iceberg_coupling in the ice domain's runscript to match FESOM."
+                                echo " S T O P  74"
+                                exit 74
+                        fi
                 fi
 
                 # "cdo gridarea" needs cell corners, which the ice sheet's own

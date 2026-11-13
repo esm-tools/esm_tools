@@ -1345,6 +1345,12 @@ EOF
         add_to ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat jsbach_init_override.dat config jsbach
 }
 
+## Newly deglaciated cells are given tundra: tile 7 in the 11-tile layout,
+## where JSBACH puts tundra together with C3 grass (utils/jsbach_init_file.f90:
+## cover_fract(7) = c3grass + tundra). Six digits, as in the file names that
+## cdo splitrec/splitlevel write.
+tundra_tile_id=000007
+
 set_glacial_mask_jsbach_update_restart_jsbach() {
         echo; echo "                *   updating land cover fractions in jsbach restart file >>jsbach<<"
         echo -e "\t\t-   Making a temporary directory to work in"
@@ -1472,7 +1478,7 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
                                                                 ${tile}
 
                                                         ;;
-                                                2d_restart_${EXP_ID}_jsbach_${var}_tile000007.nc )
+                                                2d_restart_${EXP_ID}_jsbach_${var}_tile${tundra_tile_id}.nc )
                                                         echo -e "\t\t Tundra for ${var} on ${tile}"
                                                         # New Glaciers need to be exactly 0 everywhere except on tile 1
                                                         cdo -s ifthenelse \
@@ -1480,8 +1486,9 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
                                                                 -mulc,0 ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
                                                                 ${tile} \
                                                                 ${tile}.tmp
-                                                        # New land gets the maximum allowed value
-                                                        # NOTE: This is only valid for 11 tiles!!
+                                                        # New land gets the maximum allowed value:
+                                                        # 1 - (ntiles-1)*1e-10 with the other tiles at 1e-10.
+                                                        # NOTE: 1e-9 is only exact for 11 tiles!!
                                                         # BUG(?): What about the negative values that appear here?
                                                         cdo -s -subc,1e-9 \
                                                                 ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
@@ -1542,6 +1549,31 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
                                         ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
                                         -selvar,layer_moist ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
                                        2d_restart_${EXP_ID}_jsbach_${var}.tmp 2d_restart_${EXP_ID}_jsbach_${var}.nc
+                                ;;
+                        rock_fract | veg_ratio_max)
+                                # Under glaciers JSBACH keeps rock_fract=1 and
+                                # veg_ratio_max=0. rock_fract is only reset on
+                                # a cold start, so on a resumed run a
+                                # deglaciated cell keeps rock_fract=1 for good,
+                                # and veg_ratio_max = max(fract_small,
+                                # 1 - (desert_fpc + rock_fract)) never lets any
+                                # vegetation in. Initialise both as on a cold
+                                # start: rock_fract=0, veg_ratio_max from the
+                                # new init file. desert_fpc and
+                                # sum_green_bio_memory are reset to match in
+                                # the >>veg<< restart. New glaciers are left
+                                # to JSBACH, as before.
+                                echo -e "\t\t- Initialising ${var} on new deglacial cells"
+                                if [ "${var}" == "rock_fract" ]; then
+                                        new_value="-mulc,0"
+                                else
+                                        new_value=""
+                                fi
+                                cdo -s -setvar,${var} -ifthenelse \
+                                        ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                        ${new_value} -selvar,veg_ratio_max ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                                        2d_restart_${EXP_ID}_jsbach_${var}.nc 2d_restart_${EXP_ID}_jsbach_${var}.tmp
+                                mv 2d_restart_${EXP_ID}_jsbach_${var}.tmp 2d_restart_${EXP_ID}_jsbach_${var}.nc
                                 ;;
                 esac
                 cd $here
@@ -1686,6 +1718,39 @@ set_glacial_mask_jsbach_update_restart_veg() {
                 here=$(pwd); mkdir -p ${var}; mv 2d_restart_${EXP_ID}_veg_${var}.nc ${var}; cd ${var}
                 echo -e "\t\t- Updating JSBACH restart file -- ${var}\n"
                 case ${var} in
+                        desert_fpc | sum_green_bio_memory )
+                                # Under glaciers JSBACH keeps desert_fpc=1 and
+                                # sum_green_bio_memory=0. dynveg sets, once a
+                                # year (mo_dynveg.f90, desert_fraction and
+                                # calc_veg_ratio_max):
+                                #   memory     <- (memory*(tau-1) + green_bio)/tau,  tau=50a
+                                #   desert_fpc  = 1 - memory
+                                #   veg_ratio_max = 1 - (desert_fpc + rock_fract)
+                                # so with the glacier values a deglaciated cell
+                                # stays a desert for decades, and resetting
+                                # desert_fpc alone is undone after one year.
+                                # Initialise both as JSBACH does on a cold
+                                # start (update_dynveg): memory = veg_ratio_max
+                                # and desert_fpc = 1 - veg_ratio_max, with
+                                # veg_ratio_max from the new init file (there
+                                # extrapolated from the surrounding non-glacier
+                                # land). rock_fract and veg_ratio_max are reset
+                                # in the >>jsbach<< restart. desert_fpc is not
+                                # part of the act_fpc + bare_fpc = 1 closure.
+                                # New glaciers are left to JSBACH, as before.
+                                echo -e "\t\t- Initialising ${var} from veg_ratio_max on new deglacial cells"
+                                if [ "${var}" == "desert_fpc" ]; then
+                                        new_value="-addc,1 -mulc,-1"
+                                else
+                                        new_value=""
+                                fi
+                                cdo -s -setvar,${var} -ifthenelse \
+                                        ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                        ${new_value} -selvar,veg_ratio_max ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                                        2d_restart_${EXP_ID}_veg_${var}.nc \
+                                        2d_restart_${EXP_ID}_veg_${var}.tmp
+                                mv 2d_restart_${EXP_ID}_veg_${var}.tmp 2d_restart_${EXP_ID}_veg_${var}.nc
+                                ;;
                         bare_fpc )
                                 # For bare fpc, we need the fraction of "bare" under glaciers to be 1
                                 cdo -s ifthenelse \
@@ -1708,7 +1773,7 @@ set_glacial_mask_jsbach_update_restart_veg() {
                                 # care of by JSBACH internally.
                                 #
                                 # For active plant cover fraction, we put 0 on
-                                # all tiles except tundra (tile 7) which gets
+                                # all tiles except tundra (tile 7), which gets
                                 # 5%.
                                 #
                                 # Split up the levels
@@ -1729,15 +1794,14 @@ set_glacial_mask_jsbach_update_restart_veg() {
                                         # this is already the case, do nothing:
                                         ncrename -d .sfc,tiles $tile
                                         case ${tile} in
-                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.nc )
+                                                2d_restart_${EXP_ID}_veg_${var}_tile${tundra_tile_id}.nc )
                                                         echo -e "\t\t- Setting 5% initial cover of tundra for new deglacial cells"
-                                                        # For the tundra tile
-                                                        cdo -v -setvar,$var -ifthenelse \
+                                                        cdo -s -setvar,$var -ifthenelse \
                                                                 ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
                                                                 -mulc,0.05 ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
-                                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.nc \
-                                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.tmp
-                                                        mv 2d_restart_${EXP_ID}_veg_${var}_tile000007.tmp 2d_restart_${EXP_ID}_veg_${var}_tile000007.nc
+                                                                ${tile} \
+                                                                ${tile}.tmp
+                                                        mv ${tile}.tmp ${tile}
                                                         ;;
                                                 * )
                                                         # For all other tiles:

@@ -7,7 +7,6 @@ a new OS process -- directly (``LOCAL``) or via the scheduler
 
 from __future__ import annotations
 
-import os
 import subprocess
 
 from ..pplan.plan import Workflow
@@ -46,7 +45,7 @@ def launch_batch(workflow: "Workflow", multi_step_name: str, config: dict) -> di
     batch_system_by_name(batch_system_name)  # validates the name eagerly
     submit = config["computer"]["submit"]
     subprocess.run(
-        [submit, os.path.basename(path)],
+        [submit, path.name],
         cwd=config["general"]["thisrun_scripts_dir"],
         check=True,
     )

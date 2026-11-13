@@ -56,9 +56,8 @@ def test_launch_local_writes_executable_script_and_runs_it(tmp_path, monkeypatch
     (args, cwd, check) = calls[0]
     assert cwd == config["general"]["thisrun_scripts_dir"]
     assert check is True
-    assert args[0].endswith(".run")
-    import os
-    assert os.stat(args[0]).st_mode & 0o100
+    assert args[0].suffix == ".run"
+    assert args[0].stat().st_mode & 0o100
 
 
 def test_launch_batch_writes_script_and_submits_it(tmp_path, monkeypatch):

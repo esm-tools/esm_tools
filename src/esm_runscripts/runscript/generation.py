@@ -23,8 +23,8 @@ self-resubmission *is* covered -- see :func:`observe_call_line` and
 from __future__ import annotations
 
 import math
-import os
 import stat
+from pathlib import Path
 from typing import List, Optional
 
 import esm_environment
@@ -36,7 +36,7 @@ from .. import dataprocess
 from ..pplan.plan import Executor, LaunchMode, MultiStepKind, Workflow
 from .batch_system import by_name as batch_system_by_name
 
-_TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+_TEMPLATE_DIR = Path(__file__).parent / "templates"
 _ENV = Environment(
     loader=FileSystemLoader(_TEMPLATE_DIR),
     autoescape=select_autoescape(enabled_extensions=()),
@@ -295,15 +295,14 @@ def render(context: RunscriptContext) -> str:
     return template.render(context=context)
 
 
-def get_run_filename(config: dict, multi_step_name: str) -> str:
+def get_run_filename(config: dict, multi_step_name: str) -> Path:
     folder = config["general"]["thisrun_scripts_dir"]
     expid = config["general"]["expid"]
-    return f"{folder}/{expid}_{multi_step_name}_{config['general']['run_datestamp']}.run"
+    run_datestamp = config["general"]["run_datestamp"]
+    return Path(folder) / f"{expid}_{multi_step_name}_{run_datestamp}.run"
 
 
-def write_runscript(context: RunscriptContext, path: str, executable: bool = False) -> None:
-    with open(path, "w") as runfile:
-        runfile.write(render(context))
+def write_runscript(context: RunscriptContext, path: Path, executable: bool = False) -> None:
+    path.write_text(render(context))
     if executable:
-        current = os.stat(path).st_mode
-        os.chmod(path, current | stat.S_IEXEC)
+        path.chmod(path.stat().st_mode | stat.S_IEXEC)

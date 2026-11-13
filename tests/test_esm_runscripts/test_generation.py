@@ -156,7 +156,7 @@ def test_write_runscript_writes_file_and_chmods_executable(tmp_path):
     context = generation.RunscriptContext(header_lines=["#!/bin/bash"], command_lines=["echo hi"])
     path = tmp_path / "test.run"
 
-    generation.write_runscript(context, str(path), executable=True)
+    generation.write_runscript(context, path, executable=True)
 
     assert path.read_text().strip().startswith("#!/bin/bash")
     assert path.stat().st_mode & 0o100  # owner-executable bit set

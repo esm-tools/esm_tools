@@ -83,6 +83,56 @@ changes.
 thk_plus_topg` in each ice domain runscript, and `oro_regrid_method: remapbil`
 and `oro_lo_res_source: restart` under `echam:`.
 
+**High-res orography: absolute orography lands exactly, no change applied twice.**
+Two fixes in how `echam6_new_orography_before_calnoro_high_res.nc` is updated;
+no option, the normal anomaly update is unchanged (checked: identical high-res
+orography and `OROMEA`).
+
+* *Absolute orography* (`ice_orog.nc`, written by `orog_reference_pism: 1` at
+  the first coupling): the T511 anomaly is now taken against the high-res orography it is
+  added to, not against the T63 orography remapped to T511. The high-res field
+  then *is* the ice sheet surface where there is ice. Before, PI's T511 relief
+  below T63 scale stayed on top of it, and CALNORO and `GEOSP` saw both:
+  over a PI Greenland ice sheet that relief is 217 m on average, 627 m at the
+  95th percentile, 1441 m at most. In the offline test the high-res field now
+  equals the PISM surface over the ice (max difference 0.0 m) and is unchanged
+  outside it. `OROMEA` (an area mean) was hardly affected. Without a high-res
+  orography yet (first coupling), the starting high-res orography is now
+  chosen (and checked against the restart) *before* the per-domain stage, so
+  the very first absolute surface lands exactly as well (offline: max 0.000 m
+  over all T511 cells with surface > 0).
+* *`orog_reference_pism: 1` hands over the absolute surface at the first
+  coupling of each ice domain*, not at `CHUNK_NUMBER_pism == 2`. Chunk numbers
+  count all models: in a dual run `pism_nh` first couples in chunk 2 but
+  `pism_sh` in chunk 3, so Antarctica never got its absolute surface. "First"
+  is now: no earlier `ice_file_for_atmosphere.nc` in the domain's couple dir,
+  or a repeat of the coupling recorded in `ice_orog_absolute.chunk`. Running
+  experiments (which have that file) keep handing over changes. For
+  `pism_nh`/mono the absolute file is bit-identical to before; mode `0` is
+  unchanged.
+* *Repeated `couple_in` for the same chunk* (crash, manual resubmission): the
+  high-res orography accumulates, so a repeat used to add the chunk's change a
+  second time (2124 m at single cells in the test). Now
+  `...high_res.chunk` records the last applied chunk and
+  `...high_res.before_chunk.nc` keeps the state before it; a repeat starts from
+  that state again (the log says so), and a repeat of the very first update
+  picks the starting orography again. Result identical to a single run.
+* *OROMEA and the sub-grid parameters are updated wherever the surface
+  changed*, and only there: ECHAM cells containing a T511 cell where the
+  high-res orography differs from PI T511 by > 1 m
+  (`mask_oro_changed_T63grid.nc`, `update_orography_changed_mask`). That is
+  ice, former ice, and bedrock movement outside the ice (Lingle-Clark responds
+  there too: ~-20 m within 50 km of the margin in a 2370-year NH spinup).
+  Before, OROMEA used the whole ice-domain footprint, and the sub-grid
+  parameters "ice now or glacier in `unit.24`", which missed former ice and
+  bedrock: on fix_oro's high-res orography after 233 years, 21 cells had
+  OROMEA moved by > 20 m (up to -773 m) with `unit.24` sub-grid parameters,
+  11 of them with OROMEA outside OROVAL..OROPIC. The new mask covers all 21
+  (245 cells instead of 192; the 13 dropped are PI glacier cells that did not
+  change, |OROMEA change| <= 0.1 m). For a first update OROMEA differs from
+  before by at most 0.2 m (cells whose surface moved < 1 m). Without a
+  high-res orography the old sub-grid rule is kept.
+
 ### 1.2 Affects the **dual** experiment
 
 **(a) CALNORO is now fed the current chunk's merged orography.**

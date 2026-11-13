@@ -214,8 +214,39 @@ function pism_atmosphere_update_domain_mask {
         echo; echo "                  ...done."
 }
 
+## @fn pism_orography_decide_absolute()
+## Sets ORO_ABSOLUTE=1 if this coupling hands the atmosphere the absolute ice
+## sheet surface (ice_orog.nc) rather than the change over the chunk: with
+## orog_reference_pism=1, at the first coupling of this ice domain. ECHAM's
+## orography is then set to the ice sheet model's once, and only changes are
+## added afterwards.
+##
+## "First coupling" = no ice_file_for_atmosphere.nc from an earlier coupling in
+## ${ICE_COUPLE_DIR}, or a repeat of the coupling that delivered the absolute
+## surface (recorded in ice_orog_absolute.chunk). This used to be
+## "CHUNK_NUMBER_pism == 2", which is the first coupling only for the first ice
+## model: in a dual run pism_sh couples first in chunk 3 and so never handed
+## over its absolute surface.
+pism_orography_decide_absolute() {
+        typeset _pa_mark=${ICE_COUPLE_DIR}/ice_orog_absolute.chunk
+        ORO_ABSOLUTE=0
+        if [ "x${orog_reference_pism}" == "x1" ]; then
+                if [[ -f ${_pa_mark} ]]; then
+                        [[ "$(cat ${_pa_mark})" == "${CHUNK_START_DATE_pism}" ]] && ORO_ABSOLUTE=1
+                elif [[ ! -f ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc ]]; then
+                        ORO_ABSOLUTE=1
+                fi
+        fi
+        if [ "x${ORO_ABSOLUTE}" == "x1" ]; then
+                echo "                 -   first coupling of this ice domain: handing over the absolute surface"
+        else
+                echo "                 -   handing over the surface change over this chunk"
+        fi
+}
+
 function pism_atmosphere_generate_orography_anomaly {
         echo; echo "                 Generating orography anomaly..."
+        pism_orography_decide_absolute
         generate_orography_anomaly_over_pism_run
         if [ "x${orog_reference_pism}" != "x1" ]
         then
@@ -242,7 +273,7 @@ function pism_atmosphere_generate_runoff {
 
 function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
-        if [ "x${orog_reference_pism}" == "x1" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ] 
+        if [ "x${ORO_ABSOLUTE}" == "x1" ]
         then
             files_needed="${ICE_COUPLE_DIR}/ice_mask_current.nc ${ICE_COUPLE_DIR}/ice_runoff_flux_total.nc ${ICE_COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
         else
@@ -400,7 +431,9 @@ function generate_orography_anomaly_over_pism_run {
                     -expr,"${_orog_expr}" \
                     $ifile2 \
                     $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
-        elif [ "x${orog_reference_pism}" == "x1" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ]; then 
+        elif [ "x${ORO_ABSOLUTE}" == "x1" ]; then
+            # orog_reference_pism=1, first coupling of this domain: hand over
+            # the absolute surface once instead of an anomaly.
             #ifile2="${ICE_COUPLE_DIR}/elev_lo.nc"
             ofile=${ICE_COUPLE_DIR}/ice_orog.nc
             cdo -s  \
@@ -409,7 +442,11 @@ function generate_orography_anomaly_over_pism_run {
                     $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
             ncwa -a time $ofile tmp
             mv tmp $ofile
+            echo "${CHUNK_START_DATE_pism}" > ${ICE_COUPLE_DIR}/ice_orog_absolute.chunk
         else
+            # orog_reference_pism=1, any later coupling: the absolute surface
+            # was handed over once, so keep it out of the way and deliver the
+            # anomaly.
             if [ -f ${ICE_COUPLE_DIR}/ice_orog.nc ]
             then
                 mv ${ICE_COUPLE_DIR}/ice_orog.nc ${ICE_COUPLE_DIR}/ice_orog.nc_BAK

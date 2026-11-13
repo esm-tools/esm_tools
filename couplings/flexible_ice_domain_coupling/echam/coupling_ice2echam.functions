@@ -71,6 +71,12 @@ ice2echam() {
 
         define_echam_names
 
+        # The high-resolution orography before this chunk, chosen once for
+        # all domains (and, at the first update, checked against the restart).
+        if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
+                update_orography_prepare_high_res_base
+        fi
+
         # Stage 1 -- per domain
         ice_domain_foreach ice2echam_per_domain
 
@@ -266,11 +272,24 @@ update_orography_to_echam_grid() {
                 cdo -s ifthen ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.mask.nc \
                         ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc tmp
                 mv tmp ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc
-                # atmosphere_file_for_ice.nc is already on the ECHAM grid, so
-                # only the T511 reference needs an extra remap.
+                # The anomaly is taken against the field it will be added to,
+                # so that field becomes the ice sheet surface where there is
+                # ice: on the ECHAM grid the orography ECHAM reported, on T511
+                # the high-resolution orography as it was before this chunk.
+                # (Taking the T63 orography remapped to T511 instead kept the
+                # PI T511 relief below T63 scale on top of the ice sheet
+                # surface: ~200 m on average, >1000 m locally, which CALNORO
+                # and GEOSP then saw.)
+                _u2e_hi=${ORO_HIGH_RES_BASE}
                 if [ "x${_u2e_res}" = "x${RES_echam}" ]; then
                         _u2e_ref="-selname,orog ${COUPLE_DIR}/atmosphere_file_for_ice.nc"
+                elif [ -n "${_u2e_hi}" ]; then
+                        echo "                -   T511 anomaly against ${_u2e_hi}"
+                        _u2e_ref="-setgrid,T511grid -selname,oromea ${_u2e_hi}"
                 else
+                        # no high-resolution orography at all (low resolution
+                        # path): the T511 file is not used; keep the old
+                        # reference.
                         _u2e_ref="-remapbil,${_u2e_res}grid -selname,orog ${COUPLE_DIR}/atmosphere_file_for_ice.nc"
                 fi
                 cdo -s -chname,usurf,delta_usurf -sub \
@@ -278,7 +297,7 @@ update_orography_to_echam_grid() {
                         ${_u2e_ref} \
                         ${ICE_COUPLE_DIR}/ice_orog_difference_${_u2e_res}grid.nc
             done
-            unset _u2e_res _u2e_ref
+            unset _u2e_res _u2e_ref _u2e_hi
         else
             # Anomaly: normalise by the full ECHAM cell area (destarea), i.e.
             # the part of a cell outside the ice domain counts as "no change".
@@ -528,26 +547,99 @@ update_orography_init_high_res_reference() {
         unset _hro_out _hro_mode _hro_tol _hro_pi_ref _hro_cand _hro_rfile _hro_f _hro_n _hro_mis
 }
 
+## @fn update_orography_set_hi_res_init_oro()
+## Sets hi_res_init_oro, the reference T511 orography, as the two orography
+## steps below do.
+update_orography_set_hi_res_init_oro() {
+        if [ "$MACHINE" == "levante" ]; then
+            case "$paleo_time" in
+                eot) hi_res_init_oro="/work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc" ;;
+                omt) : ;;
+                *)   hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc" ;;
+            esac
+        fi
+}
+
+## @fn update_orography_prepare_high_res_base()
+## GLOBAL, once per coupling, before the per-domain stage. Sets
+## ORO_HIGH_RES_BASE to the high-resolution orography as it was before this
+## chunk's ice sheet change: the field this chunk's change is taken against
+## (absolute surface, update_orography_to_echam_grid) and added to
+## (update_orography_apply_orography_anomaly_high_res).
+##
+## echam6_new_orography_before_calnoro_high_res.nc accumulates: every update
+## adds the chunk's change. Next to it:
+##   ...high_res.chunk            which chunk was applied last (CHUNK_START_DATE_echam)
+##   ...high_res.before_chunk.nc  the state before that chunk
+##   ...high_res.start.nc         the state before the very first update
+##
+##   normal update:     ...high_res.nc
+##   same chunk again:  ...high_res.before_chunk.nc (or .start.nc for the first
+##                      update), so a crash or manual resubmission does not
+##                      add the change twice
+##   first update:      ...high_res.start.nc, chosen here once by
+##                      update_orography_init_high_res_reference (the parent's
+##                      file or PI T511, checked against the restart; may stop
+##                      with exit 48). Choosing it before the per-domain stage
+##                      lets the first coupling's absolute ice sheet surface be
+##                      taken against it, so it lands exactly.
+## Empty when there is no high-resolution orography to work with.
+update_orography_prepare_high_res_base() {
+        typeset _pb_f=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
+        typeset _pb_chunk=${_pb_f%.nc}.chunk _pb_before=${_pb_f%.nc}.before_chunk.nc _pb_start=${_pb_f%.nc}.start.nc
+        ORO_HIGH_RES_BASE=""
+        update_orography_set_hi_res_init_oro
+        if [[ -f ${_pb_chunk} ]] && [[ "$(cat ${_pb_chunk})" == "${CHUNK_START_DATE_echam}" ]]; then
+                echo "                -   this chunk (${CHUNK_START_DATE_echam}) was applied before:"
+                echo "                -   starting again from the orography before it, not adding the change twice"
+                if [[ -f ${_pb_before} ]]; then
+                        ORO_HIGH_RES_BASE=${_pb_before}
+                elif [[ -f ${_pb_start} ]]; then
+                        ORO_HIGH_RES_BASE=${_pb_start}
+                fi
+        elif [[ -f ${_pb_f} ]]; then
+                ORO_HIGH_RES_BASE=${_pb_f}
+        fi
+        if [[ -z "${ORO_HIGH_RES_BASE}" ]] && [[ -f "${hi_res_init_oro}" ]]; then
+                rm -f ${_pb_before}
+                update_orography_init_high_res_reference ${_pb_start}
+                ORO_HIGH_RES_BASE=${_pb_start}
+        fi
+        echo "                -   high-resolution orography before this chunk: ${ORO_HIGH_RES_BASE:-none}"
+}
+
 ## @fn update_orography_apply_orography_anomaly_high_res()
 ## GLOBAL. $ifile is the anomaly summed over all ice domains; it already
 ## carries the name "oromea", has no missing values and no time axis
-## (see update_orography_to_echam_grid).
+## (see update_orography_to_echam_grid). Adds it to the high-resolution
+## orography from before this chunk, ${ORO_HIGH_RES_BASE}
+## (see update_orography_prepare_high_res_base).
 update_orography_apply_orography_anomaly_high_res() {
         echo; echo "                *   applying surface height changes to high-resolution echam topography"
         ifile=${COUPLE_DIR}/ice_orog_difference_T511grid.nc
         ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
-        if [[ -f ${ofile} ]]
-        then
-            rfile=${ofile}
-            ncks -O -v oromea $rfile tmp_oromea
-        else
-            # No accumulated high-res orography yet (first coupling of this
-            # experiment). Do not silently start from the PI reference; this
-            # picks a consistent reference or stops (exit 48).
-            update_orography_init_high_res_reference tmp_oromea
+        typeset _ah_chunk=${ofile%.nc}.chunk _ah_before=${ofile%.nc}.before_chunk.nc
+        typeset _ah_base=${ORO_HIGH_RES_BASE}
+
+        if [[ -z "${_ah_base}" ]] || [[ ! -f "${_ah_base}" ]]; then
+            echo " !!! no high-resolution orography to add the change to (ORO_HIGH_RES_BASE=>${_ah_base}<)"
+            echo " S T O P  48"
+            exit 48
         fi
-        # LA: need to backup echam6_new_orography_before_calnoro!!!
-        ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
+        # keep the state before this chunk (unless the base already is a copy)
+        if [[ "${_ah_base}" == "${ofile}" ]]; then
+            cp -p ${ofile} ${_ah_before}
+        fi
+        ncks -O -v oromea ${_ah_base} tmp_oromea
+        # Record the chunk before writing $ofile: if anything below fails, a
+        # repeat of this chunk still starts from the state before it.
+        echo "${CHUNK_START_DATE_echam}" > ${_ah_chunk}
+        if ! ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam; then
+            echo " !!! could not add $ifile to the high-resolution orography (see nco_stderr_ice2echam)"
+            echo " S T O P  48"
+            exit 48
+        fi
+        rm -f tmp_oromea
 
         update_orography_apply_orography_anomaly from_high_res
 }
@@ -575,20 +667,49 @@ update_orography_apply_orography_anomaly() {
         ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
 }
 
+## @fn update_orography_changed_mask()
+## GLOBAL. Writes ${COUPLE_DIR}/mask_oro_changed_${RES_echam}grid.nc: 1 on every
+## ECHAM cell that contains a T511 cell where the high-resolution orography
+## differs from the reference T511 orography (${hi_res_init_oro}) by more than
+## 1 m, else 0. That is where the surface has changed -- under the ice, where
+## ice has gone, and where only the bedrock moved (Lingle-Clark responds
+## outside the ice as well). OROMEA and the sub-grid parameters are updated
+## exactly there (update_orography_lo_res_from_high_res,
+## update_orography_generate_target_orography_file). The 1 m only keeps
+## numerical noise out.
+## Returns 1 (and writes nothing) without a high-resolution orography.
+update_orography_changed_mask() {
+        typeset _cm_hi=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
+        typeset _cm_out=${COUPLE_DIR}/mask_oro_changed_${RES_echam}grid.nc
+        rm -f ${_cm_out}
+        [[ -f ${_cm_hi} ]] && [[ -f "${hi_res_init_oro}" ]] && [[ -f ${INIT_DIR_echam}/unit.24 ]] || return 1
+        cdo -s griddes -selname,OROMEA ${INIT_DIR_echam}/unit.24 > cm_grid.txt
+        cdo -s -chname,oromea,changed -gtc,0 -remapcon,cm_grid.txt -gtc,1 -abs \
+                -sub -setgrid,T511grid -selname,oromea ${_cm_hi} \
+                     -setgrid,T511grid -chname,OROMEA,oromea -selname,OROMEA ${hi_res_init_oro} \
+                ${_cm_out} 2>>cdo_stderr_ice2echam
+        rm -f cm_grid.txt
+        [[ -s ${_cm_out} ]] || return 1
+        echo "                -   ECHAM cells with a changed surface: $(cdo -s -outputf,%.0f,1 -fldsum ${_cm_out} 2>>cdo_stderr_ice2echam | tr -d ' ')"
+}
+
 ## @fn update_orography_lo_res_from_high_res()
 ## GLOBAL. Writes $1, the ECHAM-resolution orography, as the area mean of the
 ## high-resolution orography that was just updated:
 ##
-##     inside the ice domains:  OROMEA = unit.24 OROMEA
-##                                     + remapcon( HIGH - reference T511 )
-##     elsewhere:               OROMEA = restart OROMEA (unchanged)
+##     where the surface changed:  OROMEA = unit.24 OROMEA
+##                                        + remapcon( HIGH - reference T511 )
+##     elsewhere:                  OROMEA = restart OROMEA (unchanged)
+##
+## "Where the surface changed" is update_orography_changed_mask: ice, former
+## ice and bedrock movement alike.
 ##
 ## GEOSP and the sub-grid parameters (CALNORO) are made from HIGH as well, so
 ## all of ECHAM's orography fields now describe one and the same surface.
 ## Because it is rebuilt from HIGH every chunk, OROMEA no longer accumulates
 ## its own regridding errors, and errors that earlier chunks left in the
 ## restart OROMEA are replaced at the first update with this option.
-## Inside the ice domains the result is kept >= 0: the ice sheet surface is
+## Where the surface changed the result is kept >= 0: the ice sheet surface is
 ## never below sea level (see pism_surface_elevation_expr).
 ##
 ## Needs the same reference pair as update_orography_init_high_res_reference:
@@ -597,7 +718,7 @@ update_orography_lo_res_from_high_res() {
         typeset _lo_out=$1
         typeset _lo_hi=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
         typeset _lo_u24=${INIT_DIR_echam}/unit.24
-        typeset _lo_dom=${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc
+        typeset _lo_chg=${COUPLE_DIR}/mask_oro_changed_${RES_echam}grid.nc
         typeset _lo_rfile _lo_f _lo_stats
         echo "                -   OROMEA = area mean of the high-resolution orography (oro_lo_res_source=high_res)"
 
@@ -606,7 +727,7 @@ update_orography_lo_res_from_high_res() {
         else
                 _lo_rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
         fi
-        for _lo_f in "${_lo_hi}" "${hi_res_init_oro}" "${_lo_u24}" "${_lo_rfile}" "${_lo_dom}"; do
+        for _lo_f in "${_lo_hi}" "${hi_res_init_oro}" "${_lo_u24}" "${_lo_rfile}"; do
                 if [ -z "${_lo_f}" ] || [ ! -f "${_lo_f}" ]; then
                         echo " !!! update_orography_lo_res_from_high_res: missing file >${_lo_f}<"
                         echo " !!! (set oro_lo_res_source: restart under echam: to add the"
@@ -615,6 +736,11 @@ update_orography_lo_res_from_high_res() {
                         exit 49
                 fi
         done
+        if ! update_orography_changed_mask; then
+                echo " !!! update_orography_lo_res_from_high_res: could not build ${_lo_chg} (see cdo_stderr_ice2echam)"
+                echo " S T O P  49"
+                exit 49
+        fi
 
         cdo -s griddes -selname,OROMEA ${_lo_u24} > lo_grid.txt
         # change since the reference, on T511, then area mean on the ECHAM grid
@@ -626,7 +752,7 @@ update_orography_lo_res_from_high_res() {
                 lo_new.nc 2>>cdo_stderr_ice2echam
         ncks -O -v oromea ${_lo_rfile} lo_rst_raw.nc
         cdo -s -setgrid,lo_grid.txt lo_rst_raw.nc lo_rst.nc 2>>cdo_stderr_ice2echam
-        cdo -s -ifthenelse -gtc,0 -setmisstoc,0 -setgrid,lo_grid.txt ${_lo_dom} \
+        cdo -s -ifthenelse -setgrid,lo_grid.txt ${_lo_chg} \
                 lo_new.nc lo_rst.nc ${_lo_out} 2>>cdo_stderr_ice2echam
         if [ ! -s ${_lo_out} ]; then
                 echo " !!! update_orography_lo_res_from_high_res: building ${_lo_out} failed (see cdo_stderr_ice2echam)"
@@ -638,9 +764,9 @@ update_orography_lo_res_from_high_res() {
         # first update of an experiment that ran with the old regridding).
         _lo_stats=$(cdo -s -outputf,%.0f,3 -fldmax -abs -sub ${_lo_out} lo_rst.nc \
                         -fldsum -gtc,50 -abs -sub ${_lo_out} lo_rst.nc \
-                        -fldsum -setmisstoc,0 -gtc,0 -setgrid,lo_grid.txt ${_lo_dom} 2>>cdo_stderr_ice2echam \
+                        -fldsum -setgrid,lo_grid.txt ${_lo_chg} 2>>cdo_stderr_ice2echam \
                     | tr -s ' \n' ' ')
-        echo "                -   |OROMEA - restart OROMEA|: max, cells > 50 m, ice-domain cells: ${_lo_stats}"
+        echo "                -   |OROMEA - restart OROMEA|: max, cells > 50 m, changed cells: ${_lo_stats}"
         rm -f lo_grid.txt lo_anom.nc lo_new.nc lo_rst_raw.nc lo_rst.nc
 }
 
@@ -807,9 +933,17 @@ update_orography_generate_target_orography_file() {
                     echo " *  ${INIT_DIR_echam}/unit.24 not found!"
                 fi
 
-                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc -gtc,0 \
-                        -add ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
-                        ${COUPLE_DIR}/mask_oro_update.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                # Sub-grid parameters from CALNORO wherever the surface changed
+                # (ice, former ice, bedrock; see update_orography_changed_mask),
+                # unit.24 elsewhere. Without a high-resolution orography: the
+                # old rule, ice now or glacier in unit.24, inside the ice domains.
+                if update_orography_changed_mask; then
+                        cp ${COUPLE_DIR}/mask_oro_changed_${RES_echam}grid.nc ${COUPLE_DIR}/mask_oro_update.nc
+                else
+                        cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc -gtc,0 \
+                                -add ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
+                                ${COUPLE_DIR}/mask_oro_update.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                fi
 #                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
                 for VAR in "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
                 do

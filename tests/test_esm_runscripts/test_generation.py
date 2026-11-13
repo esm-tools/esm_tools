@@ -1,5 +1,7 @@
 """Tests for native runscript generation."""
 
+import pytest
+
 from esm_runscripts.pplan.plan import Workflow
 from esm_runscripts.runscript import generation
 
@@ -61,6 +63,21 @@ def test_compute_requirements_uses_execution_nproc_for_bash_kind():
 
     assert requirements.tasks == 33
     assert requirements.nodes == 3  # ceil(33 / 16)
+
+
+def test_cores_per_node_raises_for_an_unknown_queue():
+    config = _config()
+
+    with pytest.raises(ValueError, match="pp"):
+        generation._cores_per_node(config, "pp")
+
+
+def test_compute_requirements_raises_for_an_unknown_multi_step():
+    config = _config()
+    workflow = Workflow.default(config)
+
+    with pytest.raises(KeyError, match="nonexistent"):
+        generation.compute_requirements(workflow, "nonexistent", config)
 
 
 def test_batch_header_lines_substitutes_tags():

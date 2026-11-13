@@ -17,7 +17,9 @@ from ..runscript.generation import generate_runscript, get_run_filename, write_r
 
 def launch_local(workflow: "Workflow", multi_step_name: str, config: dict) -> dict:
     """Write ``multi_step_name``'s runscript and run it directly, no
-    scheduler."""
+    scheduler. Returns ``config`` unchanged -- launching is fire-and-forget
+    here too (see :func:`launch_batch`); any effect the run itself has on
+    ``config`` happens in the spawned process, not this one."""
     context = generate_runscript(workflow, multi_step_name, config)
     path = get_run_filename(config, multi_step_name)
     write_runscript(context, path, executable=True)
@@ -28,7 +30,14 @@ def launch_local(workflow: "Workflow", multi_step_name: str, config: dict) -> di
 
 def launch_batch(workflow: "Workflow", multi_step_name: str, config: dict) -> dict:
     """Write ``multi_step_name``'s runscript and submit it to the
-    scheduler named by ``computer.batch_system``."""
+    scheduler named by ``computer.batch_system``. Returns ``config``
+    unchanged: submission is fire-and-forget -- the scheduler queues the
+    job and this call returns immediately, well before anything the job
+    itself would do to ``config`` has happened. Unlike
+    :func:`~esm_runscripts.execution.dispatch.run_in_process`, whose
+    return value reflects real work already done, a ``LOCAL``/``BATCH``
+    result in :func:`~esm_runscripts.execution.dispatch.advance`'s output
+    dict means "launched", not "finished"."""
     context = generate_runscript(workflow, multi_step_name, config)
     path = get_run_filename(config, multi_step_name)
     write_runscript(context, path, executable=False)

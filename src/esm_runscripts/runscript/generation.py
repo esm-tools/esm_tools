@@ -14,11 +14,10 @@ pass, with three separate, pure(r) steps:
   it executable for the shell case.
 
 Deliberately NOT covered yet (see ``batch_system/__init__.py`` for why):
-the MPMD ``srun --multi-prog`` hostfile launcher, and in-script
-self-resubmission (legacy's ``observe_call``) -- today's
-:class:`MultiStep`/:class:`Plan` always run one executable per job, and
-resubmission is triggered by :func:`esm_runscripts.execution.dispatch.advance`
-from outside the job, not by the job re-invoking itself.
+the MPMD ``srun --multi-prog`` hostfile launcher -- today's
+:class:`MultiStep`/:class:`Plan` always run one executable per job. In-script
+self-resubmission *is* covered -- see :func:`observe_call_line` and
+:mod:`esm_runscripts.execution.observe`.
 """
 
 from __future__ import annotations
@@ -73,12 +72,26 @@ class RunscriptContext(ProvenanceFreeModel):
 
 def _cores_per_node(config: dict, queue: Optional[str]) -> int:
     partitions = config["computer"]["partitions"]
-    partition = partitions.get(queue) if queue else None
-    if partition is None:
-        # Fall back to whichever partition exists, matching legacy's own
-        # assumption that every computer defines at least "compute" or "pp".
-        partition = next(iter(partitions.values()))
-    return partition["cores_per_node"]
+    if queue is None:
+        # No queue named -- fall back to whichever partition exists,
+        # matching legacy's own assumption that every computer defines at
+        # least "compute" or "pp".
+        return next(iter(partitions.values()))["cores_per_node"]
+    if queue not in partitions:
+        raise ValueError(
+            f"run_on_queue={queue!r} names a partition that doesn't exist "
+            f"in computer.partitions (known: {sorted(partitions)})."
+        )
+    return partitions[queue]["cores_per_node"]
+
+
+def _multi_step_execution(workflow: Workflow, multi_step_name: str):
+    if multi_step_name not in workflow.multi_step_execution:
+        raise KeyError(
+            f"No MultiStepExecution found for {multi_step_name!r} -- known: "
+            f"{sorted(workflow.multi_step_execution)}."
+        )
+    return workflow.multi_step_execution[multi_step_name]
 
 
 def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict) -> ResourceRequirements:
@@ -92,7 +105,7 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
     reads the already-known ``MultiStepExecution.nproc`` directly instead
     of re-deriving it from the legacy workflow dict.
     """
-    execution = workflow.multi_step_execution[multi_step_name]
+    execution = _multi_step_execution(workflow, multi_step_name)
     parent_execution = workflow.execution_of(multi_step_name)
     cores_per_node = _cores_per_node(config, parent_execution.run_on_queue)
 
@@ -166,7 +179,7 @@ def batch_header_lines(
         if not any(v.strip() == "" for v in values):
             flags.append(conditional)
 
-    execution = workflow.multi_step_execution[multi_step_name]
+    execution = _multi_step_execution(workflow, multi_step_name)
     if execution.kind == MultiStepKind.ESM_MULTISTEP and multi_step_name in ("prepcompute", "tidy"):
         flags.append("exclusive_flag")
 
@@ -234,7 +247,7 @@ def observe_call_line(config: dict, multi_step_name: str) -> str:
 
 
 def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_batch: bool) -> List[str]:
-    execution = workflow.multi_step_execution[multi_step_name]
+    execution = _multi_step_execution(workflow, multi_step_name)
     if execution.kind != MultiStepKind.ESM_MULTISTEP:
         batch_or_shell = "batch" if is_batch else "shell"
         return dataprocess.sub_plan_tasks(config, multi_step_name, batch_or_shell)

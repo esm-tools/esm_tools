@@ -60,7 +60,12 @@ def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, con
     ``config`` passed in (not threaded sequentially through each other's
     result) -- fan-out targets are independent resubmissions, matching
     legacy's own ``resubmit_recursively``, which never chains one target's
-    output into the next.
+    output into the next. A target's entry means "dispatched", not
+    necessarily "finished": ``run_in_process`` really has run by the time
+    it returns, so its entry reflects real work done; ``launch_local``/
+    ``launch_batch`` return ``config`` unchanged, since launching a
+    process or submitting to a scheduler is fire-and-forget -- their
+    entry means "launched".
     """
     results = {}
     for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, []):

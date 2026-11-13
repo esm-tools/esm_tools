@@ -124,7 +124,17 @@ def main(**command_line_config):
     """esm_runscripts: build a simulation's config, then run or debug it."""
     logger.add(sys.stdout, level="WARNING", format="{message}")
 
-    command_line_config["jobtype"] = command_line_config["task"]
+    task = command_line_config["task"]
+    observing_multi_step = (
+        task[len("observe_") :]
+        if command_line_config["wf_engine"] == "pplan" and task.startswith("observe_")
+        else None
+    )
+    # Build config/Workflow for the step actually being observed, not a
+    # synthetic "observe_<step>" jobtype that doesn't correspond to any
+    # real MultiStep -- Workflow.resolve() has no reason to know about
+    # "observe_compute", only "compute".
+    command_line_config["jobtype"] = observing_multi_step or task
     command_line_config["use_venv"] = _resolve_use_venv(command_line_config)
     command_line_config["motd"] = not command_line_config.pop("no_motd")
     command_line_config["original_command"] = " ".join(sys.argv[1:]).strip()
@@ -136,9 +146,8 @@ def main(**command_line_config):
     sim = Simulation.from_config(config)
 
     if command_line_config["wf_engine"] == "pplan":
-        task = command_line_config["task"]
-        if task.startswith("observe_"):
-            _run_observe(task[len("observe_") :], sim.plan, sim.config)
+        if observing_multi_step is not None:
+            _run_observe(observing_multi_step, sim.plan, sim.config)
             return
         drop_into_pplan_debug(sim.plan, sim.config)
         return

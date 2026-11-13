@@ -32,8 +32,8 @@ from pydantic import ConfigDict
 
 class SubPlanKind(StrEnum):
     """What a :class:`SubPlan` fundamentally is, orthogonal to how or where
-    it runs (that's :attr:`SubPlan.launch_mode`/:attr:`SubPlan.concurrent`,
-    and the :class:`Plan` it belongs to)."""
+    it runs (that's :attr:`SubPlan.launch_mode` and the :class:`Plan` it
+    belongs to)."""
 
     ESM_SUBPLAN = enum.auto()
     """A Python recipe -- steps resolved and executed one at a time through
@@ -76,6 +76,21 @@ class Executor(StrEnum):
     scheduler command name, since esm_tools supports more than one."""
 
 
+class OrderInCluster(StrEnum):
+    """How a cluster's sub-plans share their allocation (legacy
+    ``workflow.py``'s ``order_in_cluster``, controlling whether
+    :attr:`Plan.nproc` is the max or the sum of its sub-plans' ``nproc``)."""
+
+    SEQUENTIAL = enum.auto()
+    """Sub-plans run one after another, same allocation -- ``Plan.nproc``
+    is the max of its sub-plans' ``nproc``. Legacy default."""
+
+    CONCURRENT = enum.auto()
+    """Sub-plans run side by side, sharing one allocation -- backgrounded
+    (``&``) with a trailing ``wait``. ``Plan.nproc`` is the sum of its
+    sub-plans' ``nproc``."""
+
+
 class Step(ProvenanceFreeModel):
     """A single recipe step (``p-plan:Step``) -- a function or bash script
     that makes up a :class:`SubPlan`, run sequentially."""
@@ -93,19 +108,20 @@ class SubPlan(ProvenanceFreeModel):
 
     The finer-grained level inside a :class:`Plan` cluster -- e.g.
     ``prepcompute``, ``compute``, ``tidy``, or a coupling phase like
-    ``couple_in``.
+    ``couple_in``. ``step_of_plan`` is ``p-plan:isStepOfPlan`` (domain
+    ``Step``, range ``Plan``) -- MultiStep is also a Step, so this is the
+    property that names which cluster it's batched into.
     """
 
     model_config = ConfigDict(frozen=True)
 
     name: str
-    parent_plan: str
+    step_of_plan: str
     nproc: int = 1
     preceded_by: List[str] = []
     steps: List[Step] = []
     kind: SubPlanKind = SubPlanKind.ESM_SUBPLAN
     launch_mode: Optional[LaunchMode] = None
-    concurrent: bool = False
     # Legacy's conditional-skip mechanism (workflow.skip_plan: run_only,
     # skip_chunk_number, skip_run_number) is cycling-condition territory --
     # belongs in Plan.cycling once that's shaped, not modeled here.
@@ -116,8 +132,6 @@ class SubPlan(ProvenanceFreeModel):
             bits.append(f"preceded_by={','.join(self.preceded_by)}")
         if self.launch_mode:
             bits.append(f"launch_mode={self.launch_mode.value}")
-        if self.concurrent:
-            bits.append("concurrent=True")
         return f"<SubPlan {self.name}  {' '.join(bits)}>"
 
 
@@ -139,7 +153,7 @@ class Plan(ProvenanceFreeModel):
     preceded_by: List[str] = []
     next_submit: List[str] = []
     nproc: Optional[int] = None
-    order_in_cluster: Optional[str] = None
+    order_in_cluster: Optional[OrderInCluster] = None
     executor: Optional[Executor] = None
     run_on_queue: Optional[str] = None
     cycling: Optional[dict] = None
@@ -181,7 +195,7 @@ class Workflow(ProvenanceFreeModel):
 
     def parent_plan_of(self, sub_plan_name: str) -> Plan:
         """The cluster (:class:`Plan`) that a sub-plan is batched into."""
-        return self.plans[self.sub_plans[sub_plan_name].parent_plan]
+        return self.plans[self.sub_plans[sub_plan_name].step_of_plan]
 
     @classmethod
     def from_config(cls, config: dict) -> "Workflow":
@@ -197,8 +211,11 @@ class Workflow(ProvenanceFreeModel):
         sub_plans = {
             name: SubPlan(
                 name=name,
+                step_of_plan=conf.get("parent_plan", name),
                 **_only_known_fields(
-                    SubPlan, conf, exclude=frozenset({"preceded_by"})
+                    SubPlan,
+                    conf,
+                    exclude=frozenset({"preceded_by", "step_of_plan"}),
                 ),
                 preceded_by=_as_list(conf.get("preceded_by")),
             )
@@ -262,17 +279,17 @@ class Workflow(ProvenanceFreeModel):
 
         sub_plans = {
             "prepcompute": SubPlan(
-                name="prepcompute", parent_plan="prepcompute", nproc=1
+                name="prepcompute", step_of_plan="prepcompute", nproc=1
             ),
             "compute": SubPlan(
                 name="compute",
-                parent_plan="compute",
+                step_of_plan="compute",
                 nproc=tasks,
                 preceded_by=["prepcompute"],
                 launch_mode=LaunchMode.BACKGROUND,
             ),
             "tidy": SubPlan(
-                name="tidy", parent_plan="tidy", nproc=1, preceded_by=["compute"]
+                name="tidy", step_of_plan="tidy", nproc=1, preceded_by=["compute"]
             ),
         }
 
@@ -404,10 +421,12 @@ def _collect_extra_sub_plans(config: dict):
             preceded_by = _as_list(conf.get("preceded_by"))
             sub_plan = SubPlan(
                 name=name,
-                parent_plan=name,
+                step_of_plan=name,
                 preceded_by=preceded_by,
                 **_only_known_fields(
-                    SubPlan, conf, exclude=frozenset({"preceded_by"})
+                    SubPlan,
+                    conf,
+                    exclude=frozenset({"preceded_by", "step_of_plan"}),
                 ),
             )
             extra_sub_plans[name] = sub_plan

@@ -113,7 +113,7 @@ def test_advance_dispatches_every_target_in_an_n_way_fan_out(monkeypatch):
     )
 
     sub_plans = {
-        name: plan_module.SubPlan(name=name, parent_plan=name)
+        name: plan_module.SubPlan(name=name, step_of_plan=name)
         for name in ("alpha", "beta", "gamma")
     }
     plans = {

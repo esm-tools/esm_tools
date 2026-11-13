@@ -37,7 +37,7 @@ def test_workflow_from_config_default_chain(shared_datadir):
     compute = wf.sub_plans["compute"]
     assert isinstance(compute, SubPlan)
     assert compute.preceded_by == ["prepcompute"]
-    assert compute.parent_plan == "compute"
+    assert compute.step_of_plan == "compute"
 
     parent = wf.parent_plan_of("compute")
     assert isinstance(parent, Plan)
@@ -96,7 +96,7 @@ def test_models_are_frozen(shared_datadir):
 
 
 def test_subplan_defaults_for_new_fields():
-    sub_plan = SubPlan(name="prepare", parent_plan="initialization")
+    sub_plan = SubPlan(name="prepare", step_of_plan="initialization")
 
     assert sub_plan.steps == []
     assert sub_plan.kind == "esm_subplan"
@@ -110,7 +110,7 @@ def test_plan_defaults_for_new_fields():
 
 
 def test_run_steps_is_a_noop_for_an_empty_steps_list():
-    sub_plan = SubPlan(name="prepare", parent_plan="initialization")
+    sub_plan = SubPlan(name="prepare", step_of_plan="initialization")
     config = {"general": {"setup_name": "awicm3"}}
 
     result = run_steps(sub_plan, config)
@@ -150,7 +150,7 @@ def test_run_steps_resolves_and_runs_via_esm_plugin_manager(monkeypatch):
 
     sub_plan = SubPlan(
         name="prepare",
-        parent_plan="initialization",
+        step_of_plan="initialization",
         steps=[Step(name="_read_date_file"), Step(name="check_model_lresume")],
     )
     config = {"general": {"setup_name": "awicm3"}}
@@ -239,24 +239,6 @@ def test_workflow_resolve_does_not_raise_for_an_empty_supplemental_block():
     wf = Workflow.resolve(config)
 
     assert wf.entry_point == "prepcompute"
-
-
-def test_subplan_coerces_bool_with_provenance():
-    # Real cluster crash: esm_parser YAML values aren't plain bool/int/str --
-    # they're wrapped (e.g. BoolWithProvenance) to carry provenance info.
-    # BoolWithProvenance fakes isinstance(v, bool) == True in pure Python
-    # but isn't the literal C-level bool pydantic-core's Rust validator
-    # checks, so an isinstance-based coercion guard silently passes it
-    # through unconverted and pydantic-core rejects it (bool_type error).
-    from esm_parser.provenance import BoolWithProvenance
-
-    sub_plan = SubPlan(
-        name="postprocessing",
-        parent_plan="postprocessing",
-        concurrent=BoolWithProvenance(True, provenance=None),
-    )
-    assert sub_plan.concurrent is True
-    assert type(sub_plan.concurrent) is bool
 
 
 def test_plan_accepts_none_with_provenance():

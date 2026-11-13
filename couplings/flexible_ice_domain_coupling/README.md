@@ -127,7 +127,9 @@ therefore go through the same code path they always did.
 
 ## 2. Configuring it
 
-`examples/` contains a complete, runnable-shaped set:
+`examples/ready_to_run/` contains two experiments that can be submitted as they
+are — `greenland_only/` and `dual_hemisphere/`; see **RUNNING.md**.
+`examples/` itself contains a complete, runnable-shaped set:
 
 ```
 awiesm_pism_multi_domain.yaml   the coupling runscript: model1 = AWI-ESM,
@@ -139,6 +141,9 @@ pism_nh.yaml / pism_sh.yaml / pism_gris.yaml   one per ice domain
 reference_mono/   the pi_ctl_1x1_icb runscripts, migrated to this tree
 reference_dual/   the spinup_20260818 runscripts, migrated to this tree
 ```
+
+**RUNNING.md** documents how the runscripts have to look and which switches
+exist; this section only sketches the shape.
 
 `reference_mono/` and `reference_dual/` are the two production experiments this
 tree has to replace `couplings/` and `couplings/coupling_dual-hemisphere/` for.
@@ -200,6 +205,7 @@ utils/apply_hosing_correction.py   accepts any number of (discharge, area) pairs
 utils/                             otherwise unchanged
 examples/                          runscripts, incl. both migrated reference experiments
 
+RUNNING.md              how to set up and run an experiment: runscripts + switches
 MIGRATION.md            how to run the two reference experiments with this tree
 CHANGES-vs-REFERENCE.md what can move numbers relative to those reference runs
 ```
@@ -271,6 +277,68 @@ they are the parts worth reviewing.
     `ice2fesom` looks.
 
 ---
+
+11. **Ocean anomaly forcing ported from the dual-hemisphere tree.**
+    `ANOMALY_OCEAN_TEMPERATURE` / `ANOMALY_OCEAN_SALINITY` were exported by the
+    env scripts of *both* older trees but only ever implemented in
+    `coupling_dual-hemisphere` — in the single ice sheet tree they were dead
+    settings. `ic_oce2pism_anoforce_*` now lives in
+    `pism/coupling_ocean2pism.functions` and runs per domain on
+    `${PISM_OCEAN_FORCING_FILE}`, which already points into
+    `${ICE_COUPLE_DIR}`, so each ice sheet gets its own anomaly against its own
+    `REFERENCE_OCEAN_FNAME` / `BASE_STATE_OCEAN_FNAME`. The arithmetic and the
+    `ncks -A -xv` merge-back are unchanged from the dual version. The two files
+    have to be set: the dual version fell back to Antarctic 16 km files, which
+    would silently be wrong for any other domain, so it now stops (exit 2).
+    The temperature clip at -260 (degC, so never active) is gone; salinity is
+    still clipped at 0.
+
+12. **`ice_surface_temp` in the PDD forcing, ported from the dual-hemisphere
+    tree.** `ic_atm2pism_ablation_pdd_set_ice_surface_temperature_from_temperature`
+    computes `min(time-mean air_temp, 273.15)`, broadcast over the time axis,
+    and `ic_atm2pism_ablation_pdd_merge_preliminary_files` adds it to
+    `atmo_given_file.nc`. This affects only the `PDD` ablation path; `DEBM`
+    and `EBM` are untouched. Set `PDD_ICE_SURFACE_TEMP: 0` in the ice domain's
+    section for the plain temp+precip file this tree wrote before.
+
+13. **`orog_reference_pism` accepts only `0` and `1`.** The branch had one
+    test for `0`, one for `1`-at-chunk-2 and a catch-all `else`, so every other
+    value — `4` in the mono reference runscript — silently took the legacy
+    path and a typo could not be noticed. `pism2atmosphere` now validates the
+    value up front and stops with exit 43, the way `oro_update_var` does.
+    `0` is the legacy mode (anomaly against the chunk's PISM input); `1` hands
+    over the absolute ice sheet surface at the first coupling of each ice
+    domain and the change over each chunk afterwards (it used to key on
+    `CHUNK_NUMBER_pism == 2`, which in a dual run is the first coupling of
+    `pism_nh` only). `4` has to be written as `0`, which differs only in that
+    no `ice_orog.nc_BAK` is left behind.
+
+14. **`correct_lonlat_order` now follows the file, not the mode.**
+    `pism_atmosphere_generate_orography_anomaly` tested
+    `orog_reference_pism != 1`, so mode 1 skipped the lon/lat correction in
+    *every* chunk -- including the chunks where it does write
+    `ice_orog_difference.nc`. It now tests the same condition
+    `pism_atmosphere_assemble_final_file` uses, i.e. it corrects the file
+    whenever the anomaly was written and skips it only at the first coupling
+    with `orog_reference_pism=1`, where `ice_orog.nc` is written instead.
+    Mode 0 is unaffected; mode 1 changes for every later coupling.
+
+15. **`regrid_to_echam` falls back to `remapbil` when the ice grid has no cell
+    corners.** The default remapper for the masks and the discharge is
+    `remapcon2`, which needs cell corner coordinates. The Greenland griddes in
+    the PISM pool carries `xbounds`/`ybounds`; the Antarctic 8 km one does not,
+    so `cdo` aborted with "Source grid cell corner coordinates missing!",
+    produced no `*_T63grid.nc`, and the failure only surfaced much later as nco
+    file-not-found errors while `ice2echam` still reported success. The decision
+    is now per domain: conservative where the grid supports it, `remapbil` with
+    a warning where it does not, and a hard stop (exit 47) if a remap produces
+    no output at all.
+
+    `remapbil` is *not* conservative, which matters for `ice_discharge` --
+    stage an `ice.griddes` carrying `xbounds`/`ybounds` in that domain's couple
+    directory to keep the conservative path. Note the released dual-hemisphere
+    coupling passed `remapbil` explicitly for every field, so a domain taking
+    the fallback matches that behaviour rather than departing from it.
 
 ## 5. Iceberg discharge: per domain or combined
 

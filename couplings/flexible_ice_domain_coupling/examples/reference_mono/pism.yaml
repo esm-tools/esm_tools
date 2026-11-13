@@ -48,7 +48,7 @@ pism:
         select_min_glacial_depth: 1
         downscale_precip: 0
         multi_year_mean_smb: 1
-        orog_reference_pism: 4
+        orog_reference_pism: 0                    # CHANGED (was 4; only 0/1 are accepted now, and 4 behaved as 0)
         iceberg_coupling: 1
         #reduce_temp: False
         #reduce_temp_by: "anom"
@@ -136,3 +136,11 @@ pism:
               #          submit_to_batch_system: True
               #          script: post_pism_archive.sh ${general.expid} ${general.chunk_start_date!syear} ${general.chunk_end_date!syear} ${general.nyear}
               #          run_only: last_run_in_chunk
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1

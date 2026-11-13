@@ -1,0 +1,199 @@
+# ---------------------------------------------------------------------------
+# DUAL HEMISPHERE -- the ESM side (ECHAM6/JSBACH + FESOM2), AWI-ESM 2.6.1.
+# Submitted through awiesm_pism.yaml, not directly.
+#
+# Nothing here knows that there are two ice sheets: env_awiesm.py derives
+# ICE_DOMAINS from the modelN sections of awiesm_pism.yaml, and ice2echam /
+# ice2fesom loop over that list and reduce the per-domain results onto the
+# global grids.
+# ---------------------------------------------------------------------------
+general:
+    setup_name: "awiesm"
+    version: "2.6.1"
+    account: "ba1587"
+    compute_time: "03:00:00"
+    initial_date: "3140-01-01"
+    final_date: "3500-12-31"
+    base_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6"
+    restart_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6/AWIESM26_spinup/restart"
+    # The coupling tree. Must be absolute: a path starting with "." would be
+    # resolved against the runscript directory, not against script_dir.
+    script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    with_icb: True
+    with_wiso: False
+    use_venv: False
+    # Global products of ice2echam -- written once, after BOTH ice domains have
+    # been reduced, so no domain prefix here.
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1
+    taskset: true
+
+awiesm:
+    postprocessing: false
+    model_dir: "/work/ab0246/a270124/model_codes/testing_and_debugging/awiesm-2.6.1/"
+
+echam:
+    lresume: 0
+    ini_parent_dir: "${restart_dir}/echam/"
+    ini_parent_date: "31391231"
+    ini_parent_exp_id: "AWIESM26_spinup"
+    restart_rate: 1
+    restart_unit: "years"
+    namelist_dir: "/home/a/a270124/namelists/production/echam"
+    scenario_type: PI-CTRL
+    ##################################
+    # ice sheet -> ECHAM coupling
+    oro_update_mod: 1              # 0 = legacy, 1 = masked (OROXXX from T511, OROMEA from T63)
+    oro_update_var: "OROMEA"       # exactly "OROMEA" or "GEOSP" -- the check is case sensitive
+    albedo_on_glaciers: 0.7
+    glacial_threshold: 0.5
+    # The glacier fraction prescribed in unit.24 is cleared wherever EITHER ice
+    # domain is active (the reduced ice domain mask). Export
+    # ISM_TO_ECHAM_reset_glac_in_ice_domain=0 to keep the prescribed field.
+    ##################################
+    add_namelist_changes:
+        namelist.echam:
+            radctl:
+                lrad_async: False
+                yr_perp: remove_from_namelist
+            runctl:
+                l_orbvsop87: false
+                default_output: false
+            wisoctl:
+                lwiso_rerun: false
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                # One driver for any number of ice domains -- the old
+                # coupling_dual-ice2echam.functions has no successor.
+                script: coupling_ice2echam.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: ice2echam
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_echam2ice.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: echam2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: last_run_in_chunk
+
+jsbach:
+    dynamic_vegetations: True
+    input_sources:
+        jsbach_1850: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850_ICEv2.nc"
+    namelist_dir: "/work/ba0989/a270124/PalModII/configs/namelists_jsbach/"
+
+oasis3mct:
+    lresume: 0
+    ini_parent_dir: "${restart_dir}/oasis3mct/"
+    ini_parent_date: "31391231"
+    ini_parent_exp_id: "AWIESM26_spinup"
+
+fesom:
+    nx: 132273
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: 1
+    ini_parent_dir: "${restart_dir}/fesom/"
+    ini_parent_date: "31391231"
+    ini_parent_exp_id: "AWIESM26_spinup"
+    tar_binary_restarts: true
+    mesh_dir: "/home/a/a270146/meshes/AWIESM-2.1-wiso/PI_ICEv2/"
+    rotate: False
+    use_cav: True
+    climate_data_dir: "/work/ab0246/a270124/awiesm_pool/"
+    ############################
+    # icebergs -- ONE FILE PER ICE DOMAIN
+    # With more than one ice domain ICE_DISCHARGE_MERGE defaults to 0, so the
+    # coupling writes ${couple_dir}/<domain>/latest_discharge.nc for each
+    # domain and no combined file. Each domain keeps its native ice grid, which
+    # is what the iceberg module wants: basin_file, domain and scaling_factor
+    # are per-entry too, and the order of the lists must match disch_file.
+    # (To get a single combined file instead, export ICE_DISCHARGE_MERGE=1 and
+    # set ice_discharge_target_grid -- the two native grids differ, so they have
+    # to be summed on a common one.)
+    fesom_use_iceberg: 1
+    ini_iceberg_dir: "/home/a/a270124/icebergs/dummy/"
+    ini_disch_file:
+        - "/home/a/a270124/icebergs/sh_scaled/latest_discharge.nc"
+        - "/home/a/a270124/icebergs/greenland_future/latest_discharge.nc"
+    disch_file:
+        - "${general.experiment_couple_dir}/pism_sh/latest_discharge.nc"
+        - "${general.experiment_couple_dir}/pism_nh/latest_discharge.nc"
+    basin_file:
+        - "/work/ba1066/a270124/pool_pism/basins/antarctica.16km.nc"
+        - "/home/a/a270124/icebergs/greenland_future/basins.nc"
+    domain:
+        - "sh"
+        - "greenland"
+    scaling_factor:
+        - 250
+        - 100
+        - 50
+        - 1
+        - 1
+    ############################
+    add_config_sources:
+        io: "/work/ba0989/a270124/PalModII/configs/namelists_fesom2.5/namelist.io.paleo_no_dmoc"
+    add_namelist_changes:
+        namelist.config:
+            icebergs:
+                turn_off_hf: False
+                turn_off_fw: False
+                cell_saturation: 2
+                lbalance_fw: False
+                l_cap_ibhf_n: True
+                l_allowgrounding: 1
+                steps_per_ib_step: 8
+            run_config:
+                use_cavity: True
+                use_cavity_partial_cell: True
+            paths:
+                ClimateDataPath: "${climate_data_dir}"
+
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2fesom.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: ice2fesom
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_fesom2ice.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: fesom2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: last_run_in_chunk

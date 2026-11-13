@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# DUAL HEMISPHERE  --  AWI-ESM 2.6.1 + PISM Greenland (5 km) + PISM Antarctica (8 km)
+#
+# Submit this file (the other three are pulled in by the "runscript:" keys):
+#
+#     cd <this directory>
+#     esm_runscripts awiesm_pism.yaml -e <your_expid>
+#
+# All four yaml files must sit in the same directory, and that has to be the
+# working directory when you submit -- ESM-Tools resolves "runscript:" against
+# the current directory, not against this file.
+#
+# Both ice sheets carry "ice_domain: True", so ICE_DOMAINS becomes
+# "pism_nh,pism_sh" and each one gets its own exchange directory
+# ${couple_dir}/pism_nh/ and ${couple_dir}/pism_sh/. That is the layout
+# configs/components/pism_nh and .../pism_sh already point their
+# atmo_forcing/ocean_forcing at, so those need no change.
+#
+# ice_domain_box clips each domain's contribution to its hemisphere before the
+# two are combined onto the global ECHAM/FESOM fields. It reproduces the
+# sellonlatbox clipping of the old dual-hemisphere driver; drop it to let a
+# domain's remapping halo contribute across the equator instead.
+#
+# A third ice sheet would be one more block exactly like these two, plus its
+# runscript and a configs/components/<name>/ pointing at
+# ${general.experiment_couple_dir}/<name>/. No coupling script changes.
+#
+# Everything in "general:" here wins over the same key in the component
+# runscripts, so keep this section minimal -- in particular do not put dates
+# here, the three components run on different calendars.
+# ---------------------------------------------------------------------------
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6"
+        account: ba1587
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        # Greenland
+        setup_name: pism_nh
+        runscript: pism_nh.yaml
+        chunk_size: 10
+        chunk_unit: "years"
+        ice_domain: True
+        ice_domain_box: "0,360,0,90"
+
+model3:
+        # Antarctica
+        setup_name: pism_sh
+        runscript: pism_sh.yaml
+        chunk_size: 10
+        chunk_unit: "years"
+        ice_domain: True
+        ice_domain_box: "0,360,-90,0"

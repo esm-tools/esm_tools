@@ -1,0 +1,129 @@
+# ---------------------------------------------------------------------------
+# DUAL HEMISPHERE -- northern ice domain: PISM 1.2.1, Greenland 5 km.
+# Submitted through awiesm_pism.yaml, not directly.
+#
+# general.setup_name must match model2.setup_name in awiesm_pism.yaml and the
+# directory name under configs/components/ -- that is the identifier the whole
+# scheme keys on. This domain's private exchange directory is
+# ${couple_dir}/pism_nh/, which is where configs/components/pism_nh points its
+# atmo_forcing/ocean_forcing.
+# ---------------------------------------------------------------------------
+general:
+        setup_name: pism_nh
+        compute_time: "00:40:00"
+        initial_date: "43670-01-01"
+        final_date: "600000-12-31"
+        base_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6"
+        script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"
+        nyear: 10
+        # Relative to ${couple_dir}, so these carry the domain prefix.
+        files_to_wait_for:
+            - "pism_nh/latest_atmo_forcing_file.nc"
+            - "pism_nh/latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism_nh:
+        version: "github1.2.1"
+        resolution: "5km"
+        domain: "greenland"           # PISM's own domain name, unrelated to the ice domain
+        model_dir: "/home/a/a270124/model_codes/pism/pism-v1.2.1/"
+        lresume: 1
+
+        nx: 301
+        ny: 561
+
+        ###################
+        # Settings for AWI-ESM <-> PISM coupling
+        ablation_method: "DEBM"       # PDD | DEBM | EBM  (case sensitive)
+        debm_path: "/home/a/a270124/model_codes/dEBM/Fortran/dEBMmain"
+        debm_beta: "WIND"
+        lapse_rate: -0.005
+        downscale_precip: 0
+        multi_year_mean_smb: 1
+        thk_threshold: 5.0
+        select_min_glacial_depth: 1
+        orog_reference_pism: 1             # 1 = hand ECHAM the absolute PISM surface at the first coupling, changes after that;
+                                           # needed whenever PISM starts from another ice sheet than ECHAM's orography.
+                                           # 0 = changes only: a start offset never reaches ECHAM.
+        iceberg_coupling: 1
+        iter_coup_interact_method_ice2oce: "BASALSHELF_WATER_ICEBERG_MODEL"
+        # regrid_method defaults to DOWNSCALE, the ocean interaction to
+        # OCEANTEMPSALT -- both are what this domain wants, so they are not set.
+        ###################
+
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+        spinup_file: "/work/ba0989/a270124/PalModII/experiments/pi_ctl_1x1/restart/pism/pi_ctl_1x1_pismr_restart_436690101-436691231.nc"
+        pool_dir: "/work/ba1066/a270124/pool_pism/"
+        ts_interval: "1"
+        ex_interval: "monthly"
+        force_bootstrap_first_run: False
+
+        kv_pairs:
+            stress_balance.model: "ssa+sia"
+            stress_balance.sia.max_diffusivity: 800
+            sia_e: 3.5
+            ssa_e: 1.0
+            basal_resistance.pseudo_plastic.q: 0.5
+            basal_resistance.pseudo_plastic.u_threshold: 100
+            basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.01
+            basal_yield_stress.mohr_coulomb.till_phi_default: 30
+            basal_yield_stress.mohr_coulomb.till_cohesion: 0
+            basal_yield_stress.mohr_coulomb.till_compressibility_coefficient: 0.12
+            hydrology.tillwat_max: 1
+            bed_deformation.model: "lc"
+            calving.methods: 'eigen_calving,thickness_calving'
+            calving.thickness_calving.threshold: 200
+            ocean.pik_melt_factor: "1e-2"
+            atmosphere.elevation_change.precip_lapse_rate: 0.0
+            atmosphere.elevation_change.smb_lapse_rate: 0.0
+            max_dt: 0.02
+
+        flags:
+            - "pik"
+            - "basal_resistance.pseudo_plastic.enabled"
+            - "basal_yield_stress.slippery_grounding_lines"
+
+        # File names are relative to this domain's couple directory, which the
+        # component config prefixes with ${couple_dir}/pism_nh/.
+        couplers:
+            surface:
+                given:
+                    files:
+                        surface_given_file: "latest_atmo_forcing_file.nc"
+                    kv_pairs:
+                        surface_given_period: 1
+            ocean:
+                th:
+                    files:
+                        ocean_th_file: "latest_ocean_forcing_file.nc"
+
+        workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: coupling_awiesm2pism.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: awiesm2pism
+                        env_preparation: ${general.script_dir}/envs/env_ice.py
+                        run_only: first_run_in_chunk
+
+                couple_out:
+                        nproc: 1
+                        run_after: tidy
+                        script: coupling_pism2awiesm.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: pism2awiesm
+                        env_preparation: ${general.script_dir}/envs/env_ice2awiesm.py
+                        run_only: last_run_in_chunk
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1

@@ -1,0 +1,186 @@
+# ---------------------------------------------------------------------------
+# GREENLAND-ONLY -- the ESM side (ECHAM6/JSBACH + FESOM2), AWI-ESM 2.1-paleodyn-2.5.
+# Submitted through awiesm_pism.yaml, not directly.
+#
+# Starts from the pi_spinup_3rd_cont_mid restarts (2120-12-31) and runs
+# 1-year chunks; the coupling subjobs at the bottom of the echam and fesom
+# sections are the only coupling-specific part.
+# ---------------------------------------------------------------------------
+general:
+    setup_name: "awiesm"
+    version: "2.1-paleodyn-2.5"
+    account: "ba0989"
+    compute_time: "01:00:00"
+    initial_date: "2121-01-01T00:00:00"
+    final_date: "2220-12-31T00:00:00"
+    base_dir: "/work/ba0989/a270124/PalModII/experiments"
+    restart_dir: "/work/ba0989/a270124/PalModII/experiments/pi_spinup_3rd_cont_mid/restart"
+    # The coupling tree. Must be absolute: a path starting with "." would be
+    # resolved against the runscript directory, not against script_dir.
+    script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"
+    nmonth: 0
+    nyear: 1
+    with_wiso: False
+    with_icb: True
+    use_venv: False
+    # Global products of ice2echam -- written once, after the (single) ice
+    # domain has been reduced, so no domain prefix here.
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+
+awiesm:
+    postprocessing: false
+    model_dir: "/home/a/a270124/model_codes/FIX.la/fix_icb/awiesm-2.1-paleodyn-2.5/"
+
+echam:
+    nproca: 24
+    nprocb: 24
+    nprocar: 0
+    nprocbr: 0
+    restart_rate: 1
+    restart_unit: "years"
+    lresume: False
+    ini_parent_dir: "${restart_dir}/echam/"
+    ini_parent_date: "21201231"
+    ini_parent_exp_id: "pi_spinup_3rd_cont_mid"
+    ##################################
+    # ice sheet -> ECHAM coupling
+    oro_update_mod: 1              # 0 = legacy, 1 = masked (OROXXX from T511, OROMEA from T63)
+    oro_update_var: "OROMEA"       # exactly "OROMEA" or "GEOSP" -- the check is case sensitive
+    albedo_on_glaciers: 0.7
+    glacial_threshold: 0.5
+    use_transient_forcing: False
+    # update_ice_orography / update_glacial_mask / update_land_runoff default
+    # to True; set them to False to switch off a single feedback.
+    ##################################
+    add_namelist_changes:
+        namelist.echam:
+            submodelctl:
+                lmethox: true
+                lco2: false
+            radctl:
+                iaero: 3
+                io3: 4
+                isolrad: 6
+                ich4: 3
+                in2o: 3
+                yr_perp: remove_from_namelist
+            co2ctl:
+                lco2_scenario: false
+            runctl:
+                l_orbvsop87: false
+                default_output: false
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2echam.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: ice2echam
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_echam2ice.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: echam2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: last_run_in_chunk
+
+jsbach:
+    dynamic_vegetations: True
+    input_sources:
+        jsbach_1850: "/work/ba0989/a270124/PalModII/experiments/pi_spinup_3rd_cont_mid/couple/jsbach_init_file_2120-01-01T00:00:00-2120-12-31T00:00:00.nc"
+    namelist_dir: "/work/ba0989/a270124/PalModII/namelists_jsbach/"
+
+oasis3mct:
+    lresume: False
+    ini_parent_dir: "${restart_dir}/oasis3mct/"
+    ini_parent_date: "21201231"
+    ini_parent_exp_id: "pi_spinup_3rd_cont_mid"
+
+fesom:
+    nproc: 384
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: 1
+    ini_parent_dir: "${restart_dir}/fesom/"
+    ini_parent_date: "21201231"
+    ini_parent_exp_id: "pi_spinup_3rd_cont_mid"
+    mesh_dir: "/work/ba0989/a270124/PalModII/experiments/ICEBERGS/mesh_core2/"
+    ############################
+    # icebergs
+    # One ice domain, so ICE_DISCHARGE_MERGE defaults to 1: the coupling writes
+    # a single ${couple_dir}/latest_discharge.nc on the native PISM grid, which
+    # is exactly what disch_file below points at. No target grid needed.
+    fesom_use_iceberg: 1
+    ini_iceberg_dir: "/home/a/a270124/icebergs/dummy/"
+    ini_disch_file: "/home/a/a270124/icebergs/greenland_future/latest_discharge.nc"
+    disch_file: "${general.experiment_couple_dir}/latest_discharge.nc"
+    basin_file: "/home/a/a270124/icebergs/greenland_future/basins.nc"
+    domain: "greenland"
+    rotate: False
+    scaling_factor:
+        - 100
+        - 50
+        - 10
+        - 1
+        - 1
+    ############################
+    add_config_sources:
+        io: "/work/ba0989/a270124/PalModII/configs/namelists_fesom2.5/namelist.io.paleo_no_dmoc"
+    add_namelist_changes:
+        namelist.tra:
+            tracer_phys:
+                use_momix: false
+        namelist.oce:
+            oce_dyn:
+                spp: true
+        namelist.config:
+            icebergs:
+                turn_off_hf: False
+                turn_off_fw: False
+                lbalance_fw: False
+                l_cap_ibhf_n: True
+                steps_per_ib_step: 8
+
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2fesom.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: ice2fesom
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_fesom2ice.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: fesom2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py
+                run_only: last_run_in_chunk
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1

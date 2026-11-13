@@ -55,7 +55,7 @@ echam:
     # LA: setups for coupling
     multi_year_mean: 0
     oro_update_mod: 1                             # CHANGED (was 6; same code, renumbered)
-    oro_update_var: "oromea"
+    oro_update_var: "OROMEA"                       # CHANGED (was "oromea"; the new tree matches GEOSP/OROMEA exactly)
     albedo_on_glaciers: 0.7 
     glacial_threshold: 0.5
     use_transient_forcing: False
@@ -183,3 +183,11 @@ fesom:
                 env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
                 run_only: last_run_in_chunk
     
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1

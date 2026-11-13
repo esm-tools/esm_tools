@@ -135,6 +135,22 @@ Verified: the mode-6 block of
 and the mode-1 block here are identical apart from one commented-out line.
 Modes 3, 4, 5 and 7 do not exist here — neither reference experiment uses them.
 
+## 4b. `oro_update_var` must now be spelled `OROMEA` or `GEOSP`
+
+`echam_ice_select_relevant_variables` here tests
+
+```sh
+if   [[ "x${oro_update_var}" == "xGEOSP"  ]]; then ...
+elif [[ "x${oro_update_var}" == "xOROMEA" ]]; then ...
+else echo " You have to choose either GEOSP or OROMEA. Exit with error! "; return 42
+```
+
+while the old tree only tested `== "xgeosp"` and let *everything else* fall
+into the OROMEA branch. Both reference runscripts relied on that: the mono one
+has `oro_update_var: "oromea"`, the dual one `"ormoea"` (a typo). Either would
+now abort `echam2ice`. Both migrated copies in `examples/` are corrected to
+`"OROMEA"`; check this line in any other runscript you migrate.
+
 ## 5. Things that silently do nothing now
 
 `multi_year_mean: 0` (echam) is set in both reference runscripts. It fed

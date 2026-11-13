@@ -1,0 +1,148 @@
+# ---------------------------------------------------------------------------
+# DUAL HEMISPHERE -- southern ice domain: PISM 1.2.1, Antarctica 8 km.
+# Submitted through awiesm_pism.yaml, not directly.
+#
+# Same shape as pism_nh.yaml; what differs is the physics, not the coupling.
+# This domain uses PDD instead of dEBM, PICO instead of the three-equation
+# ocean, and anomaly coupling against a piControl reference state.
+# Its private exchange directory is ${couple_dir}/pism_sh/.
+# ---------------------------------------------------------------------------
+general:
+        setup_name: "pism_sh"
+        compute_time: "00:59:59"
+        initial_date: "61850-01-01"
+        final_date: "62775-12-31"
+        base_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6"
+        script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"
+        nyear: 10
+        first_initial_year: 61850
+        lresume: 1
+        # Relative to ${couple_dir}, so these carry the domain prefix.
+        files_to_wait_for:
+            - "pism_sh/latest_atmo_forcing_file.nc"
+            - "pism_sh/latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism_sh:
+        version: "github1.2.1"
+        resolution: "08km"
+        domain: "antarct_cr"
+        model_dir: "/home/a/a270096/usr/share/pism.intel"
+        lresume: 1
+
+        ###################
+        # Settings for AWI-ESM <-> PISM coupling
+        ablation_method: "PDD"                     # PDD | DEBM | EBM  (case sensitive)
+        ocean_ablation_method: "PICO_OCEAN"        # -> iter_coup_interact_method_oce2ice
+        iter_coup_interact_method_ice2oce: "BASALSHELF_WATER_ICEBERG_MODEL"
+        lapse_rate: -0.005
+        iceberg_coupling: 1
+        USE_CAV_fesom: 1
+        # anomaly coupling against the piControl reference state
+        ANOMALY_AIR_TEMPERATURE: 1
+        ANOMALY_PRECIPITATION: 1
+        ANOMALY_OCEAN_TEMPERATURE: 1
+        ANOMALY_OCEAN_SALINITY: 1
+        REFERENCE_ATMOS_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/ATMForcing.piControl.08km.nc"
+        BASE_STATE_ATMOS_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/atmo_given_file_base_state.pictrl-withoutism.pism_sh.nc"
+        REFERENCE_OCEAN_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/OCEForcing.piControl.08km.nc"
+        BASE_STATE_OCEAN_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/ocean_forcing4pism_base_state.pictrl-withoutism.pism_sh.nc"
+        ###################
+
+        ini_parent_exp_id: "spinup16"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "/work/ab0246/a270096/esm-experiments/spinup16"
+        spinup_file: "/work/ab0246/a270096/share/pism/ANT.08km/production/PISM_ANT08km_1850_spinup16.nc"
+        pool_dir: "/work/ba1347/PISM/pool_pism_cr/"
+        ts_interval: "monthly"
+        ex_interval: "monthly"
+        force_bootstrap_first_run: False
+        PICO_basins_only_file: "/work/ab0246/a270096/share/pism/ANT.08km/production/OCEForcing.piControl.08km.nc"
+
+        kv_pairs:
+                title: AntarcticaPISM_sc2
+                max_dt: 0.83333334
+                stress_balance.model: "ssa+sia"
+                stress_balance.sia.max_diffusivity: 64000
+                sia_e: "2.5"
+                ssa_e: "0.512"
+                sia_n: "3.0"
+                ssa_n: "3.0"
+                hydrology: "null"
+                -bed_def: "lc"
+                bed_deformation.lc.update_interval: 1
+                calving: "eigen_calving,thickness_calving"
+                thickness_calving_threshold: 75
+                eigen_calving_K: "5.0e17"
+                front_retreat_file: "/work/ab0246/a270096/share/pism/ANT.08km/production/retreat_coupled.nc"
+                temp_lapse_rate: "-0.005"
+                number_of_boxes: 5
+                continental_shelf_depth: -800
+                exclude_icerises: yes
+                ocean.pico.maximum_ice_rise_area: "1.0e5"
+                overturning_coeff: "3.0e6"
+                gamma_T: "4.0e-6"
+                atmosphere: "given"
+                surface: "pdd"
+                pdd_std_dev: 3.5
+                surface.ppd.balance_year_start_day: 91
+
+        flags:
+                - front_retreat_cfl
+                - options_left
+                - pik
+                - no_subgl_basal_melt
+                - tauc_slippery_grounding_lines
+                - pseudo_plastic
+                - label_floating_holes
+
+        # File names are relative to this domain's couple directory, which the
+        # component config prefixes with ${couple_dir}/pism_sh/.
+        couplers:
+                surface:
+                    pdd:
+                        files:
+                            surface_pdd_file: "latest_atmo_forcing_file.nc"
+                        kv_pairs:
+                            surface_pdd_period: 1
+                atmosphere:
+                    given:
+                        files:
+                            atmosphere_given_file: "latest_atmo_forcing_file.nc"
+                        kv_pairs:
+                            atmosphere_given_period: 1
+                ocean:
+                    pico:
+                        files:
+                            ocean_pico_file: "latest_ocean_forcing_file.nc"
+                        kv_pairs:
+                            ocean_pico_period: 1
+
+        workflow:
+                next_run_triggered_by: couple_out
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                script: coupling_awiesm2pism.functions
+                                script_dir: ${general.script_dir}/pism
+                                call_function: awiesm2pism
+                                env_preparation: ${general.script_dir}/envs/env_ice.py
+                                run_only: first_run_in_chunk
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                script: coupling_pism2awiesm.functions
+                                script_dir: ${general.script_dir}/pism
+                                call_function: pism2awiesm
+                                env_preparation: ${general.script_dir}/envs/env_ice2awiesm.py
+                                run_only: last_run_in_chunk
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1

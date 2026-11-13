@@ -135,3 +135,11 @@ pism_nh:
               #          submit_to_batch_system: True
               #          script: post_pism_archive.sh ${general.expid} ${general.chunk_start_date!syear} ${general.chunk_end_date!syear} ${general.nyear}
               #          run_only: last_run_in_chunk
+
+computer:
+    # Python caches the bytecode of the env_*.py modules that esm_runscripts
+    # imports when it writes a subjob's run file. That cache write has been
+    # seen to fail with "ValueError: unmarshallable object", which kills the
+    # resubmission after a finished run. Nothing here needs the cache.
+    add_export_vars:
+        PYTHONDONTWRITEBYTECODE: 1

@@ -179,6 +179,14 @@ function ocean2pism {
             exit 3
     esac
 
+    # Ocean anomaly forcing for this ice domain (see ic_oce2pism_anomaly)
+    if [ "x${ANOMALY_OCEAN_TEMPERATURE:-0}" == "x1" ] ; then
+        ic_oce2pism_anomaly theta_ocean
+    fi
+    if [ "x${ANOMALY_OCEAN_SALINITY:-0}" == "x1" ] ; then
+        ic_oce2pism_anomaly salinity_ocean 0
+    fi
+
     #iterative_coupling_ocean_pism_set_options
     iterative_coupling_ocean_pism_regrid_set_time_axis ${PISM_OCEAN_FORCING_FILE}
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
@@ -509,9 +517,23 @@ function iterative_coupling_ocean_pism_prepare_pico_ocean_forcing {
     for _file in $_ofile $_bfile ; do
         if [ ! -f $_file ] ; then
             echo " Missing file $_file"
-            echo exit 99
+            echo " S T O P  99"
+            exit 99
         fi
     done
+
+    # Guard against the basins file being the forcing file itself, which is
+    # what happens when PISM_OCEAN_PICO_BASINS_FILE is unset: ncks would then
+    # be asked to copy "basins" from a file that does not have it, and PISM
+    # only fails much later with "Can't find 'basins' in the regridding file".
+    if ! ncdump -h $_bfile | grep -qE "[[:space:]]basins[[:space:]]*\(" ; then
+        echo ""
+        echo " !!! No 'basins' variable in >>${_bfile}<<"
+        echo " !!! PICO_OCEAN needs one. Set PICO_basins_only_file (or basin_file)"
+        echo " !!! in the ice domain's runscript section to a file that has it."
+        echo " S T O P  45"
+        exit 45
+    fi
 
     echo "Wrting basins from $_bfile to $_ofile"
     ncks -Av basins $_bfile $_ofile
@@ -934,6 +956,49 @@ function iterative_coupling_ocean_pism_fesom2pism_collapse_depth {
     cleanup_list="${cleanup_list} $(pwd)/${_file_input}"
 
     unset _cdovert_sel_flag _file_depth _file_input
+}
+
+## @fn ic_oce2pism_anomaly()
+## Call: ic_oce2pism_anomaly VAR [MIN]
+## Ocean anomaly forcing (ported from coupling_dual-hemisphere) on this
+## domain's ${PISM_OCEAN_FORCING_FILE}:
+##
+##     VAR = reference + (forcing - base state)      [clipped at MIN if given]
+##
+## i.e. the change of the ocean model since its base state, added to a
+## reference ocean. REFERENCE_OCEAN_FNAME and BASE_STATE_OCEAN_FNAME are set
+## in the ice domain's runscript section; both use the PISM names
+## (theta_ocean [degC], salinity_ocean [g/kg]) on this domain's grid.
+## Temperature is not clipped, salinity at 0. Stops (exit 2) if a file is
+## missing or the result could not be written.
+ic_oce2pism_anomaly() {
+    typeset _var=$1 _min=$2 _f
+    typeset _raw=${PISM_OCEAN_FORCING_FILE}.no_anomaly.nc
+    echo ""; echo -e "\t\t*   ocean anomaly forcing for ${_var}"
+    for _f in "${REFERENCE_OCEAN_FNAME}" "${BASE_STATE_OCEAN_FNAME}" "${PISM_OCEAN_FORCING_FILE}" ; do
+        if [ -z "${_f}" ] || [ ! -f "${_f}" ] ; then
+            echo " !!! ocean anomaly forcing: missing file >${_f}<"
+            echo " !!! (REFERENCE_OCEAN_FNAME and BASE_STATE_OCEAN_FNAME have to be set"
+            echo " !!!  in the ice domain's runscript section)"
+            echo " S T O P  2"
+            exit 2
+        fi
+    done
+
+    mv ${PISM_OCEAN_FORCING_FILE} ${_raw}
+    cdo -s -O -setvar,${_var} ${_min:+-maxc,${_min}} \
+        -add -selvar,${_var} ${REFERENCE_OCEAN_FNAME} \
+        -sub -selvar,${_var} ${_raw} \
+             -selvar,${_var} ${BASE_STATE_OCEAN_FNAME} \
+        ${PISM_OCEAN_FORCING_FILE}
+    # every other variable of the forcing file unchanged
+    ncks -A -x -v ${_var} ${_raw} ${PISM_OCEAN_FORCING_FILE}
+    if [ ! -s ${PISM_OCEAN_FORCING_FILE} ] ; then
+        echo " !!! ocean anomaly forcing for ${_var} failed: no ${PISM_OCEAN_FORCING_FILE}"
+        echo " S T O P  2"
+        exit 2
+    fi
+    rm -f ${_raw}
 }
 
 # -- last line

@@ -77,7 +77,14 @@ def prepare_environment(config):
         "DEBM_BETA": ice.get("debm_beta", 999),
         "MY_OBLIQUITY": ice.get("debm_obl", "23.441"),
         "MULTI_YEAR_MEAN_SMB": ice.get("multi_year_mean_smb", 1),
-        "PISM_OCEAN_PICO_BASINS_FILE": ice.get("basin_file", ""),
+        # PICO basin field. The dual-hemisphere tree called this
+        # "PICO_basins_only_file", the single ice sheet tree "basin_file";
+        # accept both so runscripts from either tree keep working. Empty means
+        # ocean2pism falls back to the domain's own ocean forcing file, which
+        # only carries "basins" if the ocean side put it there.
+        "PISM_OCEAN_PICO_BASINS_FILE": ice.get(
+            "PICO_basins_only_file", ice.get("basin_file", "")
+        ),
         "DOWNSCALING_LAPSE_RATE": ice.get("lapse_rate", -0.005),
         # Downscaling switches are read by atmosphere2pism, which runs in
         # couple_in -- so they have to be exported here and not only in

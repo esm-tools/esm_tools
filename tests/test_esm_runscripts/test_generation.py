@@ -22,11 +22,11 @@ def _config():
             "sh_interpreter": "/bin/bash",
             "header_start": "#SBATCH",
             "submit": "sbatch",
-            "partition_flag": "--partition=@partition@",
+            "partition_flag": "--partition={{ partition }}",
             "time_flag": "--time=01:00:00",
-            "tasks_flag": "--ntasks=@tasks@",
+            "tasks_flag": "--ntasks={{ tasks }}",
             "output_flags": "--output=slurm.out",
-            "name_flag": "--job-name=@jobtype@",
+            "name_flag": "--job-name={{ jobtype }}",
             "partitions": {"compute": {"name": "compute", "cores_per_node": 32}},
         },
     }
@@ -91,6 +91,16 @@ def test_batch_header_lines_substitutes_tags():
     assert "#SBATCH --partition=compute" in header
     assert "#SBATCH --ntasks=128" in header
     assert "#SBATCH --job-name=compute" in header
+
+
+def test_batch_header_lines_raises_for_a_flag_referencing_an_unknown_variable():
+    config = _config()
+    config["computer"]["name_flag"] = "--job-name={{ typo }}"
+    workflow = Workflow.default(config)
+    requirements = generation.ResourceRequirements(tasks=128, nodes=4)
+
+    with pytest.raises(Exception, match="typo"):
+        generation.batch_header_lines(workflow, "compute", requirements, config)
 
 
 def test_build_runscript_context_and_render_for_batch_executor(monkeypatch):

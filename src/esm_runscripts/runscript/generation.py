@@ -29,7 +29,7 @@ from typing import List, Optional
 
 import esm_environment
 from esm_parser.pydantic_models import ProvenanceFreeModel
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 from pydantic import ConfigDict
 
 from .. import dataprocess
@@ -43,6 +43,20 @@ _ENV = Environment(
     trim_blocks=True,
     lstrip_blocks=True,
 )
+
+# A separate, string-only Jinja environment for rendering one-line
+# computer.<flag> values (e.g. slurm.yaml's tasks_flag: "--ntasks={{
+# tasks }}") -- no loader/templates dir needed, just .from_string().
+# StrictUndefined so a flag referencing a name outside _HEADER_FLAG_VARS
+# (a typo, or a tag this code doesn't know about) raises immediately
+# naming it, rather than silently rendering as empty.
+_FLAG_ENV = Environment(undefined=StrictUndefined)
+
+_HEADER_FLAG_VARS = ("tasks", "nodes", "partition", "jobtype")
+"""The only variables a computer.<flag> value may reference inside
+``{{ }}`` -- see :func:`batch_header_lines`. Documented here and in a
+comment atop ``configs/other_software/batch_system/slurm.yaml``/
+``pbs.yaml``, the two files that actually use them."""
 
 
 class ResourceRequirements(ProvenanceFreeModel):
@@ -151,10 +165,10 @@ def shell_header_lines(config: dict) -> List[str]:
 def batch_header_lines(
     workflow: Workflow, multi_step_name: str, requirements: ResourceRequirements, config: dict
 ) -> List[str]:
-    """Scheduler header lines, reading ``computer.<flag>`` entries that
-    still use the ``@tag@`` substitution scheme (that's the external YAML
-    config contract, unrelated to the internal ``scb``/``ecb``
-    brace-escaping hack this replaces in ``slurm.py``)."""
+    """Scheduler header lines, reading ``computer.<flag>`` entries as
+    Jinja templates -- e.g. ``slurm.yaml``'s
+    ``tasks_flag: "--ntasks={{ tasks }}"`` -- with exactly the variables
+    in :data:`_HEADER_FLAG_VARS` available."""
     computer = config["computer"]
     batch_system = batch_system_by_name(computer["batch_system"])
 
@@ -163,11 +177,11 @@ def batch_header_lines(
     partition_name = parent_execution.run_on_queue or next(iter(partitions))
     partition = partitions[partition_name]["name"]
 
-    replacements = {
-        "@tasks@": str(requirements.tasks),
-        "@nodes@": str(requirements.nodes),
-        "@partition@": partition,
-        "@jobtype@": multi_step_name,
+    flag_vars = {
+        "tasks": requirements.tasks,
+        "nodes": requirements.nodes,
+        "partition": partition,
+        "jobtype": multi_step_name,
     }
 
     flags = ["partition_flag", "time_flag", batch_system.tasks_or_nodes_flag(), "output_flags", "name_flag"]
@@ -195,9 +209,8 @@ def batch_header_lines(
     if header_start is None:
         return lines
     for value in values:
-        for tag, replacement in replacements.items():
-            value = value.replace(tag, replacement)
-        lines.append(f"{header_start} {value}")
+        rendered = _FLAG_ENV.from_string(value).render(**flag_vars)
+        lines.append(f"{header_start} {rendered}")
     return lines
 
 

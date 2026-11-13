@@ -47,7 +47,8 @@ pism_nh:
         select_min_glacial_depth: 1
         downscale_precip: 0
         multi_year_mean_smb: 1
-        orog_reference_pism: 0 #4
+        orog_reference_pism: 1                    # CHANGED (was 4, i.e. 0: the offset between the PISM start
+                                                  # state and ECHAM's orography never reached ECHAM)
         #reduce_temp: False
         #reduce_temp_by: "anom"
         #temp2_bias_file: "/work/ba0989/a270124/PalModII/experiments/hist_awiesm-2.1/temp2.bias.bilT63.1948-2010.no_greenland.nc"

@@ -43,7 +43,11 @@ icon:
    # settings follow Trang's ICON-XPP CAP7 AMIP setup, see choose_amip below.
    # Combine with scenario: 'cmip7hist' for transient forcing.
    amip: False
-   # SST and sea ice used if amip: True (daily files, sstice_mode = 6):
+   # SST and sea ice used if amip: True (daily files, sstice_mode = 6), selected
+   # with sstice (choose_sstice). To add a dataset: process it to daily files
+   # {SST,SeaIce}_<name>_daily_<grid_id>_<resolution>_<grid_label>.nc (see the
+   # ceresmip repository, src/sst_seaice/) and add an entry with sstice_dir and
+   # sstice_name below. Do not run past the end date of the dataset.
    #   hadisst1p1:   CMIP7 CFMIP ImperialCollege-AMIP-HadISST1p1-1-0 (HadISST1.1),
    #                 1949-01 .. 2024-12, mid-month boundary conditions computed by
    #                 GEOMAR from the monthly means with the PCMDI (Taylor et al.,
@@ -51,19 +55,26 @@ icon:
    #   hadisst1p1-origbcs: as hadisst1p1, but with the tosbcs/siconcbcs of the
    #                 original dataset (sea ice not mean-preserving, ~16% too much
    #                 summer sea ice in ICON)
+   #   hadisst2p4:   HadISST 2.4.0.0 SST (ensemble member 001) + HadISST 2.2.1.0
+   #                 sea ice (Met Office), CERESMIP choice for the first runs,
+   #                 1949-01 .. 2021-12 (do not run past 2021-12-31), GEOMAR
+   #                 mid-month adjustment as hadisst1p1, see r0003/README.md
    #   pcmdi-1-1-10: CMIP7 PCMDI-AMIP-1-1-10 (HadISST1 + OISST v2.1) as used by
    #                 Trang's ICON-XPP AMIP setup, 1949-01 .. 2022-01-16
-   amip_sst: hadisst1p1
-   choose_amip_sst:
+   sstice: hadisst1p1
+   choose_sstice:
       hadisst1p1:
-         amip_sst_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0002
-         amip_sst_name: CFMIP_ImperialCollege-AMIP-HadISST1p1-1-0-midmonth_194901-202412
+         sstice_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0002
+         sstice_name: CFMIP_ImperialCollege-AMIP-HadISST1p1-1-0-midmonth_194901-202412
       hadisst1p1-origbcs:
-         amip_sst_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0001
-         amip_sst_name: CFMIP_ImperialCollege-AMIP-HadISST1p1-1-0_194901-202412
+         sstice_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0001
+         sstice_name: CFMIP_ImperialCollege-AMIP-HadISST1p1-1-0_194901-202412
+      hadisst2p4:
+         sstice_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0003
+         sstice_name: HadISST.2.4.0.0-member001_SIC-HadISST.2.2.1.0-midmonth_194901-202112
       pcmdi-1-1-10:
-         amip_sst_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
-         amip_sst_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
+         sstice_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
+         sstice_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
    # extpar file, JSBACH land files and surface namelist settings used if
    # amip: True (see choose_amip_surface in choose_amip below). The extpar file
    # and the JSBACH files must belong together (same land-sea mask; JSBACH
@@ -624,9 +635,9 @@ icon:
       kinne_fin: ${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1850.nc
 
       # SST / sea ice, only used if amip: True (see choose_amip), selected by
-      # amip_sst (see choose_amip_sst above)
-      sic: ${amip_sst_dir}/SeaIce_${amip_sst_name}_daily_${grid_id}_${resolution}_${grid_label}.nc
-      sst: ${amip_sst_dir}/SST_${amip_sst_name}_daily_${grid_id}_${resolution}_${grid_label}.nc
+      # sstice (see choose_sstice above)
+      sic: ${sstice_dir}/SeaIce_${sstice_name}_daily_${grid_id}_${resolution}_${grid_label}.nc
+      sst: ${sstice_dir}/SST_${sstice_name}_daily_${grid_id}_${resolution}_${grid_label}.nc
 
       # JSBACH
       # ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc

@@ -58,7 +58,7 @@ icon:
    # extpar, JSBACH land files and sea-ice snow albedo (see amip_surface in icon.yaml):
    # core2 = CORE2 extpar + 0012-CORE2/land/r00xx JSBACH files (as the R2B4 ICON-FESOM runs)
    amip_surface: core2
-   amip_sst: hadisst1p1
+   sstice: hadisst1p1
    scenario: 'cmip7hist'
    cmip7_scenario: m
    # ScenarioMIP ozone (2023-2025) for grid 0012, made by GEOMAR (not in the ICON-XPP pool)

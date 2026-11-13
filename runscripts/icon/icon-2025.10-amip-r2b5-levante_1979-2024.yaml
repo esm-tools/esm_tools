@@ -4,7 +4,7 @@
 # Model settings follow Trang's ICON-XPP CAP7 AMIP setup (mkexp, icon-mpim):
 #   - icon.amip: True       prescribed daily SST/sea ice, no ocean coupling, no HD,
 #                           namelists/icon/2025.10-public/R02B05/amip
-#   - icon.amip_sst         hadisst1p1: HadISST1.1 (CMIP7 CFMIP), mid-month adjusted
+#   - icon.sstice            hadisst1p1: HadISST1.1 (CMIP7 CFMIP), mid-month adjusted
 #                           by GEOMAR, 1949-2024 (alternatives see icon.yaml)
 #   - icon.scenario: cmip7hist  transient CMIP7 forcing (GHG, ozone, volcanic and
 #                           MACv2-SP aerosol, solar, land use change), extended
@@ -77,7 +77,7 @@ icon:
    # mixed = as icon-amip-01 (CORE2 extpar with the 0030/land/r0002 JSBACH files),
    # consistent alternatives: xpp (Trang, ICON-XPP) or core2 (ICON-FESOM)
    amip_surface: mixed
-   amip_sst: hadisst1p1
+   sstice: hadisst1p1
    scenario: 'cmip7hist'
    cmip7_scenario: m
 

@@ -1038,7 +1038,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
 ## sheets, so every domain contributes one (discharge, cell area) pair. The
 ## fields live on different ice grids and are integrated separately by
 ## apply_hosing_correction.py, which accepts an arbitrary number of pairs.
-function distribute_total_discharge_over_ocean() {
+distribute_total_discharge_over_ocean() {
         echo; echo "                *   integrate discharge over the ice grid(s)"
 
         typeset _hos_pairs=""
@@ -1058,8 +1058,29 @@ function distribute_total_discharge_over_ocean() {
                         continue
                 fi
 
-                _hos_area=${_hos_dir}/ice_discharge.gridarea.nc
-                cdo -s gridarea "${_hos_disch}" "${_hos_area}"
+                # "cdo gridarea" needs cell corners, which the ice sheet's own
+                # grid may not carry. So integrate the copy on the ECHAM grid
+                # (written by ice2echam, as in the released coupling) when it
+                # exists. Like ice_discharge.nc it is ice2echam's: from this
+                # coupling if ice2echam ran before ice2fesom, otherwise from the
+                # previous one.
+                if [ -f "${_hos_dir}/ice_discharge_${RES_echam}grid.nc" ]; then
+                        _hos_disch=${_hos_dir}/ice_discharge_${RES_echam}grid.nc
+                fi
+
+                _hos_area=${_hos_disch%.nc}.gridarea.nc
+                if ! cdo -s gridarea "${_hos_disch}" "${_hos_area}" 2>/dev/null \
+                   || [ ! -s "${_hos_area}" ]; then
+                        echo ""
+                        echo " !!! Cannot compute grid cell areas for"
+                        echo " !!!   ${_hos_disch}"
+                        echo " !!! cdo gridarea needs cell corner coordinates, which the ice"
+                        echo " !!! sheet's native curvilinear grid does not carry. The field on"
+                        echo " !!! the ECHAM grid (ice_discharge_${RES_echam}grid.nc) does; it is"
+                        echo " !!! written by ice2echam when ISM_TO_ECHAM_update_land_runoff=1."
+                        echo " S T O P  46"
+                        exit 46
+                fi
                 _hos_pairs="${_hos_pairs} --pair ${_hos_disch} ${_hos_area}"
         done
 

@@ -27,6 +27,11 @@ awiesm2pism() {
     ice_domain_stage_in ${COUPLE_DIR}/ocean_file_for_ice.nc
     ice_domain_stage_in ${COUPLE_DIR}/${GRIDDES_OCE:-ocean.griddes}
 
+    # The ice grid description has to carry cell corners, or the conservative
+    # remapping, the hosing integral and the iceberg plugin all fail on this
+    # domain. Derive them once, here, before anything reads the griddes.
+    ice_griddes_ensure_corners
+
     if [ -f ${ICE_COUPLE_DIR}/latest_atmo_forcing_file.nc ]; then
         rm ${ICE_COUPLE_DIR}/latest_atmo_forcing_file.nc
     fi

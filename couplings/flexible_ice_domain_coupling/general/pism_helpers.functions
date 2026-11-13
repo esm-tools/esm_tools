@@ -102,3 +102,69 @@ pism_helpers_create_xy_axis() {
 }
 
 # -- last line
+
+## @fn ice_griddes_ensure_corners()
+## @brief Make sure an ice domain's ice.griddes carries cell corners.
+##
+## Call: ice_griddes_ensure_corners [GRIDDES] [PISM_FILE ...]
+##
+## The griddes files in the PISM pools describe the ice grid by cell centres
+## only. Three consumers need the corners and fail without them:
+##   cdo remapcon2   (ice2echam masks/discharge) "Source grid cell corner
+##                    coordinates missing!"
+##   cdo gridarea    (hosing correction) "gridcell_areas: Cell corner
+##                    coordinates missing!"
+##   fesom_icb_pism  reads lon_bnds/lat_bnds off the discharge file and raises
+##                   AttributeError: 'Dataset' object has no attribute 'lon_bnds'
+##
+## The Greenland pool griddes happens to carry xbounds/ybounds; the Antarctic
+## one does not. utils/make_ice_griddes.py derives them from the projection,
+## calibrating against the PISM file's own lon/lat so a wrongly rotated grid is
+## refused rather than written. A griddes that already has corners, including
+## one staged by hand, is left untouched.
+ice_griddes_ensure_corners() {
+        typeset _gd=${1:-${ICE_COUPLE_DIR:-${COUPLE_DIR}}/ice.griddes}
+        shift 2>/dev/null
+        typeset _src _mk _bak
+
+        if [ -f "${_gd}" ] && grep -qm1 -E '^[[:space:]]*(xbounds|ybounds)' "${_gd}" 2>/dev/null; then
+                echo " *   ice.griddes already carries cell corners"
+                return 0
+        fi
+
+        _mk=${FUNCTION_PATH:-.}/../utils/make_ice_griddes.py
+        if [ ! -f "${_mk}" ]; then
+                echo " !   ${_mk} not found - leaving ice.griddes without corners"
+                return 0
+        fi
+
+        # First PISM file that exists and can describe the grid.
+        for _src in "$@" \
+                    "${first_year_in_chunk_input}" \
+                    "${INPUT_FILE_pism}" \
+                    "${SPINUP_FILE_pism}" ; do
+                [ -n "${_src}" ] && [ -f "${_src}" ] && break
+                _src=""
+        done
+        if [ -z "${_src}" ]; then
+                echo " !   no PISM file available to derive cell corners from"
+                echo " !   (tried first_year_in_chunk_input, INPUT_FILE_pism, SPINUP_FILE_pism)"
+                return 0
+        fi
+
+        echo " *   deriving cell corners for ice.griddes from $(basename ${_src})"
+        if ${PYTHON:-python3} "${_mk}" "${_src}" "${_gd}.with_corners" ; then
+                if [ -f "${_gd}" ]; then
+                        _bak=${_gd}.no_corners
+                        [ -f "${_bak}" ] || mv "${_gd}" "${_bak}"
+                fi
+                mv "${_gd}.with_corners" "${_gd}"
+                echo " *   ice.griddes now carries cell corners"
+        else
+                rm -f "${_gd}.with_corners"
+                echo " !   could not derive cell corners; keeping the centre-only griddes."
+                echo " !   remapcon2 will fall back to remapbil (not conservative) and the"
+                echo " !   iceberg plugin will fail if this domain feeds it a discharge file."
+        fi
+        unset _gd _src _mk _bak
+}

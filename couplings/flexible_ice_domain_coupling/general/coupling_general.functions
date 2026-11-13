@@ -434,12 +434,28 @@ function iterative_coupling_pism_regrid_add_xy_array {
 
     test_file_or_exit $_file_name_add_xy 10
 
+    # Where the x/y axis file comes from. A copy staged in the ice domain's
+    # couple directory wins over the pool, the same way ice.griddes does --
+    # a grid that deviates from the pool default (different nx/ny, e.g. the
+    # "handbook" Greenland grid) can then be used without touching the pool.
+    _xy_basename=pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    for _xy_candidate in ${ICE_COUPLE_DIR}/${_xy_basename} \
+                         ${COUPLE_DIR}/${_xy_basename} \
+                         ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${_xy_basename} ; do
+        if [ -f "${_xy_candidate}" ] ; then
+            _xy_source=${_xy_candidate}
+            break
+        fi
+    done
+    _xy_source=${_xy_source:-${POOL_DIR_pism}/grids/${DOMAIN_pism}/${_xy_basename}}
+    echo -e "\t\t*   x/y axis taken from >>${_xy_source}<<"
+
     if [ 1 -eq 0 ] ; then
 	# Problems with float vs double: does not work as expected when using directly: "ncks -A .."
-	PISM_GRID_XY_FILE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+	PISM_GRID_XY_FILE=${_xy_source}
     else
         # This is the standard case: generate both float and double files, just in case something strange happens
-	INITIAL_FILE_pism=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+	INITIAL_FILE_pism=${_xy_source}
 	PISM_GRID_xy_file_double=${PISM_GRID_xy_file_double:-xy_file_double.$(basename ${INITIAL_FILE_pism})}
 	PISM_GRID_xy_file_float=${PISM_GRID_xy_file_float:-xy_file_float.$(basename ${INITIAL_FILE_pism})}
 	pism_helpers_create_xy_axis ${INITIAL_FILE_pism} ${PISM_GRID_xy_file_double} ${PISM_GRID_xy_file_float}
@@ -452,5 +468,23 @@ function iterative_coupling_pism_regrid_add_xy_array {
     ncrename -v .x,x_org_$$ -v .y,y_org_$$ $_file_name_add_xy && \
 	ncks -A -v x,y $PISM_GRID_XY_FILE $_file_name_add_xy
 
-    unset _file_name_add_xy _model
+    # ncks fails (and only warns) when the axis file does not match the grid of
+    # the forcing file -- "Start+count exceeds dimension bound". PISM then
+    # reports "coordinate variable y is missing" much later, which does not
+    # point at the cause. Check it here instead.
+    if ! ncdump -h $_file_name_add_xy | grep -qE "^[[:space:]]*(float|double|int)[[:space:]]+x\(x\)" \
+       || ! ncdump -h $_file_name_add_xy | grep -qE "^[[:space:]]*(float|double|int)[[:space:]]+y\(y\)" ; then
+            echo ""
+            echo " !!! Failed to add the x/y axis to $(basename ${_file_name_add_xy})"
+            echo " !!! axis file : ${_xy_source}"
+            echo " !!!   $(ncdump -h ${_xy_source} 2>/dev/null | grep -E '^\s+(x|y) = ' | tr -d '\n\t')"
+            echo " !!! target    : ${_file_name_add_xy}"
+            echo " !!!   $(ncdump -h ${_file_name_add_xy} 2>/dev/null | grep -E '^\s+(x|y) = ' | tr -d '\n\t')"
+            echo " !!! The two grids must have the same x/y dimensions. Stage a matching"
+            echo " !!! ${_xy_basename} in ${ICE_COUPLE_DIR} to override the pool version."
+            echo " S T O P  44"
+            exit 44
+    fi
+
+    unset _file_name_add_xy _model _xy_basename _xy_candidate _xy_source
 }

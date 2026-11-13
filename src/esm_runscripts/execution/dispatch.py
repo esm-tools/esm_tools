@@ -10,6 +10,7 @@ deciding *how* a sub-plan's work actually runs belongs.
 
 from ..pplan import plan as plan_module
 from . import launch
+from .check_mode import is_check_mode
 
 
 def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, config: dict) -> dict:
@@ -20,6 +21,11 @@ def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, confi
     -- no new OS process, no runscript, just ``plan.run_steps()`` called
     right here. ``launch_local``/``launch_batch`` (:mod:`.launch`) spawn a
     process instead.
+
+    In check mode (``-c``), ``run_steps`` never gets called -- there's
+    nothing to "build" separately for an in-process step the way a
+    runscript gets written-but-not-submitted, so check mode here just
+    means the step never actually runs.
     """
     multi_step = workflow.multi_steps[multi_step_name]
     parent = workflow.parent_plan_of(multi_step_name)
@@ -30,6 +36,8 @@ def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, confi
             f"plan {parent.name!r} has executor={execution.executor!r}, not "
             f"{plan_module.Executor.IN_PROCESS!r}."
         )
+    if is_check_mode(config):
+        return config
     return plan_module.run_steps(multi_step, config)
 
 

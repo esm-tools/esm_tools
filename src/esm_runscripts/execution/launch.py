@@ -12,17 +12,23 @@ import subprocess
 from ..pplan.plan import Workflow
 from ..runscript.batch_system import by_name as batch_system_by_name
 from ..runscript.generation import build_runscript_context, runscript_path, write_runscript
+from .check_mode import is_check_mode
 
 
 def launch_local(workflow: "Workflow", multi_step_name: str, config: dict) -> dict:
     """Write ``multi_step_name``'s runscript and run it directly, no
     scheduler. Returns ``config`` unchanged -- launching is fire-and-forget
     here too (see :func:`launch_batch`); any effect the run itself has on
-    ``config`` happens in the spawned process, not this one."""
+    ``config`` happens in the spawned process, not this one.
+
+    In check mode (``-c``), the runscript still gets written (so it can
+    be inspected), but never actually run."""
     context = build_runscript_context(workflow, multi_step_name, config)
     path = runscript_path(config, multi_step_name)
     write_runscript(context, path, executable=True)
 
+    if is_check_mode(config):
+        return config
     subprocess.run([path], cwd=config["general"]["thisrun_scripts_dir"], check=True)
     return config
 
@@ -36,13 +42,18 @@ def launch_batch(workflow: "Workflow", multi_step_name: str, config: dict) -> di
     :func:`~esm_runscripts.execution.dispatch.run_in_process`, whose
     return value reflects real work already done, a ``LOCAL``/``BATCH``
     result in :func:`~esm_runscripts.execution.dispatch.advance`'s output
-    dict means "launched", not "finished"."""
+    dict means "launched", not "finished".
+
+    In check mode (``-c``), the runscript still gets written (so it can
+    be inspected), but never actually submitted."""
     context = build_runscript_context(workflow, multi_step_name, config)
     path = runscript_path(config, multi_step_name)
     write_runscript(context, path, executable=False)
 
     batch_system_name = config["computer"]["batch_system"]
     batch_system_by_name(batch_system_name)  # validates the name eagerly
+    if is_check_mode(config):
+        return config
     submit = config["computer"]["submit"]
     subprocess.run(
         [submit, path.name],

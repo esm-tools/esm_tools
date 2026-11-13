@@ -860,8 +860,11 @@ update_orography_generate_target_orography_file() {
         orography_names[var56]=OROPIC
         orography_names[var57]=OROVAL
 
+        # CALNORO's var51..var57 -> ECHAM names, renamed in place: no output
+        # file means ncrename never asks "overwrite tmp (y/n)?" (a stale tmp
+        # used to end up as calnoro_output.nc, or hang the job).
         for varname in "${!orography_names[@]}"; do
-                ncrename -v ${varname},${orography_names[$varname]} ${ifile} tmp; mv tmp ${ifile}
+                ncrename -v ${varname},${orography_names[$varname]} ${ifile}
         done
 
         ## Ensure that we use the OROMEA from the "raw" PISM-corrected orography,
@@ -1100,7 +1103,10 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                         -mulc,0 -selvar,GLAC dummy_jan_surf.nc \
                         -selvar,GLAC dummy_jan_surf.nc \
                         glac_outside_ice_domains.nc
-                cdo -s -replace dummy_jan_surf.nc -chname,ice_domain,GLAC glac_outside_ice_domains.nc dummy_jan_surf.nc2
+                # cdo ifthenelse names the result after the then/else fields,
+                # so glac_outside_ice_domains.nc already carries "GLAC" and
+                # needs no renaming (an explicit chname only warns here).
+                cdo -s -replace dummy_jan_surf.nc glac_outside_ice_domains.nc dummy_jan_surf.nc2
                 mv dummy_jan_surf.nc2 dummy_jan_surf.nc
                 rm -f glac_outside_ice_domains.nc
         fi

@@ -89,11 +89,17 @@ icon:
    #          (land-sea mask from the FESOM CORE2 mesh, CDNC climatology of the
    #          GEOMAR tuning) and the JSBACH files of ${grid_id}-CORE2/land/r00xx,
    #          sea-ice snow albedo 0.80/0.69 (ICON-FESOM namelist templates)
+   #   xpp-r0007: ICON-XPP land data of the 2025-10/11 generation, as Trang's
+   #          mkexp AMIP scripts of 2026-11 (test_jsbach_amip-nwp): extpar and
+   #          JSBACH files of ${grid_id}-0062/land/r0007 (ESACCI vegetation, LUH3
+   #          land use incl. C4 crops, corrected skin conductivity; R2B5 only,
+   #          2.2e6 km2 more land than r0003), ic_land_soil.nc of r0008 (drier
+   #          initial soil moisture, 0.15 vs 0.20 m), sea-ice snow albedo 0.81/0.71
    #   mixed: as icon-amip-01 (nesh, 1979-2024, 2026-11): CORE2 extpar with the
    #          ${grid_id}/land/r0002 JSBACH files, sea-ice snow albedo 0.81/0.71.
    #          Inconsistent land-sea mask (R2B5: 5145 cells), only to reproduce
    #          icon-amip-01.
-   # All three use the same atmosphere tuning: the namelist templates in
+   # All use the same atmosphere tuning: the namelist templates in
    # namelists/icon/<version>/<resolution>/amip are the ICON-FESOM GEOMAR
    # templates, which are identical to Trang's namelist apart from the AMIP
    # settings set in choose_amip.
@@ -417,6 +423,13 @@ icon:
                ic_land_soil_file: ${input_dir}/${grid_id}-CORE2/land/r00xx/ic_land_soil.nc
                amip_albsi_snow_max: 0.80
                amip_albsi_snow_min: 0.69
+            xpp-r0007:
+               extpar_file: ${input_dir}/${grid_id}-0062/land/r0007/icon_extpar4jsbach_${grid_id}_20251007_tiles_jsb.nc
+               jsbach_ic_dir: ${input_dir}/${grid_id}-0062/land/r0007
+               jsbach_forcing_dir: ${input_dir}/${grid_id}-0062/land/r0007
+               ic_land_soil_file: ${input_dir}/${grid_id}-0062/land/r0008/ic_land_soil.nc
+               amip_albsi_snow_max: 0.81
+               amip_albsi_snow_min: 0.71
             mixed:
                extpar_file: ${input_dir}/${grid_id}-CORE2/land/r00xx/icon_extpar4jsbach_${grid_id}_20250306_tiles_jsb_cdnc.nc
                jsbach_ic_dir: ${input_dir}/${grid_id}/land/r0002

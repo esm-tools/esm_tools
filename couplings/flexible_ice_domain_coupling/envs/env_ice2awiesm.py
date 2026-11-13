@@ -91,6 +91,9 @@ def prepare_environment(config):
         # "thk_plus_topg" (pism_surface_elevation_expr in
         # pism/coupling_pism2atmosphere.functions)
         "orog_surface_definition": ice.get("orog_surface_definition", "physical"),
+        # ECHAM glacier mask: 1 (default, old behaviour) = thk-mask OR SMB > 0,
+        # 0 = thk-mask only (ice-free land with SMB > 0 is not made glacier)
+        "GLACIAL_MASK_POS_SMB": int(ice.get("glacial_mask_from_pos_smb", 1)),
     }
 
     environment_dict.update(ice_domain_env.ice_domain_environment(config))

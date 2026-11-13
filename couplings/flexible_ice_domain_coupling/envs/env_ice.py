@@ -86,6 +86,8 @@ def prepare_environment(config):
             "PICO_basins_only_file", ice.get("basin_file", "")
         ),
         "DOWNSCALING_LAPSE_RATE": ice.get("lapse_rate", -0.005),
+        # PDD path: also hand PISM ice_surface_temp (see atmosphere2pism)
+        "PDD_ICE_SURFACE_TEMP": int(ice.get("PDD_ICE_SURFACE_TEMP", 1)),
         # Downscaling switches are read by atmosphere2pism, which runs in
         # couple_in -- so they have to be exported here and not only in
         # env_ice2awiesm.py.

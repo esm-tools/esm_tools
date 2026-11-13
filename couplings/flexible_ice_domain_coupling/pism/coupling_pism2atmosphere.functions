@@ -15,6 +15,26 @@ function pism2atmosphere {
         echo " * first_year_in_chunk_input = ${first_year_in_chunk_input}"
         echo " * last_year_in_chunk_restart = ${last_year_in_chunk_restart}"
 
+        # Reference the orography anomaly is taken against. Only two modes
+        # exist; anything else used to fall through to the legacy behaviour
+        # silently, which hid typos in the runscript.
+        #   0  legacy: anomaly against this chunk's PISM input file
+        #   1  reference: the absolute ice sheet surface at the first coupling
+        #      of each ice domain, the change over the chunk afterwards
+        #      (see pism_orography_decide_absolute)
+        orog_reference_pism=${orog_reference_pism:-1}
+        case "x${orog_reference_pism}" in
+            "x0"|"x1") ;;
+            *)
+                echo ""
+                echo " You have to choose either 0 (legacy) or 1 for orog_reference_pism,"
+                echo " but it is >>${orog_reference_pism}<<. Exit with error! "
+                echo " S T O P  43"
+                exit 43
+                ;;
+        esac
+        echo " * orog_reference_pism = ${orog_reference_pism}"
+
         # Which surface height is handed to the atmosphere (see
         # pism_surface_elevation_expr). Checked here, before anything is
         # written, so that a typo stops the run instead of changing it.
@@ -155,10 +175,10 @@ function pism_atmosphere_get_newest_output {
         
         if [[ ${EX_INT} == "monthly" ]]; then
             case $DOMAIN_pism in
-                    "nhem" | "laurentide" | "greenland") 
+                    "nhem" | "laurentide" | "greenland" | "gris_nhem")
                             month_to_select=6
                             ;;
-                    "shem" | "antarctica" | "Antarctica")
+                    "shem" | "antarctica" | "Antarctica" | "antarct_cr")
                             month_to_select=12
                             ;;
                     *)
@@ -248,8 +268,12 @@ function pism_atmosphere_generate_orography_anomaly {
         echo; echo "                 Generating orography anomaly..."
         pism_orography_decide_absolute
         generate_orography_anomaly_over_pism_run
-        if [ "x${orog_reference_pism}" != "x1" ]
-        then
+        # Correct the lon/lat order whenever an anomaly file was actually
+        # written. That is every case except the first coupling with
+        # orog_reference_pism=1, which writes the absolute ice_orog.nc
+        # instead -- the same condition pism_atmosphere_assemble_final_file
+        # uses to pick its input files.
+        if [ "x${ORO_ABSOLUTE}" != "x1" ]; then
             correct_lonlat_order ${ICE_COUPLE_DIR}/ice_orog_difference.nc
         fi
         echo; echo "                  ...done."
@@ -328,7 +352,14 @@ function update_domain_mask_merge_masks {
         ifile2=${ICE_COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_pos_smb.nc
         ofile=${ICE_COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_merged_mask.nc
         #LA: merge both masks: glacial cell if thickness above threshold OR surface mass balance > 0
-        cdo -s max $ifile1 $ifile2 $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+        # GLACIAL_MASK_POS_SMB=1 (default, old behaviour): thk-mask OR SMB>0
+        # GLACIAL_MASK_POS_SMB=0: thk-mask only (ice-free land with SMB>0 is NOT made glacier in ECHAM)
+        if [[ "x${GLACIAL_MASK_POS_SMB:-1}" == "x0" ]]; then
+            echo "                 -   GLACIAL_MASK_POS_SMB=0: using ice-thickness mask only"
+            cp $ifile1 $ofile
+        else
+            cdo -s max $ifile1 $ifile2 $ofile 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+        fi
         #rm $ifile1 $ifile2
         unset ifile1 ifile2 ofile
 }

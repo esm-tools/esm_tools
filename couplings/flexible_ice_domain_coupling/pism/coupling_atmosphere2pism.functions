@@ -765,16 +765,23 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
 ## @note
 ## Downscaling of temperature can be explicitly turned **OFF** by setting `DOWNSCALE_TEMP` to a value not equal to 1.
 ## In this case, temperature information is instead generated via bilinear interpolation.
+## @fn ic_atm2pism_check_lapse_rate()
+## Stops (exit 6) if DOWNSCALING_LAPSE_RATE is positive. Compared with awk
+## because "[ x -gt 0 ]" only handles integers (and so let e.g. 0.005 pass).
+ic_atm2pism_check_lapse_rate() {
+        if awk -v g="${DOWNSCALING_LAPSE_RATE}" 'BEGIN { exit !(g + 0 > 0) }'; then
+                echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
+                echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
+                exit 6
+        fi
+}
+
 ic_atm2pism_regrid_downscale_temperature() {
         DOWNSCALE_TEMP=${DOWNSCALE_TEMP:-1}
         if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
                 echo ""; echo "                *  downscaling temperature"
                 DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"}
-                if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
-                        echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
-                        echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
-                        exit 6
-                fi
+                ic_atm2pism_check_lapse_rate
                 echo "                -  Lapse rate applied was Γ=${DOWNSCALING_LAPSE_RATE} (K/km)"
                 cp ${ICE_COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${ICE_COUPLE_DIR}/uta_temp_before.nc
                 ${cdo} -s -f nc \
@@ -801,11 +808,7 @@ ic_atm2pism_regrid_downscale_temperature_below_firn() {
         if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
                 echo ""; echo "                *  downscaling temperature_below_firn"
                 DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"} #old value = -0.007
-                if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
-                        echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
-                        echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
-                        exit 6
-                fi
+                ic_atm2pism_check_lapse_rate
                 echo "                -  Lapse rate applied was Γ=${DOWNSCALING_LAPSE_RATE} (K/km)"
                 ${cdo} -s -f nc \
                         -add ${ICE_COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature_below_firn}.nc \
@@ -1156,6 +1159,13 @@ ic_atm2pism_regrid_remap_cloud_cover() {
 ic_atm2pism_ablation_pdd_make_atmosphere_forcing() {
         echo; echo -e "\t\t* Generating atmo_given file with sensible metadata"
         ic_atm2pism_ablation_pdd_set_temperature_units
+        # Ported from coupling_dual-hemisphere. Set PDD_ICE_SURFACE_TEMP=0 to
+        # get the plain temp+precip file this tree wrote before. The old file
+        # goes first, so switching it off cannot pick up an earlier chunk's.
+        rm -f ${ICE_COUPLE_DIR}/ice_surface_temp.pism.nc
+        if [ "x${PDD_ICE_SURFACE_TEMP:-1}" == "x1" ]; then
+                ic_atm2pism_ablation_pdd_set_ice_surface_temperature_from_temperature
+        fi
         ic_atm2pism_ablation_pdd_set_precipitation_units
         ic_atm2pism_ablation_pdd_merge_preliminary_files
         ic_atm2pism_ablation_pdd_set_time_axis
@@ -1174,6 +1184,26 @@ ic_atm2pism_ablation_pdd_set_temperature_units() {
         ncrename \
                 -v ${atmosphere_name_temperature},air_temp \
                 ${ICE_COUPLE_DIR}/temperature.nc
+}
+
+## @fn ic_atm2pism_ablation_pdd_set_ice_surface_temperature_from_temperature()
+## Writes ${ICE_COUPLE_DIR}/ice_surface_temp.pism.nc: the time-mean air
+## temperature of this chunk, at most 273.15 K, repeated on every time step of
+## temperature.nc. ic_atm2pism_ablation_pdd_merge_preliminary_files adds it to
+## atmo_given_file.nc. Ported from coupling_dual-hemisphere.
+ic_atm2pism_ablation_pdd_set_ice_surface_temperature_from_temperature() {
+        echo -e "\t\t- compute ice_surface_temp from air_temp"
+        # 0*air_temp + timmean: the time mean on the original time axis
+        ${cdo} -s \
+                -setattribute,ice_surface_temp@long_name="ice_surface_temp" \
+                -setvar,ice_surface_temp \
+                -add -mulc,0.0 -selvar,air_temp ${ICE_COUPLE_DIR}/temperature.nc \
+                     -minc,273.15 -timmean -selvar,air_temp ${ICE_COUPLE_DIR}/temperature.nc \
+                ${ICE_COUPLE_DIR}/ice_surface_temp.pism.nc \
+                2>> ${ICE_COUPLE_DIR}/cdo_stderr_atm2pism
+        ncatted -a standard_name,ice_surface_temp,d,, \
+                -a pism_intent,ice_surface_temp,d,, \
+                ${ICE_COUPLE_DIR}/ice_surface_temp.pism.nc
 }
 
 
@@ -1232,6 +1262,14 @@ ic_atm2pism_ablation_pdd_merge_preliminary_files() {
                 ${ICE_COUPLE_DIR}/precipitation.nc \
                 ${ICE_COUPLE_DIR}/temperature.nc \
                 ${ICE_COUPLE_DIR}/atmo_given_file.nc 2>> ${ICE_COUPLE_DIR}/cdo_stderr_atm2pism
+
+        # written this chunk only if PDD_ICE_SURFACE_TEMP=1
+        if [ -f ${ICE_COUPLE_DIR}/ice_surface_temp.pism.nc ] ; then
+                echo -e "\t\t\t+ add ice_surface_temp.pism.nc"
+                ncks -A ${ICE_COUPLE_DIR}/ice_surface_temp.pism.nc \
+                        ${ICE_COUPLE_DIR}/atmo_given_file.nc \
+                        2>> ${ICE_COUPLE_DIR}/cdo_stderr_atm2pism
+        fi
 }
 
 

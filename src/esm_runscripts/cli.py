@@ -230,9 +230,9 @@ def _run_observe(multi_step_name, workflow, config):
     """
     from .execution import dispatch, observe
     from .execution.errors import JobCrashedError
-    from .runscript.generation import observe_log_filename
+    from .runscript.generation import observe_log_path
 
-    log_file = observe_log_filename(config, multi_step_name)
+    log_file = observe_log_path(config, multi_step_name)
     try:
         observe.wait_and_observe(config["general"]["launcher_pid"], config, log_file)
     except JobCrashedError as exc:

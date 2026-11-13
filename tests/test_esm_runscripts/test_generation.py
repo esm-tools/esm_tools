@@ -93,14 +93,14 @@ def test_batch_header_lines_substitutes_tags():
     assert "#SBATCH --job-name=compute" in header
 
 
-def test_generate_runscript_and_render_for_batch_executor(monkeypatch):
+def test_build_runscript_context_and_render_for_batch_executor(monkeypatch):
     config = _config()
     workflow = Workflow.default(config)
     monkeypatch.setattr(generation, "environment_lines", lambda *a, **k: [])
     monkeypatch.setattr(generation, "extra_lines", lambda *a, **k: [])
     monkeypatch.setattr(generation, "command_lines", lambda *a, **k: ["time ./fesom &"])
 
-    context = generation.generate_runscript(workflow, "compute", config)
+    context = generation.build_runscript_context(workflow, "compute", config)
 
     assert context.is_batch is True
     assert any("#SBATCH" in line for line in context.header_lines)
@@ -112,14 +112,14 @@ def test_generate_runscript_and_render_for_batch_executor(monkeypatch):
     assert text.strip().endswith("wait")
 
 
-def test_generate_runscript_for_in_process_plan_has_no_batch_header(monkeypatch):
+def test_build_runscript_context_for_in_process_plan_has_no_batch_header(monkeypatch):
     config = _config()
     workflow = Workflow.default(config)
     monkeypatch.setattr(generation, "environment_lines", lambda *a, **k: [])
     monkeypatch.setattr(generation, "extra_lines", lambda *a, **k: [])
     monkeypatch.setattr(generation, "command_lines", lambda *a, **k: [])
 
-    context = generation.generate_runscript(workflow, "prepcompute", config)
+    context = generation.build_runscript_context(workflow, "prepcompute", config)
 
     assert context.is_batch is False
     assert not any("#SBATCH" in line for line in context.header_lines)

@@ -5,8 +5,8 @@ function that wrote header, resource calculation (as a side effect),
 per-step commands, and the self-resubmission CLI re-entry call all in one
 pass, with three separate, pure(r) steps:
 
-* :func:`generate_runscript` -- builds a :class:`RunscriptContext` (plain
-  data, nothing written yet).
+* :func:`build_runscript_context` -- builds a :class:`RunscriptContext`
+  (plain data, nothing written yet).
 * :func:`render` -- turns that context into the script text, via Jinja2
   (``templates/runscript.sh.j2``) rather than legacy's ``@tag@``
   ``str.replace`` chains.
@@ -222,12 +222,13 @@ def extra_lines(config: dict) -> List[str]:
     return lines
 
 
-def observe_log_filename(config: dict, multi_step_name: str) -> str:
+def observe_log_path(config: dict, multi_step_name: str) -> Path:
     general = config["general"]
-    return (
-        f'{general["thisrun_log_dir"]}{general["expid"]}_{general["setup_name"]}_'
+    filename = (
+        f'{general["expid"]}_{general["setup_name"]}_'
         f'{multi_step_name}_{general["jobid"]}.log'
     )
+    return Path(general["thisrun_log_dir"]) / filename
 
 
 def observe_call_line(config: dict, multi_step_name: str) -> str:
@@ -268,7 +269,7 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     return [f"{command} &", "process=$!", observe_call_line(config, multi_step_name)]
 
 
-def generate_runscript(workflow: Workflow, multi_step_name: str, config: dict) -> RunscriptContext:
+def build_runscript_context(workflow: Workflow, multi_step_name: str, config: dict) -> RunscriptContext:
     """Build the :class:`RunscriptContext` for ``multi_step_name`` -- the
     data :func:`render` needs, nothing written to disk yet."""
     parent_execution = workflow.execution_of(multi_step_name)
@@ -295,7 +296,7 @@ def render(context: RunscriptContext) -> str:
     return template.render(context=context)
 
 
-def get_run_filename(config: dict, multi_step_name: str) -> Path:
+def runscript_path(config: dict, multi_step_name: str) -> Path:
     folder = config["general"]["thisrun_scripts_dir"]
     expid = config["general"]["expid"]
     run_datestamp = config["general"]["run_datestamp"]

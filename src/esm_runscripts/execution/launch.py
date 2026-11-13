@@ -11,7 +11,7 @@ import subprocess
 
 from ..pplan.plan import Workflow
 from ..runscript.batch_system import by_name as batch_system_by_name
-from ..runscript.generation import generate_runscript, get_run_filename, write_runscript
+from ..runscript.generation import build_runscript_context, runscript_path, write_runscript
 
 
 def launch_local(workflow: "Workflow", multi_step_name: str, config: dict) -> dict:
@@ -19,8 +19,8 @@ def launch_local(workflow: "Workflow", multi_step_name: str, config: dict) -> di
     scheduler. Returns ``config`` unchanged -- launching is fire-and-forget
     here too (see :func:`launch_batch`); any effect the run itself has on
     ``config`` happens in the spawned process, not this one."""
-    context = generate_runscript(workflow, multi_step_name, config)
-    path = get_run_filename(config, multi_step_name)
+    context = build_runscript_context(workflow, multi_step_name, config)
+    path = runscript_path(config, multi_step_name)
     write_runscript(context, path, executable=True)
 
     subprocess.run([path], cwd=config["general"]["thisrun_scripts_dir"], check=True)
@@ -37,8 +37,8 @@ def launch_batch(workflow: "Workflow", multi_step_name: str, config: dict) -> di
     return value reflects real work already done, a ``LOCAL``/``BATCH``
     result in :func:`~esm_runscripts.execution.dispatch.advance`'s output
     dict means "launched", not "finished"."""
-    context = generate_runscript(workflow, multi_step_name, config)
-    path = get_run_filename(config, multi_step_name)
+    context = build_runscript_context(workflow, multi_step_name, config)
+    path = runscript_path(config, multi_step_name)
     write_runscript(context, path, executable=False)
 
     batch_system_name = config["computer"]["batch_system"]

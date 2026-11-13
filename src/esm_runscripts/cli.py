@@ -220,14 +220,16 @@ def _build_config(command_line_config):
 def _run_observe(multi_step_name, workflow, config):
     """Watch the backgrounded PID this job's runscript captured
     (``config["general"]["launcher_pid"]``), advance the run date/number
-    for the next cycle, then dispatch whatever ``multi_step_name``
-    triggers next.
+    for the next cycle, and -- unless the experiment is now over --
+    dispatch whatever ``multi_step_name`` triggers next.
 
     Invoked via the ``-t observe_<multi_step_name>`` CLI re-entry a
     backgrounded command's runscript makes (see
-    ``runscript.generation.observe_call_line``) -- the scheduler
-    cancellation and nonzero exit on a crash both happen right here, at
-    the outer boundary, not inside the detection logic itself.
+    ``runscript.generation.observe_call_line``) -- on a crash, the
+    scheduler cancellation happens right here, at the outer boundary, and
+    ``JobCrashedError`` is then let through (no invented exit code --
+    an uncaught exception already gives a real traceback and a nonzero
+    exit).
     """
     from .execution import cycle, dispatch, observe
     from .execution.errors import JobCrashedError
@@ -236,16 +238,20 @@ def _run_observe(multi_step_name, workflow, config):
     log_file = observe_log_path(config, multi_step_name)
     try:
         observe.wait_and_observe(config["general"]["launcher_pid"], config, log_file)
-    except JobCrashedError as exc:
+    except JobCrashedError:
         import subprocess
 
-        logger.error(f"ERROR: {exc.message}")
         logger.error("Will kill the run now...")
         subprocess.run(["scancel", str(config["general"]["jobid"])])
-        sys.exit(42)
+        raise
 
     config = cycle.advance_date(config)
+    config = cycle.advance_run_number(config)
+    config = cycle.sync_command_line_config(config)
     cycle.write_date_file(config)
+    if cycle.is_experiment_over(config):
+        config["general"]["experiment_over"] = True
+        return
     dispatch.advance(workflow, multi_step_name, config)
 
 

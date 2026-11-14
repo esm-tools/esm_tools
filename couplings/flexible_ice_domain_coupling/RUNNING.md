@@ -332,7 +332,7 @@ pism_nh:
 | `use_ymonmean` | `0` | use a monthly climatology of the chunk |
 | `iter_coup_interact_method_oce2ice` (or `ocean_ablation_method`) | `OCEANTEMPSALT` | `DIRECT` / `OCEANTEMP` / `OCEANTEMPSALT` / `PICO_OCEAN` / `TEMP2FLUX` / `TEMPSALT2FLUX` / `MIXED` |
 | `PICO_basins_only_file` (or `basin_file`) | — | file holding the PICO `basins` field, required by `PICO_OCEAN`. Must be on the same grid as the domain's ocean forcing. Both spellings are accepted: the dual-hemisphere tree used the first, the single ice sheet tree the second |
-| `iceberg_coupling` | `False` | this domain delivers ice→ocean forcing / iceberg discharge |
+| `iceberg_coupling` | `False` | this domain delivers ice→ocean forcing / iceberg discharge. The calving (PISM's discharge, chunk mean) then goes to FESOM as icebergs and is taken out of the mass loss sent to the rivers and the hosing; must match FESOM's `use_icebergs` (else exit 74). With `geometry.front_retreat.prescribed.file` in `kv_pairs` the discharge is 0 wherever that file allows no ice (e.g. Tibet), since PISM books cleared ice there as discharge |
 | `thk_threshold` | `5.0` | ice thickness above which a cell counts as glaciated |
 | `select_min_glacial_depth` | `1` | glacial mask criterion |
 | `glacial_mask_from_pos_smb` | `1` | ECHAM glacier mask: `1` = ice thicker than `thk_threshold` **or** positive SMB, `0` = ice thickness only (ice-free land with positive SMB does not become glacier) |

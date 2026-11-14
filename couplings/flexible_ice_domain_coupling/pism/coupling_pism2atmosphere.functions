@@ -454,6 +454,37 @@ function generate_orography_anomaly_over_pism_run {
         unset _orog_expr
 }
 
+## @fn generate_iceberg_discharge()
+## Writes ${ICE_COUPLE_DIR}/iceberg_discharge.nc: PISM's
+## tendency_of_ice_amount_due_to_discharge [kg m-2 yr-1], mean over the chunk
+## (latest_ex_file_pism.nc). This is the calving that FESOM gets as icebergs
+## (pism2ocean, ice2fesom) and that generate_mass_loss_flux subtracts.
+## With a prescribed front retreat (PISM_FRONT_RETREAT_FILE) it is 0 wherever
+## that file allows no ice: PISM books the ice it removes there as
+## discharge, which over land (e.g. Tibet) is cleared snow, not calving.
+function generate_iceberg_discharge {
+        typeset _src=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+        typeset _out=${ICE_COUPLE_DIR}/iceberg_discharge.nc
+        if ! ncdump -h ${_src} 2>/dev/null | grep -q "tendency_of_ice_amount_due_to_discharge("; then
+                echo " !!! no tendency_of_ice_amount_due_to_discharge in ${_src};"
+                echo " !!! calving would reach the ocean twice. Add it to PISM's extra output."
+                echo " S T O P  42"
+                exit 42
+        fi
+        cdo -s -O -timmean -selname,tendency_of_ice_amount_due_to_discharge ${_src} ${_out} \
+                2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+        if [ -n "${PISM_FRONT_RETREAT_FILE}" ]; then
+                echo "                 -   no discharge where ${PISM_FRONT_RETREAT_FILE} allows no ice"
+                if ! ( module load python3 >/dev/null 2>&1
+                       python3 ${FUNCTION_PATH}/../utils/mask_discharge_front_retreat.py \
+                               ${_out} ${PISM_FRONT_RETREAT_FILE} ); then
+                        echo " !!! could not apply the front-retreat mask to ${_out}"
+                        echo " S T O P  42"
+                        exit 42
+                fi
+        fi
+}
+
 ## @fn generate_mass_loss_flux()
 ## Writes ${ICE_COUPLE_DIR}/ice_runoff_flux_total.nc with
 ## total_ice_mass_loss_flux [kg m-2 s-1]: the ice mass change over this chunk
@@ -462,15 +493,14 @@ function generate_orography_anomaly_over_pism_run {
 ##     910 kg m-3 * (thk at the end - thk at the start) / chunk length,
 ##
 ## which goes to the rivers (gfw_atmo) and to the FESOM hosing. With iceberg
-## coupling the calving -- PISM's tendency_of_ice_amount_due_to_discharge,
-## mean over the chunk (latest_ex_file_pism.nc), the same field the iceberg
-## model is seeded with -- goes to FESOM as icebergs and is subtracted here,
+## coupling the calving (iceberg_discharge.nc, see generate_iceberg_discharge;
+## the same field the iceberg model is seeded with) goes to FESOM as icebergs
+## and is subtracted here,
 ## so that it reaches the ocean once. The standard_name then says
 ## "excluding_calving", which ice2fesom checks against FESOM's setting.
 ## PISM 1.x only.
 function generate_mass_loss_flux {
         typeset _out=${ICE_COUPLE_DIR}/ice_runoff_flux_total.nc
-        typeset _disch=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
         typeset _sec_per_year=3.15569e+07
         case ${VERSION_pism:-} in
             1.0|1.1|1.2) ;;
@@ -494,15 +524,10 @@ function generate_mass_loss_flux {
 
         if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
                 echo "                 -   minus the calving, which goes to the FESOM iceberg model"
-                if ! ncdump -h ${_disch} 2>/dev/null | grep -q "tendency_of_ice_amount_due_to_discharge("; then
-                        echo " !!! no tendency_of_ice_amount_due_to_discharge in ${_disch};"
-                        echo " !!! calving would reach the ocean twice. Add it to PISM's extra output."
-                        echo " S T O P  42"
-                        exit 42
-                fi
+                generate_iceberg_discharge
                 cdo -s -sub ${_out} \
                         -divc,${_sec_per_year} -setmisstoc,0 \
-                        -selname,tendency_of_ice_amount_due_to_discharge ${_disch} \
+                        ${ICE_COUPLE_DIR}/iceberg_discharge.nc \
                         ${_out}.tmp 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
                 mv ${_out}.tmp ${_out}
                 ncatted -O -h \

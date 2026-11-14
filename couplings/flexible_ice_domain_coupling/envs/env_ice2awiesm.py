@@ -32,6 +32,11 @@ def prepare_environment(config):
         "PISM_TO_OCEAN": int(ice.get("iceberg_coupling", False).__bool__()),
         "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
         "fesom_use_iceberg": int(ice.get("iceberg_coupling", False).__bool__()),
+        # PISM's prescribed front retreat: no iceberg discharge where it
+        # allows no ice (generate_iceberg_discharge)
+        "PISM_FRONT_RETREAT_FILE": (ice.get("kv_pairs") or {}).get(
+            "geometry.front_retreat.prescribed.file", ""
+        ),
 
         "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
         "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],

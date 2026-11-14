@@ -1008,7 +1008,11 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     done
 
     latest_pism_output=${_icb_outdir}/latest_ex_file_pism.nc
-    if [[ -f ${latest_pism_output} ]]; then
+    # the calving pism2atmosphere took out of the mass loss
+    # (generate_iceberg_discharge), else PISM's own output
+    if [[ -f ${ICE_COUPLE_DIR}/iceberg_discharge.nc ]]; then
+        pism_discharge_file=${ICE_COUPLE_DIR}/iceberg_discharge.nc
+    elif [[ -f ${latest_pism_output} ]]; then
         pism_discharge_file=${latest_pism_output}
     elif [[ -f ${SPINUP_FILE_pism} ]]; then
         pism_discharge_file=${SPINUP_FILE_pism}

@@ -158,14 +158,79 @@ Both components use **`env_awiesm.py`** (there is no separate `env_echam.py` /
 | `update_land_runoff` | `True` | feed the ice discharge into the runoff field |
 | `oro_update_mod` | `1` | `0` = legacy (`OROMEA`/`GEOSP` from the low-res input), `1` = masked (`OROXXX` from T511, `OROMEA` from `${RES_echam}`). Modes 2–7 of the old tree no longer exist (see MIGRATION.md §4) |
 | `oro_update_var` | `OROMEA` | orography variable that is updated. Must be **exactly** `OROMEA` or `GEOSP` — the comparison is case sensitive and anything else aborts `echam2ice` with "You have to choose either GEOSP or OROMEA" (the old tree only tested for lowercase `geosp` and silently took the OROMEA branch for everything else, so old runscripts may carry `oromea` or a typo) |
-| `oro_hi_res_parent_file` | `""` | T511 file (variable `oromea`) to start the accumulated high-res orography from on the first orography update, when `${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc` does not exist yet. For a branch: the parent's file **from the branch year**. Empty = PI T511 |
-| `oro_hi_res_tolerance` | `100` | metres. That start file is accepted only if its anomaly against PI T511 matches the restart's `oromea` anomaly against `unit.24` (mean over the changed cells). Typical: consistent branch ~35 m, parent file of the wrong year ~480 m, PI start of a branched run ~700 m |
-| `oro_hi_res_on_mismatch` | `abort` | above the tolerance: `abort` (exit 48), `reconstruct` (PI T511 + bilinear T511 remap of the restart anomaly, on land only), `ignore` (use the start file anyway; leaves `GEOSP` ≠ `OROMEA`) |
+| `oro_hi_res_parent_file` | `""` | T511 file (variable `oromea`) to start the accumulated high-res orography from on the first orography update, when `${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc` does not exist yet. For a branch: the parent's file **from the branch year**. Empty = PI T511. Prefer this over copying the file into `couple/` by hand: only a file given here goes through the start check |
+| `oro_hi_res_tolerance` | `100` | metres. That start file is accepted only if its anomaly against PI T511 matches the restart's `oromea` anomaly against the ECHAM-grid reference (`oro_lo_res_reference_file`, default `unit.24`; mean over the changed cells). Typical: consistent branch ~35 m, parent file of the wrong year ~480 m, PI start of a branched run ~700 m |
+| `oro_hi_res_on_mismatch` | `abort` | above the tolerance: `abort` (exit 48), `reconstruct` (PI T511 + bilinear T511 remap of the restart anomaly, everywhere, so glacial ice on today's shelves is kept), `ignore` (use the start file anyway; leaves `GEOSP` ≠ `OROMEA`) |
 | `oro_regrid_method` | `remapcon` | how the ice sheet's orography reaches the ECHAM grids. `remapcon` = area mean of all ice-grid cells per ECHAM cell (needs cell corners in `ice.griddes`; falls back to `remapbil` with a message if they are missing). `remapbil` = legacy, samples only the 4 ice cells around each cell centre and puts single fjords or nunataks (±1000 m) into `OROMEA` |
-| `oro_lo_res_source` | `high_res` | where `OROMEA` comes from when the high-res (T511) orography is updated. `high_res` = `unit.24` + area mean of the high-res change, inside the ice domains, so `OROMEA`, `GEOSP` and the CALNORO parameters describe the same surface (needs `unit.24` and the T511 reference; stops with exit 49 otherwise). `restart` = legacy, restart `OROMEA` + its own regridded anomaly |
+| `oro_lo_res_source` | `high_res` | where `OROMEA` comes from when the high-res (T511) orography is updated. `high_res` = ECHAM-grid reference (`oro_lo_res_reference_file`, default `unit.24`) + area mean of the high-res change, wherever the surface changed, so `OROMEA`, `GEOSP` and the CALNORO parameters describe the same surface (needs `unit.24` and the T511 reference; stops with exit 49 otherwise). `restart` = legacy, restart `OROMEA` + its own regridded anomaly |
+| `oro_lo_res_reference_file` | `${INIT_DIR_echam}/unit.24` | ECHAM-grid orography that belongs to the T511 reference (`hi_res_init_oro`, PI T511 unless `paleo_time` says otherwise). Used for `OROMEA` with `oro_lo_res_source: high_res` and for the `A_lo` anomaly of the high-res start check. **Must be a present-day surface.** In paleo setups `unit.24` comes from a glacial tarfile (`LGM_glac1d`, …) and already holds the glacial ice sheets; then set it to the present-day `jan_surf` of the same resolution, e.g. T63: `/pool/data/ECHAM6/input/r0007/T63/T63GR15_jan_surf.nc`. See §3a |
+| `oro_lo_res_reference_check` | `abort` | checks that reference against the T511 reference on its glacier cells (`GLAC` > 0.5): more than `oro_lo_res_reference_max_frac` (default `0.05`) of them > 500 m apart → `abort` (exit 49), `warn` (go on), `off` (no check). Cached in `${couple_dir}/oro_lo_res_reference.checked` |
 | `albedo_on_glaciers` | `0.7` | albedo prescribed on new glacier points |
 | `glacial_threshold` | `0.5` | glacier fraction above which a cell counts as glaciated |
 | `paleo_time` | `pi` | background state used for the orography/land surface |
+
+### 3a. Paleo setups: the orography reference (glacial `unit.24`)
+
+`OROMEA` is built as
+
+```
+OROMEA = REF_lo + remapcon( HIGH - REF_hi )
+```
+
+where `HIGH` is the accumulated high-resolution orography (an absolute
+surface: `REF_hi` plus every ice-sheet change), `REF_hi` the T511 reference
+`hi_res_init_oro` (PI T511) and `REF_lo` its ECHAM-grid partner. That is only
+right if `REF_lo` and `REF_hi` are **the same surface**. `REF_lo` used to be
+hard-wired to `unit.24`. With a glacial tarfile `unit.24` already contains
+the paleo ice sheets, so they were counted twice:
+
+| 140k_eq_smallLIS, after 4 legs | PISM surface | `GEOSP`/g | `OROMEA` with glacial `unit.24` | `OROMEA` with PI T63 reference |
+|---|---|---|---|---|
+| Laurentide (ice > 500 m) | 2016 m | 1960 m | **3794 m** | 1953 m |
+| Eurasia | 1676 m | — | 1971 m | 1609 m |
+| Greenland | 2280 m | — | 2443 m | 2201 m |
+| N. American ice-free land | 454 m | 405 m | 958 m | 414 m |
+
+`echam2ice` hands `OROMEA` to the ice sheet as the ECHAM height
+(`oro_update_var: OROMEA`), so the downscaled air temperature for dEBM was
+0.005 K/m × 1780 m ≈ **9 K too warm** over the Laurentide: JJA −14.8 → +0.3 °C
+in three couplings, dEBM SMB on the North American ice +3700 → −10300 Gt/yr.
+`GEOSP` and the sub-grid parameters come from `HIGH` and were right.
+
+The same pair is used by the high-res start check (§ `oro_hi_res_*`,
+`A_lo = restart OROMEA − REF_lo`). With a glacial `unit.24` that anomaly is
+"restart − glacial ice" and the check meaningless; it is what stopped
+140k_eq_v3 with a "925 m mismatch". With a present-day `REF_lo`, on
+140k_eq_v2's 3300 restart: PI T511 as start 317 m (rejected, correctly), the
+run's own high-res file 127 m (old: 753 m and 388 m). The 127 m are legacy
+`OROMEA` regridding errors of runs made with the old tree; branches from such
+runs may need `oro_hi_res_tolerance` above 100 m.
+
+A **fresh** paleo experiment stops at that check on its first orography
+update if it starts from PI T511 (the restart has the glacial ice, PI T511
+not; exit 48, 317 m above). Give it the parent's high-res file
+(`oro_hi_res_parent_file`; a copy put into `couple/` by hand skips the
+check) or use `oro_hi_res_on_mismatch: reconstruct`. `reconstruct` rebuilds
+the restart anomaly everywhere, so glacial ice on today's shelves survives.
+140k_eq_smallLIS, restart 3301, against the restart `OROMEA`: glacier cells
+−2 m on average (mean |difference| 41 m); the 853 T63 cells with > 100 m of
+glacial ice on today's ocean 851 m against 883 m; paleo ocean 4 m. Rebuilding
+on land only lost that shelf ice (Hudson Bay without ice in `GEOSP`), and a
+land mask that included the glacial shelves still lost 117 m there.
+
+**What to set** in a paleo runscript (T63 example):
+
+```yaml
+echam:
+    oro_lo_res_reference_file: "/pool/data/ECHAM6/input/r0007/T63/T63GR15_jan_surf.nc"
+```
+
+Its present-day coastline is intended: `HIGH − REF_hi` is the full change
+since present day, exposed shelves included. Without the setting the check
+stops the coupling (exit 49) instead of silently doubling the ice. Present-day
+setups need nothing: `unit.24` passes (greenland_only: 10 of 2031 glacier cells
+> 500 m off, 0.5 %; LGM_glac1d: 1305 of 3292, 40 %) and `OROMEA` is
+bit-identical to before (checked).
 
 ### Switches read from `fesom:`
 

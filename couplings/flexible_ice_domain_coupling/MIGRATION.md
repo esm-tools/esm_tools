@@ -151,6 +151,41 @@ has `oro_update_var: "oromea"`, the dual one `"ormoea"` (a typo). Either would
 now abort `echam2ice`. Both migrated copies in `examples/` are corrected to
 `"OROMEA"`; check this line in any other runscript you migrate.
 
+## 4c. Paleo setups: set `oro_lo_res_reference_file`
+
+If `unit.24` comes from a glacial tarfile (`tarfile_ending: LGM_glac1d`, …),
+add under `echam:` the present-day `jan_surf` of the same resolution, e.g.
+
+```yaml
+oro_lo_res_reference_file: "/pool/data/ECHAM6/input/r0007/T63/T63GR15_jan_surf.nc"
+```
+
+Without it the coupling stops at the first orography update (exit 49): the old
+code built `OROMEA` from the glacial `unit.24` plus the ice-sheet change since
+PI and counted the paleo ice twice (RUNNING.md §3a). The old tree's mode 5 did
+not have this problem, because it added the change to the restart `OROMEA`;
+`oro_lo_res_source: restart` restores that path, but the high-res start check
+still needs a present-day reference.
+
+**A fresh paleo experiment also needs a paleo high-res start.** On the very
+first orography update (no `echam6_new_orography_before_calnoro_high_res.nc`
+in `couple/` yet) the high-res field starts from PI T511 unless told
+otherwise. The restart carries the glacial ice sheets, PI T511 does not, so the
+start check stops with exit 48 (140k_eq_v2 restart 3300: 317 m mean mismatch
+over 7540 cells). Do one of:
+
+* set `oro_hi_res_parent_file` to the parent's
+  `echam6_new_orography_before_calnoro_high_res.nc` from the branch year.
+  Copying it into `couple/` by hand (as `prepare_run_F.sh` did for
+  140k_eq_smallLIS) also works, but then the start check does not see it;
+* or `oro_hi_res_on_mismatch: reconstruct`: PI T511 + the restart's `OROMEA`
+  anomaly, everywhere, so glacial ice on today's ocean (exposed shelves,
+  Hudson Bay under the Laurentide) is kept.
+
+Parents run with the old coupling tree carry ~130 m of `OROMEA` regridding
+error (140k_eq_v2's own high-res file against its restart: 127 m), above the
+100 m default; raise `oro_hi_res_tolerance` (e.g. 150) for such branches.
+
 ## 5. Things that silently do nothing now
 
 `multi_year_mean: 0` (echam) is set in both reference runscripts. It fed

@@ -70,6 +70,13 @@ def prepare_environment(config):
             # and update_orography_lo_res_from_high_res)
             "oro_regrid_method": config["echam"].get("oro_regrid_method", "remapcon"),
             "oro_lo_res_source": config["echam"].get("oro_lo_res_source", "high_res"),
+            # ECHAM-grid partner of the T511 orography reference and its check
+            # (update_orography_lo_res_reference). Empty = ${INIT_DIR_echam}/unit.24.
+            # Paleo setups with a glacial unit.24 (LGM_glac1d, ...) must point this
+            # at the present-day jan_surf of the same resolution.
+            "oro_lo_res_reference_file": config["echam"].get("oro_lo_res_reference_file", ""),
+            "oro_lo_res_reference_check": config["echam"].get("oro_lo_res_reference_check", "abort"),
+            "oro_lo_res_reference_max_frac": config["echam"].get("oro_lo_res_reference_max_frac", 0.05),
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             "paleo_time": config["echam"].get("paleo_time", "pi"),

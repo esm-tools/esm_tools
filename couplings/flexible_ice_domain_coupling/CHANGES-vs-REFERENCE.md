@@ -62,7 +62,7 @@ lapse-rate downscaling for the ice sheet: 0.005 K/m × the `OROMEA` error.
 |---|---|---|---|
 | `orog_surface_definition` (ice domain) | `physical` | `thk_plus_topg` | surface handed to the atmosphere = `max(topg+thk, freeboard)`: open ocean 0 instead of the bed depth, floating ice its freeboard |
 | `oro_regrid_method` (echam) | `remapcon` | `remapbil` | area mean of all ice-grid cells per ECHAM cell instead of the 4 around the centre. Anomalies are normalised by the full cell area (`destarea`), which also makes the sum over several domains exact |
-| `oro_lo_res_source` (echam) | `high_res` | `restart` | `OROMEA` = `unit.24` + area mean (T511 → ECHAM grid) of the high-res change, inside the ice domains; no longer restart `OROMEA` + a separately regridded anomaly. `OROMEA`, `GEOSP` and the CALNORO parameters then come from the same field |
+| `oro_lo_res_source` (echam) | `high_res` | `restart` | `OROMEA` = ECHAM-grid reference (`unit.24`, or `oro_lo_res_reference_file` in paleo setups) + area mean (T511 → ECHAM grid) of the high-res change, where the surface changed (see below); no longer restart `OROMEA` + a separately regridded anomaly. `OROMEA`, `GEOSP` and the CALNORO parameters then come from the same field |
 
 Checked offline on fix_oro/ssp585_1x1 data:
 * The legacy values reproduce the old code exactly (all variables and values).
@@ -132,6 +132,50 @@ orography and `OROMEA`).
   change, |OROMEA change| <= 0.1 m). For a first update OROMEA differs from
   before by at most 0.2 m (cells whose surface moved < 1 m). Without a
   high-res orography the old sub-grid rule is kept.
+
+**`OROMEA` reference: no double-counted paleo ice (2026-11-14).**
+`update_orography_lo_res_from_high_res` (`oro_lo_res_source: high_res`) built
+`OROMEA = unit.24 + remapcon(HIGH − PI T511)`, and
+`update_orography_init_high_res_reference` compared `restart − unit.24` with
+`candidate − PI T511`. Both assume that `unit.24` is the present-day surface
+of PI T511. In paleo setups `unit.24` comes from a glacial tarfile and carries
+the glacial ice sheets, which were then counted twice (140k_eq_smallLIS:
+`OROMEA` 3794 m over the Laurentide against a 2016 m PISM surface, ~9 K too
+warm dEBM forcing; details and numbers in RUNNING.md §3a).
+
+New: `update_orography_lo_res_reference` picks the ECHAM-grid reference
+(`echam.oro_lo_res_reference_file`, default `unit.24`) for both places and
+checks it against the T511 reference on its glacier cells
+(`oro_lo_res_reference_check`: `abort` (default, exit 49) / `warn` / `off`;
+`oro_lo_res_reference_max_frac`, default 0.05, of the glacier cells > 500 m
+apart). Paleo runscripts set the present-day `jan_surf` of their resolution.
+
+*Affects:* neither reference experiment (both present-day): `unit.24` passes
+the check and `OROMEA` is bit-identical (offline, greenland_only `unit.24`,
+max |difference| 0 m). Paleo experiments with `oro_lo_res_source: high_res`
+stop at the first orography update until the reference is set; with it,
+`OROMEA` follows the ice-sheet surface (Laurentide 1953 m vs PISM 2016 m).
+Experiments that already ran with a glacial `unit.24` carry the wrong
+`OROMEA` in their restarts; the first update with the right reference
+replaces it inside the changed cells (`|OROMEA - restart OROMEA|` in the log,
+up to ~2500 m), but their climate since the first coupling is affected and
+they should be restarted from before it.
+
+*Same day, follow-up from review:* `oro_hi_res_on_mismatch: reconstruct`
+rebuilt the high-res start only on present-day T511 land, so glacial ice on
+today's ocean (Hudson Bay, exposed shelves; 813 T63 cells > 100 m in 140k,
+up to ~3200 m) was missing from `GEOSP`, and from `OROMEA` wherever the
+surface changes later. It now rebuilds everywhere: the anomaly is 0 where
+restart and reference are both ocean, and no land mask is needed. On
+140k_eq_smallLIS (restart 3301) the rebuilt `OROMEA` matches the restart
+within −2 m on average on glacier cells and 4 m over the paleo ocean; on the
+853 shelf-ice cells it is 851 m against 883 m (a mask of present-day plus
+glacial-shelf land: −117 m, present-day land only: the ice was missing).
+Present-day setups change only where `reconstruct` is used, by bilinear
+spill of coastal anomalies of a few metres onto ocean cells. The exit-48
+message now says what a fresh paleo run needs (`oro_hi_res_parent_file`,
+which is checked, or `reconstruct`) and that branches from runs of the old
+tree need `oro_hi_res_tolerance` ~150 m.
 
 ### 1.2 Affects the **dual** experiment
 

@@ -409,6 +409,131 @@ update_orography_select_field() {
         rmlist="$rmlist ${ICE_COUPLE_DIR}/ice_orog_difference.nc"
 }
 
+## @fn update_orography_lo_res_reference()
+## GLOBAL. Picks the ECHAM-grid orography that belongs to the high-resolution
+## reference ${hi_res_init_oro}, and checks that the two describe the same
+## (present-day) surface. Sets
+##     oro_lo_ref        file whose OROMEA is the ECHAM-grid reference
+##     oro_lo_ref_grid   its grid description (cdo griddes), written to oro_lo_ref_grid.txt
+##
+## Why this exists. The high-resolution orography
+## ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc is
+## "${hi_res_init_oro} (PI T511) + every ice-sheet change", i.e. an absolute
+## surface. Two places turn it into ECHAM-grid quantities by pairing the T511
+## reference with an ECHAM-grid reference:
+##     update_orography_lo_res_from_high_res:
+##         OROMEA = REF_lo + remapcon(HIGH - REF_hi)
+##     update_orography_init_high_res_reference:
+##         A_lo   = restart OROMEA - REF_lo   (compared with HIGH_cand - REF_hi)
+## Both are only right if REF_lo is the same surface as REF_hi, averaged to
+## the ECHAM grid. REF_lo used to be hard-wired to ${INIT_DIR_echam}/unit.24.
+## In a paleo setup unit.24 comes from a glacial tarfile (e.g. LGM_glac1d) and
+## already carries the glacial ice sheets, so the ice sheet was counted twice:
+## OROMEA = glacial unit.24 + (PISM surface - PI). Found in 140k_eq_smallLIS
+## (2026-11-14): over the Laurentide OROMEA was 3794 m against a PISM surface
+## of 2016 m (GEOSP 1960 m), +300 m over Eurasia, +160 m over Greenland.
+## Through elev_lo (oro_update_var: OROMEA) the dEBM air temperature on the ice
+## was ~9 K too warm, and the A_lo check aborted 140k_eq_v3 with a 925 m
+## "mismatch" that was mostly this double count.
+##
+## Choice:  echam.oro_lo_res_reference_file  (default: ${INIT_DIR_echam}/unit.24)
+##   For a paleo setup with glacial unit.24 set it to the present-day jan_surf
+##   of the same resolution, e.g. for T63:
+##       /pool/data/ECHAM6/input/r0007/T63/T63GR15_jan_surf.nc
+##   (same grid as unit.24; its coastline is the present-day one, which is
+##   right: HIGH - REF_hi is then the full change since present day, exposed
+##   shelves included).
+##
+## Check:   echam.oro_lo_res_reference_check  abort (default) | warn | off
+##   On the glacier cells of REF_lo (GLAC > 0.5), compare REF_lo OROMEA with
+##   remapcon(REF_hi OROMEA). A present-day pair agrees there apart from
+##   resolution effects at steep margins: pi_ctl/greenland_only unit.24 vs
+##   PI T511 differs by > 500 m on 10 of 2031 glacier cells (0.5 %). The
+##   LGM_glac1d unit.24 differs on 1305 of 3292 (40 %). More than
+##   echam.oro_lo_res_reference_max_frac (default 0.05) of the glacier cells
+##   above 500 m means REF_lo carries ice that REF_hi does not:
+##       abort -> diagnostics and S T O P 49 (set oro_lo_res_reference_file,
+##                or oro_lo_res_source: restart for the legacy OROMEA path)
+##       warn  -> go on with REF_lo anyway
+##       off   -> no check
+##   The result is cached in ${COUPLE_DIR}/oro_lo_res_reference.checked, so the
+##   remapping is done once per experiment and reference pair.
+update_orography_lo_res_reference() {
+        typeset _lr_file=${oro_lo_res_reference_file:-${INIT_DIR_echam}/unit.24}
+        typeset _lr_check=${oro_lo_res_reference_check:-abort}
+        typeset _lr_frac=${oro_lo_res_reference_max_frac:-0.05}
+        typeset _lr_stamp=${COUPLE_DIR}/oro_lo_res_reference.checked
+        typeset _lr_key _lr_n _lr_bad _lr_f
+        oro_lo_ref=${_lr_file}
+        oro_lo_ref_grid=oro_lo_ref_grid.txt
+
+        for _lr_f in "${_lr_file}" "${hi_res_init_oro}"; do
+                if [ -z "${_lr_f}" ] || [ ! -f "${_lr_f}" ]; then
+                        echo " !!! update_orography_lo_res_reference: missing file >${_lr_f}<"
+                        echo " S T O P  49"
+                        exit 49
+                fi
+        done
+        case "x${_lr_check}" in
+            xabort|xwarn|xoff) ;;
+            *)  echo " !!! oro_lo_res_reference_check must be 'abort', 'warn' or 'off', not >${_lr_check}<"
+                echo " S T O P  49"; exit 49 ;;
+        esac
+        cdo -s griddes -selname,OROMEA ${_lr_file} > ${oro_lo_ref_grid} 2>>cdo_stderr_ice2echam
+        echo "                -   ECHAM-grid orography reference: ${_lr_file}"
+
+        [[ "x${_lr_check}" == "xoff" ]] && return 0
+        _lr_key="$(readlink -f ${_lr_file}) $(readlink -f ${hi_res_init_oro}) ${_lr_frac}"
+        if [[ -f ${_lr_stamp} ]] && [[ "$(head -1 ${_lr_stamp})" == "${_lr_key}" ]]; then
+                echo "                -   reference pair already checked: $(tail -1 ${_lr_stamp})"
+                return 0
+        fi
+        if ! ncdump -h ${_lr_file} | grep -q '[[:space:]]GLAC('; then
+                echo "                -   WARNING: ${_lr_file} has no GLAC field; reference check skipped"
+                return 0
+        fi
+        # glacier cells of REF_lo, and those where REF_lo is > 500 m off the
+        # area mean of REF_hi
+        cdo -s -remapcon,${oro_lo_ref_grid} -setgrid,T511grid -selname,OROMEA ${hi_res_init_oro} \
+                lr_hi_on_lo.nc 2>>cdo_stderr_ice2echam
+        cdo -s -gtc,0.5 -selname,GLAC ${_lr_file} lr_glac.nc 2>>cdo_stderr_ice2echam
+        _lr_n=$(cdo -s output -fldsum lr_glac.nc 2>>cdo_stderr_ice2echam | tr -d ' ')
+        _lr_bad=$(cdo -s output -fldsum -mul lr_glac.nc -gtc,500 -abs \
+                        -sub -setgrid,${oro_lo_ref_grid} -selname,OROMEA ${_lr_file} lr_hi_on_lo.nc \
+                  2>>cdo_stderr_ice2echam | tr -d ' ')
+        rm -f lr_hi_on_lo.nc lr_glac.nc
+        if [[ -z "${_lr_n}" ]] || [[ -z "${_lr_bad}" ]]; then
+                echo " !!! update_orography_lo_res_reference: could not compare ${_lr_file} with ${hi_res_init_oro} (see cdo_stderr_ice2echam)"
+                echo " S T O P  49"
+                exit 49
+        fi
+        echo "                -   glacier cells of the reference > 500 m off remapcon(${hi_res_init_oro}): ${_lr_bad} of ${_lr_n} (limit: fraction ${_lr_frac})"
+        if awk -v b="${_lr_bad}" -v n="${_lr_n}" -v f="${_lr_frac}" 'BEGIN { exit !(n + 0 > 0 && b / n > f + 0) }'; then
+                if [[ "x${_lr_check}" == "xwarn" ]]; then
+                        echo "                -   WARNING: the ECHAM-grid reference looks like it carries glacial ice"
+                        echo "                -   WARNING: (oro_lo_res_reference_check=warn) -- OROMEA will count that ice twice"
+                else
+                        echo ""
+                        echo " !!! The ECHAM-grid orography reference"
+                        echo " !!!   ${_lr_file}"
+                        echo " !!! does not describe the same surface as the high-resolution reference"
+                        echo " !!!   ${hi_res_init_oro}"
+                        echo " !!! on ${_lr_bad} of its ${_lr_n} glacier cells (> 500 m apart). It most likely"
+                        echo " !!! comes from a glacial tarfile and already contains the paleo ice sheets;"
+                        echo " !!! OROMEA would then count the ice twice (unit.24 ice + ice-sheet change)."
+                        echo " !!! Set, under echam:,"
+                        echo " !!!   oro_lo_res_reference_file: <present-day jan_surf of this resolution>"
+                        echo " !!!     (T63: /pool/data/ECHAM6/input/r0007/T63/T63GR15_jan_surf.nc)"
+                        echo " !!! or oro_lo_res_source: restart (legacy OROMEA path; the A_lo check of"
+                        echo " !!! update_orography_init_high_res_reference still needs a consistent pair),"
+                        echo " !!! or, if you know what you are doing, oro_lo_res_reference_check: warn."
+                        echo " S T O P  49"
+                        exit 49
+                fi
+        fi
+        printf '%s\n%s\n' "${_lr_key}" "${_lr_bad} of ${_lr_n} glacier cells > 500 m off" > ${_lr_stamp}
+}
+
 ## @fn update_orography_init_high_res_reference()
 ## GLOBAL. Starting T511 orography (variable `oromea`) for the case that
 ## ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc does not exist
@@ -425,29 +550,36 @@ update_orography_select_field() {
 ## The candidate start is echam.oro_hi_res_parent_file if set (the parent's
 ## high-res file from the branch year), else ${hi_res_init_oro} (PI T511).
 ## It is accepted only if its anomaly against PI T511 matches the restart's
-## anomaly against unit.24:
+## anomaly against the ECHAM-grid reference REF_lo (update_orography_lo_res_reference;
+## unit.24 unless echam.oro_lo_res_reference_file is set -- with a glacial
+## unit.24 the old A_lo was "restart - glacial ice" and the check meaningless):
 ##
 ##     A_hi = remapnn_T63(candidate) - remapnn_T63(PI T511)
-##     A_lo = restart oromea         - unit.24 OROMEA
+##     A_lo = restart oromea         - REF_lo OROMEA
 ##     mismatch = mean |A_hi - A_lo| over cells where |A_hi| or |A_lo| > 1 m
 ##
 ## mismatch <= echam.oro_hi_res_tolerance (default 100 m) -> use the candidate
 ## (a PI start from a PI restart has no such cells and always passes).
 ## Otherwise echam.oro_hi_res_on_mismatch decides:
 ##     abort (default) -> diagnostics and stop
-##     reconstruct     -> PI T511 + bilinear T511 remap of A_lo, applied on
-##                        T511 land (SLM >= 0.5) only, clipped at 0 m
+##     reconstruct     -> PI T511 + bilinear T511 remap of A_lo, everywhere
+##                        (glacial ice on today's shelves included), clipped at 0 m
 ##     ignore          -> use the candidate anyway, with a warning
 ##
 ## Reference values (Greenland, T63): consistent branch 34 m; parent file of
 ## the wrong year 477 m; PI start of a branched run 704 m.
+## Paleo (140k_eq_v2 restart 3300, LGM_glac1d unit.24, present-day REF_lo):
+## PI T511 start 317 m (a fresh paleo run always stops here unless it gets a
+## paleo high-res file or reconstruct); the run's own high-res file 127 m,
+## legacy OROMEA regridding errors of the old coupling tree.
 ##
 ## @param $1 output file (T511, variable `oromea`)
 update_orography_init_high_res_reference() {
         _hro_out=$1
         _hro_mode=${oro_hi_res_on_mismatch:-abort}
         _hro_tol=${oro_hi_res_tolerance:-100}
-        _hro_pi_ref=${INIT_DIR_echam}/unit.24
+        update_orography_lo_res_reference
+        _hro_pi_ref=${oro_lo_ref}
         _hro_cand=${oro_hi_res_parent_file:-${hi_res_init_oro}}
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
                 _hro_rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
@@ -505,13 +637,16 @@ update_orography_init_high_res_reference() {
         else
                 case ${_hro_mode} in
                 reconstruct)
+                        # Everywhere, not only on land: A_lo is 0 wherever restart and
+                        # REF_lo are both ocean, and a land mask cut off glacial ice on
+                        # today's ocean (Hudson Bay under the Laurentide, exposed
+                        # shelves; 140k: 853 T63 cells with > 100 m of ice there).
                         echo "                -   WARNING: ${_hro_cand} does not match the restart orography;"
-                        echo "                -            reconstructing PI T511 + remapbil_T511(restart oromea - unit.24 OROMEA) on land"
+                        echo "                -            reconstructing PI T511 + remapbil_T511(restart oromea - ${_hro_pi_ref} OROMEA)"
                         rm -f ${_hro_out}
                         cdo -s -maxc,0 -add \
                                 -setgrid,T511grid -chname,OROMEA,oromea -selname,OROMEA ${hi_res_init_oro} \
-                                -mul -setgrid,T511grid -gec,0.5 -selname,SLM ${hi_res_init_oro} \
-                                     -remapbil,T511grid hro_a_lo.nc \
+                                -remapbil,T511grid hro_a_lo.nc \
                                 ${_hro_out} 2>> cdo_stderr_ice2echam
                         if [[ ! -s ${_hro_out} ]]; then
                                 echo " !!! reconstruction of the high-res orography failed (see cdo_stderr_ice2echam)"
@@ -537,6 +672,12 @@ update_orography_init_high_res_reference() {
                         echo " !!!                           (the parent's file from the branch year)"
                         echo " !!!   oro_hi_res_on_mismatch: reconstruct   (rebuild from the restart oromea anomaly)"
                         echo " !!!   oro_hi_res_on_mismatch: ignore        (start from the candidate anyway; inconsistent)"
+                        echo " !!! Paleo runs: a fresh experiment always lands here when it starts from"
+                        echo " !!! PI T511 -- the restart carries the glacial ice sheets, PI T511 does not."
+                        echo " !!! Give the parent's high-res file as oro_hi_res_parent_file (checked here;"
+                        echo " !!! a copy placed in couple/ by hand is not), or use reconstruct."
+                        echo " !!! Parents run with the old coupling tree carry ~130 m of"
+                        echo " !!! OROMEA regridding error; for them raise oro_hi_res_tolerance (e.g. 150)."
                         echo " S T O P  48"
                         rm -f hro_cand.nc hro_grid.txt hro_a_hi.nc hro_restart.nc hro_a_lo.nc hro_mask.nc
                         exit 48
@@ -697,7 +838,7 @@ update_orography_changed_mask() {
 ## GLOBAL. Writes $1, the ECHAM-resolution orography, as the area mean of the
 ## high-resolution orography that was just updated:
 ##
-##     where the surface changed:  OROMEA = unit.24 OROMEA
+##     where the surface changed:  OROMEA = REF_lo OROMEA
 ##                                        + remapcon( HIGH - reference T511 )
 ##     elsewhere:                  OROMEA = restart OROMEA (unchanged)
 ##
@@ -712,12 +853,15 @@ update_orography_changed_mask() {
 ## Where the surface changed the result is kept >= 0: the ice sheet surface is
 ## never below sea level (see pism_surface_elevation_expr).
 ##
-## Needs the same reference pair as update_orography_init_high_res_reference:
-## ${hi_res_init_oro} (T511) and ${INIT_DIR_echam}/unit.24 (ECHAM grid).
+## REF_lo is the ECHAM-grid partner of ${hi_res_init_oro}, chosen and checked
+## by update_orography_lo_res_reference: unit.24 by default, or
+## echam.oro_lo_res_reference_file. It has to be the same (present-day)
+## surface as ${hi_res_init_oro}; a glacial unit.24 counted the paleo ice
+## twice (see update_orography_lo_res_reference).
 update_orography_lo_res_from_high_res() {
         typeset _lo_out=$1
         typeset _lo_hi=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
-        typeset _lo_u24=${INIT_DIR_echam}/unit.24
+        typeset _lo_u24
         typeset _lo_chg=${COUPLE_DIR}/mask_oro_changed_${RES_echam}grid.nc
         typeset _lo_rfile _lo_f _lo_stats
         echo "                -   OROMEA = area mean of the high-resolution orography (oro_lo_res_source=high_res)"
@@ -727,6 +871,8 @@ update_orography_lo_res_from_high_res() {
         else
                 _lo_rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
         fi
+        update_orography_lo_res_reference
+        _lo_u24=${oro_lo_ref}
         for _lo_f in "${_lo_hi}" "${hi_res_init_oro}" "${_lo_u24}" "${_lo_rfile}"; do
                 if [ -z "${_lo_f}" ] || [ ! -f "${_lo_f}" ]; then
                         echo " !!! update_orography_lo_res_from_high_res: missing file >${_lo_f}<"
@@ -748,7 +894,7 @@ update_orography_lo_res_from_high_res() {
                 -sub -setgrid,T511grid -selname,oromea ${_lo_hi} \
                      -setgrid,T511grid -chname,OROMEA,oromea -selname,OROMEA ${hi_res_init_oro} \
                 lo_anom.nc 2>>cdo_stderr_ice2echam
-        cdo -s -maxc,0 -add -chname,OROMEA,oromea -selname,OROMEA ${_lo_u24} lo_anom.nc \
+        cdo -s -maxc,0 -add -setgrid,lo_grid.txt -chname,OROMEA,oromea -selname,OROMEA ${_lo_u24} lo_anom.nc \
                 lo_new.nc 2>>cdo_stderr_ice2echam
         ncks -O -v oromea ${_lo_rfile} lo_rst_raw.nc
         cdo -s -setgrid,lo_grid.txt lo_rst_raw.nc lo_rst.nc 2>>cdo_stderr_ice2echam

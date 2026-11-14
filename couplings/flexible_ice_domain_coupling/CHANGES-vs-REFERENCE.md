@@ -171,8 +171,16 @@ restart and reference are both ocean, and no land mask is needed. On
 within −2 m on average on glacier cells and 4 m over the paleo ocean; on the
 853 shelf-ice cells it is 851 m against 883 m (a mask of present-day plus
 glacial-shelf land: −117 m, present-day land only: the ice was missing).
-Present-day setups change only where `reconstruct` is used, by bilinear
-spill of coastal anomalies of a few metres onto ocean cells. The exit-48
+Rebuilding everywhere spreads coastal anomalies onto ocean points of the
+T511 field (bilinear remap across the coast), and not by a few metres:
+paleo (140k_eq_v2 restart 3300) 16626 open-ocean T511 points raised by
+> 50 m, 461 by > 500 m, at most 1099 m; present-day (greenland_only,
+`reconstruct` forced) 1668 points > 50 m, 91 > 500 m, at most 1166 m. This
+is accepted on purpose: ECHAM uses T63 cell means (`GEOSP`, `OROMEA`), and
+those match the restart far better than with a land mask (see above). The
+raised ocean points only enter the sub-grid parameters (CALNORO) of coastal
+cells; the land-sea and glacier masks do not come from this field.
+Present-day setups change only where `reconstruct` is used. The exit-48
 message now says what a fresh paleo run needs (`oro_hi_res_parent_file`,
 which is checked, or `reconstruct`) and that branches from runs of the old
 tree need `oro_hi_res_tolerance` ~150 m.

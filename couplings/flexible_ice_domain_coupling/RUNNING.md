@@ -217,6 +217,11 @@ the restart anomaly everywhere, so glacial ice on today's shelves survives.
 glacial ice on today's ocean 851 m against 883 m; paleo ocean 4 m. Rebuilding
 on land only lost that shelf ice (Hudson Bay without ice in `GEOSP`), and a
 land mask that included the glacial shelves still lost 117 m there.
+The price: the bilinear remap spreads coastal anomalies onto ocean points of
+the T511 field, by hundreds of metres next to ice-covered coasts (up to
+~1100 m; numbers in CHANGES-vs-REFERENCE.md). Those points only enter the
+sub-grid parameters of coastal cells; `GEOSP`, `OROMEA` and the land-sea
+mask are not affected by it.
 
 **What to set** in a paleo runscript (T63 example):
 

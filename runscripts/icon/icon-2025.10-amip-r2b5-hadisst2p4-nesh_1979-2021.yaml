@@ -21,8 +21,11 @@
 #   - a 10-day test with this setup is recommended (copy of icon-2025.10-amip-r2b5-nesh.yaml
 #     with sstice: hadisst2p4, amip_surface: xpp-r0007)
 #
-# Run length: 3 runs of 14 years (1979-1992, 1993-2006, 2007-2020; ~2.27 h per model year
-#   on 24 nodes = ~32 h, 48 h limit), final_date 2021-01-01. Then 2021 as one run, started
+# Run length: originally 3 runs of 14 years. The first job (24918879, 2026-11-14) ran at half
+#   speed because node nesh-srp283 has hyperthreading on (see the exclude list); it was
+#   cancelled after the 1985-01-01 checkpoint and the experiment continues from there in
+#   3 runs of 12 years (1985-1996, 1997-2008, 2009-2020; ~2.27 h per model year on 24 nodes
+#   = ~27 h, 48 h limit), final_date 2021-01-01. Then 2021 as one run, started
 #   by hand (ESM-Tools does not shorten the last run, and the SST/sea ice data end on
 #   2022-01-16): set runlength: 1, nyear: 1 (choose_unit), checkpoint_interval: P01Y and
 #   final_date: "2022-01-01", and resubmit; the experiment continues from the 2021-01-01 restart.
@@ -36,8 +39,10 @@ computer:
     additional_flags:
         - "--tasks-per-node=32"
         - "--constraint=sapphire"
-        # nodes that were thermally throttled on 2026-11-09 (half speed)
-        - "--exclude=nesh-srp[224-227]"
+        # defective nodes (ceresmip/nesh/check_nesh_srp_nodes.sh, 2026-11-14): srp224-227
+        # thermally throttled (2026-11-09, half speed), srp110 and srp283 hyperthreading on
+        # (32 ranks on 16 cores, job ~1.6x slower)
+        - "--exclude=nesh-srp[110,224-227,283]"
     launcher: mpirun
     launcher_flags: ""
     check_error:
@@ -59,20 +64,20 @@ general:
    final_date: "2021-01-01T00:00:00"         # Final date of the experiment, see above for 2021
    # set length and unit of each run, both are used to set the ESM-Tools run
    # length and the ICON restart_interval (end of the run)
-   runlength: 14
+   runlength: 12
    unit: 'y' # 'd' for day, 'm' for month, 'y' for year
    # needs fixing, esm_tools can't resolve ${runlength} here
    # https://github.com/esm-tools/esm_tools/issues/1453
    # so set nday/nmonth/nyear to the same value as runlength
    choose_unit:
       'd':
-         nday: 14
+         nday: 12
          unitUpper: 'D'
       'm':
-         nmonth: 14
+         nmonth: 12
          unitUpper: 'M'
       'y':
-         nyear: 14
+         nyear: 12
          unitUpper: 'Y'
 
    # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to

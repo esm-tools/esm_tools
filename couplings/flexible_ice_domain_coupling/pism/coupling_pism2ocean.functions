@@ -227,13 +227,27 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
     elif [[ -f ${SPINUP_FILE_pism} ]]; then
         pism_discharge_file=${SPINUP_FILE_pism}
+        echo; echo " * WARNING: latest_ex_file_pism.nc not found; icebergs are seeded from"
+        echo "   the PISM SPIN-UP file ${SPINUP_FILE_pism}"; echo
+    else
+        pism_discharge_file=""
+    fi
+
+    # Remove last year's file first: if no new one is made below, a stale file
+    # must not stay in place to be seeded as icebergs a second time.
+    rm -f ${ICE_COUPLE_DIR}/latest_discharge.nc
+
+    if [[ -z ${pism_discharge_file} ]]; then
+        echo " *   domain ${ICE_DOMAIN}: no discharge source found, no latest_discharge.nc"
+        return 0
     fi
 
     echo " * generating latest_discharge.nc"
     echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
 
     cdo -timmean -selname,tendency_of_ice_amount_due_to_discharge \
-        -setgrid,${ICE_COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${ICE_COUPLE_DIR}/latest_discharge.nc
+        -setgrid,${ICE_COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${ICE_COUPLE_DIR}/latest_discharge.nc \
+        || { echo " * ERROR: cdo failed to create ${ICE_COUPLE_DIR}/latest_discharge.nc"; exit 42; }
 
     #cdo mulc,${CHUNK_SIZE_pism_standalone} \
     #        -timmean -selname,tendency_of_ice_amount_due_to_discharge \

@@ -267,12 +267,23 @@ def drop_into_pplan_debug(workflow, config):
     separate ``MultiStep("prepare")`` stub anymore, ``workflow.multi_steps``
     holds every phase (e.g. ``prepcompute``, ``compute``, ``tidy``)
     directly.
+
+    For each phase, resolves (but never runs) its recipe steps via
+    ``execution.steps.resolve_steps`` -- a harder version of ``--check``:
+    check mode still writes a real runscript/calls a real recipe, just
+    without submitting/executing it; this resolves the step list and
+    stops there, nothing built or run at all.
     """
+    from .execution.steps import resolve_steps
+
     print(workflow)
     for multi_step in workflow.multi_steps.values():
         print(" ", multi_step)
-        for step in multi_step.steps:
-            print("   ", step)
+        try:
+            for step in resolve_steps(config, multi_step.name):
+                print("   ", step)
+        except Exception as exc:  # pragma: no cover - debug-only preview
+            print(f"    (couldn't resolve steps for {multi_step.name!r}: {exc})")
 
     for cluster in workflow.plans.values():
         print(" ", cluster)

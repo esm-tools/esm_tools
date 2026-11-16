@@ -12,12 +12,13 @@ def test_is_check_mode_true_when_check_flag_set():
 
 
 def test_run_in_process_does_not_run_steps_in_check_mode(monkeypatch):
+    from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.execution.dispatch import run_in_process
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
     monkeypatch.setattr(
-        plan_module, "run_steps", lambda multi_step, config: calls.append(multi_step.name) or config
+        steps_module, "run_steps", lambda config, job_type: calls.append(job_type) or config
     )
 
     config = {

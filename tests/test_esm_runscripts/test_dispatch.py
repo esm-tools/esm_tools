@@ -18,13 +18,14 @@ def _default_config():
 
 
 def test_run_in_process_runs_steps_for_an_in_process_multi_step(monkeypatch):
+    from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
     monkeypatch.setattr(
-        plan_module,
+        steps_module,
         "run_steps",
-        lambda multi_step, config: (calls.append(multi_step.name), config)[1],
+        lambda config, job_type: (calls.append(job_type), config)[1],
     )
 
     workflow = plan_module.Workflow.default(_default_config())
@@ -47,13 +48,14 @@ def test_run_in_process_rejects_a_batch_multi_step():
 
 
 def test_advance_dispatches_the_triggered_in_process_multi_step(monkeypatch):
+    from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
     monkeypatch.setattr(
-        plan_module,
+        steps_module,
         "run_steps",
-        lambda multi_step, config: (calls.append(multi_step.name), config)[1],
+        lambda config, job_type: (calls.append(job_type), config)[1],
     )
 
     workflow = plan_module.Workflow.default(_default_config())
@@ -75,6 +77,7 @@ def test_advance_returns_empty_dict_for_a_multi_step_that_triggers_nothing():
 
 def test_advance_dispatches_a_batch_trigger_target(monkeypatch):
     from esm_runscripts.execution import dispatch as dispatch_module
+    from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
@@ -83,6 +86,10 @@ def test_advance_dispatches_a_batch_trigger_target(monkeypatch):
         plan_module.Executor.BATCH,
         lambda workflow, multi_step_name, config: calls.append(multi_step_name) or config,
     )
+    # "tidy" fans out to both "postprocessing" (BATCH, mocked above) and
+    # "prepcompute" (IN_PROCESS, dispatched for real) -- mock step
+    # resolution for the latter so it doesn't need a full real config.
+    monkeypatch.setattr(steps_module, "run_steps", lambda config, job_type: config)
 
     config = _default_config()
     config["fesom"]["workflow"] = {
@@ -109,9 +116,14 @@ def test_advance_dispatches_a_batch_trigger_target(monkeypatch):
 
 def test_advance_raises_when_an_executor_has_no_registered_strategy(monkeypatch):
     from esm_runscripts.execution import dispatch as dispatch_module
+    from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.pplan import plan as plan_module
 
     monkeypatch.delitem(dispatch_module._DISPATCHERS, plan_module.Executor.BATCH)
+    # "tidy" also fans out to "prepcompute" (IN_PROCESS) -- advance()
+    # dispatches that one for real before reaching the un-registered
+    # BATCH target and raising; mock step resolution for it.
+    monkeypatch.setattr(steps_module, "run_steps", lambda config, job_type: config)
 
     config = _default_config()
     config["fesom"]["workflow"] = {
@@ -139,13 +151,14 @@ def test_advance_dispatches_every_target_in_an_n_way_fan_out(monkeypatch):
     # don't share a trigger) -- construct the Workflow directly to unit
     # test advance()'s fan-out loop itself, independent of whether today's
     # config-building code happens to produce this shape yet.
+    from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.pplan import plan as plan_module
 
     calls = []
     monkeypatch.setattr(
-        plan_module,
+        steps_module,
         "run_steps",
-        lambda multi_step, config: (calls.append(multi_step.name), config)[1],
+        lambda config, job_type: (calls.append(job_type), config)[1],
     )
 
     multi_steps = {

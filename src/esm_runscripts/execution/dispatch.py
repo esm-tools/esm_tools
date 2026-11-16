@@ -9,7 +9,7 @@ deciding *how* a sub-plan's work actually runs belongs.
 """
 
 from ..pplan import plan as plan_module
-from . import launch
+from . import launch, steps as steps_module
 from .check_mode import is_check_mode
 
 
@@ -18,16 +18,17 @@ def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, confi
 
     Only valid for a sub-plan whose parent :class:`~plan.Plan` has
     ``executor == Executor.IN_PROCESS`` (in :class:`~plan.PlanExecution`)
-    -- no new OS process, no runscript, just ``plan.run_steps()`` called
-    right here. ``launch_local``/``launch_batch`` (:mod:`.launch`) spawn a
-    process instead.
+    -- no new OS process, no runscript, just
+    :func:`~esm_runscripts.execution.steps.run_steps` called right here
+    (which resolves ``multi_step_name``'s recipe steps lazily, at this
+    exact moment -- see that module's docstring for why). ``launch_local``/
+    ``launch_batch`` (:mod:`.launch`) spawn a process instead.
 
-    In check mode (``-c``), ``run_steps`` never gets called -- there's
+    In check mode (``-c``), steps never get resolved or run -- there's
     nothing to "build" separately for an in-process step the way a
     runscript gets written-but-not-submitted, so check mode here just
     means the step never actually runs.
     """
-    multi_step = workflow.multi_steps[multi_step_name]
     parent = workflow.parent_plan_of(multi_step_name)
     execution = workflow.execution_of(multi_step_name)
     if execution.executor != plan_module.Executor.IN_PROCESS:
@@ -38,7 +39,7 @@ def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, confi
         )
     if is_check_mode(config):
         return config
-    return plan_module.run_steps(multi_step, config)
+    return steps_module.run_steps(config, multi_step_name)
 
 
 # One strategy per Executor value. advance() looks a target's executor up

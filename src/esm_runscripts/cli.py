@@ -115,9 +115,10 @@ from .simulation_config import ConfigBuilder
     type=click.Choice(["legacy", "pplan"]), default="legacy",
     help=(
         "Workflow engine to use. 'legacy' (default) runs the job as usual. "
-        "'pplan' assembles the workflow, snapshots it into the pydantic "
-        "Plan/MultiStep/Workflow view, prints it, and drops into a debug "
-        "session instead of submitting anything."
+        "'pplan' assembles the workflow into the pydantic Plan/MultiStep/"
+        "Workflow view and dispatches it natively -- combine with -c/"
+        "--check to preview the resolved workflow and its recipe steps "
+        "and drop into a debug session instead of dispatching anything."
     ),
 )
 def main(**command_line_config):
@@ -146,10 +147,15 @@ def main(**command_line_config):
     sim = Simulation.from_config(config)
 
     if command_line_config["wf_engine"] == "pplan":
+        from .execution import dispatch
+
         if observing_multi_step is not None:
             _run_observe(observing_multi_step, sim.plan, sim.config)
             return
-        drop_into_pplan_debug(sim.plan, sim.config)
+        if command_line_config["check"]:
+            drop_into_pplan_debug(sim.plan, sim.config)
+            return
+        dispatch.start(sim.plan, sim.config)
         return
 
     if not sim.config["general"]["submitted"] and command_line_config["motd"]:
@@ -256,23 +262,24 @@ def _run_observe(multi_step_name, workflow, config):
 
 
 def drop_into_pplan_debug(workflow, config):
-    """Print the resolved ``Workflow`` that ``Simulation.from_config`` built
-    for this job type, and drop into a debug session for poking around.
+    """``--wf-engine=pplan -c``'s path: print the resolved ``Workflow``
+    that ``Simulation.from_config`` built for this job type, and drop
+    into a debug session for poking around.
 
-    Does not submit or run anything -- this is purely for exploring where
-    recipe steps hook into the new ``plan.py`` models. Legacy
-    ``prepare.run_job``/``assemble_workflow`` never ran to get here (see
-    ``Simulation.from_config``'s ``wf_engine`` branch); ``workflow`` is
-    built natively by ``plan.Workflow.resolve`` instead -- there is no
-    separate ``MultiStep("prepare")`` stub anymore, ``workflow.multi_steps``
-    holds every phase (e.g. ``prepcompute``, ``compute``, ``tidy``)
-    directly.
+    Does not submit or run anything -- a harder version of ``--check``:
+    plain check mode still writes a real runscript/calls a real recipe
+    for ``IN_PROCESS``/``LOCAL``/``BATCH`` steps, just without
+    submitting/executing them; this resolves the step list and stops
+    there, nothing built or run at all. (Without ``-c``, a fresh
+    ``--wf-engine=pplan`` invocation calls ``execution.dispatch.start``
+    instead, which actually dispatches ``workflow.entry_point``.)
 
-    For each phase, resolves (but never runs) its recipe steps via
-    ``execution.steps.resolve_steps`` -- a harder version of ``--check``:
-    check mode still writes a real runscript/calls a real recipe, just
-    without submitting/executing it; this resolves the step list and
-    stops there, nothing built or run at all.
+    Legacy ``prepare.run_job``/``assemble_workflow`` never ran to get
+    here (see ``Simulation.from_config``'s ``wf_engine`` branch);
+    ``workflow`` is built natively by ``plan.Workflow.resolve`` instead
+    -- there is no separate ``MultiStep("prepare")`` stub anymore,
+    ``workflow.multi_steps`` holds every phase (e.g. ``prepcompute``,
+    ``compute``, ``tidy``) directly.
     """
     from .execution.steps import resolve_steps
 

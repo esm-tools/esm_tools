@@ -2,7 +2,7 @@
 
 import pytest
 
-from esm_runscripts.execution.dispatch import advance, run_in_process
+from esm_runscripts.execution.dispatch import advance, run_in_process, start
 from esm_runscripts.pplan.plan import Executor
 
 
@@ -193,3 +193,33 @@ def test_advance_dispatches_every_target_in_an_n_way_fan_out(monkeypatch):
         "beta": {"general": {}},
         "gamma": {"general": {}},
     }
+
+
+def test_start_dispatches_the_entry_point(monkeypatch):
+    from esm_runscripts.execution import steps as steps_module
+    from esm_runscripts.pplan import plan as plan_module
+
+    calls = []
+    monkeypatch.setattr(
+        steps_module, "run_steps", lambda config, job_type: calls.append(job_type) or config
+    )
+
+    workflow = plan_module.Workflow.default(_default_config())
+    assert workflow.entry_point == "prepcompute"
+
+    result = start(workflow, {"general": {}})
+
+    assert calls == ["prepcompute"]
+    assert result == {"general": {}}
+
+
+def test_start_raises_when_the_entry_points_executor_has_no_registered_strategy(monkeypatch):
+    from esm_runscripts.execution import dispatch as dispatch_module
+    from esm_runscripts.pplan import plan as plan_module
+
+    monkeypatch.delitem(dispatch_module._DISPATCHERS, plan_module.Executor.IN_PROCESS)
+
+    workflow = plan_module.Workflow.default(_default_config())
+
+    with pytest.raises(NotImplementedError, match="prepcompute"):
+        start(workflow, {"general": {}})

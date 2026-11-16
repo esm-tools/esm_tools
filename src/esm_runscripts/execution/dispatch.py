@@ -51,6 +51,33 @@ _DISPATCHERS = {
 }
 
 
+def _dispatch_one(workflow: "plan_module.Workflow", multi_step_name: str, config: dict, caller: str) -> dict:
+    """Look ``multi_step_name``'s parent executor up in ``_DISPATCHERS``
+    and run the matching strategy. Shared by :func:`start` and
+    :func:`advance` -- ``caller`` is only for the error message, naming
+    which one couldn't dispatch."""
+    parent = workflow.parent_plan_of(multi_step_name)
+    execution = workflow.execution_of(multi_step_name)
+    strategy = _DISPATCHERS.get(execution.executor)
+    if strategy is None:
+        raise NotImplementedError(
+            f"{caller}() can't dispatch {multi_step_name!r} yet -- its parent "
+            f"plan {parent.name!r} has executor={execution.executor!r}, "
+            f"and no strategy is registered for it (only "
+            f"{[e.value for e in _DISPATCHERS]} so far)."
+        )
+    return strategy(workflow, multi_step_name, config)
+
+
+def start(workflow: "plan_module.Workflow", config: dict) -> dict:
+    """Dispatch ``workflow.entry_point`` -- the bootstrap call for a
+    fresh invocation (nothing has triggered anything yet). Uses the same
+    ``_DISPATCHERS`` lookup :func:`advance` uses for every later cycle;
+    this is just the one call that kicks the chain off in the first
+    place."""
+    return _dispatch_one(workflow, workflow.entry_point, config, caller="start")
+
+
 def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, config: dict) -> dict:
     """Dispatch whatever ``finished_multi_step_name`` triggers next.
 
@@ -76,17 +103,7 @@ def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, con
     process or submitting to a scheduler is fire-and-forget -- their
     entry means "launched".
     """
-    results = {}
-    for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, []):
-        parent = workflow.parent_plan_of(next_name)
-        execution = workflow.execution_of(next_name)
-        strategy = _DISPATCHERS.get(execution.executor)
-        if strategy is None:
-            raise NotImplementedError(
-                f"advance() can't dispatch {next_name!r} yet -- its parent "
-                f"plan {parent.name!r} has executor={execution.executor!r}, "
-                f"and no strategy is registered for it (only "
-                f"{[e.value for e in _DISPATCHERS]} so far)."
-            )
-        results[next_name] = strategy(workflow, next_name, config)
-    return results
+    return {
+        next_name: _dispatch_one(workflow, next_name, config, caller="advance")
+        for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, [])
+    }

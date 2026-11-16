@@ -222,7 +222,7 @@ class Workflow(ProvenanceFreeModel):
             if self.resubmit_triggers
             else ""
         )
-        return f"<Plan 'workflow'  first={self.entry_point}{triggers}>"
+        return f"<Workflow  first={self.entry_point}{triggers}>"
 
     def parent_plan_of(self, multi_step_name: str) -> Plan:
         """The cluster (:class:`Plan`) that a sub-plan is batched into."""

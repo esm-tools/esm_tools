@@ -23,6 +23,10 @@
       <domain domain_ref="regular" />
       <axis axis_ref="model_levels_zoom" />
     </grid>
+    <grid id="reduced_ml_lowest" description="2D model grid on the lowest hybrid model level" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="model_levels_lowest" />
+    </grid>
   </grid_group>
 
   <!-- Definition of pressure levels grids -->

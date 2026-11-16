@@ -389,6 +389,17 @@
     <field id="co2apf" long_name="anthropogenic emissions of carbon dioxide"                  standard_name="anthropogenic_emissions_of_carbon dioxide"                unit="kg m-2 s-1" />
     <field id="co2fire" long_name="wildfire flux of carbon dioxide"                           standard_name="wildfire_flux_of_carbon_dioxide"                          unit="kg m-2 s-1" />
     <field id="macv2sp_taod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP" standard_name="total_aerosol_optical_depth_at_550nm_from_MACV2SP"        unit="1" />
+{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
+    <!-- AOD at 550 nm of the aerosol climatology the radiation uses (yomxios CSFCFLD, GRIB 210207-210212),
+         filled hourly by climaer_layer.F90 (LAERVISI). Names and long names from the ECMWF parameter
+         database. Not the MACv2-SP plume optical depth above. -->
+    <field id="aod550"   long_name="Total Aerosol Optical Depth at 550nm"                     standard_name="atmosphere_optical_thickness_due_to_ambient_aerosol_particles"                              unit="1" />
+    <field id="aod550ss" long_name="Sea Salt Aerosol Optical Depth at 550nm"                  standard_name="atmosphere_optical_thickness_due_to_sea_salt_ambient_aerosol_particles"                     unit="1" />
+    <field id="aod550du" long_name="Dust Aerosol Optical Depth at 550nm"                      standard_name="atmosphere_optical_thickness_due_to_dust_ambient_aerosol_particles"                         unit="1" />
+    <field id="aod550om" long_name="Organic Matter Aerosol Optical Depth at 550nm"            standard_name="atmosphere_optical_thickness_due_to_particulate_organic_matter_ambient_aerosol_particles"   unit="1" />
+    <field id="aod550bc" long_name="Black Carbon Aerosol Optical Depth at 550nm"              standard_name="atmosphere_optical_thickness_due_to_black_carbon_ambient_aerosol"                           unit="1" />
+    <field id="aod550su" long_name="Sulphate Aerosol Optical Depth at 550nm"                  standard_name="atmosphere_optical_thickness_due_to_sulfate_ambient_aerosol_particles"                      unit="1" />
+{%- endif %}
   </field_group>
 
   <field_group id="3D_ml" grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" >

@@ -116,8 +116,8 @@ from .simulation_config import ConfigBuilder
     help=(
         "Workflow engine to use. 'legacy' (default) runs the job as usual. "
         "'pplan' assembles the workflow into the pydantic Plan/MultiStep/"
-        "Workflow view and dispatches it natively -- combine with -c/"
-        "--check to preview the resolved workflow and its recipe steps "
+        "Workflow view and dispatches it natively -- combine with -d/"
+        "--debug to preview the resolved workflow and its recipe steps "
         "and drop into a debug session instead of dispatching anything."
     ),
 )
@@ -152,7 +152,7 @@ def main(**command_line_config):
         if observing_multi_step is not None:
             _run_observe(observing_multi_step, sim.plan, sim.config)
             return
-        if command_line_config["check"]:
+        if command_line_config["debug"]:
             drop_into_pplan_debug(sim.plan, sim.config)
             return
         dispatch.start(sim.plan, sim.config)
@@ -262,17 +262,18 @@ def _run_observe(multi_step_name, workflow, config):
 
 
 def drop_into_pplan_debug(workflow, config):
-    """``--wf-engine=pplan -c``'s path: print the resolved ``Workflow``
+    """``--wf-engine=pplan -d``'s path: print the resolved ``Workflow``
     that ``Simulation.from_config`` built for this job type, and drop
     into a debug session for poking around.
 
-    Does not submit or run anything -- a harder version of ``--check``:
-    plain check mode still writes a real runscript/calls a real recipe
-    for ``IN_PROCESS``/``LOCAL``/``BATCH`` steps, just without
-    submitting/executing them; this resolves the step list and stops
-    there, nothing built or run at all. (Without ``-c``, a fresh
-    ``--wf-engine=pplan`` invocation calls ``execution.dispatch.start``
-    instead, which actually dispatches ``workflow.entry_point``.)
+    Does not submit or run anything -- resolution-only, a step further
+    than ``-c``/``--check``: check mode still writes a real runscript/
+    calls a real recipe for ``IN_PROCESS``/``LOCAL``/``BATCH`` steps,
+    just without submitting/executing them; this resolves the step list
+    and stops there, nothing built or run at all. (Without ``-d``, a
+    fresh ``--wf-engine=pplan`` invocation calls
+    ``execution.dispatch.start`` instead, which actually dispatches
+    ``workflow.entry_point``.)
 
     Legacy ``prepare.run_job``/``assemble_workflow`` never ran to get
     here (see ``Simulation.from_config``'s ``wf_engine`` branch);

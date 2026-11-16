@@ -17,13 +17,13 @@ queue, launch mode, ...) lives separately in :class:`PlanExecution`/
 :class:`MultiStepExecution` -- openly esm-invented vocabulary, not claimed
 to align to any ontology (none has been selected for that side yet).
 
-``Step``/``MultiStep.steps``/``run_steps()`` model a sub-plan's individual
-recipe steps, resolved and run through ``esm_plugin_manager`` exactly like
-the legacy engine's recipes. No ``MultiStep`` built here is given a
-non-empty ``steps`` list yet, though -- the per-invocation work that
-exists today still runs through ``RunStateBuilder``'s hardcoded method
-chain instead (``simulation_config.py``); wiring real step lists onto
-``prepcompute``/``compute``/``tidy`` is future work.
+``Step`` models one recipe step (``p-plan:Step``). Resolving which
+``Step``\\ s a ``MultiStep`` actually runs, and running them, is
+deliberately NOT done here -- see
+:mod:`esm_runscripts.execution.steps`. Baking a resolved ``steps`` list
+into this model would mean this module calling into ``execution`` (the
+wrong dependency direction) and would make building a ``Workflow`` do
+real I/O for what's supposed to be cheap, pure data.
 """
 
 from __future__ import annotations
@@ -31,8 +31,6 @@ from __future__ import annotations
 import enum
 from typing import Dict, List, Optional
 
-import esm_plugin_manager
-import esm_tools
 from esm_parser.pydantic_models import ProvenanceFreeModel
 from esm_tools._compat import StrEnum
 from pydantic import ConfigDict
@@ -128,7 +126,6 @@ class MultiStep(ProvenanceFreeModel):
     name: str
     step_of_plan: str
     preceded_by: List[str] = []
-    steps: List[Step] = []
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         bits = []
@@ -222,7 +219,7 @@ class Workflow(ProvenanceFreeModel):
             if self.resubmit_triggers
             else ""
         )
-        return f"<Plan 'workflow'  first={self.entry_point}{triggers}>"
+        return f"<Workflow  first={self.entry_point}{triggers}>"
 
     def parent_plan_of(self, multi_step_name: str) -> Plan:
         """The cluster (:class:`Plan`) that a sub-plan is batched into."""
@@ -559,31 +556,3 @@ def _only_known_fields(model, conf: dict, exclude: frozenset = frozenset()) -> d
     return {k: v for k, v in conf.items() if k in known}
 
 
-def run_steps(multi_step: MultiStep, config: dict) -> dict:
-    """Resolve and run a :class:`MultiStep`'s :attr:`steps`, in order.
-
-    Reuses ``esm_plugin_manager`` wholesale -- the same
-    ``read_plugin_information`` + ``check_plugin_availability`` +
-    ``work_through_recipe`` sequence ``helpers.evaluate`` already uses for
-    the legacy engine's recipes -- rather than re-resolving step names to
-    callables natively. Every step function already has the uniform
-    ``fn(config) -> config`` signature (the same shape every
-    ``RunStateBuilder.with_*()`` method wraps), and there is no separate
-    success/failure return value to model: a step either returns normally
-    (success) or raises (failure propagates to the caller), exactly like
-    the legacy engine.
-    """
-    if not multi_step.steps:
-        return config
-
-    recipe = {
-        "recipe": [step.name for step in multi_step.steps],
-        "job_type": multi_step.name,
-    }
-    plugins_bare = (
-        esm_tools.get_config_filepath()
-        + "/esm_software/esm_runscripts/esm_plugins.yaml"
-    )
-    plugins = esm_plugin_manager.read_plugin_information(plugins_bare, recipe)
-    esm_plugin_manager.check_plugin_availability(plugins)
-    return esm_plugin_manager.work_through_recipe(recipe, plugins, config)

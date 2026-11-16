@@ -11,9 +11,7 @@ from esm_runscripts.pplan.plan import (
     MultiStepExecution,
     Plan,
     PlanExecution,
-    Step,
     Workflow,
-    run_steps,
 )
 
 
@@ -108,7 +106,7 @@ def test_multi_step_defaults_for_new_fields():
     multi_step = MultiStep(name="prepare", step_of_plan="initialization")
     execution = MultiStepExecution()
 
-    assert multi_step.steps == []
+    assert multi_step.preceded_by == []
     assert execution.kind == "esm_multistep"
 
 
@@ -120,65 +118,6 @@ def test_plan_defaults_for_new_fields():
     assert execution.cycling is None
 
 
-def test_run_steps_is_a_noop_for_an_empty_steps_list():
-    multi_step = MultiStep(name="prepare", step_of_plan="initialization")
-    config = {"general": {"setup_name": "awicm3"}}
-
-    result = run_steps(multi_step, config)
-
-    assert result is config
-
-
-def test_run_steps_resolves_and_runs_via_esm_plugin_manager(monkeypatch):
-    # run_steps is a thin adapter over esm_plugin_manager -- the same
-    # read_plugin_information + check_plugin_availability +
-    # work_through_recipe sequence helpers.evaluate already uses for the
-    # legacy engine. Verify the adapter wiring (recipe shape, call order)
-    # without running real plugin functions.
-    calls = []
-
-    def fake_read_plugin_information(plugins_bare, recipe):
-        calls.append(("read_plugin_information", plugins_bare, recipe))
-        return {"fake_plugins": True}
-
-    def fake_check_plugin_availability(plugins):
-        calls.append(("check_plugin_availability", plugins))
-
-    def fake_work_through_recipe(recipe, plugins, config):
-        calls.append(("work_through_recipe", recipe, plugins, config))
-        return {**config, "ran": True}
-
-    import esm_plugin_manager
-    monkeypatch.setattr(
-        esm_plugin_manager, "read_plugin_information", fake_read_plugin_information
-    )
-    monkeypatch.setattr(
-        esm_plugin_manager, "check_plugin_availability", fake_check_plugin_availability
-    )
-    monkeypatch.setattr(
-        esm_plugin_manager, "work_through_recipe", fake_work_through_recipe
-    )
-
-    multi_step = MultiStep(
-        name="prepare",
-        step_of_plan="initialization",
-        steps=[Step(name="_read_date_file"), Step(name="check_model_lresume")],
-    )
-    config = {"general": {"setup_name": "awicm3"}}
-
-    result = run_steps(multi_step, config)
-
-    assert result == {"general": {"setup_name": "awicm3"}, "ran": True}
-    assert [name for name, *_ in calls] == [
-        "read_plugin_information",
-        "check_plugin_availability",
-        "work_through_recipe",
-    ]
-    recipe = calls[0][2]
-    assert recipe == {
-        "recipe": ["_read_date_file", "check_model_lresume"],
-        "job_type": "prepare",
-    }
 
 
 def test_workflow_default_synthesizes_prepcompute_compute_tidy():

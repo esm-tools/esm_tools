@@ -1,0 +1,109 @@
+"""Picking the right execution strategy for a resolved
+:class:`~esm_runscripts.pplan.plan.Workflow`'s work, per
+:class:`~esm_runscripts.pplan.plan.Executor`.
+
+This is the "execution" half of the staged vocabulary-rename plan (see
+esm-tools/esm_tools#1519): rename -> models -> REPL -> execution/provenance.
+``pplan.plan`` stays the read-only model layer; this module is where
+deciding *how* a sub-plan's work actually runs belongs.
+"""
+
+from ..pplan import plan as plan_module
+from . import launch, steps as steps_module
+from .check_mode import is_check_mode
+
+
+def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, config: dict) -> dict:
+    """Run ``multi_step_name``'s steps directly, in the current process.
+
+    Only valid for a sub-plan whose parent :class:`~plan.Plan` has
+    ``executor == Executor.IN_PROCESS`` (in :class:`~plan.PlanExecution`)
+    -- no new OS process, no runscript, just
+    :func:`~esm_runscripts.execution.steps.run_steps` called right here
+    (which resolves ``multi_step_name``'s recipe steps lazily, at this
+    exact moment -- see that module's docstring for why). ``launch_local``/
+    ``launch_batch`` (:mod:`.launch`) spawn a process instead.
+
+    In check mode (``-c``), steps never get resolved or run -- there's
+    nothing to "build" separately for an in-process step the way a
+    runscript gets written-but-not-submitted, so check mode here just
+    means the step never actually runs.
+    """
+    parent = workflow.parent_plan_of(multi_step_name)
+    execution = workflow.execution_of(multi_step_name)
+    if execution.executor != plan_module.Executor.IN_PROCESS:
+        raise ValueError(
+            f"run_in_process called for {multi_step_name!r}, whose parent "
+            f"plan {parent.name!r} has executor={execution.executor!r}, not "
+            f"{plan_module.Executor.IN_PROCESS!r}."
+        )
+    if is_check_mode(config):
+        return config
+    return steps_module.run_steps(config, multi_step_name)
+
+
+# One strategy per Executor value. advance() looks a target's executor up
+# here rather than branching on it directly.
+_DISPATCHERS = {
+    plan_module.Executor.IN_PROCESS: run_in_process,
+    plan_module.Executor.LOCAL: launch.launch_local,
+    plan_module.Executor.BATCH: launch.launch_batch,
+}
+
+
+def _dispatch_one(workflow: "plan_module.Workflow", multi_step_name: str, config: dict, caller: str) -> dict:
+    """Look ``multi_step_name``'s parent executor up in ``_DISPATCHERS``
+    and run the matching strategy. Shared by :func:`start` and
+    :func:`advance` -- ``caller`` is only for the error message, naming
+    which one couldn't dispatch."""
+    parent = workflow.parent_plan_of(multi_step_name)
+    execution = workflow.execution_of(multi_step_name)
+    strategy = _DISPATCHERS.get(execution.executor)
+    if strategy is None:
+        raise NotImplementedError(
+            f"{caller}() can't dispatch {multi_step_name!r} yet -- its parent "
+            f"plan {parent.name!r} has executor={execution.executor!r}, "
+            f"and no strategy is registered for it (only "
+            f"{[e.value for e in _DISPATCHERS]} so far)."
+        )
+    return strategy(workflow, multi_step_name, config)
+
+
+def start(workflow: "plan_module.Workflow", config: dict) -> dict:
+    """Dispatch ``workflow.entry_point`` -- the bootstrap call for a
+    fresh invocation (nothing has triggered anything yet). Uses the same
+    ``_DISPATCHERS`` lookup :func:`advance` uses for every later cycle;
+    this is just the one call that kicks the chain off in the first
+    place."""
+    return _dispatch_one(workflow, workflow.entry_point, config, caller="start")
+
+
+def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, config: dict) -> dict:
+    """Dispatch whatever ``finished_multi_step_name`` triggers next.
+
+    Native replacement for legacy's ``resubmit_recursively``/
+    ``maybe_resubmit`` (``resubmit.py``), reading
+    ``Workflow.resubmit_triggers`` (the fan-out-capable native shape) in
+    place of the legacy dict's per-plan ``next_submit`` list.
+
+    Looks each target's parent ``Plan.executor`` up in ``_DISPATCHERS``; a
+    target whose executor has no registered strategy raises
+    ``NotImplementedError`` naming it, rather than silently doing nothing.
+
+    Returns ``{next_multi_step_name: resulting_config}`` for every target
+    this call dispatched -- empty if ``finished_multi_step_name`` triggers
+    nothing. Each target is dispatched independently against the same
+    ``config`` passed in (not threaded sequentially through each other's
+    result) -- fan-out targets are independent resubmissions, matching
+    legacy's own ``resubmit_recursively``, which never chains one target's
+    output into the next. A target's entry means "dispatched", not
+    necessarily "finished": ``run_in_process`` really has run by the time
+    it returns, so its entry reflects real work done; ``launch_local``/
+    ``launch_batch`` return ``config`` unchanged, since launching a
+    process or submitting to a scheduler is fire-and-forget -- their
+    entry means "launched".
+    """
+    return {
+        next_name: _dispatch_one(workflow, next_name, config, caller="advance")
+        for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, [])
+    }

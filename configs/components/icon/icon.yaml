@@ -59,6 +59,9 @@ icon:
    #                 sea ice (Met Office), CERESMIP choice for the first runs,
    #                 1949-01 .. 2021-12 (do not run past 2021-12-31), GEOMAR
    #                 mid-month adjustment as hadisst1p1, see r0003/README.md
+   #                 HadISST 2.2.1.0 has no Antarctic sea ice in 1986-04/05 (data error)
+   #   hadisst2p4-p1986: as hadisst2p4, but with the Antarctic sea ice of 1986-04/05
+   #                 patched (climatology + interpolated anomaly), see r0004/README.md
    #   pcmdi-1-1-10: CMIP7 PCMDI-AMIP-1-1-10 (HadISST1 + OISST v2.1) as used by
    #                 Trang's ICON-XPP AMIP setup, 1949-01 .. 2022-01-16
    sstice: hadisst1p1
@@ -72,6 +75,9 @@ icon:
       hadisst2p4:
          sstice_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0003
          sstice_name: HadISST.2.4.0.0-member001_SIC-HadISST.2.2.1.0-midmonth_194901-202112
+      hadisst2p4-p1986:
+         sstice_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0004
+         sstice_name: HadISST.2.4.0.0-member001_SIC-HadISST.2.2.1.0-patch1986-midmonth_194901-202112
       pcmdi-1-1-10:
          sstice_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
          sstice_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112

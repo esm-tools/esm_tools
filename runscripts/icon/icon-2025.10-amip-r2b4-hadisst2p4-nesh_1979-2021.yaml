@@ -1,5 +1,5 @@
 # Standalone ICON (2025.10-public) AMIP runscript, R02B04 (grid 0012), nesh,
-# 1979-01-01 to 2021-12-31, with HadISST 2.4 SST and sea ice (icon.sstice: hadisst2p4:
+# 1979-01-01 to 2021-12-31, with HadISST 2.4 SST and sea ice (icon.sstice: hadisst2p4-p1986, r0004:
 # HadISST 2.4.0.0 SST member 001 + HadISST 2.2.1.0 sea ice, GEOMAR mid-month adjustment,
 # r0003, see ceresmip/src/sst_seaice/r0003/README.md). CERESMIP uses HadISST 2.4 for the
 # first simulations, which therefore end in 2021 (end of the dataset, do not extend
@@ -11,23 +11,26 @@
 # tune_entrorg 0.0021, tune_box_liq_asy 3.35. Suggested expid: icon-r2b4-amip-hadisst24-01
 #
 # Before the first run:
-#   - input data: 0012_geomar/sst_and_seaice/r0003 in the pool (copy, see ceresmip CLAUDE.md)
+#   - input data: 0012_geomar/sst_and_seaice/r0004 in the pool (copy, see ceresmip CLAUDE.md)
 #   - run icon-2025.10-amip-r2b4-hadisst2p4-nesh.yaml (2 x 5 days) first
 #
-# Run length: one run of 43 years (1979-2021) on 16 nodes: scaling test 2026-11-12
-#   0.72 h per model year (ICON timer) + ~8 % start-up/output = ~33 h (48 h limit).
-#   Check the speed in the first hour (thermally throttled nodes, see below).
+# Run length: two runs of 21 years (1979-1999, 2000-2020) on 8 nodes: scaling test
+#   2026-11-12 1.19 h per model year (ICON timer) + ~8 % start-up/output = ~27 h per run
+#   (48 h limit), final_date 2021-01-01. Then 2021 as one run by hand: set runlength: 1,
+#   nyear: 1 (choose_unit) and final_date: "2022-01-01", and resubmit; the experiment
+#   continues from the 2021-01-01 restart. Check the speed in the first hour (bad nodes, see below).
 # Restart files: every year (checkpoint_interval, ~1 GB each, they stay in run_*/work),
-#   the restart at the end of the run (2022-01-01) is copied to restart/icon.
-# Disk: ~25 GB per year of daily 3d model-level output (~1.1 TB for 43 years) before the
+#   the restart at the end of each run is copied to restart/icon.
+# Disk: ~25 GB per year of daily 3d model-level output (~0.5 TB per 21-year run) before the
 #   interpolation job deletes it (interp_to_plev_ml_files: remove).
 computer:
     use_hyperthreading: False
     additional_flags:
         - "--tasks-per-node=32"
         - "--constraint=sapphire"
-        # nodes that were thermally throttled on 2026-11-09 (half speed)
-        - "--exclude=nesh-srp[224-227]"
+        # nodes that ran at half speed: thermally throttled (224-227, 2026-11-09),
+        # hyperthreading on (110, 283, 2026-11-14), down or failing (scan 2026-11-16)
+        - "--exclude=nesh-srp[110,112,128,224-227,242,278,283,299]"
     launcher: mpirun
     launcher_flags: ""
     check_error:
@@ -46,10 +49,10 @@ general:
    compute_time: "48:00:00"
 
    initial_date: "1979-01-01T00:00:00"       # Initial exp. date
-   final_date: "2022-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2021-01-01T00:00:00"         # Final date of the experiment, see above for 2021
    # set length and unit of each run, both are used to set the ESM-Tools run
    # length and the ICON restart_interval (end of the run)
-   runlength: 43
+   runlength: 21
    unit: 'y' # 'd' for day, 'm' for month, 'y' for year
    # needs fixing, esm_tools can't resolve ${runlength} here
    # https://github.com/esm-tools/esm_tools/issues/1453
@@ -62,7 +65,7 @@ general:
          nmonth: 43
          unitUpper: 'M'
       'y':
-         nyear: 43
+         nyear: 21
          unitUpper: 'Y'
 
    # only use !ENV for plain ${HOME}: esm_parser exports every !ENV variable to
@@ -81,7 +84,8 @@ icon:
    # core2 = CORE2 extpar + 0012-CORE2/land/r00xx JSBACH files (as the R2B4 ICON-FESOM runs)
    amip_surface: core2
    # HadISST 2.4.0.0 SST (member 001) + HadISST 2.2.1.0 sea ice, 1949-2021 (r0003, see icon.yaml)
-   sstice: hadisst2p4
+   # Antarctic sea ice of 1986-04/05 patched (missing in HadISST 2.2.1.0, r0004)
+   sstice: hadisst2p4-p1986
    scenario: 'cmip7hist'
    cmip7_scenario: m
    # ScenarioMIP ozone (2023-2025) for grid 0012, made by GEOMAR (not in the ICON-XPP pool)
@@ -94,8 +98,8 @@ icon:
    interp_to_plev: True
    interp_to_plev_ml_files: remove
 
-   # 16 nodes (scaling test 2026-11-12: 83 % efficiency vs 8 nodes, 43 years fit into one 48 h job)
-   nproc: 512
+   # 8 nodes (scaling test 2026-11-12: best efficiency, ~9.6 node h per model year)
+   nproc: 256
    omp_num_threads: 1
    dtime: 450
 

@@ -9,6 +9,11 @@
     <axis id="nz_sfc" long_name="depth below sea level at the uppermost layer mid-point" standard_name="depth" axis_ref="nz">
       <zoom_axis index="(0,0)[0]" />
     </axis>
+    <!-- the two layers around 200 dbar (op20bar): mid-depths 175 m and 210 m on CORE3
+         (aux3d.out levels 160/190/230 m), for daily output at that depth -->
+    <axis id="nz_200" long_name="depth below sea level at the layer mid-points around 200 dbar" standard_name="depth" axis_ref="nz">
+      <zoom_axis index="(0,1)[14 15]" />
+    </axis>
   </axis_group>
 
   <!-- Density-coordinate axis for dMOC diagnostics.

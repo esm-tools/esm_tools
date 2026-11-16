@@ -637,6 +637,11 @@ fesom:
     # simulated year raw on CORE3.
     cmip7_3h_output: true
     cmip7_daily_3d_output: false
+    # cmip7_lr_gapfill_output: extra CMIP7 output for the AWI-ESM3 cc-LR spinup: daily temp and,
+    # with REcoM, O2, pH, CO3, CO3satA, PhyChl, DiaChl, PhyC, DiaC on the two layers around
+    # 200 dbar (175 and 210 m on CORE3, <var>_200.fesom.<year>.nc). temp is then sent daily, so
+    # its monthly files average daily sends. About 3.5 GB raw per simulated year on CORE3.
+    cmip7_lr_gapfill_output: false
     # When true, add regridded (regular lat/lon) output for all 2D fields
     # alongside the native unstructured output. Each regrid file is produced
     # at the same frequency as its native counterpart (daily for fesom_1d

@@ -157,6 +157,22 @@ lpj_guess:
             branch: 4.1.15
             install_bins: build/guess
             executable: guess
+        # Release tag (lpj_guess_awiesm3_cmip7 at 18bfab7), used by awiesm3 v3.4.2: the CMIP7 production
+        # line (d670d66) plus the land-use roundoff crash fix in donor selection. Not on the v3.5 line.
+        4.1.16:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.16
+            install_bins: build/guess
+            executable: guess
+        # Release tag (lpj_guess_awiesm3 at bc9ecf6), used by awiesm3 v3.5.2: 4.1.15 plus the land-use
+        # roundoff crash fix of 4.1.16.
+        4.1.17:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.17
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating

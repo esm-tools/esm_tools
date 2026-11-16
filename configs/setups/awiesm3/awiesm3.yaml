@@ -488,8 +488,8 @@ general:
             honor_final_date: true
 
         # ------------------------------------------------------------------
-        # v3.5.2: v3.5.1 on new tags (FESOM 2.8.4, OpenIFS 48r1v8, XIOS 2.5.6, runoff
-        # mapper 1.5; the ice-sheet variant adds dEBM2 1.0 and ismm 4.1.8-awi.2).
+        # v3.5.2: v3.5.1 on new tags (FESOM 2.8.4, OpenIFS 48r1v8, LPJ-GUESS 4.1.17, XIOS
+        # 2.5.6, runoff mapper 1.5; the ice-sheet variant adds dEBM2 1.0 and ismm 4.1.8-awi.2).
         # FESOM is single precision in all three variants, -cc included (#1242),
         # and WAM writes through XIOS with the CMIP7 output (oifs section).
         # Frozen: a later fix is v3.5.3, made from develop again.
@@ -2071,7 +2071,7 @@ lpj_guess:
     # never covers on the CORE3 coastline are authorised as natural.
     choose_general.major_version:
         "v3.4":
-            # The LPJ-GUESS tags of v3.4.x (4.1.5, 4.1.6, 4.1.12.1) do not know ltos.
+            # The LPJ-GUESS tags of v3.4.x (4.1.5, 4.1.16, 4.1.12.1) do not know ltos.
             set_ltos: false
             # v3.4.x input (masks.nc, LPJ-GUESS state) is on the L-grid, and the
             # CMIP7 production runs use it. coupled_land, the default in

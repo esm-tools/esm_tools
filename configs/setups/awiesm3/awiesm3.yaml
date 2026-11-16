@@ -245,8 +245,8 @@ general:
             with_co2_oce_coupling: false
             with_co2_veg_coupling: false
         # v3.4.2 as the CMIP7 production runs use it, plus technical fixes:
-        # LPJ-GUESS 4.1.12.1 (lpj_guess_awiesm3_cmip7 at d670d66, what production
-        # was rebuilt with on 2026-09-28) and OpenIFS 48r1v4.1 (48r1v4 plus the
+        # LPJ-GUESS 4.1.18 (lpj_guess_awiesm3_cmip7 at d670d66, what production
+        # was rebuilt with on 2026-09-28, plus the cold-start and land-use crash fixes) and OpenIFS 48r1v4.1 (48r1v4 plus the
         # source fixes for the Intel LLVM compilers of 2025, no change in results
         # intended). First version that builds and runs on blogin.
         v3.4.3:
@@ -2071,7 +2071,7 @@ lpj_guess:
     # never covers on the CORE3 coastline are authorised as natural.
     choose_general.major_version:
         "v3.4":
-            # The LPJ-GUESS tags of v3.4.x (4.1.5, 4.1.16, 4.1.12.1) do not know ltos.
+            # The LPJ-GUESS tags of v3.4.x (4.1.5, 4.1.16, 4.1.18) do not know ltos.
             set_ltos: false
             # v3.4.x input (masks.nc, LPJ-GUESS state) is on the L-grid, and the
             # CMIP7 production runs use it. coupled_land, the default in

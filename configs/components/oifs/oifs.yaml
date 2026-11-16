@@ -1300,6 +1300,15 @@ oifs:
                                     NAMCLDP:
                                             SCLCT_SWITCH: "${sclct_switch}"
 
+    # The pextra tendencies written by cmip7_lr_gapfill_output must be means over each
+    # output interval; the default LCLDBUD_TIMEINT=.true. accumulates them over the whole run.
+    choose_cmip7_lr_gapfill_output:
+            true:
+                    add_namelist_changes:
+                            fort.4:
+                                    NAMCLDP:
+                                            LCLDBUD_TIMEINT: ".false."
+
     ##
     ## specifics for 40r1 and 43r3
     ##

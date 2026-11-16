@@ -182,6 +182,11 @@
     <file id="f_vnod"       name="vnod.fesom.%start_date%" ><field field_ref="vnod"       freq_op="1mo"/></file>
     <file id="f_hnode"      name="hnode.fesom.%start_date%" ><field field_ref="hnode"      freq_op="1mo"/></file>
     <file id="f_rsdoabsorb" name="rsdoabsorb.fesom.%start_date%"><field field_ref="rsdoabsorb"  freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
+{%- if fesom.with_transit_tracers | default(false) %}
+    <!-- transient tracers CFC-12 and SF6 (fesom.with_transit_tracers) -->
+    <file id="f_cfc12"      name="cfc12.fesom.%start_date%" ><field field_ref="cfc12"      freq_op="1mo"/></file>
+    <file id="f_sf6"        name="sf6.fesom.%start_date%" ><field field_ref="sf6"        freq_op="1mo"/></file>
+{%- endif %}
 
     <!-- 3D nodes, interface levels -->
     <file id="f_w"       name="w.fesom.%start_date%" ><field field_ref="w"        freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>

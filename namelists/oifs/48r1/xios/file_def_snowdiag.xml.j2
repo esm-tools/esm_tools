@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 
 <file_definition>
+  <!-- Averages sample at the OpenIFS post-processing interval (NFRPOS = oifs.output_step_freq steps): OpenIFS
+       resets its accumulated fields (fluxes, precipitation) at every post-processing step, so a coarser freq_op
+       would average only every n-th accumulation window. With mip: cmip7 NFRPOS is 1 h, and the former
+       freq_op="6h" kept 4 of 24 hours a day (TOA - surface off by about 0.4 W m-2 in AWI-ESM3-cc-LR, 2026-11). -->
 
 	<!-- names and long_names according to
              ECMWF Parameter database https://apps.ecmwf.int/codes/grib/param-db -->
@@ -38,7 +42,7 @@
             name_suffix="_1d"
             description="ECE4/OIFS daily surface fields">
 
-            <field_group freq_op="6h" operation="average">
+            <field_group freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="ro" name="ro" long_name="Runoff"/>
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
@@ -63,7 +67,7 @@
             name_suffix="_1m"
             description="ECE4/OIFS monthly surface fields">
 
-            <field_group freq_op="6h" operation="average">
+            <field_group freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/> 
                 <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/> 
                 <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>
@@ -206,7 +210,7 @@
             name_suffix="_1d"
             description="ECE4/OIFS daily surface fields">
 
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+            <field_group grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>
                 <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>
                 <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>
@@ -242,7 +246,7 @@
             name_suffix="_1m"
             description="ECE4/OIFS monthly surface fields">
 
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+            <field_group grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
         <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
         <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
         <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
@@ -340,7 +344,7 @@
             name_suffix="_6h_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 
-            <field_group grid_ref="regular_pl" freq_op="6h" operation="average">
+            <field_group grid_ref="regular_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>
@@ -362,7 +366,7 @@
             name_suffix="_1m_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 
-            <field_group grid_ref="regular_pl" freq_op="6h" operation="average">
+            <field_group grid_ref="regular_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>

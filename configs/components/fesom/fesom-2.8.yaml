@@ -471,6 +471,8 @@ fesom:
                     all_directions: move
             fesom_bin_restart_tar_out:
                     all_directions: move
+            outdata:
+                    all_directions: move
 
     choose_tar_binary_restarts:
         True:

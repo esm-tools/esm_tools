@@ -520,6 +520,9 @@ oifs:
     # model levels. About 7 GB raw per simulated year at TCO95. Default off, so the shared
     # templates write for veg-HR exactly what they wrote before.
     cmip7_lr_gapfill_output: false
+    # pextra T/q tendencies in atmos_mon_ml. Off: with FullPos, 48r1v8 aborts in POS
+    # (YSD_XAD%NLEVS /= KFLEVG) until SUXIOS_PEXTRA_FIELDS sets NCEXTR before NAMDPHY uses it.
+    cmip7_lr_gapfill_tendencies: false
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"
@@ -1300,9 +1303,21 @@ oifs:
                                     NAMCLDP:
                                             SCLCT_SWITCH: "${sclct_switch}"
 
-    # The pextra tendencies written by cmip7_lr_gapfill_output must be means over each
-    # output interval; the default LCLDBUD_TIMEINT=.true. accumulates them over the whole run.
+    # Switching the gap-fill output on in a restarted run changes the length of the global DDH
+    # buffers, so reading the parent's DDH restart aborts (RERESF_PART2: DDHRCV WRONG LENGTH).
+    # Global DDH writes no output in this setup: switch it and its listing off together
+    # (SUNDDH requires LHDGLB .EQV. (LHDPRG .OR. LHDEFG)). Keep it off for the rest of that run.
     choose_cmip7_lr_gapfill_output:
+            true:
+                    add_namelist_changes:
+                            fort.4:
+                                    NAMDDH:
+                                            LHDGLB: ".false."
+                                            LHDPRG: ".false."
+
+    # The pextra tendencies (cmip7_lr_gapfill_tendencies) must be means over each output
+    # interval; the default LCLDBUD_TIMEINT=.true. accumulates them over the whole run.
+    choose_cmip7_lr_gapfill_tendencies:
             true:
                     add_namelist_changes:
                             fort.4:

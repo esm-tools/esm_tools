@@ -122,9 +122,13 @@
                 <field field_ref="relative_humidity_ml__hur"/>
 {%- if oifs.cmip7_lr_gapfill_output | default(false) %}
                 <field field_ref="o3" name="o3" long_name="Ozone mass mixing ratio"/>
+{%- if oifs.cmip7_lr_gapfill_tendencies | default(false) %}
                 <!-- Physics tendencies of T and q. Listing them is what switches the pextra
                      computation on (suxios_pextra_fields sets LBUD23 and NVEXTRAGB from the active
-                     fields). Accumulated values, unit "K/s * s" and "kg/kg/s * s". -->
+                     fields). Accumulated values, unit "K/s * s" and "kg/kg/s * s". Separate flag:
+                     with FullPos on, 48r1v8 aborts in POS (YSD_XAD%NLEVS /= KFLEVG) because
+                     SUXIOS_PEXTRA_FIELDS('NAMDPHY') copies NCEXTR before the FullPos setup sets it
+                     to NFLEVG; needs that one-line OpenIFS fix first. -->
                 <field field_ref="pextra_93"/>
                 <field field_ref="pextra_94"/>
                 <field field_ref="pextra_95"/>
@@ -135,6 +139,7 @@
                 <field field_ref="pextra_106"/>
                 <field field_ref="pextra_109"/>
                 <field field_ref="pextra_110"/>
+{%- endif %}
 {%- if general.with_co2_tracer | default(false) %}
                 <field field_ref="co2" name="co2" long_name="CO2 mass mixing ratio"/>
 {%- endif %}

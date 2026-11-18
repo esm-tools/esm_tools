@@ -7,7 +7,7 @@ components:
 - oifs-48r1v8
 - fesom-2.8.4
 - oasis3mct-5.3
-- lpj_guess-4.1.17
+- lpj_guess-4.1.19
 - pism-1.2.0-awi.1
 - debm-1.0-awi.1
 # before ismm, which links its libdebm2.so

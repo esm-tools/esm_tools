@@ -181,6 +181,15 @@ lpj_guess:
             branch: 4.1.18
             install_bins: build/guess
             executable: guess
+        # Release tag (lpj_guess_awiesm3 at 311e0e2), used by awiesm3 v3.5.2: 4.1.17 plus no
+        # prescribed CO2 lookup in coupled tracer mode, so emission-driven spin-ups can run beyond
+        # the forcing years.
+        4.1.19:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.19
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating

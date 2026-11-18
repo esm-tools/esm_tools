@@ -134,7 +134,7 @@ Plan keys:
 | `preceded_by` | list of plan dependencies | Plan-level dependencies, see [dependencies](#54-dependencies). |
 | `cycle` | dict | How the plan cycles, see [cycling](#5-cycling). |
 | `components` | list of model names | (Optional) Which components of the setup this plan runs/handles. Needed when different plans run different models (e.g. AWI-ESM2 and PISM). Defaults to all components. |
-| `calendar` | dict | (Integer mode) The model calendar of this plan (`initial_date`, `final_date`, `run_length`), see [model calendars](#55-model-calendars-in-integer-mode). |
+| `calendar` | dict | The model calendar of this plan (`initial_date`, `final_date`, `run_length`), see [model calendars](#55-model-calendars-in-integer-mode). In datetime mode only `run_length` is used, and it is the default recurrence of the plan. |
 | `resources` | dict | Batch resources (`nproc`/`nodes`, `partition`, `time`, ...). For the plan containing `compute` they are computed from the components, as today. |
 
 **Equivalent in the old workflow manager**: ~clusters
@@ -160,9 +160,9 @@ Group of steps and their ordering.
   sub-plan, not only at the end of a plan.
 * The **entry points** of a plan are its sub-plans that have no predecessor inside the same
   plan. The **exit points** are the sub-plans that have successors outside the plan
-  instance (in another plan or in the next cycle). A plan can have several exit points, for
-  example in the simulation plan both `tidy` (precedes `catalog`) and `prepare_run`
-  (hands over to the next cycle) are exit points.
+  instance (in another plan or in the next cycle). A plan can have several exit points; in
+  the simulation plan `tidy` is the exit point (it precedes `catalog` and hands over to the
+  next cycle).
 
 Sub-plan keys:
 
@@ -263,7 +263,7 @@ Legacy keys and features, and their equivalent:
 | `files_to_wait_for` | Real dependencies between plans |
 | `iterative_coupling`, `model1`/`model2` runscripts | One runscript, one plan per model with `components` |
 | `chunk_size`, `chunk_unit` | Number of cycle points of a plan per period of its recurrence (e.g. `[P22, 2/P22]`) |
-| `nyear`, `nmonth`, ... | Period of `cycle.recurrence` (datetime mode) or `calendar.run_length` (integer mode) |
+| `nyear`, `nmonth`, ... | Still supported: mapped to `calendar.run_length` of the default workflow (see [5.2](#52-recurrences)) |
 | `coupling_mode: concurrent`, `--coupling-chain` | Offsets in `preceded_by` |
 | `hold_allocation` | Vertical job bundle (`cycles_per_job`) |
 
@@ -337,6 +337,17 @@ workflow:
                 sequential: true      # default: each instance depends on the previous one
 ```
 
+Most users never write a recurrence: in datetime mode the recurrence of a plan defaults
+to its `calendar.run_length`, and the default workflow sets
+`run_length: ${general.run_length}`. `general.run_length` is mapped in the background
+from `nyear`/`nmonth`/`nday`/`nhour`/`nminute`/`nsecond` by `prepare.set_restart_chunk`,
+after it normalizes them as today (the largest unit set wins, so `nyear: 1` + `nmonth: 6`
+is one year, and nothing set means `nyear: 1`), e.g. `nyear: 1` → `P1Y0M0DT0H0M0S`. Old
+runscripts keep working. Recurrences are normal ESM-Tools values: plans with their own frequency can refer
+to a placeholder defined anywhere in the configuration, e.g.
+`recurrence: ${fesom.tripyview_recurrence}` with `fesom.tripyview_recurrence: +P9Y/P10Y`
+defined by `fesom.tripyview.yaml` and overridable in the runscript.
+
 Recurrence syntax (ISO 8601 recurrences, with the integer and exclusion extensions used by
 Cylc):
 
@@ -360,8 +371,8 @@ Cylc):
   `[P22, 2/P22]` the explicit offsets would differ between instances.) Plans that do not
   need it (e.g. postprocessing of independent years) set `sequential: false`, and several
   of their instances can then run at the same time.
-* In datetime mode, the period of the plan containing `compute` is the **run length**: it
-  replaces `nyear`/`nmonth`/`nday`.
+* In datetime mode, the period of the plan containing `compute` is the **run length**
+  (`calendar.run_length`).
 
 ## 5.3. Restricting sub-plans to some cycle points
 
@@ -374,7 +385,7 @@ sub_plans:
     prepare_run:
         plan: simulation
         cycle:
-            skip: last               # nothing to prepare after the last instance
+            skip: first              # the first run is prepared by prepare_first_run
     pism2awiesm:
         plan: pism
         cycle:
@@ -463,7 +474,83 @@ And the dependencies:
 
 The complete example is in [7.3](#73-awi-esm2-pism-in-a-single-runscript). The numbers in
 the recurrences can be computed with ESM-Tools variables, so the user only changes the
-number of years per model.
+number of years per model (see the recipe below).
+
+**Recipe: alternating plans with recurrences computed with `$(( ))`** (to be included in
+the user documentation, in the workflow recipes). The recurrences of an alternating
+workflow depend on how many runs each model does per block: N consecutive cycle points
+per period for each model. ESM-Tools evaluates `$(( ))` expressions with Python's `eval`
+(`esm_parser.do_math_in_entry`), and a list result stays a list, so a coupled setup can
+compute all recurrences from a few variables. Example with 3 years of AWI-ESM and 4 years
+of PISM per block, both with a run length of one year (period 7):
+
+| Cycle points | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `awiesm` | x | x | x | | | | | x | x | x | | | | |
+| `pism` | | | | x | x | x | x | | | | x | x | x | x |
+
+```yaml
+# awiesm-pism setup, written once by the setup maintainer
+general:
+    awiesm_years: 3            # set by the user (old model1.chunk_size)
+    pism_years: 4              # set by the user (old model2.chunk_size)
+    awiesm_run_years: 1        # run length of one AWI-ESM job, in years
+    pism_run_years: 1          # run length of one PISM job, in years
+    awiesm_runs: "$(( ${general.awiesm_years} // ${general.awiesm_run_years} ))"
+    pism_runs: "$(( ${general.pism_years} // ${general.pism_run_years} ))"
+    period: "$(( ${general.awiesm_runs} + ${general.pism_runs} ))"
+    # ['1/P7', '2/P7', '3/P7']
+    awiesm_points: "$(( [str(i) + '/P' + str(${general.period}) for i in range(1, ${general.awiesm_runs} + 1)] ))"
+    # ['4/P7', '5/P7', '6/P7', '7/P7']
+    pism_points: "$(( [str(i) + '/P' + str(${general.period}) for i in range(${general.awiesm_runs} + 1, ${general.period} + 1)] ))"
+    awiesm_first: "1/P${general.period}"                         # ice2awiesm, waits for PISM
+    awiesm_last: "${general.awiesm_runs}/P${general.period}"     # awiesm2ice
+    pism_first: "+P${general.awiesm_runs}/P${general.period}"    # awiesm2pism, waits for AWI-ESM
+    pism_last: "${general.period}/P${general.period}"            # pism2awiesm
+workflow:
+    plans:
+        awiesm:
+            calendar: {initial_date: 2000-01-01, run_length: "P${general.awiesm_run_years}Y"}
+            cycle: {recurrence: "${general.awiesm_points}"}
+            preceded_by:
+                - {plan: initialization, recurrence: R1}
+                - {plan: pism, offset: -1, recurrence: "${general.awiesm_first}"}
+        pism:
+            calendar: {initial_date: 1000-01-01, run_length: "P${general.pism_run_years}Y"}
+            cycle: {recurrence: "${general.pism_points}"}
+            preceded_by:
+                - {plan: awiesm, offset: -1, recurrence: "${general.pism_first}"}
+    sub_plans:
+        ice2awiesm:
+            plan: awiesm
+            cycle: {only: "${general.awiesm_first}", skip: first}
+        awiesm2ice:
+            plan: awiesm
+            cycle: {only: "${general.awiesm_last}"}
+        awiesm2pism:
+            plan: pism
+            cycle: {only: "${general.pism_first}"}
+        pism2awiesm:
+            plan: pism
+            cycle: {only: "${general.pism_last}"}
+```
+
+Changing `awiesm_years` to 5 regenerates everything (period 9, AWI-ESM at 1-5, PISM at
+6-9) without editing the workflow. Things to mention in the recipe:
+
+* `$(( ))` ends at the first `))` (`entry.split("))", 1)`), so the expression must not
+  contain `))` (write `range(1, n + 1)`, not `range(1, int(n))`).
+* `$(( ))` is evaluated only after all `${...}` in the entry are resolved, so every
+  variable used in the expression must resolve to a plain number **[verify]** for nested
+  `$(( ))` variables like `period`.
+* This Python-in-YAML belongs in the coupled setup, not in user runscripts: users only set
+  the years per model and their run lengths.
+
+**Decision**: for now, the workflow manager does **not** get a dedicated construct for
+alternating plans (an `alternate` shorthand in model years, or a `window` key for "N
+consecutive cycle points per period" were discussed and discarded). Recurrences, offsets
+and placeholders computed with `$(( ))` are enough. To be reconsidered only if several
+coupled setups end up repeating the same recipe.
 
 ## 5.7. Concurrency limit (runahead)
 
@@ -625,8 +712,9 @@ workflow:
             execution: batch
             preceded_by:
                 - {plan: initialization, recurrence: R1}   # only in the first cycle point
-            cycle:
-                recurrence: P1Y        # every year, the run length (replaces nyear)
+            calendar:
+                run_length: ${general.run_length}   # mapped from nyear, nmonth, ... (set_restart_chunk)
+            cycle: {}                  # recurrence defaults to calendar.run_length
     sub_plans:
         prep_exp:
             plan: initialization
@@ -643,6 +731,7 @@ workflow:
             plan: simulation
             type: bash
             launch_mode: inline
+            preceded_by: [prepare_run]
             file: ${general.esm_configs_dir}/other_software/batch/slurm/plan_cluster.run.j2
         tidy:
             plan: simulation
@@ -650,13 +739,11 @@ workflow:
             preceded_by: [compute]
             steps: [copy_stuff_back_from_work, throw_away_some_infiles]
         prepare_run:
-            # prepares the run folder of the NEXT cycle point, in the same job, so that the
-            # next job only needs to launch compute
+            # prepares the run folder of the current cycle point, at the start of the job
             plan: simulation
             type: esm_sub_plan
-            preceded_by: [tidy]
             cycle:
-                skip: last             # nothing to prepare after the last cycle
+                skip: first            # already prepared by prepare_first_run
             steps: [create_new_files, prepare_coupler_files, assemble, copy_files_to_thisrun]
 ```
 
@@ -669,17 +756,17 @@ flowchart LR
         pe[prep_exp] --> pfr[prepare_first_run]
     end
     subgraph s0["simulation@2000"]
-        c0[compute] --> t0[tidy] --> pr0["prepare_run (for 2001)"]
+        pr0["prepare_run (skipped: first)"] --> c0[compute] --> t0[tidy]
     end
     subgraph s1["simulation@2001"]
-        c1[compute] --> t1[tidy] --> pr1["prepare_run (for 2002)"]
+        pr1[prepare_run] --> c1[compute] --> t1[tidy]
     end
     subgraph s2["simulation@2002"]
-        c2[compute] --> t2[tidy] --> pr2["prepare_run (skipped: last)"]
+        pr2[prepare_run] --> c2[compute] --> t2[tidy]
     end
-    pfr -->|submits| c0
-    pr0 -->|submits| c1
-    pr1 -->|submits| c2
+    pfr -->|submits| pr0
+    t0 -->|submits| pr1
+    t1 -->|submits| pr2
 ```
 
 ## 7.2. AWI-CM3 with postprocessing, catalog and tripyview
@@ -688,8 +775,9 @@ This is the first syntax sketch from #1521, corrected:
 
 * `cluster_plan`/`plan` unified into `plan`.
 * `observe_compute` and `concurrent: true` removed (observe is part of compute).
-* `preceded_by: prepare_first_run or prepare_run` removed: `compute` is the entry point of
-  the `simulation` plan, and the plan-level dependencies (`initialization` in the first
+* `preceded_by: prepare_first_run or prepare_run` removed: `compute` is preceded by
+  `prepare_run` (skipped in the first cycle point), and the plan-level dependencies
+  (`initialization` in the first
   cycle point, scoped with `recurrence: R1`, and the previous `simulation` instance in the
   later ones) decide when it starts. The OR is resolved by recurrences.
 * `tripyview` and `catalog` are plans with their own recurrences.
@@ -699,7 +787,8 @@ general:
     workflow:
         cycling_mode: datetime
 fesom:
-    [ ... ]
+    tripyview_recurrence: +P9Y/P10Y   # default from fesom.tripyview.yaml, overridable here
+    # ...
 oifs:
     [ ... ]
 workflow:
@@ -723,7 +812,7 @@ workflow:
         tripyview:
             execution: batch
             cycle:
-                recurrence: +P9Y/P10Y  # every 10 years, after the 10th year (2009, 2019, ...)
+                recurrence: ${fesom.tripyview_recurrence}   # 2009, 2019, ...
                 sequential: false
         catalog:
             execution: batch
@@ -760,21 +849,21 @@ DAG for a 20-year experiment (2000-2019), showing the cycles around year 2009:
 ```mermaid
 flowchart LR
     subgraph s8["simulation@2008"]
-        c8[compute] --> t8[tidy] --> pr8[prepare_run]
+        pr8[prepare_run] --> c8[compute] --> t8[tidy]
     end
     subgraph s9["simulation@2009"]
-        c9[compute] --> t9[tidy] --> pr9[prepare_run]
+        pr9[prepare_run] --> c9[compute] --> t9[tidy]
     end
-    pr8 -->|submits| c9
+    t8 -->|submits| pr9
     t8 -->|submits| pp8["postprocessing@2008"]
     t9 -->|submits| pp9["postprocessing@2009"]
     t9 -->|"submits (+P9Y/P10Y)"| tv9["tripyview@2009"]
-    pr9 -->|submits| next["simulation@2010 ..."]
+    t9 -->|submits| next["simulation@2010 ..."]
     next -.-> cat["catalog@2019 (R1/$)"]
 ```
 
-`tidy` is an exit point of `simulation` (it precedes sub-plans of other plans) and
-`prepare_run` is the other one (it hands over to the next cycle).
+`tidy` is the exit point of `simulation` (it precedes sub-plans of other plans and hands
+over to the next cycle).
 
 ## 7.3. AWI-ESM2-PISM in a single runscript
 
@@ -890,10 +979,9 @@ workflow:
 Notes:
 
 * The numbers in the recurrences (`22`, `2`, `3`, `23`) derive from the number of years per
-  block of each model. They can be written with ESM-Tools variables (e.g.
-  `general.workflow.awiesm_years: 2`, `general.workflow.pism_years: 20`), so that the user
-  only changes these two numbers. A shorthand for "N consecutive cycle points every
-  period" could also be added later if this pattern is common.
+  block of each model. They can be computed with `$(( ))` from `awiesm_years` and
+  `pism_years` (see the recipe in [5.6](#56-alternating-groups-of-cycle-points)), so that
+  the user only changes these two numbers. No dedicated shorthand is planned for now.
 * Sub-plans of different plans need unique names (`tidy_awiesm`, `tidy_pism`). How the
   default sub-plans (`prepare_run`, `compute`, `tidy`) are instantiated per plan is an
   [open question](#10-open-questions); a natural choice is that every plan with
@@ -1042,7 +1130,7 @@ workflow:
         icb_seed:
             plan: simulation
             type: bash
-            preceded_by: []            # entry point, runs before compute
+            preceded_by: []            # entry point, runs before prepare_run
             steps:
                 - icb_seed:
                       script: ${general.esm_couplings_dir}/fesom/iceberg_budget.sh
@@ -1051,7 +1139,7 @@ workflow:
             plan: simulation
             type: bash
             launch_mode: inline
-            preceded_by: [icb_seed]
+            preceded_by: [prepare_run]
         tidy:
             plan: simulation
             preceded_by: [compute]
@@ -1076,9 +1164,9 @@ workflow:
                       args: "budget ${fesom.icb_dirs} ${fesom.icb_leg}"
         prepare_run:
             plan: simulation
-            preceded_by: [icb_budget]
+            preceded_by: [icb_seed]
             cycle:
-                skip: last
+                skip: first
         combine_lpjg:
             plan: combine_lpjg
             type: bash
@@ -1089,11 +1177,10 @@ workflow:
                       args: "${general.thisrun_work_dir}/work ${lpj_guess.experiment_outdata_dir} ${general.run_datestamp} ${lpj_guess.combine_njobs}"
 ```
 
-Note: `icb_seed` must run **before** compute of the same cycle, but `prepare_run` prepares
-the **next** cycle at the end of the previous job. Whether `icb_seed` runs at the start of
-the job (as shown here) or at the end of the previous one (after `prepare_run`) depends on
-whether it needs the output of the previous cycle only, which it does, so both options are
-valid.
+Note: `icb_seed` replaces `run_before: prepcompute`, so it runs before `prepare_run`.
+In the first cycle point `prepare_run` is skipped (the run was prepared on the login node
+by `prepare_first_run`), so if `icb_seed` is also needed for the first run it has to be
+added to the `initialization` plan as well, before `prepare_first_run`.
 
 ## 7.6. Job bundles
 
@@ -1145,7 +1232,7 @@ Illustration (from the #1521 discussion, with the target names):
 >>> wf.parent_plan_of("compute")
 <Plan simulation  execution=batch  cycle=Cycle(recurrence=P1Y)>
 >>> wf.plans["simulation"].sub_plan_names
-['compute', 'tidy', 'prepare_run']
+['prepare_run', 'compute', 'tidy']
 >>> wf.local_dag("simulation", cycle_point="2001-01-01")
 LocalDag(predecessors=[simulation@2000-01-01], successors=[simulation@2002-01-01, catalog@2001-01-01])
 >>> wf.sub_plans["compute"].nproc = 128
@@ -1211,9 +1298,6 @@ Currently `MultiStep` in the code (to be renamed back, see [vocabulary](#2-vocab
 * **Default sub-plans per plan**: when several plans run models (`components`), does each
   of them get its own `prepare_run`/`compute`/`tidy` chain automatically, and how are they
   named (`tidy_awiesm`)?
-* **Readability of alternating recurrences**: `[P22, 2/P22]` and `P1 ! (P22, 2/P22)` are
-  precise but not obvious for modelers. Do we want a shorthand for "N consecutive cycle
-  points every period" (e.g. `{every: 22, first: 1, count: 2}`), or are variables enough?
 * **Strictness of dependencies on non-existing instances**: the proposal rejects them at
   validation time (the user must scope them with `recurrence`). Is that too strict for
   common cases (e.g. a plan with `P1Y` depending on one with `P10Y`)?
@@ -1227,7 +1311,4 @@ Currently `MultiStep` in the code (to be renamed back, see [vocabulary](#2-vocab
 * **Migration**: how do we translate the existing `model1`/`model2` iterative coupling
   runscripts into the single-runscript format (automatic translation, or documentation
   only)?
-* **Where `prepare_run` runs**: at the end of the previous job (current proposal, lets
-  `compute` start immediately) or at the start of the next one. It affects where the
-  "before compute" sub-plans (like `icb_seed`) go.
 * **Naming in the code**: rename `MultiStep` back to `SubPlan`.

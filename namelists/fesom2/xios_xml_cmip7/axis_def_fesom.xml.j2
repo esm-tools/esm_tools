@@ -9,6 +9,15 @@
     <axis id="nz_sfc" long_name="depth below sea level at the uppermost layer mid-point" standard_name="depth" axis_ref="nz">
       <zoom_axis index="(0,0)[0]" />
     </axis>
+    <!-- the two layers around 200 dbar (op20bar), for daily output at that depth. The 0-based
+         layer indices are a mesh property, fesom.op20bar_levels from choose_resolution (CORE3
+         14 15 = 175/210 m, DARS2 16 17 = 190/212 m). Without them the axis stays an unzoomed
+         alias of nz and file_def writes no 200 dbar files, so grid_3d_nod_200 always resolves. -->
+    <axis id="nz_200" long_name="depth below sea level at the layer mid-points around 200 dbar" standard_name="depth" axis_ref="nz">
+{%- if fesom.op20bar_levels | default('') %}
+      <zoom_axis index="(0,1)[{{ fesom.op20bar_levels }}]" />
+{%- endif %}
+    </axis>
   </axis_group>
 
   <!-- Density-coordinate axis for dMOC diagnostics.

@@ -513,6 +513,9 @@ oifs:
     # CMIP7 CMOR-style j2 templates. Independent of `mip:` (which drives
     # CMIP7 *forcings*). Default off: cmip7 forcings but default OIFS output.
     cmip7_cmor_output: false
+    # pextra T/q tendencies in atmos_mon_ml (needs cmip7_cmor_output). Off: with FullPos, 48r1v8 aborts in POS
+    # (YSD_XAD%NLEVS /= KFLEVG) until SUXIOS_PEXTRA_FIELDS sets NCEXTR before NAMDPHY uses it.
+    cmip7_pextra_tendencies: false
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"
@@ -1292,6 +1295,28 @@ oifs:
                             fort.4:
                                     NAMCLDP:
                                             SCLCT_SWITCH: "${sclct_switch}"
+
+    # The CMIP7 output (100 m winds, blh, gust, o3 on model and pressure levels and at the
+    # lowest level) changes the length of the global DDH buffers, so a run restarted from a
+    # parent written without it aborts reading the DDH restart (RERESF_PART2: DDHRCV WRONG
+    # LENGTH). Global DDH writes no output in this setup: switch it and its listing off together
+    # (SUNDDH requires LHDGLB .EQV. (LHDPRG .OR. LHDEFG)) whenever the CMIP7 output is on.
+    choose_cmip7_cmor_output:
+            True:
+                    add_namelist_changes:
+                            fort.4:
+                                    NAMDDH:
+                                            LHDGLB: ".false."
+                                            LHDPRG: ".false."
+
+    # The pextra tendencies (cmip7_pextra_tendencies) must be means over each output
+    # interval; the default LCLDBUD_TIMEINT=.true. accumulates them over the whole run.
+    choose_cmip7_pextra_tendencies:
+            true:
+                    add_namelist_changes:
+                            fort.4:
+                                    NAMCLDP:
+                                            LCLDBUD_TIMEINT: ".false."
 
     ##
     ## specifics for 40r1 and 43r3

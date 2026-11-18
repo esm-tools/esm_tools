@@ -37,6 +37,12 @@
     <domain domain_ref="nodes"/>
   </grid>
 
+  <!-- the two layers around 200 dbar of a 3D node field (axis zoom) -->
+  <grid id="grid_3d_nod_200"  description="layers around 200 dbar of the 3D grid on FESOM nodes">
+    <axis   axis_ref="nz_200"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+
   <!-- 3D grids (interface / w-grid vertical axis, nl levels) -->
   <grid id="grid_3d_nod_nz1"  description="3D grid on FESOM nodes, w/interface levels">
     <axis   axis_ref="nz1"/>

@@ -1803,6 +1803,12 @@ fesom:
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+            # With cmip7_cmor_output the REcoM CMIP7 diagnostics are on (the 200 dbar output
+            # follows from fesom.op20bar_levels of the mesh). with_transit_tracers stays a
+            # runscript choice, it needs zero tracer restarts.
+            choose_cmip7_cmor_output:
+                True:
+                    recom_cmip7_diags: true
         # -is (ice-sheet coupled) variant additionally builds the native FESOM
         # mesh partitioner (fesom_meshpart, via -DBUILD_MESHPARTITIONER=ON) so
         # ice2fesom/build_submesh can partition each per-leg submesh WITHOUT the
@@ -1872,6 +1878,12 @@ fesom:
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+            # With cmip7_cmor_output the REcoM CMIP7 diagnostics are on (the 200 dbar output
+            # follows from fesom.op20bar_levels of the mesh). with_transit_tracers stays a
+            # runscript choice, it needs zero tracer restarts.
+            choose_cmip7_cmor_output:
+                True:
+                    recom_cmip7_diags: true
         v3.5.2-is:
             branch: "2.8.4"
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"

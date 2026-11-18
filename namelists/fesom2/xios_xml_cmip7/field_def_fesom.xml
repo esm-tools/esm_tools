@@ -77,6 +77,9 @@
     <field id="vnod"       long_name="meridional velocity at nodes"    unit="m s-1"/>
     <field id="hnode"      long_name="vertex layer thickness"          unit="m"/>
     <field id="rsdoabsorb" long_name="shortwave flux absorbed in ocean layer" unit="W m-2"/>
+    <!-- transient tracers (use_transit with l_f12, l_sf6), sent through 'otracers' -->
+    <field id="cfc12"      long_name="chlorofluorocarbon CFC-12"       standard_name="mole_concentration_of_cfc12_in_sea_water" unit="mol m-3"/>
+    <field id="sf6"        long_name="sulfur hexafluoride"             standard_name="mole_concentration_of_sulfur_hexafluoride_in_sea_water" unit="mol m-3"/>
   </field_group>
 
   <!-- 3D fields on NODES, interface levels / nl -->

@@ -140,6 +140,7 @@ fesom:
                     alpha_evp: 250          # constant that control numerical stability of mEVP.
                     beta_evp: 250           # constant that control numerical stability of mEVP.
             CORE3:
+                    op20bar_levels: "14 15"   # layer mid-depths 175 and 210 m (aux3d.out)
                     nx: 220509
                     mesh_dir: "${fesom.mesh_base_dir}/core3/"
                     nproc: 128
@@ -147,6 +148,7 @@ fesom:
                     alpha_evp: 300          # constant that control numerical stability of mEVP.
                     beta_evp: 300           # constant that control numerical stability of mEVP.
             CORE3_nocav:
+                    op20bar_levels: "14 15"   # layer mid-depths 175 and 210 m (aux3d.out)
                     # CORE3 with use_cavity=.false.: same nodes and elements, the
                     # ice-shelf cavities are open ocean. Partitions under
                     # core3_nocav/dist_*; ocp-tool products in the pool as CORE3_nocav.
@@ -208,6 +210,7 @@ fesom:
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.
             DARS2:
+                    op20bar_levels: "16 17"   # layer mid-depths 190 and 212 m (aux3d.out)
                     nx: 3146761
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
@@ -639,6 +642,50 @@ fesom:
     # simulated year raw on CORE3.
     cmip7_3h_output: true
     cmip7_daily_3d_output: false
+    # op20bar_levels: the two 0-based layer indices around 200 dbar, a mesh property set in
+    # choose_resolution. Where it is set, the CMIP7 file_def writes daily temp and, with REcoM,
+    # O2, pH, CO3, CO3satA, PhyChl, DiaChl, PhyC, DiaC on those two layers
+    # (<var>_200.fesom.<year>.nc, op20bar day). temp is then sent daily, so its monthly files
+    # average daily sends. About 4.5 GB raw per simulated year on CORE3. Empty: no 200 dbar files.
+    op20bar_levels: ""
+
+    # Transient tracers CFC-12 and SF6 (mod_transit.F90): use_transit with l_f12 and l_sf6, and
+    # the monthly cfc12/sf6 files in xios_xml_cmip7/file_def_fesom.xml.j2.
+    # transit_anthro false (piControl, spinup): constant atmospheric values from namelist.transit,
+    # zero for CFC-12 and SF6, so both tracers stay zero. true (historical, scenarios): yearly
+    # NH/SH values from transit_input_file, row transit_start_index for the first year of the
+    # experiment (ti_transit = year - first year + transit_start_index), transit_length rows.
+    # read_transit_input skips 22 header lines; the albedo copy of the table
+    # (/albedo/work/projects/p_plioMIP3_prod/tracer_forcing/Table_CO2_isoC_CFCs1112_SF6.txt)
+    # has 15 header lines and ends in 2015, so it cannot be used as it is.
+    # Both tracers are required restart variables (io_restart.F90 def_node_var): before the
+    # first leg with transit on, add zero sf6.nc and cfc12.nc to the oce restart directory with
+    # utils/fesom_add_zero_tracer_restart.py, or FESOM aborts reading the restart.
+    with_transit_tracers: false
+    transit_anthro: false
+    transit_input_file: "/work/ab0246/a270108/fesom2_recom_config/input-for-awiesm/Table_CO2_isoC_CFCs1112_SF6.txt"
+    transit_length: 166
+    transit_start_index: 1
+    choose_with_transit_tracers:
+            true:
+                    add_namelist_changes:
+                            namelist.config:
+                                    run_config:
+                                            use_transit: true
+                            namelist.transit:
+                                    transit_param:
+                                            l_f12: true
+                                            l_sf6: true
+                                            anthro_transit: "${transit_anthro}"
+                    choose_transit_anthro:
+                            true:
+                                    add_namelist_changes:
+                                            namelist.transit:
+                                                    transit_param:
+                                                            ifile_transit: "${transit_input_file}"
+                                                            length_transit: "${transit_length}"
+                                                            ti_start_transit: "${transit_start_index}"
+
     # When true, add regridded (regular lat/lon) output for all 2D fields
     # alongside the native unstructured output. Each regrid file is produced
     # at the same frequency as its native counterpart (daily for fesom_1d

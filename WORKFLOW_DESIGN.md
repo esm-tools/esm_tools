@@ -28,7 +28,7 @@ ESM-Tools' workflow manager is designed for HPC systems where no daemon can run 
 login node or server. Instead, an initial plan sets up the workflow, prepares the first
 job script (sbatch/PBS) and submits it to the scheduler. Each job script contains at least
 one plan: a **local daemon** (an `esm_runscripts` call running in the background of the job)
-that monitors the special inline `compute` sub-plan, runs the other sub-plans, and writes the
+that monitors the special inline `compute` multi-step, runs the other multi-steps, and writes the
 batch scripts of the plans that follow and submits them.
 
 Requirements:
@@ -36,16 +36,16 @@ Requirements:
 * **No persistent daemon [locked]**: the scheduler drives the workflow through
   self-submission. The only long-living processes are the ones inside a batch job.
 * **Only local DAGs [locked]**: the DAG of the experiment is never built nor stored. Plans
-  and sub-plans understand their **local DAG** (their direct predecessors and successors,
+  and multi-steps understand their **local DAG** (their direct predecessors and successors,
   within the same cycle and across cycles) by computing it on the fly from the workflow
   configuration. With that knowledge they can write the `.run` files of their successors
   and submit them.
 * **One plan, one `.run` file [locked]**: every plan is written into its own batch script
   that could be submitted by hand with `sbatch`/`qsub`. Grouping several plans in a single
   scheduler job is done with an additional wrapper, the [job bundle](#6-job-bundles).
-* **Cycling at plan level [locked]**: plans are what is repeated (cycled). Sub-plans and
+* **Cycling at plan level [locked]**: plans are what is repeated (cycled). Multi-steps and
   steps are not cycled independently, they run once per plan instance (possibly
-  conditioned on the cycle point, see [restrictions](#53-restricting-sub-plans-to-some-cycle-points)).
+  conditioned on the cycle point, see [restrictions](#53-restricting-multi-steps-to-some-cycle-points)).
 * **One runscript per experiment [locked]**: also multi-model iterative/offline coupled
   experiments (e.g. AWI-ESM2-PISM) and accelerated coupling are described by a single
   runscript. Different "phases" of the experiment are expressed through cycling, not
@@ -56,8 +56,8 @@ Requirements:
   and the simulation run as-is, which is useful for debugging.
 * **Concurrency only at scheduler and step level [locked]**: parallelism happens between
   plans (separate scheduler jobs or a concurrent job bundle) and inside steps (dask,
-  parallel bash). Sub-plans of a plan never run concurrently. The observation of the
-  simulation (formerly `observe_compute`) becomes part of the compute sub-plan.
+  parallel bash). Multi-steps of a plan never run concurrently. The observation of the
+  simulation (formerly `observe_compute`) becomes part of the compute multi-step.
 
 # 2. Vocabulary
 
@@ -70,9 +70,9 @@ From most coarse to most granular:
 | Classic term | Example | Legacy name | New name | YAML key | P-Plan |
 | --- | --- | --- | --- | --- | --- |
 | total workflow | a full simulation workflow | experiment | experiment plan | `workflow` | `p-plan:Plan` |
-| cluster | `simulation`, `postprocessing` | `subjob_clusters`, cluster | plan | `workflow.plans.<name>` | `p-plan:Plan`, sub-plan of the experiment plan via `p-plan:isSubPlanOfPlan` **[verify]** |
-| phase / job | `prepcompute`, `tidy` | `subjobs`, phase | sub-plan | `workflow.sub_plans.<name>` | `p-plan:Plan`, linked to its plan via `p-plan:isSubPlanOfPlan` **[verify]** |
-| recipe step | `_read_date_file` | recipe step | step | `workflow.sub_plans.<name>.steps` | `p-plan:Step`, linked via `p-plan:isStepOfPlan` |
+| cluster | `simulation`, `postprocessing` | `subjob_clusters`, cluster | plan | `workflow.plans.<name>` | `p-plan:Plan` |
+| phase / job | `prepcompute`, `tidy` | `subjobs`, phase | multi-step | `workflow.multi_steps.<name>` | `p-plan:MultiStep` (a step decomposed into steps), linked to its plan via `p-plan:isStepOfPlan` |
+| recipe step | `_read_date_file` | recipe step | step | `workflow.multi_steps.<name>.steps` | `p-plan:Step`, linked via `p-plan:isStepOfPlan` |
 
 Execution concepts (no P-Plan counterpart):
 
@@ -80,17 +80,16 @@ Execution concepts (no P-Plan counterpart):
 | --- | --- |
 | cycle point | The "label" of one repetition of a plan: an integer (`3`) or a date (`2001-01-01`). See [cycling](#5-cycling). |
 | plan instance | A plan at a given cycle point, e.g. `simulation@2001-01-01` or `pism@3`. This is what becomes a `.run` file and a scheduler job. Equivalent to Cylc's *task instance*. |
-| recurrence | The set of cycle points at which a plan (or a sub-plan, or a dependency) exists, e.g. every cycle point, every 10 years, or "cycle points 1 and 2 of every 22". See [recurrences](#52-recurrences). |
+| recurrence | The set of cycle points at which a plan (or a multi-step, or a dependency) exists, e.g. every cycle point, every 10 years, or "cycle points 1 and 2 of every 22". See [recurrences](#52-recurrences). |
 | job bundle | A wrapper batch script that runs several plan instances inside a single scheduler job. See [job bundles](#6-job-bundles). |
-| local daemon | The `esm_runscripts` process that runs in the background of a job and drives the non-inline sub-plans, the observation of compute, and the submission of successors. |
+| local daemon | The `esm_runscripts` process that runs in the background of a job and drives the non-inline multi-steps, the observation of compute, and the submission of successors. |
 
 Notes:
 
-* **Naming mismatch in the code**: commit `471110216` renamed `SubPlan` to `MultiStep` in
-  `src/esm_runscripts/pplan/plan.py`. `p-plan:MultiStep` exists, but it describes a *step*
-  that is decomposed into a plan (`p-plan:isDecomposedAsPlan`), while our sub-plans are
-  plans grouping steps. The YAML key is and stays `sub_plans`, and the class should be
-  renamed back to `SubPlan` to keep code, YAML and documentation aligned.
+* **Multi-step**: the P-Plan name for a step that is itself decomposed into steps
+  (`p-plan:MultiStep`, `p-plan:isDecomposedAsPlan`). The code uses the same name
+  (`MultiStep`, `multi_steps` in `src/esm_runscripts/pplan/plan.py`), and so do the YAML
+  key (`multi_steps`) and this document.
 * `job_bundle` is deliberately not called just `bundle`: `prov:Bundle` / `p-plan:Bundle`
   already exist in the ontology with a different meaning (a named set of provenance
   descriptions).
@@ -108,11 +107,11 @@ is the `workflow` section of the configuration.
 
 ## 3.2. Plans
 
-Group of sub-plans that are executed together on the same host, one after the other, and
+Group of multi-steps that are executed together on the same host, one after the other, and
 the building blocks of the experiment plan. **Cycling happens at this level.**
 
 **Parent**: experiment plan
-**Children**: sub-plans
+**Children**: multi-steps
 
 * A plan is written down in its own batch script (sbatch, PBS script, etc. with extension
   `.run`) or executed in the shell of the login node (to cover the experiment
@@ -139,54 +138,54 @@ Plan keys:
 
 **Equivalent in the old workflow manager**: ~clusters
 
-## 3.3. Sub-plans
+## 3.3. Multi-steps
 
 Group of steps and their ordering.
 
 **Parent**: plan
 **Children**: steps
 
-* Sub-plans of the same plan instance run **sequentially**, never concurrently.
-* The **compute** sub-plan is special: it is not triggered by the local daemon but is
+* Multi-steps of the same plan instance run **sequentially**, never concurrently.
+* The **compute** multi-step is special: it is not triggered by the local daemon but is
   written inline in the `.run` file (`launch_mode: inline`) so that the `.run` file reads
   like a plain runscript. The observation of the simulation (checking the logs and killing
-  the job if the simulation fails) is not a separate concurrent sub-plan anymore but part
-  of the compute sub-plan machinery (the local daemon is started in the background right
+  the job if the simulation fails) is not a separate concurrent multi-step anymore but part
+  of the compute multi-step machinery (the local daemon is started in the background right
   before the inline launch command, and observes it).
-* A sub-plan may precede a sub-plan of **another** plan (e.g. `catalog` preceded by
-  `tidy`). In that case, when the sub-plan finishes, it is the one writing and submitting
+* A multi-step may precede a multi-step of **another** plan (e.g. `catalog` preceded by
+  `tidy`). In that case, when the multi-step finishes, it is the one writing and submitting
   the `.run` file of the other plan instance, without waiting for the rest of its own plan
   to finish. This means batch scripts can be written and submitted at the end of any
-  sub-plan, not only at the end of a plan.
-* The **entry points** of a plan are its sub-plans that have no predecessor inside the same
-  plan. The **exit points** are the sub-plans that have successors outside the plan
+  multi-step, not only at the end of a plan.
+* The **entry points** of a plan are its multi-steps that have no predecessor inside the same
+  plan. The **exit points** are the multi-steps that have successors outside the plan
   instance (in another plan or in the next cycle). A plan can have several exit points; in
   the simulation plan `tidy` is the exit point (it precedes `catalog` and hands over to the
   next cycle).
 
-Sub-plan keys:
+Multi-step keys:
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `plan` | plan name | Plan this sub-plan belongs to (`p-plan:isSubPlanOfPlan`). |
-| `type` | `esm_sub_plan`, `bash` | `esm_sub_plan`: a list of Python steps (old recipe steps, or plugins) executed by the local daemon through `esm_plugin_manager`. `bash`: a bash script. |
+| `plan` | plan name | Plan this multi-step belongs to (`p-plan:isStepOfPlan`, `step_of_plan` in the code). |
+| `type` | `esm_multistep`, `bash` | `esm_multistep`: a list of Python steps (old recipe steps, or plugins) executed by the local daemon through `esm_plugin_manager`. `bash`: a bash script. |
 | `launch_mode` | `daemon` (default), `inline` | `inline`: the content is written directly into the body of the `.run` file and runs in the foreground of the job (the compute launch command). `daemon`: run by the local `esm_runscripts` daemon. |
-| `preceded_by` | list of sub-plan names | Sub-plan-level dependencies (same cycle). A list means **all of them** (AND). |
+| `preceded_by` | list of multi-step names | Multi-step-level dependencies (same cycle). A list means **all of them** (AND). |
 | `steps` | list | The steps (see below). |
 | `file` | path | (Only `type: bash`, `launch_mode: inline`) Template used to render the inline part, e.g. the compute block of the `.run` file. |
-| `cycle` | dict | Restrict in which cycle points of its plan this sub-plan runs (`only`/`skip`, see [restrictions](#53-restricting-sub-plans-to-some-cycle-points)). |
+| `cycle` | dict | Restrict in which cycle points of its plan this multi-step runs (`only`/`skip`, see [restrictions](#53-restricting-multi-steps-to-some-cycle-points)). |
 
 **Equivalent in the old workflow manager**: phases/subjobs
 
 ## 3.4. Steps
 
-Python functions or bash scripts that make a sub-plan.
+Python functions or bash scripts that make a multi-step.
 
-**Parent**: sub-plans
+**Parent**: multi-steps
 
-* Steps are a list in the sub-plan (`steps:`), which answers the open question from #1521
+* Steps are a list in the multi-step (`steps:`), which answers the open question from #1521
   ("where do the recipe steps hook in?"): there is no separate recipe layer, the recipe
-  of a sub-plan is its `steps` list.
+  of a multi-step is its `steps` list.
 * A step is either the name of a Python function (old recipe step or plugin), or a dict
   describing a script with its environment (as for the subjobs of the current workflow
   manager):
@@ -212,7 +211,7 @@ There are two kinds of edges, and they are kept separate (the current
 `Workflow.resubmit_triggers` mixes both):
 
 * **Same-cycle edges**: `tidy@2001 -> catalog@2001`. Expressed with `preceded_by` in
-  sub-plans or plans.
+  multi-steps or plans.
 * **Cross-cycle edges**: `simulation@2000 -> simulation@2001`,
   `pism@2 -> awiesm@3`. Expressed with an `offset` in plan-level `preceded_by` (plus the
   implicit dependency of a plan instance on the previous instance of the same plan).
@@ -236,8 +235,8 @@ use today and which concept of the new design replaces it.
 | FESOM tripyview | `configs/components/fesom/fesom.tripyview.yaml` | Subjob after `tidy` | Plan with `cycle: {recurrence: +P9Y/P10Y}` |
 | FOCI monitoring | `configs/setups/foci/foci.yaml` | `echam_postprocessing`, `echam_monitoring` with `order_in_cluster: sequential` | Plans, optionally in a sequential job bundle |
 | AWI-ESM3 `Combine_LPJG` | `configs/components/lpj_guess/lpj_guess.yaml` (awiesm3 branch) | Batch subjob on `pp`, `order_in_cluster: concurrent` | Plan `combine_lpjg` ([7.5](#75-awi-esm3-carbon-cycle-awiesm3-co2-branch)) |
-| AWI-ESM3 `Rename_XIOS_FESOM(_REG)` | `configs/components/fesom/fesom-2.{7,8}.yaml` (awiesm3 branch) | Shell subjobs after `tidy` | Sub-plans of the simulation plan |
-| AWI-ESM3 iceberg budget | `configs/setups/awiesm3/awiesm3.yaml` (awiesm3 branch) | `icb_seed` with `run_before: prepcompute`, `icb_budget` with `run_after: tidy` | Sub-plans of the simulation plan |
+| AWI-ESM3 `Rename_XIOS_FESOM(_REG)` | `configs/components/fesom/fesom-2.{7,8}.yaml` (awiesm3 branch) | Shell subjobs after `tidy` | Multi-steps of the simulation plan |
+| AWI-ESM3 iceberg budget | `configs/setups/awiesm3/awiesm3.yaml` (awiesm3 branch) | `icb_seed` with `run_before: prepcompute`, `icb_budget` with `run_after: tidy` | Multi-steps of the simulation plan |
 | AWI-ESM3 interactive CO2 | `configs/setups/awiesm3/awiesm3.yaml` (awiesm3 branch) | OASIS exchange of CO2 fields between OIFS, FESOM-REcoM and LPJ-GUESS **during** compute | Nothing: it is not a workflow feature, it lives inside `compute` |
 | AWI-ESM2-PISM | `runscripts/awicm-pism/` | 3 runscripts (top level with `model1`/`model2` + one per model), `iterative_coupling: True`, `chunk_size` per model, state in `<expid>_chunk_date` + `<expid>_<setup>.date`, `run_only: first/last_run_in_chunk`, `skip_chunk_number: 1`, `files_to_wait_for` polling, "all models over" check | Integer cycling, one plan per model, recurrence sections, plan dependencies with offsets ([7.3](#73-awi-esm2-pism-in-a-single-runscript)) |
 | AWI-ESM2-PISM dual hemisphere | `runscripts/awicm-pism/coupling_dual-hemisphere/` | 4 runscripts, 2y AWI-ESM then 20y `pism_nh` and 20y `pism_sh` | Same, with two PISM plans in parallel ([7.3](#73-awi-esm2-pism-in-a-single-runscript)) |
@@ -249,17 +248,17 @@ Legacy keys and features, and their equivalent:
 | Legacy | New |
 | --- | --- |
 | `subjob_clusters` / `plans` (cluster) | `plans` |
-| `subjobs` | `sub_plans` |
-| `subjob_cluster` / `parent_plan` | `plan` (in the sub-plan) |
+| `subjobs` | `multi_steps` |
+| `subjob_cluster` / `parent_plan` | `plan` (in the multi-step) |
 | `run_after` | `preceded_by` |
 | `run_before` | `preceded_by` in the target (flipped, as `_flip_legacy_run_before` does already) |
-| `first_task_in_queue` / `entry_point` | Derived: sub-plans of a plan without predecessors in the same plan |
+| `first_task_in_queue` / `entry_point` | Derived: multi-steps of a plan without predecessors in the same plan |
 | `last_task_in_queue` / `exit_point`, `next_run_triggered_by` / `next_iteration_trigger` | Derived: implicit dependency of the next cycle on the previous one (`cycle.sequential`) + exit points |
 | `submit_to_batch_system`, `batch_or_shell` | `execution` (plan) |
-| `order_in_cluster` | Sub-plans are always sequential; concurrency between plans via `job_bundles.<name>.order` |
+| `order_in_cluster` | Multi-steps are always sequential; concurrency between plans via `job_bundles.<name>.order` |
 | `run_on_queue` | `resources.partition` |
-| `run_only: first_run_in_chunk` / `last_run_in_chunk` | `cycle.only: <recurrence>` on the sub-plan |
-| `skip_chunk_number`, `skip_run_number` | `cycle.skip` on the sub-plan; dependencies before the initial cycle point are ignored |
+| `run_only: first_run_in_chunk` / `last_run_in_chunk` | `cycle.only: <recurrence>` on the multi-step |
+| `skip_chunk_number`, `skip_run_number` | `cycle.skip` on the multi-step; dependencies before the initial cycle point are ignored |
 | `files_to_wait_for` | Real dependencies between plans |
 | `iterative_coupling`, `model1`/`model2` runscripts | One runscript, one plan per model with `components` |
 | `chunk_size`, `chunk_unit` | Number of cycle points of a plan per period of its recurrence (e.g. `[P22, 2/P22]`) |
@@ -374,14 +373,14 @@ Cylc):
 * In datetime mode, the period of the plan containing `compute` is the **run length**
   (`calendar.run_length`).
 
-## 5.3. Restricting sub-plans to some cycle points
+## 5.3. Restricting multi-steps to some cycle points
 
-Sub-plans run in every instance of their plan, unless restricted with `cycle.only` or
+Multi-steps run in every instance of their plan, unless restricted with `cycle.only` or
 `cycle.skip`. Both take a recurrence, a list of recurrences or points, or the aliases
 `first`/`last` (the first and last instance of the plan):
 
 ```yaml
-sub_plans:
+multi_steps:
     prepare_run:
         plan: simulation
         cycle:
@@ -392,7 +391,7 @@ sub_plans:
             only: 22/P22             # only in the last PISM cycle point of each block
 ```
 
-This replaces `run_only`, `skip_chunk_number` and `skip_run_number`. A skipped sub-plan is
+This replaces `run_only`, `skip_chunk_number` and `skip_run_number`. A skipped multi-step is
 **passed through**: it counts as done for its successors, so the chain continues (this is
 what `resubmit_recursively` does today when `skip_plan` returns `True`).
 
@@ -424,8 +423,8 @@ preceded_by:
   configuration is validated. The dependency must be scoped with `recurrence` instead.
   Being strict here avoids that a typo in a recurrence silently removes a coupling
   dependency.
-* Sub-plans can be preceded by sub-plans of other plans in the same cycle point (e.g.
-  `catalog` preceded by `tidy`), see [3.3](#33-sub-plans).
+* Multi-steps can be preceded by multi-steps of other plans in the same cycle point (e.g.
+  `catalog` preceded by `tidy`), see [3.3](#33-multi-steps).
 
 ## 5.5. Model calendars in integer mode
 
@@ -520,7 +519,7 @@ workflow:
             cycle: {recurrence: "${general.pism_points}"}
             preceded_by:
                 - {plan: awiesm, offset: -1, recurrence: "${general.pism_first}"}
-    sub_plans:
+    multi_steps:
         ice2awiesm:
             plan: awiesm
             cycle: {only: "${general.awiesm_first}", skip: first}
@@ -569,16 +568,16 @@ simulation and filling the queue. It is equivalent to Cylc's *runahead limit*.
 
 There is no global DAG and no central daemon. Instead:
 
-1. When a **sub-plan** finishes, the local daemon computes its local DAG: the sub-plans that
+1. When a **multi-step** finishes, the local daemon computes its local DAG: the multi-steps that
    follow in the same plan instance are run next (sequentially). If a successor belongs to
-   another plan instance, the sub-plan goes to step 3 for that successor.
+   another plan instance, the multi-step goes to step 3 for that successor.
 2. When a **plan instance** finishes, its local daemon writes an atomic marker file
    `state/<plan>.<cycle_point>.done` (written to a temporary file and renamed), and
    computes its downstream plan instances: same-cycle successors, the next instance of the
    same plan (`sequential: true`), and cross-cycle successors (other plans that have this
    plan in `preceded_by` with an offset).
 3. For each successor, it checks whether **all** its predecessors are done (reading only
-   their `.done` markers, and applying the rules of [5.3](#53-restricting-sub-plans-to-some-cycle-points) and [5.4](#54-dependencies)). If they are,
+   their `.done` markers, and applying the rules of [5.3](#53-restricting-multi-steps-to-some-cycle-points) and [5.4](#54-dependencies)). If they are,
    it takes a lock (`state/<plan>.<cycle_point>.submitted`, created with `O_EXCL`), writes
    the `.run` file of the successor (or the [job bundle](#6-job-bundles) file) and submits
    it. If not, it does nothing.
@@ -715,16 +714,16 @@ workflow:
             calendar:
                 run_length: ${general.run_length}   # mapped from nyear, nmonth, ... (set_restart_chunk)
             cycle: {}                  # recurrence defaults to calendar.run_length
-    sub_plans:
+    multi_steps:
         prep_exp:
             plan: initialization
-            type: esm_sub_plan
+            type: esm_multistep
             steps: [_read_date_file, check_model_lresume, resolve_some_choose_blocks]
         prepare_first_run:
             # same steps as prepare_run, but run in the login node, so that the user can
             # check the run folder before anything is submitted
             plan: initialization
-            type: esm_sub_plan
+            type: esm_multistep
             preceded_by: [prep_exp]
             steps: [create_new_files, prepare_coupler_files, assemble, copy_files_to_thisrun]
         compute:
@@ -735,13 +734,13 @@ workflow:
             file: ${general.esm_configs_dir}/other_software/batch/slurm/plan_cluster.run.j2
         tidy:
             plan: simulation
-            type: esm_sub_plan
+            type: esm_multistep
             preceded_by: [compute]
             steps: [copy_stuff_back_from_work, throw_away_some_infiles]
         prepare_run:
             # prepares the run folder of the current cycle point, at the start of the job
             plan: simulation
-            type: esm_sub_plan
+            type: esm_multistep
             cycle:
                 skip: first            # already prepared by prepare_first_run
             steps: [create_new_files, prepare_coupler_files, assemble, copy_files_to_thisrun]
@@ -818,19 +817,19 @@ workflow:
             execution: batch
             cycle:
                 recurrence: R1/$       # once, at the final cycle point
-    sub_plans:
+    multi_steps:
         # prep_exp, prepare_first_run, compute, tidy, prepare_run as in 7.1
         postprocessing:
             plan: postprocessing
-            type: esm_sub_plan
-            preceded_by: [tidy]        # sub-plan of another plan: tidy submits it
+            type: esm_multistep
+            preceded_by: [tidy]        # multi-step of another plan: tidy submits it
             steps:
                 - postprocessing:
                       script: ${general.esm_configs_dir}/setups/awicm3/postprocessing.sh
                       args: "${oifs.experiment_outdata_dir} ${oifs.out_date_folder}"
         tripyview:
             plan: tripyview
-            type: esm_sub_plan
+            type: esm_multistep
             preceded_by: [tidy]
             steps:
                 - tripyview:
@@ -839,7 +838,7 @@ workflow:
                       environment: env_tripyview.py
         catalog:
             plan: catalog
-            type: esm_sub_plan
+            type: esm_multistep
             preceded_by: [tidy]
             steps: [create_catalog_entries, write_catalog]
 ```
@@ -862,7 +861,7 @@ flowchart LR
     next -.-> cat["catalog@2019 (R1/$)"]
 ```
 
-`tidy` is the exit point of `simulation` (it precedes sub-plans of other plans and hands
+`tidy` is the exit point of `simulation` (it precedes multi-steps of other plans and hands
 over to the next cycle).
 
 ## 7.3. AWI-ESM2-PISM in a single runscript
@@ -921,7 +920,7 @@ workflow:
             preceded_by:
                 # first PISM year of each block waits for the last AWI-ESM year
                 - {plan: awiesm, offset: -1, recurrence: 3/P22}
-    sub_plans:
+    multi_steps:
         # --- awiesm plan: prepare_run, compute, tidy as in 7.1 (plan: awiesm) plus:
         ice2awiesm:
             plan: awiesm
@@ -982,10 +981,10 @@ Notes:
   block of each model. They can be computed with `$(( ))` from `awiesm_years` and
   `pism_years` (see the recipe in [5.6](#56-alternating-groups-of-cycle-points)), so that
   the user only changes these two numbers. No dedicated shorthand is planned for now.
-* Sub-plans of different plans need unique names (`tidy_awiesm`, `tidy_pism`). How the
-  default sub-plans (`prepare_run`, `compute`, `tidy`) are instantiated per plan is an
+* Multi-steps of different plans need unique names (`tidy_awiesm`, `tidy_pism`). How the
+  default multi-steps (`prepare_run`, `compute`, `tidy`) are instantiated per plan is an
   [open question](#10-open-questions); a natural choice is that every plan with
-  `components` gets its own default chain named `<sub_plan>_<plan>`.
+  `components` gets its own default chain named `<multi_step>_<plan>`.
 * The environment scripts get the calendars and recurrences of the coupled plans through
   the workflow (e.g. the number of AWI-ESM years to average for the PISM forcing), instead
   of hard-coding `config["model1"]["chunk_size"]`.
@@ -1126,7 +1125,7 @@ workflow:
             cycle:
                 recurrence: P5Y
                 sequential: false
-    sub_plans:
+    multi_steps:
         icb_seed:
             plan: simulation
             type: bash
@@ -1227,15 +1226,15 @@ Illustration (from the #1521 discussion, with the target names):
 
 ```python
 >>> wf = Workflow.resolve(config)
->>> wf.sub_plans["compute"]
-<SubPlan compute  plan=simulation  type=bash  launch_mode=inline>
+>>> wf.multi_steps["compute"]
+<MultiStep compute  plan=simulation  type=bash  launch_mode=inline>
 >>> wf.parent_plan_of("compute")
 <Plan simulation  execution=batch  cycle=Cycle(recurrence=P1Y)>
->>> wf.plans["simulation"].sub_plan_names
+>>> wf.plans["simulation"].multi_step_names
 ['prepare_run', 'compute', 'tidy']
 >>> wf.local_dag("simulation", cycle_point="2001-01-01")
 LocalDag(predecessors=[simulation@2000-01-01], successors=[simulation@2002-01-01, catalog@2001-01-01])
->>> wf.sub_plans["compute"].nproc = 128
+>>> wf.multi_steps["compute"].nproc = 128
 ValidationError: Instance is frozen
 ```
 
@@ -1244,7 +1243,7 @@ ValidationError: Instance is frozen
 The root of the workflow (`Workflow` in the code).
 
 * `resolve(config)`: build the snapshot from the configuration.
-* `parent_plan_of(sub_plan)`: plan a sub-plan belongs to.
+* `parent_plan_of(multi_step)`: plan a multi-step belongs to.
 * `local_dag(plan, cycle_point)`: predecessors and successors of a plan instance, including
   cross-cycle ones (to be added).
 * `resubmit_triggers` is split into `same_cycle_edges` and `cross_cycle_edges` (to be
@@ -1267,11 +1266,9 @@ The root of the workflow (`Workflow` in the code).
 * `previous_instance(cycle_point)` / `next_instance(cycle_point)`: neighbours in the plan's
   own recurrence (used by `sequential` and by the model calendar in integer mode).
 
-## 9.3. SubPlan
+## 9.3. MultiStep
 
-Currently `MultiStep` in the code (to be renamed back, see [vocabulary](#2-vocabulary)).
-
-* `SubPlan` (ontology fields: `name`, `plan`, `preceded_by`, `steps`) and `SubPlanExecution`
+* `MultiStep` (ontology fields: `name`, `plan`, `preceded_by`, `steps`) and `MultiStepExecution`
   (`type`, `launch_mode`, `cycle.only`/`cycle.skip` restrictions).
 * `run_steps(config)`: run the steps through `esm_plugin_manager` (exists).
 
@@ -1285,7 +1282,7 @@ Currently `MultiStep` in the code (to be renamed back, see [vocabulary](#2-vocab
 `src/esm_runscripts/pplan/execution.py`.
 
 * `advance(workflow, finished, config)`: today dispatches the successors of a finished
-  sub-plan through the `_DISPATCHERS` registry (only `IN_PROCESS` exists). To add: the
+  multi-step through the `_DISPATCHERS` registry (only `IN_PROCESS` exists). To add: the
   `.done` marker writing, the AND-join readiness check, the submission lock, and the
   `LOCAL`/`BATCH` dispatchers (writing `.run` files and submitting them).
 * Job bundle writer: generates horizontal and vertical bundle scripts.
@@ -1295,7 +1292,7 @@ Currently `MultiStep` in the code (to be renamed back, see [vocabulary](#2-vocab
 * **Two setups in one runscript**: AWI-ESM2-PISM needs the `awiesm` setup and the
   standalone `pism` component in the same runscript. Do we need `general.setup_name` to be
   a list, a per-plan `setup` key, or a new `awiesm-pism` setup?
-* **Default sub-plans per plan**: when several plans run models (`components`), does each
+* **Default multi-steps per plan**: when several plans run models (`components`), does each
   of them get its own `prepare_run`/`compute`/`tidy` chain automatically, and how are they
   named (`tidy_awiesm`)?
 * **Strictness of dependencies on non-existing instances**: the proposal rejects them at
@@ -1311,4 +1308,3 @@ Currently `MultiStep` in the code (to be renamed back, see [vocabulary](#2-vocab
 * **Migration**: how do we translate the existing `model1`/`model2` iterative coupling
   runscripts into the single-runscript format (automatic translation, or documentation
   only)?
-* **Naming in the code**: rename `MultiStep` back to `SubPlan`.

@@ -134,6 +134,14 @@ def test_get_bearer_token_names_the_server_when_not_logged_in(monkeypatch, tmp_p
         auth.get_bearer_token(Settings(server_url=_SERVER))
 
 
+def test_get_bearer_token_names_the_server_when_login_expired(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    monkeypatch.setattr(auth, "fetch_oidc_metadata", lambda settings: None)
+    auth.save_token(TokenSet(access_token="old", expires_at=0), _SERVER)  # no refresh token
+    with pytest.raises(auth.AuthError, match=f"run 'esm-catalog auth login {_SERVER}'"):
+        auth.get_bearer_token(Settings(server_url=_SERVER))
+
+
 def test_clear_token(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
     assert auth.clear_token(_SERVER) is False  # nothing yet

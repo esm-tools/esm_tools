@@ -243,7 +243,10 @@ def exchange_code_for_token(
 def refresh_access_token(meta: OIDCMetadata, settings: Settings, token: TokenSet) -> TokenSet:
     """Mint a fresh access token from *token*'s refresh token."""
     if not token.refresh_token:
-        raise AuthError("no refresh token cached; run 'esm-catalog auth login'")
+        raise AuthError(
+            f"login to {settings.server_url} has expired; "
+            f"run 'esm-catalog auth login {settings.server_url}'"
+        )
     new = _request_token(
         meta,
         settings,

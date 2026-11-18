@@ -43,7 +43,7 @@
          Separate file id and name so the monthly m_ice stream, which several
          monthly rules read, is untouched. -->
     <file id="f_m_ice_day" name="m_ice_day.fesom.%start_date%"><field field_ref="m_ice" freq_op="1d"/></file>
-{%- if fesom.cmip7_lr_gapfill_output | default(false) %}
+{%- if fesom.op20bar_levels | default('') %}
 
     <!-- Daily temp on the two layers around 200 dbar (thetao op20bar day). temp is then sent
          daily, so f_temp and f_temp_reg average daily sends. -->
@@ -176,7 +176,7 @@
     <file id="f_sivols"    name="sivols.fesom.%start_date%" ><field field_ref="sivols"    freq_op="1mo"/></file>
 
     <!-- 3D nodes, cell-center -->
-    <file id="f_temp"       name="temp.fesom.%start_date%" ><field field_ref="temp"       freq_op="{{ '1d' if fesom.cmip7_lr_gapfill_output | default(false) else '1mo' }}"/></file>
+    <file id="f_temp"       name="temp.fesom.%start_date%" ><field field_ref="temp"       freq_op="{{ '1d' if fesom.op20bar_levels | default('') else '1mo' }}"/></file>
     <file id="f_salt"       name="salt.fesom.%start_date%" ><field field_ref="salt"       freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_unod"       name="unod.fesom.%start_date%" ><field field_ref="unod"       freq_op="1mo"/></file>
     <file id="f_vnod"       name="vnod.fesom.%start_date%" ><field field_ref="vnod"       freq_op="1mo"/></file>
@@ -308,7 +308,7 @@
   <file_group id="fesom_1mo_reg_3d" output_freq="1mo" split_freq="1y" split_freq_format="%y" enabled="true">
 
     <!-- 3D nodes, cell-center -->
-    <file id="f_temp_reg"       name="temp.fesom.gr.%start_date%" ><field field_ref="temp"       grid_ref="grid_3d_nod_reg"     freq_op="{{ '1d' if fesom.cmip7_lr_gapfill_output | default(false) else '1mo' }}"/></file>
+    <file id="f_temp_reg"       name="temp.fesom.gr.%start_date%" ><field field_ref="temp"       grid_ref="grid_3d_nod_reg"     freq_op="{{ '1d' if fesom.op20bar_levels | default('') else '1mo' }}"/></file>
     <file id="f_salt_reg"       name="salt.fesom.gr.%start_date%" ><field field_ref="salt"       grid_ref="grid_3d_nod_reg"     freq_op="{{ '1d' if fesom.cmip7_daily_3d_output else '1mo' }}"/></file>
     <file id="f_unod_reg"       name="unod.fesom.gr.%start_date%" ><field field_ref="unod"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
     <file id="f_vnod_reg"       name="vnod.fesom.gr.%start_date%" ><field field_ref="vnod"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
@@ -536,7 +536,7 @@
     <file id="f_DiaChl_sfc" name="DiaChl_sfc.fesom.%start_date%"><field field_ref="DiaChl" grid_ref="grid_3d_nod_sfc" freq_op="1d"/></file>
     <file id="f_NPPn_day" name="NPPn_day.fesom.%start_date%"><field field_ref="NPPn" freq_op="1d"/></file>
     <file id="f_NPPd_day" name="NPPd_day.fesom.%start_date%"><field field_ref="NPPd" freq_op="1d"/></file>
-{%- if fesom.cmip7_lr_gapfill_output | default(false) %}
+{%- if fesom.op20bar_levels | default('') %}
     <!-- the two layers around 200 dbar (o2, ph, co3, co3satarag, chl, phyc at op20bar day).
          These fields are sent daily anyway for the *_sfc files, and their monthly files
          already average daily sends. -->

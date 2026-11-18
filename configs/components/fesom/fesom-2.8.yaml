@@ -140,6 +140,7 @@ fesom:
                     alpha_evp: 250          # constant that control numerical stability of mEVP.
                     beta_evp: 250           # constant that control numerical stability of mEVP.
             CORE3:
+                    op20bar_levels: "14 15"   # layer mid-depths 175 and 210 m (aux3d.out)
                     nx: 220509
                     mesh_dir: "${fesom.mesh_base_dir}/core3/"
                     nproc: 128
@@ -147,6 +148,7 @@ fesom:
                     alpha_evp: 300          # constant that control numerical stability of mEVP.
                     beta_evp: 300           # constant that control numerical stability of mEVP.
             CORE3_nocav:
+                    op20bar_levels: "14 15"   # layer mid-depths 175 and 210 m (aux3d.out)
                     # CORE3 with use_cavity=.false.: same nodes and elements, the
                     # ice-shelf cavities are open ocean. Partitions under
                     # core3_nocav/dist_*; ocp-tool products in the pool as CORE3_nocav.
@@ -208,6 +210,7 @@ fesom:
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.
             DARS2:
+                    op20bar_levels: "16 17"   # layer mid-depths 190 and 212 m (aux3d.out)
                     nx: 3146761
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
@@ -637,11 +640,12 @@ fesom:
     # simulated year raw on CORE3.
     cmip7_3h_output: true
     cmip7_daily_3d_output: false
-    # cmip7_lr_gapfill_output: extra CMIP7 output for the AWI-ESM3 cc-LR spinup: daily temp and,
-    # with REcoM, O2, pH, CO3, CO3satA, PhyChl, DiaChl, PhyC, DiaC on the two layers around
-    # 200 dbar (175 and 210 m on CORE3, <var>_200.fesom.<year>.nc). temp is then sent daily, so
-    # its monthly files average daily sends. About 3.5 GB raw per simulated year on CORE3.
-    cmip7_lr_gapfill_output: false
+    # op20bar_levels: the two 0-based layer indices around 200 dbar, a mesh property set in
+    # choose_resolution. Where it is set, the CMIP7 file_def writes daily temp and, with REcoM,
+    # O2, pH, CO3, CO3satA, PhyChl, DiaChl, PhyC, DiaC on those two layers
+    # (<var>_200.fesom.<year>.nc, op20bar day). temp is then sent daily, so its monthly files
+    # average daily sends. About 4.5 GB raw per simulated year on CORE3. Empty: no 200 dbar files.
+    op20bar_levels: ""
 
     # Transient tracers CFC-12 and SF6 (mod_transit.F90): use_transit with l_f12 and l_sf6, and
     # the monthly cfc12/sf6 files in xios_xml_cmip7/file_def_fesom.xml.j2.

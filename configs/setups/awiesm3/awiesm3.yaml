@@ -1809,12 +1809,11 @@ fesom:
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
-            # The cc-LR CMIP7 output set: with cmip7_cmor_output the gap-fill streams
-            # (daily temp, REcoM at 200 dbar) and the REcoM CMIP7 diagnostics are on.
-            # with_transit_tracers stays a runscript choice, it needs zero tracer restarts.
+            # With cmip7_cmor_output the REcoM CMIP7 diagnostics are on (the 200 dbar output
+            # follows from fesom.op20bar_levels of the mesh). with_transit_tracers stays a
+            # runscript choice, it needs zero tracer restarts.
             choose_cmip7_cmor_output:
                 True:
-                    cmip7_lr_gapfill_output: true
                     recom_cmip7_diags: true
         # -is (ice-sheet coupled) variant additionally builds the native FESOM
         # mesh partitioner (fesom_meshpart, via -DBUILD_MESHPARTITIONER=ON) so
@@ -1885,12 +1884,11 @@ fesom:
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
-            # The cc-LR CMIP7 output set: with cmip7_cmor_output the gap-fill streams
-            # (daily temp, REcoM at 200 dbar) and the REcoM CMIP7 diagnostics are on.
-            # with_transit_tracers stays a runscript choice, it needs zero tracer restarts.
+            # With cmip7_cmor_output the REcoM CMIP7 diagnostics are on (the 200 dbar output
+            # follows from fesom.op20bar_levels of the mesh). with_transit_tracers stays a
+            # runscript choice, it needs zero tracer restarts.
             choose_cmip7_cmor_output:
                 True:
-                    cmip7_lr_gapfill_output: true
                     recom_cmip7_diags: true
         v3.5.2-is:
             branch: "2.8.4"

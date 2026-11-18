@@ -728,7 +728,7 @@ xios:
                     add_config_sources:
                         io_def:           ${fesom_xios_xml_dir}/iodef.xml.j2
                         context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
-                        axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
+                        axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml.j2
                         domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml.j2
                         grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
                         field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml

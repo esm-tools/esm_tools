@@ -7,7 +7,7 @@
     </axis>
     <!-- Lowest full model level (level 91 of L91, index 90; OpenIFS numbers the axis 1..NFLEVG
          from the top). One index, so the XIOS 2.5 min-max range of the zoom is that level only.
-         Used by atmos_1h_o3low (oifs.cmip7_lr_gapfill_output), unused otherwise. -->
+         Used by atmos_1h_o3low. -->
     <axis id="model_levels_lowest" long_name="lowest vertical model level" axis_ref="model_levels" >
       <zoom_axis index="(0,0)[90]" />
     </axis>

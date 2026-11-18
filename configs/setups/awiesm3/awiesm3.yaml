@@ -763,9 +763,6 @@ oifs:
                 True:
                     wam_xios: true
                     wam_xios_level: cmip7
-                    # cc-LR gap-fill streams (100 m winds, blh, gust, o3, CO2 on model
-                    # levels, co2fire); the pextra tendencies stay off.
-                    cmip7_lr_gapfill_output: true
                 monthly:
                     wam_xios: true
         develop-is:
@@ -888,9 +885,6 @@ oifs:
                 True:
                     wam_xios: true
                     wam_xios_level: cmip7
-                    # cc-LR gap-fill streams (100 m winds, blh, gust, o3, CO2 on model
-                    # levels, co2fire); the pextra tendencies stay off.
-                    cmip7_lr_gapfill_output: true
                 monthly:
                     wam_xios: true
         v3.5.2-is:

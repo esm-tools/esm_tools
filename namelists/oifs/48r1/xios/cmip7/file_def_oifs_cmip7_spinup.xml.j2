@@ -63,9 +63,7 @@
                 <field field_ref="zg_pl">@this_ref</field>
                 <field field_ref="air_temperature__ta">@this_ref</field>
                 <field field_ref="specific_humidity__hus">@this_ref</field>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
                 <field field_ref="o3_pl" name="o3" long_name="Ozone mass mixing ratio">@this_ref</field>
-{%- endif %}
             </field_group>
         </file>
 
@@ -120,9 +118,8 @@
                 <field field_ref="t" name="ta" long_name="Air Temperature"/>
                 <field field_ref="q" name="hus" long_name="Specific Humidity"/>
                 <field field_ref="relative_humidity_ml__hur"/>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
                 <field field_ref="o3" name="o3" long_name="Ozone mass mixing ratio"/>
-{%- if oifs.cmip7_lr_gapfill_tendencies | default(false) %}
+{%- if oifs.cmip7_pextra_tendencies | default(false) %}
                 <!-- Physics tendencies of T and q. Listing them is what switches the pextra
                      computation on (suxios_pextra_fields sets LBUD23 and NVEXTRAGB from the active
                      fields). Accumulated values, unit "K/s * s" and "kg/kg/s * s". Separate flag:
@@ -142,7 +139,6 @@
 {%- endif %}
 {%- if general.with_co2_tracer | default(false) %}
                 <field field_ref="co2" name="co2" long_name="CO2 mass mixing ratio"/>
-{%- endif %}
 {%- endif %}
             </field_group>
         </file>
@@ -182,10 +178,8 @@
                      source used to be atmos_1h_ts, an average, which smooths the
                      diurnal peak the time-point entry is there to keep. -->
                 <field field_ref="surface_temperature__ts"/>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
                 <!-- bldep 3hrPt -->
                 <field field_ref="blh" name="blh" long_name="Boundary layer height"/>
-{%- endif %}
             </field_group>
         </file>
 
@@ -223,9 +217,7 @@
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
                 <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
                 <field field_ref="sp" name="sp" long_name="Surface pressure"/>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
                 <field field_ref="blh" name="blh" long_name="Boundary layer height"/>
-{%- endif %}
             </field_group>
         </file>
 
@@ -438,7 +430,6 @@
                 <field field_ref="10fg" name="wsg10" long_name="Maximum Wind Speed of Gust at 10m"/>
             </field_group>
         </file>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
 
         <!-- Hourly maximum wind gust at 10m (wsg tmax-h10m 1hr) -->
         <file
@@ -452,7 +443,6 @@
                 <field field_ref="10fg" name="wsg10" long_name="Maximum Wind Speed of Gust at 10m"/>
             </field_group>
         </file>
-{%- endif %}
 
         <!-- ========== CAP7 additional output sections ========== -->
 
@@ -517,14 +507,11 @@
                 <!-- ps 1hrPt south of 30S (atmos.ps.tpt-u-hxy-u.1hr.30S-90S).
                      atmos_1h_sfc_sp is an hourly mean, not a snapshot. -->
                 <field field_ref="sp" name="sp" long_name="Surface pressure"/>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
                 <!-- ua/va 100 m 1hrPt -->
                 <field field_ref="100u" name="100u" long_name="100 metre U wind component"/>
                 <field field_ref="100v" name="100v" long_name="100 metre V wind component"/>
-{%- endif %}
             </field_group>
         </file>
-{%- if oifs.cmip7_lr_gapfill_output | default(false) %}
 
         <!-- Hourly mean o3 at the lowest model level (aerosol.o3 h2m 1hr and day max) -->
         <file
@@ -538,22 +525,6 @@
                 <field field_ref="o3" name="o3" long_name="Ozone mass mixing ratio">@this_ref</field>
             </field_group>
         </file>
-
-        <!-- Monthly aerosol optical depth at 550 nm, total and by species -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="1mo"
-            name="atmos_mon_aod"
-            description="AWI-ESM3 monthly aerosol optical depth at 550 nm">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="aod550"/>
-                <!-- the MACv2-SP anthropogenic part on the same grid, for od550aer = aod550 + macv2sp -->
-                <field field_ref="macv2sp_taod550"/>
-            </field_group>
-        </file>
-{%- endif %}
 
         <!-- 1hr averaged surface temperature (cap7_atm: ts average) -->
         <file

@@ -513,16 +513,9 @@ oifs:
     # CMIP7 CMOR-style j2 templates. Independent of `mip:` (which drives
     # CMIP7 *forcings*). Default off: cmip7 forcings but default OIFS output.
     cmip7_cmor_output: false
-    # Extra CMIP7 output for the AWI-ESM3 cc-LR spinup in cmip7/file_def_oifs_cmip7_spinup.xml.j2
-    # (needs cmip7_cmor_output): 100 m winds, blh and o3 in the hourly files, hourly max gust,
-    # o3 on model and pressure levels and at the lowest model level, the pextra temperature
-    # and humidity tendencies, aod550 by species and, with general.with_co2_tracer, co2 on
-    # model levels. About 7 GB raw per simulated year at TCO95. Default off, so the shared
-    # templates write for veg-HR exactly what they wrote before.
-    cmip7_lr_gapfill_output: false
-    # pextra T/q tendencies in atmos_mon_ml. Off: with FullPos, 48r1v8 aborts in POS
+    # pextra T/q tendencies in atmos_mon_ml (needs cmip7_cmor_output). Off: with FullPos, 48r1v8 aborts in POS
     # (YSD_XAD%NLEVS /= KFLEVG) until SUXIOS_PEXTRA_FIELDS sets NCEXTR before NAMDPHY uses it.
-    cmip7_lr_gapfill_tendencies: false
+    cmip7_pextra_tendencies: false
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"
@@ -1303,21 +1296,22 @@ oifs:
                                     NAMCLDP:
                                             SCLCT_SWITCH: "${sclct_switch}"
 
-    # Switching the gap-fill output on in a restarted run changes the length of the global DDH
-    # buffers, so reading the parent's DDH restart aborts (RERESF_PART2: DDHRCV WRONG LENGTH).
-    # Global DDH writes no output in this setup: switch it and its listing off together
-    # (SUNDDH requires LHDGLB .EQV. (LHDPRG .OR. LHDEFG)). Keep it off for the rest of that run.
-    choose_cmip7_lr_gapfill_output:
-            true:
+    # The CMIP7 output (100 m winds, blh, gust, o3 on model and pressure levels and at the
+    # lowest level) changes the length of the global DDH buffers, so a run restarted from a
+    # parent written without it aborts reading the DDH restart (RERESF_PART2: DDHRCV WRONG
+    # LENGTH). Global DDH writes no output in this setup: switch it and its listing off together
+    # (SUNDDH requires LHDGLB .EQV. (LHDPRG .OR. LHDEFG)) whenever the CMIP7 output is on.
+    choose_cmip7_cmor_output:
+            True:
                     add_namelist_changes:
                             fort.4:
                                     NAMDDH:
                                             LHDGLB: ".false."
                                             LHDPRG: ".false."
 
-    # The pextra tendencies (cmip7_lr_gapfill_tendencies) must be means over each output
+    # The pextra tendencies (cmip7_pextra_tendencies) must be means over each output
     # interval; the default LCLDBUD_TIMEINT=.true. accumulates them over the whole run.
-    choose_cmip7_lr_gapfill_tendencies:
+    choose_cmip7_pextra_tendencies:
             true:
                     add_namelist_changes:
                             fort.4:

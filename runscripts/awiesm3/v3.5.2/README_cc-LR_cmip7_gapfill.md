@@ -1,21 +1,19 @@
-# CMIP7 gap-fill output for the AWI-ESM3 cc-LR spinup
+# CMIP7 output for the AWI-ESM3 cc-LR runs
 
-The cc-LR spinup runscript (`awiesm3-v3.5.2-cc-albedo-TCO95L91-CORE3_spinup_branch2690.yaml`) lives in the experiment, not in this repository. These are the lines it needs on top of what it has. They take effect from the next leg; finished legs keep their gaps.
+The cc-LR runscripts (for example `awiesm3-v3.5.2-cc-albedo-TCO95L91-CORE3_spinup_branch2690.yaml`) live in the experiment, not in this repository. With `cmip7_cmor_output: true` for OpenIFS and FESOM they now write the full CMIP7 set without further switches. Changes take effect from the next leg; finished legs keep their gaps.
 
-```yaml
-fesom:
-    # was false ("Match 2630-2634"): export, benthic flux, grazing, limitation, O2 diagnostics
-    recom_cmip7_diags: true
-    # daily temp and REcoM O2, pH, CO3, CO3satA, PhyChl, DiaChl, PhyC, DiaC around 200 dbar
-    cmip7_lr_gapfill_output: true
+What comes with `cmip7_cmor_output`, for every run that uses the CMIP7 templates:
 
-oifs:
-    # 100 m winds, hourly gust, blh, o3 (ml, plev19, lowest level hourly), pextra T/q
-    # tendencies, aod550 by species, co2 on model levels
-    cmip7_lr_gapfill_output: true
-```
+- OpenIFS (`cmip7/file_def_oifs_cmip7_spinup.xml.j2`): 100 m winds (1hrPt), blh (1hr and 3hrPt), hourly maximum gust, o3 on model and pressure levels and at the lowest model level (hourly), and co2 on model levels with `general.with_co2_tracer`. `co2fire` in `atm_remapped_1m` is written for every run with CO2 coupling. Global DDH is switched off (`NAMDDH LHDGLB/LHDPRG`), because these fields change its restart buffer length; it writes no output in this setup.
+- FESOM (`xios_xml_cmip7/file_def_fesom.xml.j2`): daily temp and, with REcoM, O2, pH, CO3, CO3satA, PhyChl, DiaChl, PhyC and DiaC on the two layers around 200 dbar, on meshes that set `fesom.op20bar_levels` (CORE3 and CORE3_nocav 14 15, DARS2 16 17). Other meshes get no 200 dbar files.
+- For the cc versions (`v3.5.2-cc`, `develop-cc`), `awiesm3.yaml` also sets `fesom.recom_cmip7_diags: true` (export and benthic fluxes, grazing, limitation, O2 saturation and minimum, inventories). A runscript value wins: the spinup runscript still sets it to false until production piControl switches it on.
 
-The defaults of all three switches stay false (`configs/components/fesom/fesom-2.8.yaml`, `configs/components/oifs/oifs.yaml`), so veg-HR and every other run that shares the templates writes what it wrote before. `co2fire` in `atm_remapped_1m` comes back for every run with CO2 coupling, without a switch: it was lost when the legs moved from `file_def_oifs_mon.xml.j2` to the CMIP7 template at 2840.
+veg-HR runs that move to this branch with `cmip7_cmor_output` get the OpenIFS fields above too, and DDH goes off.
+
+Not switched on:
+
+- `oifs.cmip7_pextra_tendencies` (T/q physics tendencies, `tnt*`/`tnhus*`): off. With FullPos, 48r1v8 aborts in POS (`YSD_XAD%NLEVS /= KFLEVG`) until `SUXIOS_PEXTRA_FIELDS` sets `NCEXTR` before `NAMDPHY` uses it.
+- The XIOS `aod550*` fields are not written: with `NAERMACC=1` the `aod550` slot is the lowest-level 550 nm extinction coefficient (`climaer_layer.F90:156-201`), not a column AOD, and the species fields are column masses. od550aer is an output gap.
 
 ## Ocean CFC-12 and SF6 (optional)
 
@@ -37,6 +35,6 @@ python utils/fesom_add_zero_tracer_restart.py \
 
 It writes `sf6.nc`, `sf6_M1.nc`, `cfc12.nc` and `cfc12_M1.nc` with the structure, time and iter of `temp.nc` / `temp_M1.nc`, and refuses to overwrite existing files.
 
-## Before the spinup picks this up
+## Tested
 
-Run one test month from the current restart (design section 3.5): every new file exists, has the expected dimensions and time steps, is not constant, and is plausible (o3 1e-8 to 1e-5 kg/kg, pextra divided by the accumulation period around 1e-5 K/s, aod550 around 0.1, blh 1e2 to 1e3 m). The OpenIFS fields are checked against the develop-cc source only. With the flag on, oifs.yaml also sets NAMCLDP LCLDBUD_TIMEINT=.false. so the pextra tendencies are means over each output interval, not accumulations over the whole run; check in the test month that the monthly pextra values do not grow with run time. atmos_mon_aod also carries macv2sp_taod550 on the reduced grid, so od550aer = aod550 + macv2sp_taod550 can be formed point by point; check whether aod550 already contains the MACv2-SP part.
+One month (2850-01) branched from the v3.5.2 spinup restart: every new stream exists, has the expected dimensions and time steps and plausible values, and the pycmor rules for the 96 products built from them pass.

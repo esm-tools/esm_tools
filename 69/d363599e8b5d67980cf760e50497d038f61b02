@@ -1,0 +1,34 @@
+src/esm_runscripts/pplan/plan.py
+  s_0f8b4206b53928::t_ad1216facd3938 360,370-374,394-404
+  s_0f8b4206b53928::t_0536939997a165 327-332
+tests/test_esm_runscripts/test_simulation.py
+  s_0f8b4206b53928::t_5a5743e93f4225 151
+src/esm_runscripts/prepexp.py
+  s_0f8b4206b53928::t_14dad43a59d148 272-278,289-294
+tests/test_esm_runscripts/test_plan.py
+  s_0f8b4206b53928::t_3e7532126e5fa8 196
+  s_0f8b4206b53928::t_b526a6ee55921e 231,239-240
+  s_0f8b4206b53928::t_37ddc3c3854d58 171
+  s_0f8b4206b53928::t_ff16f623fcc2a7 136-141,143,148,154
+tests/test_esm_runscripts/test_dispatch.py
+  s_0f8b4206b53928::t_113553091c1458 62-65
+  s_0f8b4206b53928::t_cc807ea4c411cd 211,215,227
+tests/test_esm_runscripts/test_prepexp_folders.py
+  s_0f8b4206b53928::t_49434eab2591da 1-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "69d363599e8b5d67980cf760e50497d038f61b02",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

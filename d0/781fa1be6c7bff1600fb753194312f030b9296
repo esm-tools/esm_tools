@@ -1,0 +1,47 @@
+tests/test_esm_runscripts/test_launch.py
+  s_0f8b4206b53928::t_ea673c89756420 88-114,116-119
+  s_0f8b4206b53928::t_cac71f19c25b43 115
+src/esm_runscripts/runscript/batch_system/slurm.py
+  s_0f8b4206b53928::t_8546ee3777b672 42-65
+  s_0f8b4206b53928::t_2dc826a4e56f48 6,8
+src/esm_runscripts/runscript/templates/hostfile_srun.j2
+  s_0f8b4206b53928::t_9ea4ebe9545bab 1-7
+tests/test_esm_runscripts/test_runscript_batch_system.py
+  s_0f8b4206b53928::t_04617cb764f6b7 40
+  s_0f8b4206b53928::t_d44fab86a96c3c 1-39,41-65
+tests/test_esm_runscripts/test_generation.py
+  s_0f8b4206b53928::t_e9b8c27154ed7e 104
+  s_0f8b4206b53928::t_7c4157b8b91c8f 90
+  s_0f8b4206b53928::t_5262282b49e822 46-89,91-103,105-115
+  s_0f8b4206b53928::t_39e5dbc0bd9d9b 16
+  s_0f8b4206b53928::t_230a4197fc5fc9 229-234
+src/esm_runscripts/runscript/batch_system/__init__.py
+  s_0f8b4206b53928::t_b15ace57d47a96 10-21,71-78
+  s_0f8b4206b53928::t_e6607313fd8801 79-80
+src/esm_runscripts/runscript/generation.py
+  s_0f8b4206b53928::t_490bcde1e70046 360-367,372,374
+  s_0f8b4206b53928::t_a11768154be1e7 185-191,193,208-216,218-238
+  s_0f8b4206b53928::t_b6334ec7338c12 118-127,140-141,147-151,162-164,168-169,173-181,192,194-207,217
+  s_0f8b4206b53928::t_e122b3923d6296 239-240
+src/esm_runscripts/runscript/batch_system/pbs.py
+  s_0f8b4206b53928::t_054f651875ae06 37-42
+src/esm_runscripts/execution/launch.py
+  s_0f8b4206b53928::t_90e8d1ec01b633 12
+  s_0f8b4206b53928::t_a94e2fd3f563d2 47-49,55-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "d0781fa1be6c7bff1600fb753194312f030b9296",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

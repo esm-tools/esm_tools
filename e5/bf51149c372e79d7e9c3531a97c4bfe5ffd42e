@@ -1,0 +1,28 @@
+src/esm_runscripts/pplan/plan.py
+  s_0f8b4206b53928::t_8c1e1cea240a60 400-406,410-411
+tests/test_esm_runscripts/test_plan.py
+  s_0f8b4206b53928::t_703ec180ac1bbb 139-140
+src/esm_runscripts/execution/dispatch.py
+  s_0f8b4206b53928::t_d347cda839c909 72-91,94-99,103-105,116-127,129-132
+tests/test_esm_runscripts/test_dispatch.py
+  s_0f8b4206b53928::t_3fba8a65ae80b3 51-54,64-69,74-75,82-83,86-87,90-91,94-99
+  s_0f8b4206b53928::t_3d5a59d474e56e 148-151
+  s_0f8b4206b53928::t_2190ed60bc176d 170
+  s_0f8b4206b53928::t_747d445d2c00a5 225-227,235-240,247-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "e5bf51149c372e79d7e9c3531a97c4bfe5ffd42e",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

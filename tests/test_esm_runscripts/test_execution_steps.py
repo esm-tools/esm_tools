@@ -141,3 +141,21 @@ def test_run_steps_does_not_set_relevant_filetypes_for_other_job_types(monkeypat
     steps_module.run_steps(config, "prepexp")
 
     assert "relevant_filetypes" not in config["general"]
+
+
+def test_run_steps_and_run_job_agree_on_relevant_filetypes():
+    # The whole point of filetype_groups.py: legacy's run_job() (called by
+    # the legacy engine) and native run_steps() (called by pplan dispatch)
+    # must read the exact same single source, not two copies that can
+    # drift apart.
+    from esm_runscripts import compute, prepcompute, tidy
+    from esm_runscripts.execution.steps import _RELEVANT_FILETYPES_BY_JOB_TYPE
+
+    for job_type, module in (
+        ("prepcompute", prepcompute),
+        ("compute", compute),
+        ("tidy", tidy),
+    ):
+        assert list(module._RELEVANT_FILETYPES) == list(
+            _RELEVANT_FILETYPES_BY_JOB_TYPE[job_type]
+        )

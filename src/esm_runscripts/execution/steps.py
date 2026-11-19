@@ -23,7 +23,7 @@ from typing import List
 import esm_plugin_manager
 import esm_tools
 
-from .. import helpers
+from .. import filetype_groups, helpers
 from ..pplan.plan import Step
 
 # Legacy's own per-job-type ``run_job(config)`` (prepcompute.py/compute.py/
@@ -34,12 +34,12 @@ from ..pplan.plan import Step
 # docstring for why), so without this, a step that reads
 # ``relevant_filetypes`` (``log_used_files``, in both prepcompute's and
 # tidy's own recipes) raises ``KeyError`` the first time it's reached.
-# Mirrors each ``run_job``'s literal list exactly; if a job type's list
-# ever changes there, change it here too.
+# Reads the same named groups ``run_job`` itself now imports from
+# ``filetype_groups`` -- one source for both call paths, not a second copy.
 _RELEVANT_FILETYPES_BY_JOB_TYPE = {
-    "prepcompute": ["bin", "config", "forcing", "input", "restart_in"],
-    "compute": ["bin", "config", "forcing", "input", "restart_in"],
-    "tidy": ["log", "mon", "outdata", "restart_out", "ignore", "unknown"],
+    "prepcompute": filetype_groups.PREPCOMPUTE_COMPUTE,
+    "compute": filetype_groups.PREPCOMPUTE_COMPUTE,
+    "tidy": filetype_groups.TIDY,
 }
 
 
@@ -62,7 +62,7 @@ def run_steps(config: dict, job_type: str) -> dict:
         return config
 
     if job_type in _RELEVANT_FILETYPES_BY_JOB_TYPE:
-        config["general"]["relevant_filetypes"] = _RELEVANT_FILETYPES_BY_JOB_TYPE[job_type]
+        config["general"]["relevant_filetypes"] = list(_RELEVANT_FILETYPES_BY_JOB_TYPE[job_type])
 
     recipe = {"recipe": [step.name for step in steps], "job_type": job_type}
     plugins_bare = (

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 
@@ -37,3 +39,27 @@ class SlurmBatchSystem:
     @staticmethod
     def tasks_or_nodes_flag() -> str:
         return "tasks_flag"
+
+    @staticmethod
+    def write_multiprog_hostfile(config: dict) -> None:
+        """Write the ``srun --multi-prog``/``mpirun`` hostfile both into
+        ``thisrun_scripts_dir`` (a record, matching legacy's own write
+        location) and ``thisrun_work_dir`` (where ``compute``'s command
+        actually runs from, and where the launcher looks for it by its
+        bare relative filename -- see ``generation.command_lines``'s
+        ``cd``). Mirrors legacy's ``Slurm.prepare_launcher``'s "standard"
+        branch + its ``shutil.copyfile`` into the work dir."""
+        from ..generation import multiprog_hostfile_content
+
+        content = multiprog_hostfile_content(config)
+        if not content:
+            return
+
+        general = config["general"]
+        filename = config["computer"].get("config_files", {}).get("hostfile", "hostfile_srun")
+
+        scripts_path = Path(general["thisrun_scripts_dir"]) / filename
+        scripts_path.write_text(content)
+
+        work_path = Path(general["thisrun_work_dir"]) / filename
+        shutil.copyfile(scripts_path, work_path)

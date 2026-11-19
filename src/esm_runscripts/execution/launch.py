@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import subprocess
 
-from ..pplan.plan import Workflow
+from ..pplan.plan import MultiStepKind, Workflow
 from ..runscript.batch_system import by_name as batch_system_by_name
 from ..runscript.generation import build_runscript_context, runscript_path, write_runscript
 from .check_mode import is_check_mode
@@ -44,14 +44,20 @@ def launch_batch(workflow: "Workflow", multi_step_name: str, config: dict) -> di
     result in :func:`~esm_runscripts.execution.dispatch.advance`'s output
     dict means "launched", not "finished".
 
-    In check mode (``-c``), the runscript still gets written (so it can
-    be inspected), but never actually submitted."""
+    In check mode (``-c``), the runscript (and MPMD hostfile, if any) still
+    get written (so they can be inspected), but nothing is actually
+    submitted."""
     context = build_runscript_context(workflow, multi_step_name, config)
     path = runscript_path(config, multi_step_name)
     write_runscript(context, path, executable=False)
 
     batch_system_name = config["computer"]["batch_system"]
-    batch_system_by_name(batch_system_name)  # validates the name eagerly
+    batch_system = batch_system_by_name(batch_system_name)
+    if workflow.multi_step_execution[multi_step_name].kind == MultiStepKind.ESM_MULTISTEP:
+        # compute_requirements (called inside build_runscript_context, via
+        # batch_header_lines) already assigned each model's start_proc/
+        # end_proc by now -- write the hostfile those ranges describe.
+        batch_system.write_multiprog_hostfile(config)
     if is_check_mode(config):
         return config
     submit = config["computer"]["submit"]

@@ -13,6 +13,7 @@ def _config():
             "submit_to_batch_system": True,
             "sh_interpreter": "/bin/bash",
             "thisrun_scripts_dir": "/tmp/scripts",
+            "thisrun_work_dir": "/tmp/work",
             "expid": "test",
             "run_datestamp": "20260101",
         },
@@ -40,6 +41,76 @@ def test_compute_requirements_aggregates_esm_multistep_nproc():
 
     assert requirements.tasks == 128
     assert requirements.nodes == 4
+
+
+def test_compute_requirements_assigns_contiguous_mpmd_ranks_per_model():
+    # Legacy's calculate_requirements side effect: each model gets a
+    # contiguous start_proc/end_proc range, in valid_model_names order --
+    # the ranges an MPMD hostfile maps each model's binary onto.
+    config = _config()
+    config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
+    config["oifs"] = {"nproc": 12, "omp_num_threads": 2}
+    config["fesom"] = {"nproc": 128}
+    config["oasis3mct"] = {}  # library component -- no cores of its own
+    workflow = Workflow.default(config)
+
+    generation.compute_requirements(workflow, "compute", config)
+
+    assert config["oifs"]["start_proc"] == 0
+    assert config["oifs"]["end_proc"] == 11
+    assert config["fesom"]["start_proc"] == 12
+    assert config["fesom"]["end_proc"] == 139
+    assert "start_proc" not in config["oasis3mct"]
+
+
+def test_compute_requirements_applies_mpi_num_groups_multiplier():
+    config = _config()
+    config["fesom"] = {"nproc": 10, "mpi_num_groups": 3}
+    workflow = Workflow.default(config)
+
+    generation.compute_requirements(workflow, "compute", config)
+
+    assert config["fesom"]["nproc"] == 30
+    assert config["fesom"]["tasks"] == 30
+    assert config["fesom"]["end_proc"] == 29
+
+
+def test_multiprog_hostfile_content_one_line_per_model_for_srun():
+    config = _config()
+    config["computer"]["launcher"] = "srun"
+    config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
+    config["oifs"] = {"nproc": 12, "execution_command": "oifs_exe"}
+    config["fesom"] = {"nproc": 128, "executable": "fesom_exe"}
+    config["oasis3mct"] = {}
+    workflow = Workflow.default(config)
+    generation.compute_requirements(workflow, "compute", config)
+
+    content = generation.multiprog_hostfile_content(config)
+
+    assert content == "0-11  ./oifs_exe\n12-139  ./fesom_exe\n"
+
+
+def test_multiprog_hostfile_content_colon_joined_for_mpirun():
+    config = _config()
+    config["computer"]["launcher"] = "mpirun"
+    config["general"]["valid_model_names"] = ["oifs", "fesom"]
+    config["oifs"] = {"nproc": 12, "execution_command": "oifs_exe"}
+    config["fesom"] = {"nproc": 128, "executable": "fesom_exe"}
+    workflow = Workflow.default(config)
+    generation.compute_requirements(workflow, "compute", config)
+
+    content = generation.multiprog_hostfile_content(config)
+
+    assert content == " -np 12 ./oifs_exe : -np 128 ./fesom_exe"
+
+
+def test_multiprog_hostfile_content_empty_when_no_model_has_ranks():
+    config = _config()
+    config["computer"]["launcher"] = "srun"
+    config["general"]["valid_model_names"] = ["oasis3mct"]
+    config["oasis3mct"] = {}
+
+    assert generation.multiprog_hostfile_content(config) == ""
 
 
 def test_compute_requirements_uses_execution_nproc_for_bash_kind():
@@ -155,11 +226,12 @@ def test_command_lines_backgrounds_compute_and_appends_observe_call():
 
     lines = generation.command_lines(workflow, "compute", config, is_batch=True)
 
-    assert lines[0] == "time ./fesom 2>&1 &"
-    assert lines[1] == "process=$!"
-    assert lines[2].startswith("esm_runscripts my.yaml -e test")
-    assert "-t observe_compute" in lines[2]
-    assert "-p ${process}" in lines[2]
+    assert lines[0] == "cd /tmp/work"
+    assert lines[1] == "time ./fesom 2>&1 &"
+    assert lines[2] == "process=$!"
+    assert lines[3].startswith("esm_runscripts my.yaml -e test")
+    assert "-t observe_compute" in lines[3]
+    assert "-p ${process}" in lines[3]
 
 
 def test_write_runscript_writes_file_and_chmods_executable(tmp_path):

@@ -34,3 +34,9 @@ class PbsBatchSystem:
     @staticmethod
     def tasks_or_nodes_flag() -> str:
         return "nodes_flag"
+
+    @staticmethod
+    def write_multiprog_hostfile(config: dict) -> None:
+        """No-op -- PBS has no hostfile mechanism; all job info lives in
+        the launcher command itself (matches legacy's ``Pbs`` class)."""
+        return None

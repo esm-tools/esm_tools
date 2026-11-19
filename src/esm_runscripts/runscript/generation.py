@@ -115,9 +115,16 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
     ``prepcompute``/``compute``/``tidy``/...), aggregates per-model
     ``nproc``/``nproca``*``nprocb``(+``nprocar``*``nprocbr``)/``nprocio``
     across ``general.valid_model_names``, matching legacy's
-    ``calculate_requirements``. For a :attr:`MultiStepKind.BASH` step,
-    reads the already-known ``MultiStepExecution.nproc`` directly instead
-    of re-deriving it from the legacy workflow dict.
+    ``calculate_requirements`` -- including that function's side effect:
+    assigning each model a contiguous ``start_proc``/``end_proc`` MPI-rank
+    range (and ``start_core``/``end_core``, ``tasks``, ``threads``) in
+    ``config[model]``, in ``valid_model_names`` order. Those ranges are
+    what an MPMD launch's hostfile (:func:`multiprog_hostfile_content`)
+    maps each model's binary onto -- without this, a coupled run's
+    hostfile would have no ranks to write. For a :attr:`MultiStepKind.BASH`
+    step, reads the already-known ``MultiStepExecution.nproc`` directly
+    instead of re-deriving it from the legacy workflow dict, and does not
+    touch any model's config (single-executable, no MPMD ranks to assign).
     """
     execution = _multi_step_execution(workflow, multi_step_name)
     parent_execution = workflow.execution_of(multi_step_name)
@@ -130,11 +137,18 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
 
     tasks = 0
     nodes = 0
+    start_proc = 0
+    start_core = 0
     for model in config["general"]["valid_model_names"]:
         model_conf = config[model]
         omp_num_threads = int(model_conf.get("omp_num_threads", 1))
 
         if "nproc" in model_conf:
+            # kh 21.04.22: multi-group support -- (nproc * mpi_num_groups)
+            # MPI processes to start a program multiple times (used for
+            # FESOM-REcoM tracer loop parallelization).
+            mpi_num_groups = model_conf.get("mpi_num_groups", 1)
+            model_conf["nproc"] *= mpi_num_groups
             model_tasks = model_conf["nproc"]
         elif "nproca" in model_conf and "nprocb" in model_conf:
             model_tasks = model_conf["nproca"] * model_conf["nprocb"]
@@ -145,13 +159,83 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
             ):
                 model_tasks += model_conf["nprocar"] * model_conf["nprocbr"]
         else:
+            # A library component (e.g. oasis3mct) needs no cores of its
+            # own -- no start_proc/end_proc assigned, so it's skipped when
+            # building the MPMD hostfile too.
             continue
 
         model_tasks += model_conf.get("nprocio", 0)
+        model_conf["tasks"] = model_tasks
+        model_conf["threads"] = model_tasks * omp_num_threads
         tasks += model_tasks
         nodes += math.ceil(model_tasks * omp_num_threads / cores_per_node)
 
+        end_proc = start_proc + model_tasks - 1
+        end_core = start_core + model_conf["threads"] - 1
+        model_conf["start_proc"] = start_proc
+        model_conf["end_proc"] = end_proc
+        model_conf["start_core"] = start_core
+        model_conf["end_core"] = end_core
+        start_proc = end_proc + 1
+        start_core = end_core + 1
+
     return ResourceRequirements(tasks=tasks, nodes=nodes)
+
+
+def multiprog_hostfile_entries(config: dict) -> List[dict]:
+    """One entry per model :func:`compute_requirements` assigned a
+    ``start_proc``/``end_proc`` range to -- the data
+    ``hostfile_srun.j2`` renders into the MPMD hostfile content, for
+    whichever launcher (``srun``/``mpirun``) ``computer.launcher`` names.
+    A model with no range (a library component, e.g. ``oasis3mct``), or
+    no ``execution_command``/``executable`` to run, contributes no entry.
+    """
+    entries = []
+    for model in config["general"]["valid_model_names"]:
+        model_conf = config[model]
+        start_proc = model_conf.get("start_proc")
+        end_proc = model_conf.get("end_proc")
+        if start_proc is None or end_proc is None:
+            continue
+
+        if "execution_command" in model_conf:
+            command = f'./{model_conf["execution_command"]}'
+        elif "executable" in model_conf:
+            command = f'./{model_conf["executable"]}'
+        else:
+            continue
+
+        entries.append(
+            {
+                "start": start_proc,
+                "end": end_proc,
+                "ncpus": end_proc - start_proc + 1,
+                "command": command,
+            }
+        )
+    return entries
+
+
+def multiprog_hostfile_content(config: dict) -> str:
+    """The MPMD hostfile content for ``compute``'s launcher
+    (``srun --multi-prog hostfile_srun`` or ``mpirun $(cat hostfile_srun)``
+    -- see ``configs/other_software/batch_system/slurm.yaml``), rendered
+    from :func:`multiprog_hostfile_entries` via ``hostfile_srun.j2``
+    (``srun``'s ``--multi-prog`` format is one ``"{start}-{end}
+    ./command"`` line per model; ``mpirun``'s is `` -np {n} ./command``
+    `` : ``-joined on one line) -- matching legacy's ``Slurm.
+    write_one_hostfile``'s two formats, built here via the template this
+    module's docstring says generation should use, not manual string
+    concatenation. Must run after :func:`compute_requirements` has
+    populated ``start_proc``/``end_proc`` on each model; empty if no
+    model got a range.
+    """
+    entries = multiprog_hostfile_entries(config)
+    if not entries:
+        return ""
+    launcher = config["computer"].get("launcher")
+    template = _ENV.get_template("hostfile_srun.j2")
+    return template.render(launcher=launcher, entries=entries)
 
 
 def shell_header_lines(config: dict) -> List[str]:
@@ -273,13 +357,21 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     if "execution_command" not in computer:
         return []
 
+    # cd into thisrun_work_dir -- matches legacy's write_simple_runscript,
+    # which does this for every sub_plan unconditionally (batch or shell).
+    # The MPMD execution_command (srun --multi-prog hostfile_srun, see
+    # multiprog_hostfile_content) names the hostfile by bare relative
+    # filename, so the job has to actually be running from this directory
+    # for the launcher to find it.
+    lines = [f'cd {config["general"]["thisrun_work_dir"]}']
+
     write_log = computer.get("write_execution_log", "")
     command = f"time {computer['execution_command']} 2>&1{write_log}"
 
     if execution.launch_mode != LaunchMode.BACKGROUND:
-        return [command]
+        return lines + [command]
 
-    return [f"{command} &", "process=$!", observe_call_line(config, multi_step_name)]
+    return lines + [f"{command} &", "process=$!", observe_call_line(config, multi_step_name)]
 
 
 def build_runscript_context(workflow: Workflow, multi_step_name: str, config: dict) -> RunscriptContext:

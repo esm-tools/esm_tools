@@ -1,0 +1,7 @@
+{% if launcher == "srun" -%}
+{% for entry in entries %}
+{{- entry.start }}-{{ entry.end }}  {{ entry.command }}
+{% endfor -%}
+{%- elif launcher == "mpirun" -%}
+{% for entry in entries %} -np {{ entry.ncpus }} {{ entry.command }}{% if not loop.last %} :{% endif %}{% endfor %}
+{%- endif -%}

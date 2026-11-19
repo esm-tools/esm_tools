@@ -7,14 +7,18 @@ lowercase ``batch_system`` class whose ~20 methods were mostly
 scheduler-specific handful. Here that duck-typed delegation is made
 explicit as a :class:`typing.Protocol`, with two real implementations.
 
-Deliberately NOT ported from the legacy implementations (flagged, not
-silently dropped):
+The MPMD hostfile launcher (``write_multiprog_hostfile``, legacy
+``Slurm.prepare_launcher``'s "standard" branch) is ported -- a real,
+load-bearing mechanism for coupled runs, not dead code. See
+:mod:`esm_runscripts.runscript.generation`'s ``compute_requirements``/
+``multiprog_hostfile_content`` for the per-model rank-range math and
+hostfile-content building this method writes to disk; ``PbsBatchSystem``'s
+own implementation is a no-op, matching legacy's ``Pbs`` (``"no hostfile
+for PBS"`` -- all job info is in the launcher command itself).
 
-* The MPMD hostfile launcher (legacy ``Slurm.prepare_launcher``'s
-  "standard" branch, ``srun --multi-prog`` with a per-component core-range
-  hostfile) -- a real, load-bearing mechanism for coupled runs, not dead
-  code. Needs its own design pass; :class:`BatchSystem` implementations
-  here only support the single-executable-per-job case for now.
+Still deliberately NOT ported from the legacy implementations (flagged,
+not silently dropped):
+
 * ``multi_srun`` and the heterogeneous-parallelization/``taskset`` code
   paths -- confirmed dead/broken (see PR discussion): ``multi_srun``'s own
   template-building function is unreachable (calls ``self.bs...`` from a
@@ -62,6 +66,16 @@ class BatchSystem(Protocol):
         tasks-per-job header flag -- ``"tasks_flag"`` for schedulers that
         take a task count directly, ``"nodes_flag"`` for ones (PBS) that
         only take a node count."""
+        ...
+
+    def write_multiprog_hostfile(self, config: dict) -> None:
+        """Write this scheduler's MPMD hostfile for ``compute``'s coupled
+        launch into ``general.thisrun_work_dir`` (where the job actually
+        runs from -- see ``generation.command_lines``'s ``cd``), if this
+        scheduler has one. No-op for schedulers without one (PBS). Must
+        run after :func:`~esm_runscripts.runscript.generation.
+        compute_requirements` has assigned each model's ``start_proc``/
+        ``end_proc`` range."""
         ...
 
 

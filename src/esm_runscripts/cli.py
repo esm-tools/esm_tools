@@ -148,6 +148,14 @@ def main(**command_line_config):
 
     if command_line_config["wf_engine"] == "pplan":
         from .execution import dispatch
+        from .logfiles import set_jsonl_event_sink
+
+        # Native-only structured event log -- see dispatch._cascade for
+        # the emitters. One call per process: covers this branch's three
+        # sub-paths (observe re-entry, debug, and the normal start()
+        # bootstrap) alike, since each is its own process invocation of
+        # this same main().
+        set_jsonl_event_sink(sim.config)
 
         if observing_multi_step is not None:
             _run_observe(observing_multi_step, sim.plan, sim.config)

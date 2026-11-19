@@ -324,7 +324,12 @@ class Workflow(ProvenanceFreeModel):
                         tasks += model_conf["nprocar"] * model_conf["nprocbr"]
 
         multi_steps = {
-            "prepcompute": MultiStep(name="prepcompute", step_of_plan="prepcompute"),
+            "prepexp": MultiStep(name="prepexp", step_of_plan="prepexp"),
+            "prepcompute": MultiStep(
+                name="prepcompute",
+                step_of_plan="prepcompute",
+                preceded_by=["prepexp"],
+            ),
             "compute": MultiStep(
                 name="compute",
                 step_of_plan="compute",
@@ -352,6 +357,7 @@ class Workflow(ProvenanceFreeModel):
             else Executor.LOCAL
         )
         plans = {
+            "prepexp": Plan(name="prepexp"),
             "prepcompute": Plan(
                 name="prepcompute", preceded_by=multi_steps["prepcompute"].preceded_by
             ),
@@ -361,6 +367,11 @@ class Workflow(ProvenanceFreeModel):
             "tidy": Plan(name="tidy", preceded_by=multi_steps["tidy"].preceded_by),
         }
         plan_execution = {
+            "prepexp": PlanExecution(
+                multi_step_names=["prepexp"],
+                nproc=1,
+                executor=Executor.IN_PROCESS,
+            ),
             "prepcompute": PlanExecution(
                 multi_step_names=["prepcompute"],
                 nproc=multi_step_execution["prepcompute"].nproc,
@@ -380,8 +391,17 @@ class Workflow(ProvenanceFreeModel):
         }
 
         return cls(
-            entry_point="prepcompute",
-            resubmit_triggers={"tidy": ["prepcompute"]},
+            # A fresh run's real first step is prepexp -- it creates the
+            # thisrun_<filetype>_dir tree (_create_setup_folders /
+            # _create_component_folders) that prepcompute's create_new_files
+            # assumes already exists (bare os.mkdir, not makedirs). Matches
+            # legacy's assemble_workflow, which always submits prepexp
+            # before prepcompute.
+            entry_point="prepexp",
+            resubmit_triggers={
+                "prepexp": ["prepcompute"],
+                "tidy": ["prepcompute"],
+            },
             plans=plans,
             plan_execution=plan_execution,
             multi_steps=multi_steps,

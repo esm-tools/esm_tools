@@ -269,6 +269,13 @@ def _create_folders(config, filetypes):
     Generates the experiment file tree. Folders are created for every filetype
     except for "ignore".
 
+    Uses ``pathlib.Path.mkdir(parents=True, exist_ok=True)`` rather than a
+    manual ``os.path.exists``/``os.makedirs`` pair, so the full parent chain
+    (e.g. ``.../run_.../config/fesom``) is always created in one call --
+    callers downstream (``prepcompute.py``'s ``create_new_files``, which
+    does a bare ``os.mkdir`` and assumes the parent already exists) rely on
+    that.
+
     Parameters
     ----------
     config : dict
@@ -279,10 +286,12 @@ def _create_folders(config, filetypes):
     for filetype in filetypes:
         if not filetype == "ignore":
             if not filetype == "work":
-                if not os.path.exists(config[f"experiment_{filetype}_dir"]):
-                    os.makedirs(config[f"experiment_{filetype}_dir"])
-            if not os.path.exists(config[f"thisrun_{filetype}_dir"]):
-                os.makedirs(config[f"thisrun_{filetype}_dir"])
+                pathlib.Path(config[f"experiment_{filetype}_dir"]).mkdir(
+                    parents=True, exist_ok=True
+                )
+            pathlib.Path(config[f"thisrun_{filetype}_dir"]).mkdir(
+                parents=True, exist_ok=True
+            )
 
 
 def _create_setup_folders(config):

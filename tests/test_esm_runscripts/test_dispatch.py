@@ -59,7 +59,10 @@ def test_advance_dispatches_the_triggered_in_process_multi_step(monkeypatch):
     )
 
     workflow = plan_module.Workflow.default(_default_config())
-    assert workflow.resubmit_triggers == {"tidy": ["prepcompute"]}
+    assert workflow.resubmit_triggers == {
+        "prepexp": ["prepcompute"],
+        "tidy": ["prepcompute"],
+    }
 
     result = advance(workflow, "tidy", {"general": {}})
 
@@ -205,11 +208,11 @@ def test_start_dispatches_the_entry_point(monkeypatch):
     )
 
     workflow = plan_module.Workflow.default(_default_config())
-    assert workflow.entry_point == "prepcompute"
+    assert workflow.entry_point == "prepexp"
 
     result = start(workflow, {"general": {}})
 
-    assert calls == ["prepcompute"]
+    assert calls == ["prepexp"]
     assert result == {"general": {}}
 
 
@@ -221,5 +224,5 @@ def test_start_raises_when_the_entry_points_executor_has_no_registered_strategy(
 
     workflow = plan_module.Workflow.default(_default_config())
 
-    with pytest.raises(NotImplementedError, match="prepcompute"):
+    with pytest.raises(NotImplementedError, match="prepexp"):
         start(workflow, {"general": {}})

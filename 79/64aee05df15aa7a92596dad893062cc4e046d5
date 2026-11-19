@@ -1,0 +1,29 @@
+tests/test_esm_runscripts/test_dispatch_events.py
+  s_0f8b4206b53928::t_88672a42b65e4f 1-4,6-12,34-53,55-61,65-107,109-120,122-138
+  s_0f8b4206b53928::t_7650fb4cbea0e9 5,13-33,54,62-64,108,121
+src/esm_runscripts/logfiles.py
+  s_0f8b4206b53928::t_4ae3581897f87e 1
+  s_0f8b4206b53928::t_cc26f739923675 62-119
+src/esm_runscripts/execution/dispatch.py
+  s_0f8b4206b53928::t_d5bd9adc66bbcf 103-123,136-154
+  s_0f8b4206b53928::t_c5c1055812b7d4 11-16,21-42
+  s_0f8b4206b53928::t_d1abf0b4fcb9e8 43-44
+src/esm_runscripts/cli.py
+  s_0f8b4206b53928::t_611b1af8aa40f8 151-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7964aee05df15aa7a92596dad893062cc4e046d5",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

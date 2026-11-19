@@ -13,7 +13,7 @@ import pystac
 
 from esm_catalog.models import Contact
 from esm_catalog.plugins import hookimpl
-from esm_catalog.registry import Extension
+from esm_catalog.registry import EXTENSION_URLS, Extension
 from esm_catalog.stac_ext import apply_extension
 
 
@@ -38,6 +38,41 @@ def add_contacts_collection_extension(
     collection.extra_fields["contacts"] = [contact.to_stac() for contact in contacts]
     # remote schema (upstream stac-extensions) — nothing local to validate against
     apply_extension(collection, Extension.contacts, validate=False)
+
+
+def contact_from_stac(entry: dict) -> Contact:
+    """Read one STAC ``contacts`` entry back into a :class:`Contact`.
+
+    The reverse of :meth:`Contact.to_stac`: ``organization`` becomes
+    ``institution``, the ORCID URL in ``identifier`` its bare id, and
+    ``emails: [{value: ...}]`` a plain list of addresses.
+    """
+    orcid = entry.get("identifier")
+    if orcid and str(orcid).startswith("https://orcid.org/"):
+        orcid = str(orcid)[len("https://orcid.org/") :]
+    return Contact(
+        name=entry.get("name"),
+        institution=entry.get("organization"),
+        orcid=orcid,
+        emails=[e["value"] for e in entry.get("emails") or [] if isinstance(e, dict) and e.get("value")],
+        roles=list(entry.get("roles") or ["author"]),
+    )
+
+
+def set_collection_contacts(collection: dict, contacts: list[Contact]) -> None:
+    """Replace the contacts of a Collection given as a plain JSON dict.
+
+    Also lists the contacts extension in ``stac_extensions`` when contacts are
+    set, as :func:`add_contacts_collection_extension` does for pystac objects.
+    """
+    if contacts:
+        collection["contacts"] = [contact.to_stac() for contact in contacts]
+        url = EXTENSION_URLS[Extension.contacts]
+        extensions = collection.setdefault("stac_extensions", [])
+        if url not in extensions:
+            extensions.append(url)
+    else:
+        collection.pop("contacts", None)
 
 
 @hookimpl

@@ -35,6 +35,7 @@ class StacContact(TypedDict, total=False):
     roles: list[str]
     identifier: str
     organization: str
+    emails: list[dict[str, str]]
 
 
 class Contact(BaseModel):
@@ -50,6 +51,8 @@ class Contact(BaseModel):
         default=None, serialization_alias="organization"
     )
     """Affiliated institution."""
+    emails: list[str] = []
+    """E-mail addresses (none, one or several); in STAC ``emails: [{value: ...}]``."""
     roles: list[str] = ["principal_investigator"]
     """STAC contact roles; defaults to ["principal_investigator"]."""
 
@@ -62,7 +65,12 @@ class Contact(BaseModel):
 
     def to_stac(self) -> StacContact:
         """Serialize to the STAC contacts entry (aliased fields, empties dropped)."""
-        return cast(StacContact, self.model_dump(by_alias=True, exclude_none=True))
+        entry = self.model_dump(by_alias=True, exclude_none=True)
+        emails = entry.pop("emails")
+        if emails:
+            # The STAC contacts extension lists addresses as objects.
+            entry["emails"] = [{"value": email} for email in emails]
+        return cast(StacContact, entry)
 
 
 class ExperimentMetadata(BaseModel):

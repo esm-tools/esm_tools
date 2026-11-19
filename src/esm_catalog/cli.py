@@ -624,7 +624,7 @@ def add_asset(
 
     component, stream = _parse_item_id(item_id)
     root, catalog = _resolve_catalog(exp_root, catalog_dir)
-    exp_metadata = source_experiment(root)
+    exp_metadata = source_experiment(root, catalog=catalog)
     state = load_state(catalog) or WorkspaceState(
         experiment_id=exp_metadata.experiment_id
     )
@@ -711,7 +711,7 @@ def add_alternate(
 
     _parse_item_id(item_id)  # validated for a clear error message
     root, catalog = _resolve_catalog(exp_root, catalog_dir)
-    exp_metadata = source_experiment(root)
+    exp_metadata = source_experiment(root, catalog=catalog)
     href = _resolve_href(location)
 
     row = pystac.Item(
@@ -773,7 +773,7 @@ def rm_asset(
 
     _parse_item_id(item_id)  # validated for a clear error message
     root, catalog = _resolve_catalog(exp_root, catalog_dir)
-    exp_metadata = source_experiment(root)
+    exp_metadata = source_experiment(root, catalog=catalog)
 
     tombstone = pystac.Item(
         id=item_id,
@@ -843,7 +843,7 @@ def set_main_asset(
 
     _parse_item_id(item_id)  # validated for a clear error message
     root, catalog = _resolve_catalog(exp_root, catalog_dir)
-    exp_metadata = source_experiment(root)
+    exp_metadata = source_experiment(root, catalog=catalog)
 
     row = pystac.Item(
         id=item_id,
@@ -910,7 +910,7 @@ def validate(
 
     component, stream = _parse_item_id(item_id)
     root, catalog = _resolve_catalog(exp_root, catalog_dir)
-    exp_metadata = source_experiment(root)
+    exp_metadata = source_experiment(root, catalog=catalog)
     state = load_state(catalog) or WorkspaceState(
         experiment_id=exp_metadata.experiment_id
     )
@@ -971,6 +971,12 @@ def server() -> None:
     "certificate validation is unaffected — only useful when DNS itself is "
     "broken but the server is reachable by IP. Repeatable.",
 )
+@click.option(
+    "--no-questions",
+    is_flag=True,
+    help="Upload without reviewing contacts or asking 'Publish now?'. "
+    "Questions are also skipped automatically when nobody is at the terminal.",
+)
 @click.pass_context
 def put(
     ctx: click.Context,
@@ -979,6 +985,7 @@ def put(
     insecure: bool,
     verbose: bool,
     resolve_specs: tuple[str, ...],
+    no_questions: bool = False,
 ) -> None:
     """Bulk-upsert STAC objects to the catalog.
 
@@ -986,6 +993,10 @@ def put(
     of them, or '-' to read one STAC JSON object from stdin. Writes are
     authenticated (run 'auth login' first) and idempotent (upsert) —
     re-running is safe, nothing is deleted.
+
+    When run in a terminal, each Collection's contacts are shown first and can
+    be changed (saved to catalog_contacts.yaml next to it), followed by a final
+    'Publish now?'. Answering no sends nothing.
     """
     json_output: bool = (ctx.obj or {}).get("json", False)
 
@@ -1013,6 +1024,34 @@ def put(
             click.echo(json.dumps({"error": message}))
             sys.exit(1)
         raise click.ClickException(message)
+
+    # Fail on a missing server before asking any questions (no network needed).
+    try:
+        settings.api_url
+    except ValueError as exc:
+        _die(str(exc))
+
+    # Review contacts and confirm before anything is sent (no network up to
+    # here). Skipped for stdin, machine-readable output, --no-questions, and
+    # when nobody is at the terminal.
+    from esm_catalog import contact_prompts
+
+    if (
+        not no_questions
+        and not json_output
+        and list(paths) != [Path("-")]
+        and contact_prompts.can_ask()
+    ):
+        collection_files = [
+            f
+            for f in pushmod.expand_paths(list(paths))
+            if pushmod.classify_file(f) == "collection"
+        ]
+        for collection_file in collection_files:
+            contact_prompts.review_contacts(collection_file, settings.server_url)
+        if not click.confirm("Publish now?", default=True):
+            click.echo("Not published: nothing was sent to the server.")
+            return
 
     try:
         api_url = settings.api_url

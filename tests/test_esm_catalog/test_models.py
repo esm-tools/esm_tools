@@ -92,3 +92,16 @@ def test_contact_to_stac_passes_through_full_orcid_url():
 def test_contact_to_stac_omits_absent_orcid():
     stac = Contact(name="Jane", institution="AWI").to_stac()
     assert "identifier" not in stac
+
+
+def test_contact_emails_serialize_as_stac_info_objects():
+    from esm_catalog.models import Contact
+
+    two = Contact(name="Ada", emails=["ada@example.org", "ada@home.example"])
+    none = Contact(name="Ada")
+
+    assert two.to_stac()["emails"] == [
+        {"value": "ada@example.org"},
+        {"value": "ada@home.example"},
+    ]
+    assert "emails" not in none.to_stac()

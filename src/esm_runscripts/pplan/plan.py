@@ -397,9 +397,18 @@ class Workflow(ProvenanceFreeModel):
             # assumes already exists (bare os.mkdir, not makedirs). Matches
             # legacy's assemble_workflow, which always submits prepexp
             # before prepcompute.
+            #
+            # The full bootstrap chain: prepexp -> prepcompute -> compute,
+            # then tidy -> prepcompute again for the next cycle. dispatch.
+            # start()/advance() cascade through every IN_PROCESS link here
+            # synchronously, stopping at the first LOCAL/BATCH dispatch
+            # (fire-and-forget -- that job's own observe re-entry resumes
+            # the chain later by calling advance() itself).
             entry_point="prepexp",
             resubmit_triggers={
                 "prepexp": ["prepcompute"],
+                "prepcompute": ["compute"],
+                "compute": ["tidy"],
                 "tidy": ["prepcompute"],
             },
             plans=plans,

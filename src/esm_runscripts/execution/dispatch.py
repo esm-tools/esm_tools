@@ -69,17 +69,40 @@ def _dispatch_one(workflow: "plan_module.Workflow", multi_step_name: str, config
     return strategy(workflow, multi_step_name, config)
 
 
+def _cascade(workflow: "plan_module.Workflow", multi_step_name: str, config: dict, caller: str) -> dict:
+    """Dispatch ``multi_step_name``, then keep cascading through
+    ``Workflow.resubmit_triggers`` for as long as the step just dispatched
+    is ``IN_PROCESS`` -- it really did finish, synchronously, right here,
+    so whatever it triggers must run next in this same call. Stops at the
+    first ``LOCAL``/``BATCH`` dispatch: that's fire-and-forget (a spawned
+    process or scheduler submission), and whatever it finishes into gets
+    resumed later, by its own observe re-entry calling :func:`advance`.
+
+    Returns ``{multi_step_name: resulting_config, ...}`` for every step
+    this call actually dispatched, entry point included.
+    """
+    results = {multi_step_name: _dispatch_one(workflow, multi_step_name, config, caller=caller)}
+    if workflow.execution_of(multi_step_name).executor != plan_module.Executor.IN_PROCESS:
+        return results
+    for next_name in workflow.resubmit_triggers.get(multi_step_name, []):
+        results.update(_cascade(workflow, next_name, config, caller=caller))
+    return results
+
+
 def start(workflow: "plan_module.Workflow", config: dict) -> dict:
     """Dispatch ``workflow.entry_point`` -- the bootstrap call for a
-    fresh invocation (nothing has triggered anything yet). Uses the same
-    ``_DISPATCHERS`` lookup :func:`advance` uses for every later cycle;
-    this is just the one call that kicks the chain off in the first
-    place."""
-    return _dispatch_one(workflow, workflow.entry_point, config, caller="start")
+    fresh invocation (nothing has triggered anything yet) -- then cascade
+    through every ``IN_PROCESS`` link ``Workflow.resubmit_triggers``
+    chains from it (e.g. ``prepexp -> prepcompute``), stopping at the
+    first ``LOCAL``/``BATCH`` dispatch (``compute``, normally). See
+    :func:`_cascade`."""
+    return _cascade(workflow, workflow.entry_point, config, caller="start")
 
 
 def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, config: dict) -> dict:
-    """Dispatch whatever ``finished_multi_step_name`` triggers next.
+    """Dispatch whatever ``finished_multi_step_name`` triggers next, then
+    cascade each of those through their own ``IN_PROCESS`` chains too (see
+    :func:`_cascade`).
 
     Native replacement for legacy's ``resubmit_recursively``/
     ``maybe_resubmit`` (``resubmit.py``), reading
@@ -90,20 +113,20 @@ def advance(workflow: "plan_module.Workflow", finished_multi_step_name: str, con
     target whose executor has no registered strategy raises
     ``NotImplementedError`` naming it, rather than silently doing nothing.
 
-    Returns ``{next_multi_step_name: resulting_config}`` for every target
-    this call dispatched -- empty if ``finished_multi_step_name`` triggers
-    nothing. Each target is dispatched independently against the same
-    ``config`` passed in (not threaded sequentially through each other's
-    result) -- fan-out targets are independent resubmissions, matching
-    legacy's own ``resubmit_recursively``, which never chains one target's
-    output into the next. A target's entry means "dispatched", not
-    necessarily "finished": ``run_in_process`` really has run by the time
-    it returns, so its entry reflects real work done; ``launch_local``/
-    ``launch_batch`` return ``config`` unchanged, since launching a
-    process or submitting to a scheduler is fire-and-forget -- their
-    entry means "launched".
+    Returns ``{multi_step_name: resulting_config}`` for every step this
+    call (and its cascades) actually dispatched -- empty if
+    ``finished_multi_step_name`` triggers nothing. Each trigger branch is
+    dispatched independently against the same ``config`` passed in (not
+    threaded sequentially through each other's result) -- fan-out targets
+    are independent resubmissions, matching legacy's own
+    ``resubmit_recursively``, which never chains one target's output into
+    the next. An entry means "dispatched", not necessarily "finished":
+    ``run_in_process`` really has run by the time it returns, so its
+    entry reflects real work done; ``launch_local``/``launch_batch``
+    return ``config`` unchanged, since launching a process or submitting
+    to a scheduler is fire-and-forget -- their entry means "launched".
     """
-    return {
-        next_name: _dispatch_one(workflow, next_name, config, caller="advance")
-        for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, [])
-    }
+    results: dict = {}
+    for next_name in workflow.resubmit_triggers.get(finished_multi_step_name, []):
+        results.update(_cascade(workflow, next_name, config, caller="advance"))
+    return results

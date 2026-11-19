@@ -136,6 +136,8 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
     assert wf.entry_point == "prepexp"
     assert wf.resubmit_triggers == {
         "prepexp": ["prepcompute"],
+        "prepcompute": ["compute"],
+        "compute": ["tidy"],
         "tidy": ["prepcompute"],
     }
     assert set(wf.multi_steps) == {"prepexp", "prepcompute", "compute", "tidy"}

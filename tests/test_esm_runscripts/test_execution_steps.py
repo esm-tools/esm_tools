@@ -96,3 +96,48 @@ def test_run_steps_resolves_and_runs_via_esm_plugin_manager(monkeypatch):
         "recipe": ["_read_date_file", "check_model_lresume"],
         "job_type": "prepare",
     }
+
+
+def test_run_steps_sets_relevant_filetypes_for_prepcompute_compute_tidy(monkeypatch):
+    # Native parity shim for legacy's run_job(config) (prepcompute.py/
+    # compute.py/tidy.py), which sets general.relevant_filetypes before
+    # ever calling helpers.evaluate -- native dispatch calls straight into
+    # the recipe, bypassing that wrapper, so run_steps must set it itself
+    # or a step reading it (log_used_files) raises KeyError.
+    import esm_plugin_manager
+
+    from esm_runscripts import helpers
+
+    monkeypatch.setattr(helpers, "get_recipe_step_names", lambda *a, **k: ["log_used_files"])
+    monkeypatch.setattr(esm_plugin_manager, "read_plugin_information", lambda *a, **k: {})
+    monkeypatch.setattr(esm_plugin_manager, "check_plugin_availability", lambda *a, **k: None)
+    seen_filetypes = {}
+    monkeypatch.setattr(
+        esm_plugin_manager,
+        "work_through_recipe",
+        lambda recipe, plugins, config: seen_filetypes.setdefault(
+            recipe["job_type"], config["general"]["relevant_filetypes"]
+        )
+        or config,
+    )
+
+    for job_type, expected in {
+        "prepcompute": ["bin", "config", "forcing", "input", "restart_in"],
+        "compute": ["bin", "config", "forcing", "input", "restart_in"],
+        "tidy": ["log", "mon", "outdata", "restart_out", "ignore", "unknown"],
+    }.items():
+        config = {"general": {"setup_name": "awicm3"}}
+        steps_module.run_steps(config, job_type)
+        assert config["general"]["relevant_filetypes"] == expected
+        assert seen_filetypes[job_type] == expected
+
+
+def test_run_steps_does_not_set_relevant_filetypes_for_other_job_types(monkeypatch):
+    from esm_runscripts import helpers
+
+    monkeypatch.setattr(helpers, "get_recipe_step_names", lambda *a, **k: [])
+
+    config = {"general": {"setup_name": "awicm3"}}
+    steps_module.run_steps(config, "prepexp")
+
+    assert "relevant_filetypes" not in config["general"]

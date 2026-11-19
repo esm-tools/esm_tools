@@ -10,7 +10,6 @@ deciding *how* a sub-plan's work actually runs belongs.
 
 from ..pplan import plan as plan_module
 from . import launch, steps as steps_module
-from .check_mode import is_check_mode
 
 
 def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, config: dict) -> dict:
@@ -24,10 +23,14 @@ def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, confi
     exact moment -- see that module's docstring for why). ``launch_local``/
     ``launch_batch`` (:mod:`.launch`) spawn a process instead.
 
-    In check mode (``-c``), steps never get resolved or run -- there's
-    nothing to "build" separately for an in-process step the way a
-    runscript gets written-but-not-submitted, so check mode here just
-    means the step never actually runs.
+    Always actually runs, even in check mode (``-c``) -- matching legacy's
+    ``resubmit.py``, whose ``check_if_check`` only ever gates the next
+    job's *submission* (``submit()``/``kill_after_submit``), never a
+    step's own real work. An ``IN_PROCESS`` step (``prepexp``,
+    ``prepcompute``, ``tidy``) builds the experiment tree and config that
+    the next, possibly ``LOCAL``/``BATCH`` dispatch's own check-mode guard
+    (:mod:`.launch`) depends on actually existing -- skipping it here
+    would make ``-c`` fail before even reaching that guard.
     """
     parent = workflow.parent_plan_of(multi_step_name)
     execution = workflow.execution_of(multi_step_name)
@@ -37,8 +40,6 @@ def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, confi
             f"plan {parent.name!r} has executor={execution.executor!r}, not "
             f"{plan_module.Executor.IN_PROCESS!r}."
         )
-    if is_check_mode(config):
-        return config
     return steps_module.run_steps(config, multi_step_name)
 
 

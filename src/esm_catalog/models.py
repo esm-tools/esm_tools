@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from datetime import datetime
 from typing import Any, Optional, TypedDict, cast
 
@@ -130,6 +131,15 @@ class ExperimentMetadata(BaseModel):
     def collection_id(self) -> str:
         """The STAC Collection id: the ``experiment_id`` plus a short hash of
         the ``experiment_path``, so experiments that reuse a name still get
-        distinct ids."""
-        digest = hashlib.md5(str(self.experiment_path).encode()).hexdigest()[:8]
+        distinct ids.
+
+        A local path is made absolute first, so scanning from inside the
+        experiment (``--exp-root .``) gives the same id as scanning it with
+        its full path. Shortcuts (symlinks) are not followed, so a full path
+        keeps the id it always had.
+        """
+        location = str(self.experiment_path)
+        if self.experiment_path.protocol == "":  # a local path
+            location = os.path.abspath(location)
+        digest = hashlib.md5(location.encode()).hexdigest()[:8]
         return f"{self.experiment_id}-{digest}"

@@ -39,6 +39,39 @@ def test_collection_id_is_name_plus_path_hash():
     assert a.collection_id == again.collection_id  # stable for the same path
 
 
+def test_collection_id_is_the_same_from_inside_and_with_the_full_path(tmp_path, monkeypatch):
+    """Scanning from inside the experiment ('.') must not give a new id."""
+    import hashlib
+
+    from upath import UPath
+
+    exp_root = tmp_path / "runs" / "run01"
+    exp_root.mkdir(parents=True)
+    monkeypatch.chdir(exp_root)
+
+    def collection_id(path):
+        return ExperimentMetadata(experiment_id="run01", experiment_path=UPath(path)).collection_id
+
+    expected = f"run01-{hashlib.md5(str(exp_root).encode()).hexdigest()[:8]}"
+    assert collection_id(".") == expected
+    assert collection_id(str(exp_root)) == expected
+    assert collection_id("../run01") == expected
+
+
+def test_collection_id_differs_for_same_name_scanned_from_inside(tmp_path, monkeypatch):
+    """Two 'run01's in different folders, both scanned from inside, get different ids."""
+    from upath import UPath
+
+    ids = []
+    for person in ("alice", "bob"):
+        folder = tmp_path / person / "run01"
+        folder.mkdir(parents=True)
+        monkeypatch.chdir(folder)
+        ids.append(ExperimentMetadata(experiment_id="run01", experiment_path=UPath(".")).collection_id)
+
+    assert ids[0] != ids[1]
+
+
 def test_exp_metadata_carries_prescanned_namelists():
     exp_metadata = ExperimentMetadata(
         experiment_id="exp-alpha",

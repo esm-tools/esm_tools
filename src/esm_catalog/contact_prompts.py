@@ -1,19 +1,7 @@
-"""Review and edit a collection's contacts in the terminal before publishing.
+"""Review and edit a collection's contacts before ``esm-catalog server put``.
 
-Used by ``esm-catalog server put``: before anything is sent, the contacts of
-each Collection are shown, and the user may add or change them. Changes are
-saved to ``catalog_contacts.yaml`` next to the collection (so the next scan
-keeps them) and written into the local ``collection.json`` (so this upload
-carries them).
-
-Every question has a default, so pressing Enter is always enough:
-
-    About to publish run01-abc to https://stac.example.org
-      Contacts:
-        1. Ada Lovelace (a123456) - author
-    Add or change contacts? Press Enter to keep, or type y:
-
-Only plain text prompts are used (click), no arrow-key menus.
+Changes are saved to ``catalog_contacts.yaml`` (read by the next scan) and to
+the local ``collection.json`` (sent by this upload).
 """
 
 from __future__ import annotations
@@ -30,7 +18,7 @@ from esm_catalog.contacts import contact_from_stac, set_collection_contacts
 from esm_catalog.models import Contact
 
 ROLES_HINT = "author, principalInvestigator, pointOfContact"
-"""The roles offered in the role question; any other text is accepted too."""
+"""Roles suggested in the role question; other text is accepted too."""
 
 CLEAR = "-"
 """Typed in a field to remove its value (at Name: the whole contact)."""
@@ -39,7 +27,7 @@ HOW_TO_ANSWER = (
     'Press Enter to continue, type a new one to replace it, or "-" to remove it. '
     "For several emails, separate them by commas."
 )
-"""Shown once per round of questions, so each question can stay short."""
+"""Shown once per round of questions."""
 
 
 def can_ask() -> bool:

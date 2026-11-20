@@ -41,12 +41,7 @@ def add_contacts_collection_extension(
 
 
 def contact_from_stac(entry: dict) -> Contact:
-    """Read one STAC ``contacts`` entry back into a :class:`Contact`.
-
-    The reverse of :meth:`Contact.to_stac`: ``organization`` becomes
-    ``institution``, the ORCID URL in ``identifier`` its bare id, and
-    ``emails: [{value: ...}]`` a plain list of addresses.
-    """
+    """Read one STAC ``contacts`` entry into a :class:`Contact` (reverse of ``to_stac``)."""
     orcid = entry.get("identifier")
     if orcid and str(orcid).startswith("https://orcid.org/"):
         orcid = str(orcid)[len("https://orcid.org/") :]
@@ -60,11 +55,7 @@ def contact_from_stac(entry: dict) -> Contact:
 
 
 def set_collection_contacts(collection: dict, contacts: list[Contact]) -> None:
-    """Replace the contacts of a Collection given as a plain JSON dict.
-
-    Also lists the contacts extension in ``stac_extensions`` when contacts are
-    set, as :func:`add_contacts_collection_extension` does for pystac objects.
-    """
+    """Replace the contacts (and list the extension) of a Collection JSON dict."""
     if contacts:
         collection["contacts"] = [contact.to_stac() for contact in contacts]
         url = EXTENSION_URLS[Extension.contacts]

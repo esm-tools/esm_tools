@@ -1025,15 +1025,13 @@ def put(
             sys.exit(1)
         raise click.ClickException(message)
 
-    # Fail on a missing server before asking any questions (no network needed).
+    # Report a missing server before asking any questions.
     try:
         settings.api_url
     except ValueError as exc:
         _die(str(exc))
 
-    # Review contacts and confirm before anything is sent (no network up to
-    # here). Skipped for stdin, machine-readable output, --no-questions, and
-    # when nobody is at the terminal.
+    # Review contacts and confirm before anything is sent.
     from esm_catalog import contact_prompts
 
     if (

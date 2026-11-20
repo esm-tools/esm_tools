@@ -806,9 +806,7 @@ CONTACTS_FILE = "catalog_contacts.yaml"
           orcid: 0000-0000-0000-0000
           emails: [grace@example.org, grace.hopper@example.com]  # one or several
 
-It lives next to the catalog (not in the experiment), so contacts can be kept
-for runs one may read but not write to. It wins over ``general.metadata.Authors`` and the ``general.user`` fallback,
-and can be added to an experiment at any time, also after it has run.
+Takes priority over ``general.metadata.Authors`` and the ``general.user`` fallback.
 """
 
 
@@ -880,12 +878,7 @@ DEFAULT_AUTHOR_ROLES = ["author"]
 
 
 def _to_contact(author: object, institution: Optional[str]) -> Optional[Contact]:
-    """Coerce one ``Authors`` entry (a name string or a mapping) into a Contact.
-
-    A mapping may set ``roles`` (a single role or a list of roles), e.g.
-    ``author``, ``principalInvestigator`` or ``pointOfContact``. Without it,
-    the contact gets :data:`DEFAULT_AUTHOR_ROLES`.
-    """
+    """One ``Authors`` entry (a name or a mapping) as a Contact; roles default to author."""
     if isinstance(author, str):
         name = author.strip()
         if not name:
@@ -914,12 +907,7 @@ def _emails(author: dict) -> list[str]:
 
 
 def _fallback_contacts(docs: Iterable[FinishedConfigDoc]) -> list[Contact]:
-    """A contact from the user who ran the experiment, if no Authors are given.
-
-    Uses ``general.user`` (the account name, e.g. ``a123456``) so the run can
-    still be traced back to a person. Returns an empty list if no segment
-    records a user.
-    """
+    """The user who ran the experiment (``general.user``) as a contact, if recorded."""
     for doc in docs:
         user = _general(doc).user
         if user and str(user).strip():
@@ -931,12 +919,7 @@ def _fallback_contacts(docs: Iterable[FinishedConfigDoc]) -> list[Contact]:
 
 
 def _full_name_of(user: str) -> Optional[str]:
-    """The full name the system records for account *user*, if any.
-
-    Reads the account's comment field (what ``getent passwd <user>`` shows in
-    its fifth field, e.g. ``Ada Lovelace``). Only works when scanning on a
-    machine that knows the account; returns None otherwise.
-    """
+    """The account's full name as the system records it (``getent passwd``), or None."""
     try:
         import pwd  # Unix only
 

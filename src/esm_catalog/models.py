@@ -90,6 +90,8 @@ class ExperimentMetadata(BaseModel):
     # outright rather than silently degrading it -- confirmed live. Keep this
     # the actual UPath all the way through; don't round-trip via str().
     experiment_path: UPath
+    collection_stamp: Optional[str] = None
+    """Random part of the Collection id, saved in the catalog folder."""
     description: Optional[str] = None
 
     @field_validator("experiment_path", mode="before")
@@ -129,15 +131,12 @@ class ExperimentMetadata(BaseModel):
 
     @property
     def collection_id(self) -> str:
-        """The STAC Collection id: the ``experiment_id`` plus a short hash of
-        the ``experiment_path``, so experiments that reuse a name still get
-        distinct ids.
+        """``<experiment_id>-<collection_stamp>``.
 
-        A local path is made absolute first, so scanning from inside the
-        experiment (``--exp-root .``) gives the same id as scanning it with
-        its full path. Shortcuts (symlinks) are not followed, so a full path
-        keeps the id it always had.
+        Without a stamp, a hash of the full experiment path is used instead.
         """
+        if self.collection_stamp:
+            return f"{self.experiment_id}-{self.collection_stamp}"
         location = str(self.experiment_path)
         if self.experiment_path.protocol == "":  # a local path
             location = os.path.abspath(location)

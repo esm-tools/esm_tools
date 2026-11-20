@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime
 
@@ -742,3 +743,47 @@ def test_walk_restart_local_root_never_stats_an_entry(tmp_path, monkeypatch):
 
     (only,) = list(_walk_restart(UPath(tmp_path)))
     assert only.component == "fesom"
+
+
+# --------------------------------------------------------------------------- #
+# Collection id: a random stamp, made once per catalog folder.
+# --------------------------------------------------------------------------- #
+
+
+def test_collection_stamp_is_made_once_and_reused(tmp_path, monkeypatch):
+    exp_root = UPath(tmp_path / "run01")
+    _write_general(exp_root, {})
+
+    first = source_experiment(exp_root).collection_id
+    monkeypatch.chdir(tmp_path / "run01")
+    from_inside = source_experiment(UPath(".")).collection_id
+
+    stamp = first.rsplit("-", 1)[1]
+    assert len(stamp) == 8 and int(stamp, 16) >= 0  # 8 hex digits
+    assert from_inside == first
+    saved = json.loads((exp_root / "catalog" / "esm-catalog.json").read_text())
+    assert saved["collection_stamp"] == stamp
+
+
+def test_same_name_in_the_same_place_gets_a_new_id_after_a_move(tmp_path):
+    exp_root = UPath(tmp_path / "run01")
+    _write_general(exp_root, {})
+    old_id = source_experiment(exp_root).collection_id
+
+    (tmp_path / "run01").rename(tmp_path / "moved")  # old experiment moved away...
+    moved_id = source_experiment(UPath(tmp_path / "moved")).collection_id
+    _write_general(exp_root, {})  # ...and a new one with the same name in its place
+    new_id = source_experiment(exp_root).collection_id
+
+    assert moved_id == old_id  # the moved experiment keeps its id
+    assert new_id != old_id  # the new one does not overwrite it
+
+
+def test_existing_catalog_keeps_its_collection_id(tmp_path):
+    exp_root = UPath(tmp_path / "run01")
+    _write_general(exp_root, {})
+    catalog = exp_root / "catalog"
+    catalog.mkdir()
+    (catalog / "collection.json").write_text(json.dumps({"id": f"{_EXPID}-c7b37639"}))
+
+    assert source_experiment(exp_root).collection_id == f"{_EXPID}-c7b37639"

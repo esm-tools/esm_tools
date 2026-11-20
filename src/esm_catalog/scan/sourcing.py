@@ -32,8 +32,10 @@ parsed with f90nml.
 from __future__ import annotations
 
 import io
+import json
 import os
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import date, datetime
 from itertools import chain
@@ -52,7 +54,7 @@ from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
 from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.types import Md5, OutputFile, RunStamp, Stream
-from esm_catalog.scan.workspace import catalog_dir
+from esm_catalog.scan.workspace import WorkspaceState, catalog_dir, load_state, save_state
 from esm_catalog.types import ComponentName, ExperimentId
 
 FinishedConfigDoc = dict[str, Any]
@@ -197,15 +199,19 @@ def source_experiment(
     general_metadata = list(_general_metadata_blocks(docs))
     run_start, run_end = _run_span(run_cfgs)
     components = _components(docs)
+    experiment_id = _experiment_id(run_cfgs)
+    if catalog is None:
+        catalog = catalog_dir(exp_root)
 
     return ExperimentMetadata(
-        experiment_id=_experiment_id(run_cfgs),
+        experiment_id=experiment_id,
         # Keep the real UPath (storage_options and all) -- stringifying and
         # rewrapping it loses the host for remote protocols (sftp://, ...).
         experiment_path=exp_root,
+        collection_stamp=collection_stamp(catalog, experiment_id),
         description=_first_value(general_metadata, "Description"),
         data_license=_first_value(general_metadata, "License"),
-        contacts=_file_contacts(catalog if catalog is not None else catalog_dir(exp_root))
+        contacts=_file_contacts(catalog)
         or _contacts(general_metadata)
         or _fallback_contacts(docs),
         paleo_config=_paleo_config(docs),
@@ -216,6 +222,35 @@ def source_experiment(
         namelists_by_component=_namelists_by_component(exp_root),
         model_dirs=_model_dirs(docs, components),
     )
+
+
+def collection_stamp(catalog: UPath, experiment_id: str) -> str:
+    """The random part of the Collection id: 8 hex digits of a uuid4.
+
+    Made at the first scan, saved in ``esm-catalog.json`` and reused
+    afterwards. A catalog folder that already has a ``collection.json``
+    keeps the stamp of its id.
+    """
+    state = load_state(catalog)
+    if state is not None and state.collection_stamp:
+        return state.collection_stamp
+    stamp = _existing_stamp(catalog, experiment_id) or uuid.uuid4().hex[:8]
+    state = state or WorkspaceState(experiment_id=experiment_id)
+    state.collection_stamp = stamp
+    save_state(catalog, state)
+    return stamp
+
+
+def _existing_stamp(catalog: UPath, experiment_id: str) -> Optional[str]:
+    """The stamp of the id in ``<catalog>/collection.json``, if any."""
+    try:
+        collection_id = json.loads((catalog / "collection.json").read_text()).get("id", "")
+    except (FileNotFoundError, ValueError, AttributeError):
+        return None
+    prefix = f"{experiment_id}-"
+    if isinstance(collection_id, str) and collection_id.startswith(prefix):
+        return collection_id[len(prefix):] or None
+    return None
 
 
 def _components(docs: Iterable[FinishedConfigDoc]) -> list[ComponentName]:

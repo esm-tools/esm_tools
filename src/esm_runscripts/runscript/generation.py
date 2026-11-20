@@ -471,7 +471,20 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     if execution.launch_mode != LaunchMode.BACKGROUND:
         return lines + [command]
 
-    return lines + [f"{command} &", "process=$!", observe_call_line(config, multi_step_name)]
+    # observe_call_line's "esm_runscripts {scriptname}" resolves scriptname
+    # relative to cwd -- the runscript yaml lives in thisrun_scripts_dir,
+    # not thisrun_work_dir (cd'd into above for the actual compute
+    # command). Without this, the observe re-entry fails immediately
+    # ("runscript not found"), silently dropping the rest of the cascade
+    # (tidy, next-cycle resubmission) -- matches legacy's own
+    # write_simple_runscript, which cd's back to scripts_dir right before
+    # its equivalent resubmission call.
+    return lines + [
+        f"{command} &",
+        "process=$!",
+        f'cd {config["general"]["thisrun_scripts_dir"]}',
+        observe_call_line(config, multi_step_name),
+    ]
 
 
 def build_runscript_context(workflow: Workflow, multi_step_name: str, config: dict) -> RunscriptContext:

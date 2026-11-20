@@ -16,16 +16,29 @@ hostfile-content building this method writes to disk; ``PbsBatchSystem``'s
 own implementation is a no-op, matching legacy's ``Pbs`` (``"no hostfile
 for PBS"`` -- all job info is in the launcher command itself).
 
+The ``taskset`` heterogeneous-MPI+OMP mechanism (``write_taskset_wrappers``,
+legacy's ``Slurm.write_het_par_wrappers``/``add_hostlist_file_gen_lines``)
+is ALSO ported -- confirmed load-bearing, not dead, for at least one real
+production config (``configs/setups/awicm3/awicm3.yaml`` pins
+``taskset: true`` for ``name: levante`` specifically; only ``juwels`` has
+moved to the newer ``packjob``/``hetjob`` approach there). ``tasks_or_
+nodes_flag`` now takes ``config`` -- SLURM uses ``nodes_flag`` whenever
+``computer.heterogeneous_parallelization`` is true (set by the shared
+``prepare`` recipe's ``find_openmp`` step, from any model's
+``omp_num_threads`` > 1), matching legacy's ``get_batch_header`` exactly;
+PBS always uses ``nodes_flag`` regardless.
+
 Still deliberately NOT ported from the legacy implementations (flagged,
 not silently dropped):
 
-* ``multi_srun`` and the heterogeneous-parallelization/``taskset`` code
-  paths -- confirmed dead/broken (see PR discussion): ``multi_srun``'s own
+* ``multi_srun`` -- confirmed dead/broken (see PR discussion): its own
   template-building function is unreachable (calls ``self.bs...`` from a
-  ``@staticmethod``) and contains obvious placeholder garbage; the
-  het-par/taskset paths are themselves marked
-  ``# TODO: remove it once it's not needed anymore (substituted by packjob)``
-  in the legacy source.
+  ``@staticmethod``) and contains obvious placeholder garbage.
+* The newer ``packjob``/``hetjob`` heterogeneous-parallelization path
+  (``taskset: false``, ``Slurm.het_par_launcher_lines``/
+  ``het_par_headers``) -- not yet exercised by any config this rewrite has
+  been verified against (``juwels`` only); port when a real need for it
+  shows up, rather than guessing at its correctness now.
 * PBS's ``add_pre_launcher_lines`` (renaming the output stream via
   ``qalter`` once the job ID is known) -- not yet ported.
 """
@@ -61,11 +74,14 @@ class BatchSystem(Protocol):
         """Whether ``jobid`` is still running or queued."""
         ...
 
-    def tasks_or_nodes_flag(self) -> str:
+    def tasks_or_nodes_flag(self, config: dict) -> str:
         """Which ``computer.<flag>`` key selects this scheduler's
-        tasks-per-job header flag -- ``"tasks_flag"`` for schedulers that
-        take a task count directly, ``"nodes_flag"`` for ones (PBS) that
-        only take a node count."""
+        tasks-per-job header flag -- ``"tasks_flag"`` for a plain task
+        count, ``"nodes_flag"`` for a node count. SLURM depends on
+        ``config``: ``"nodes_flag"`` whenever ``computer.
+        heterogeneous_parallelization`` is true, ``"tasks_flag"``
+        otherwise. PBS always uses ``"nodes_flag"``, regardless of
+        ``config``."""
         ...
 
     def write_multiprog_hostfile(self, config: dict) -> None:
@@ -75,7 +91,23 @@ class BatchSystem(Protocol):
         scheduler has one. No-op for schedulers without one (PBS). Must
         run after :func:`~esm_runscripts.runscript.generation.
         compute_requirements` has assigned each model's ``start_proc``/
-        ``end_proc`` range."""
+        ``end_proc`` range, and after :func:`write_taskset_wrappers` (if
+        ``computer.taskset`` is set) so any ``execution_command_het_par``
+        override is already in place."""
+        ...
+
+    def write_taskset_wrappers(self, config: dict) -> None:
+        """Write the per-model ``taskset``-wrapping shell scripts
+        (``script_<model>.sh``, ``prog_<model>.sh``) into ``general.
+        thisrun_work_dir`` that pin each MPI rank's threads to its own
+        core range, and set ``config[model]["execution_command_het_par"]``
+        to the wrapper's name -- :func:`write_multiprog_hostfile` then
+        references that wrapper instead of the model's own executable. A
+        no-op when ``computer.heterogeneous_parallelization`` or
+        ``computer.taskset`` isn't set (including for schedulers --
+        PBS -- that don't support this mechanism at all). Must run after
+        :func:`~esm_runscripts.runscript.generation.compute_requirements`
+        has assigned each model's ``start_core``/``end_core``."""
         ...
 
 

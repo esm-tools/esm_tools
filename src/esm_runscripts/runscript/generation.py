@@ -188,8 +188,17 @@ def multiprog_hostfile_entries(config: dict) -> List[dict]:
     ``hostfile_srun.j2`` renders into the MPMD hostfile content, for
     whichever launcher (``srun``/``mpirun``) ``computer.launcher`` names.
     A model with no range (a library component, e.g. ``oasis3mct``), or
-    no ``execution_command``/``executable`` to run, contributes no entry.
+    no command to run, contributes no entry.
+
+    When ``computer.heterogeneous_parallelization`` is set, a model's
+    ``execution_command_het_par`` (set by
+    :func:`~esm_runscripts.runscript.batch_system.slurm.
+    SlurmBatchSystem.write_taskset_wrappers` -- the ``taskset``-wrapping
+    ``prog_<model>.sh``) takes priority over its own ``execution_command``/
+    ``executable``, matching legacy's ``Slurm.write_one_hostfile``
+    exactly: the hostfile launches the wrapper, not the model directly.
     """
+    heterogeneous = config["computer"].get("heterogeneous_parallelization", False)
     entries = []
     for model in config["general"]["valid_model_names"]:
         model_conf = config[model]
@@ -198,7 +207,9 @@ def multiprog_hostfile_entries(config: dict) -> List[dict]:
         if start_proc is None or end_proc is None:
             continue
 
-        if "execution_command" in model_conf:
+        if heterogeneous and model_conf.get("execution_command_het_par"):
+            command = f'./{model_conf["execution_command_het_par"]}'
+        elif "execution_command" in model_conf:
             command = f'./{model_conf["execution_command"]}'
         elif "executable" in model_conf:
             command = f'./{model_conf["executable"]}'
@@ -238,6 +249,76 @@ def multiprog_hostfile_content(config: dict) -> str:
     return template.render(launcher=launcher, entries=entries)
 
 
+def taskset_wrapper_entries(config: dict) -> List[dict]:
+    """One entry per model the ``taskset`` mechanism wraps -- skips
+    ``oasis3mct`` (a library, matching legacy's ``write_het_par_wrappers``
+    exactly) and any model with no command to run."""
+    entries = []
+    for model in config["general"]["valid_model_names"]:
+        if model == "oasis3mct":
+            continue
+        model_conf = config[model]
+        if "execution_command" in model_conf:
+            command = f'./{model_conf["execution_command"]}'
+        elif "executable" in model_conf:
+            command = f'./{model_conf["executable"]}'
+        else:
+            continue
+        entries.append(
+            {
+                "model": model,
+                "omp_num_threads": model_conf.get("omp_num_threads", 1),
+                "command": command,
+            }
+        )
+    return entries
+
+
+def hostlist_gen_lines(config: dict) -> List[str]:
+    """The runtime shell lines that build ``hostlist`` (and export it as
+    ``SLURM_HOSTFILE``) for a ``taskset``-mode heterogeneous MPI+OMP job
+    -- one hostname line per MPI rank, spaced by each model's
+    ``omp_num_threads`` so co-located threads land on the same physical
+    node. Ported from legacy's ``Slurm.add_hostlist_file_gen_lines``
+    (same algorithm; rendered via ``hostlist_gen.sh.j2`` instead of
+    ``runfile.write(...)`` calls). Empty (no lines) unless ``computer.
+    heterogeneous_parallelization`` and ``computer.taskset`` are both set.
+    """
+    computer = config["computer"]
+    if not (computer.get("heterogeneous_parallelization", False) and computer.get("taskset", False)):
+        return []
+
+    entries = []
+    for model in config["general"]["valid_model_names"]:
+        model_conf = config[model]
+        if model == "oasis3mct" or not (
+            model_conf.get("execution_command") or model_conf.get("executable")
+        ):
+            continue
+        if "nproca" in model_conf:
+            mpi_tasks = model_conf["nproca"] * model_conf["nprocb"]
+        else:
+            mpi_tasks = model_conf["nproc"]
+        entries.append(
+            {
+                "model": model,
+                "mpi_tasks": mpi_tasks,
+                "omp_num_threads": model_conf.get("omp_num_threads", 1),
+            }
+        )
+    if not entries:
+        return []
+
+    cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
+    template = _ENV.get_template("hostlist_gen.sh.j2")
+    rendered = template.render(
+        thisrun_work_dir=config["general"]["thisrun_work_dir"],
+        entries=entries,
+        cores_per_node=cores_per_node,
+    )
+    return rendered.splitlines()
+
+
 def shell_header_lines(config: dict) -> List[str]:
     lines = []
     sh_interpreter = config["computer"].get("sh_interpreter")
@@ -268,7 +349,7 @@ def batch_header_lines(
         "jobtype": multi_step_name,
     }
 
-    flags = ["partition_flag", "time_flag", batch_system.tasks_or_nodes_flag(), "output_flags", "name_flag"]
+    flags = ["partition_flag", "time_flag", batch_system.tasks_or_nodes_flag(config), "output_flags", "name_flag"]
     for conditional in ("accounting_flag", "notification_flag", "hyperthreading_flag", "additional_flags", "overcommit_flag"):
         if conditional not in computer:
             continue
@@ -364,6 +445,11 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     # filename, so the job has to actually be running from this directory
     # for the launcher to find it.
     lines = [f'cd {config["general"]["thisrun_work_dir"]}']
+    # taskset-mode heterogeneous MPI+OMP jobs need SLURM_HOSTFILE/hostlist
+    # built at runtime, from inside the allocation (scontrol show hostnames
+    # needs $SLURM_JOB_NODELIST, only set once the job's actually running)
+    # -- empty for anything else (see hostlist_gen_lines).
+    lines += hostlist_gen_lines(config)
 
     write_log = computer.get("write_execution_log", "")
     command = f"time {computer['execution_command']} 2>&1{write_log}"

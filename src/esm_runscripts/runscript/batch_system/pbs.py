@@ -32,11 +32,17 @@ class PbsBatchSystem:
         return bool(cls.get_job_state(jobid))
 
     @staticmethod
-    def tasks_or_nodes_flag() -> str:
+    def tasks_or_nodes_flag(config: dict) -> str:
         return "nodes_flag"
 
     @staticmethod
     def write_multiprog_hostfile(config: dict) -> None:
         """No-op -- PBS has no hostfile mechanism; all job info lives in
         the launcher command itself (matches legacy's ``Pbs`` class)."""
+        return None
+
+    @staticmethod
+    def write_taskset_wrappers(config: dict) -> None:
+        """No-op -- the ``taskset`` mechanism is SLURM-specific (legacy's
+        ``Pbs`` has no equivalent at all)."""
         return None

@@ -56,7 +56,11 @@ def launch_batch(workflow: "Workflow", multi_step_name: str, config: dict) -> di
     if workflow.multi_step_execution[multi_step_name].kind == MultiStepKind.ESM_MULTISTEP:
         # compute_requirements (called inside build_runscript_context, via
         # batch_header_lines) already assigned each model's start_proc/
-        # end_proc by now -- write the hostfile those ranges describe.
+        # end_proc by now. write_taskset_wrappers must run first -- it
+        # sets execution_command_het_par, which write_multiprog_hostfile
+        # reads (a no-op for either, unless heterogeneous_parallelization/
+        # taskset are actually set).
+        batch_system.write_taskset_wrappers(config)
         batch_system.write_multiprog_hostfile(config)
     if is_check_mode(config):
         return config

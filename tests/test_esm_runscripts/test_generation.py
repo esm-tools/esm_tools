@@ -234,6 +234,38 @@ def test_command_lines_backgrounds_compute_and_appends_observe_call():
     assert "-p ${process}" in lines[3]
 
 
+def test_hostlist_gen_lines_empty_without_heterogeneous_taskset():
+    config = _config()
+    assert generation.hostlist_gen_lines(config) == []
+
+    config["computer"]["heterogeneous_parallelization"] = True
+    # taskset not set -> still empty (packjob/het-par-without-taskset path,
+    # not ported, see runscript/batch_system/__init__.py).
+    assert generation.hostlist_gen_lines(config) == []
+
+
+def test_hostlist_gen_lines_builds_hostlist_shell_snippet():
+    config = _config()
+    config["general"]["thisrun_work_dir"] = "/tmp/work"
+    config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
+    config["oifs"] = {"nproc": 12, "omp_num_threads": 2, "execution_command": "oifs_exe"}
+    config["fesom"] = {"nproc": 128, "omp_num_threads": 1, "executable": "fesom_exe"}
+    config["oasis3mct"] = {}
+    config["computer"]["heterogeneous_parallelization"] = True
+    config["computer"]["taskset"] = True
+
+    lines = generation.hostlist_gen_lines(config)
+
+    text = "\n".join(lines)
+    assert "export SLURM_HOSTFILE=/tmp/work/hostlist" in text
+    assert "mpi_tasks_oifs=12" in text
+    assert "omp_threads_oifs=2" in text
+    assert "mpi_tasks_fesom=128" in text
+    assert "for model in oifs fesom ;do" in text
+    # oasis3mct (no command) contributes nothing.
+    assert "oasis3mct" not in text
+
+
 def test_write_runscript_writes_file_and_chmods_executable(tmp_path):
     context = generation.RunscriptContext(header_lines=["#!/bin/bash"], command_lines=["echo hi"])
     path = tmp_path / "test.run"

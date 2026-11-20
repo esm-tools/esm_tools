@@ -1,0 +1,42 @@
+src/esm_runscripts/runscript/generation.py
+  s_0f8b4206b53928::t_9b5b52ac331cf9 191-199,201,210-212
+  s_0f8b4206b53928::t_d26f7bec283072 252-321
+  s_0f8b4206b53928::t_8a9caba328b107 448-452
+  s_0f8b4206b53928::t_8b73158b5a403a 352
+src/esm_runscripts/runscript/templates/taskset_script.sh.j2
+  s_0f8b4206b53928::t_cdc01f194847fd 1-4
+src/esm_runscripts/runscript/batch_system/pbs.py
+  s_0f8b4206b53928::t_971b283780029c 35,43-47
+  s_0f8b4206b53928::t_46b02a7b584ab5 48
+tests/test_esm_runscripts/test_generation.py
+  s_0f8b4206b53928::t_d1a05c1f750287 237-268
+src/esm_runscripts/runscript/batch_system/__init__.py
+  s_0f8b4206b53928::t_44cbccef3e6b69 19-30,34,36-41,77,79-84,94-110
+src/esm_runscripts/runscript/templates/hostlist_gen.sh.j2
+  s_0f8b4206b53928::t_3261384eb2fcc5 1-23
+tests/test_esm_runscripts/test_runscript_batch_system.py
+  s_0f8b4206b53928::t_d8832184415bba 66-150
+src/esm_runscripts/runscript/templates/taskset_prog.sh.j2
+  s_0f8b4206b53928::t_22981f31efe3ac 1-7
+src/esm_runscripts/runscript/batch_system/slurm.py
+  s_0f8b4206b53928::t_c86943891b822d 40-45
+  s_0f8b4206b53928::t_5f9055bdec5c23 70-119
+src/esm_runscripts/execution/launch.py
+  s_0f8b4206b53928::t_d192fd8ccf82c9 59-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "774668fee3e28d24336da08423f6ab186436f792",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

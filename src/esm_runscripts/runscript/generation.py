@@ -279,10 +279,17 @@ def hostlist_gen_lines(config: dict) -> List[str]:
     ``SLURM_HOSTFILE``) for a ``taskset``-mode heterogeneous MPI+OMP job
     -- one hostname line per MPI rank, spaced by each model's
     ``omp_num_threads`` so co-located threads land on the same physical
-    node. Ported from legacy's ``Slurm.add_hostlist_file_gen_lines``
-    (same algorithm; rendered via ``hostlist_gen.sh.j2`` instead of
-    ``runfile.write(...)`` calls). Empty (no lines) unless ``computer.
-    heterogeneous_parallelization`` and ``computer.taskset`` are both set.
+    node. The rank -> node-index assignment is pure arithmetic on data
+    already known at script-generation time (``mpi_tasks``/
+    ``omp_num_threads``/``cores_per_node``), so it's computed once, here,
+    in Python -- not recomputed by a shell loop every time the job runs.
+    Only resolving that index to an actual hostname stays in shell
+    (``hostlist_gen.sh.j2``): physical node assignment
+    (``$SLURM_JOB_NODELIST``) isn't known until the job is actually
+    running. Ported from legacy's ``Slurm.add_hostlist_file_gen_lines``
+    (same per-rank math, same resulting ``hostlist`` content). Empty (no
+    lines) unless ``computer.heterogeneous_parallelization`` and
+    ``computer.taskset`` are both set.
     """
     computer = config["computer"]
     if not (computer.get("heterogeneous_parallelization", False) and computer.get("taskset", False)):
@@ -310,11 +317,17 @@ def hostlist_gen_lines(config: dict) -> List[str]:
         return []
 
     cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
+    host_indices = []
+    current_core = 0
+    for entry in entries:
+        for _ in range(entry["mpi_tasks"]):
+            host_indices.append(current_core // cores_per_node)
+            current_core += entry["omp_num_threads"]
+
     template = _ENV.get_template("hostlist_gen.sh.j2")
     rendered = template.render(
         thisrun_work_dir=config["general"]["thisrun_work_dir"],
-        entries=entries,
-        cores_per_node=cores_per_node,
+        host_indices=host_indices,
     )
     return rendered.splitlines()
 

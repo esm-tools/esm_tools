@@ -5,19 +5,6 @@ export SLURM_HOSTFILE={{ thisrun_work_dir }}/hostlist
 IFS=$'\n'; set -f
 listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))
 unset IFS; set +f
-current_core=0
-{% for entry in entries -%}
-mpi_tasks_{{ entry.model }}={{ entry.mpi_tasks }}
-omp_threads_{{ entry.model }}={{ entry.omp_num_threads }}
+{% for index in host_indices -%}
+echo ${listnodes[{{ index }}]} >> hostlist
 {% endfor -%}
-for model in {{ entries | map(attribute="model") | join(" ") }} ;do
-    eval nb_of_cores=\${mpi_tasks_${model}}
-    eval nb_of_cores=$((${nb_of_cores}-1))
-    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do
-        (( index_host = current_core / {{ cores_per_node }} ))
-        host_value=${listnodes[${index_host}]}
-        (( slot =  current_core % {{ cores_per_node }} ))
-        echo $host_value >> hostlist
-        (( current_core = current_core + omp_threads_${model} ))
-    done
-done

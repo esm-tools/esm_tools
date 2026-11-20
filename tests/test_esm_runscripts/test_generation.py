@@ -278,6 +278,10 @@ def test_hostlist_gen_lines_empty_without_heterogeneous_taskset():
 
 
 def test_hostlist_gen_lines_builds_hostlist_shell_snippet():
+    # All per-rank index math (current_core // cores_per_node) happens in
+    # Python at generation time -- the template only resolves the
+    # resulting indices to real hostnames at runtime (host assignment
+    # isn't known until the job is actually running).
     config = _config()
     config["general"]["thisrun_work_dir"] = "/tmp/work"
     config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
@@ -286,16 +290,23 @@ def test_hostlist_gen_lines_builds_hostlist_shell_snippet():
     config["oasis3mct"] = {}
     config["computer"]["heterogeneous_parallelization"] = True
     config["computer"]["taskset"] = True
+    config["computer"]["partitions"]["compute"]["cores_per_node"] = 32
 
     lines = generation.hostlist_gen_lines(config)
 
     text = "\n".join(lines)
     assert "export SLURM_HOSTFILE=/tmp/work/hostlist" in text
-    assert "mpi_tasks_oifs=12" in text
-    assert "omp_threads_oifs=2" in text
-    assert "mpi_tasks_fesom=128" in text
-    assert "for model in oifs fesom ;do" in text
-    # oasis3mct (no command) contributes nothing.
+    # No shell math at all -- just 140 (12 oifs + 128 fesom) literal
+    # "echo ${listnodes[N]} >> hostlist" lines.
+    echo_lines = [l for l in lines if l.startswith("echo ${listnodes[")]
+    assert len(echo_lines) == 140
+    # oifs' 12 ranks (24 cores, omp=2 each) all fit in node 0 (32 cores).
+    assert echo_lines[:12] == ["echo ${listnodes[0]} >> hostlist"] * 12
+    # fesom's first 8 ranks fill out the rest of node 0 (24+8=32 cores).
+    assert echo_lines[12:20] == ["echo ${listnodes[0]} >> hostlist"] * 8
+    # fesom's next 32 ranks (1 core each) fill node 1 entirely.
+    assert echo_lines[20:52] == ["echo ${listnodes[1]} >> hostlist"] * 32
+    # oasis3mct (no command) contributes no ranks at all.
     assert "oasis3mct" not in text
 
 

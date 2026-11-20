@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from datetime import datetime
 from typing import Any, Optional, TypedDict, cast
 
@@ -35,6 +36,7 @@ class StacContact(TypedDict, total=False):
     roles: list[str]
     identifier: str
     organization: str
+    emails: list[dict[str, str]]
 
 
 class Contact(BaseModel):
@@ -50,6 +52,8 @@ class Contact(BaseModel):
         default=None, serialization_alias="organization"
     )
     """Affiliated institution."""
+    emails: list[str] = []
+    """E-mail addresses (none, one or several); in STAC ``emails: [{value: ...}]``."""
     roles: list[str] = ["principal_investigator"]
     """STAC contact roles; defaults to ["principal_investigator"]."""
 
@@ -62,7 +66,12 @@ class Contact(BaseModel):
 
     def to_stac(self) -> StacContact:
         """Serialize to the STAC contacts entry (aliased fields, empties dropped)."""
-        return cast(StacContact, self.model_dump(by_alias=True, exclude_none=True))
+        entry = self.model_dump(by_alias=True, exclude_none=True)
+        emails = entry.pop("emails")
+        if emails:
+            # The STAC contacts extension lists addresses as objects.
+            entry["emails"] = [{"value": email} for email in emails]
+        return cast(StacContact, entry)
 
 
 class ExperimentMetadata(BaseModel):
@@ -81,6 +90,8 @@ class ExperimentMetadata(BaseModel):
     # outright rather than silently degrading it -- confirmed live. Keep this
     # the actual UPath all the way through; don't round-trip via str().
     experiment_path: UPath
+    collection_stamp: Optional[str] = None
+    """Random part of the Collection id, saved in the catalog folder."""
     description: Optional[str] = None
 
     @field_validator("experiment_path", mode="before")
@@ -120,8 +131,14 @@ class ExperimentMetadata(BaseModel):
 
     @property
     def collection_id(self) -> str:
-        """The STAC Collection id: the ``experiment_id`` plus a short hash of
-        the ``experiment_path``, so experiments that reuse a name still get
-        distinct ids."""
-        digest = hashlib.md5(str(self.experiment_path).encode()).hexdigest()[:8]
+        """``<experiment_id>-<collection_stamp>``.
+
+        Without a stamp, a hash of the full experiment path is used instead.
+        """
+        if self.collection_stamp:
+            return f"{self.experiment_id}-{self.collection_stamp}"
+        location = str(self.experiment_path)
+        if self.experiment_path.protocol == "":  # a local path
+            location = os.path.abspath(location)
+        digest = hashlib.md5(location.encode()).hexdigest()[:8]
         return f"{self.experiment_id}-{digest}"

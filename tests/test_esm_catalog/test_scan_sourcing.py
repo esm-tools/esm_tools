@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime
 
@@ -9,6 +10,7 @@ import pytest
 from ruamel.yaml import YAML
 from upath import UPath
 
+from esm_catalog.scan import sourcing
 from esm_catalog.scan.sourcing import (
     SourcingError,
     TidyOutdataEntry,
@@ -396,6 +398,207 @@ def test_no_general_metadata_leaves_fields_empty(tmp_path):
     assert metadata.contacts == []
 
 
+def _write_general(exp_root, general):
+    """Write a minimal finished_config with the given ``general`` section."""
+    config_dir = exp_root / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    doc = {
+        "general": {
+            "expid": _EXPID,
+            "start_date": "2000-01-01",
+            "end_date": "2000-12-31",
+            **general,
+        },
+    }
+    path = config_dir / f"{_EXPID}_finished_config.yaml_20000101-20001231"
+    with path.open("w") as stream:
+        YAML(typ="safe").dump(doc, stream)
+
+
+def test_author_roles_are_read_from_config(tmp_path):
+    # Each Authors entry may name its own role(s); one without roles is an author.
+    exp_root = UPath(tmp_path)
+    _write_general(
+        exp_root,
+        {
+            "user": "a123456",
+            "metadata": {
+                "Institute": "Example Institute",
+                "Authors": [
+                    {"name": "Ada Lovelace"},
+                    {"name": "Grace Hopper", "roles": ["principalInvestigator"]},
+                    {"name": "Alan Turing", "roles": "pointOfContact"},
+                ],
+            },
+        },
+    )
+
+    metadata = source_experiment(exp_root)
+
+    assert [(c.name, c.roles) for c in metadata.contacts] == [
+        ("Ada Lovelace", ["author"]),
+        ("Grace Hopper", ["principalInvestigator"]),
+        ("Alan Turing", ["pointOfContact"]),
+    ]
+    # Given Authors win: the user id is not added on top of them.
+    assert "a123456" not in [c.name for c in metadata.contacts]
+
+
+def test_plain_author_names_default_to_author_role(tmp_path):
+    exp_root = UPath(tmp_path)
+    _write_general(exp_root, {"metadata": {"Authors": ["Ada Lovelace"]}})
+
+    metadata = source_experiment(exp_root)
+
+    assert [(c.name, c.roles) for c in metadata.contacts] == [
+        ("Ada Lovelace", ["author"])
+    ]
+
+
+def test_user_id_is_fallback_contact_without_authors(tmp_path, monkeypatch):
+    # No Authors given: the user who ran the experiment becomes its author,
+    # so the run can still be traced back to a person. Here the scanning
+    # machine does not know the account, so only the id is shown.
+    monkeypatch.setattr(sourcing, "_full_name_of", lambda user: None)
+    exp_root = UPath(tmp_path)
+    _write_general(exp_root, {"user": "a123456"})
+
+    metadata = source_experiment(exp_root)
+
+    assert [(c.name, c.roles) for c in metadata.contacts] == [
+        ("a123456", ["author"])
+    ]
+
+
+def test_fallback_contact_shows_full_name_when_known(tmp_path, monkeypatch):
+    # On the machine where the account exists, its full name is added.
+    monkeypatch.setattr(
+        sourcing, "_full_name_of", lambda user: "Ada Lovelace"
+    )
+    exp_root = UPath(tmp_path)
+    _write_general(exp_root, {"user": "a123456"})
+
+    metadata = source_experiment(exp_root)
+
+    assert [(c.name, c.roles) for c in metadata.contacts] == [
+        ("Ada Lovelace (a123456)", ["author"])
+    ]
+
+
+@pytest.mark.parametrize(
+    "comment, expected",
+    [
+        ("Ada Lovelace", "Ada Lovelace"),
+        ("Ada Lovelace,Room 1,0471", "Ada Lovelace"),
+        ("", None),
+    ],
+)
+def test_full_name_of_reads_account_comment(monkeypatch, comment, expected):
+    pwd = pytest.importorskip("pwd")
+
+    class Entry:
+        pw_gecos = comment
+
+    monkeypatch.setattr(pwd, "getpwnam", lambda user: Entry())
+    assert sourcing._full_name_of("a123456") == expected
+
+
+def test_full_name_of_unknown_account_is_none(monkeypatch):
+    pwd = pytest.importorskip("pwd")
+
+    def unknown(user):
+        raise KeyError(user)
+
+    monkeypatch.setattr(pwd, "getpwnam", unknown)
+    assert sourcing._full_name_of("nobody-here") is None
+
+
+def _write_contacts_file(catalog, text):
+    """Write a catalog_contacts.yaml into *catalog* (an experiment's catalog dir)."""
+    catalog.mkdir(parents=True, exist_ok=True)
+    (catalog / "catalog_contacts.yaml").write_text(text)
+
+
+def test_contacts_file_wins_over_authors_and_user(tmp_path, monkeypatch):
+    monkeypatch.setattr(sourcing, "_full_name_of", lambda user: None)
+    exp_root = UPath(tmp_path)
+    _write_general(
+        exp_root,
+        {"user": "a123456", "metadata": {"Authors": ["Someone From Runscript"]}},
+    )
+    _write_contacts_file(
+        exp_root / "catalog",
+        """
+institution: Example Institute
+contacts:
+    - name: Ada Lovelace
+      emails: [ada@example.org, ada@home.example]
+    - name: Grace Hopper
+      roles: [principalInvestigator]
+      institution: Example University
+      orcid: 0000-0000-0000-0000
+      email: grace@example.org
+""",
+    )
+
+    metadata = source_experiment(exp_root)
+
+    assert [
+        (c.name, c.roles, c.institution, c.orcid, c.emails)
+        for c in metadata.contacts
+    ] == [
+        (
+            "Ada Lovelace",
+            ["author"],
+            "Example Institute",
+            None,
+            ["ada@example.org", "ada@home.example"],
+        ),
+        (
+            "Grace Hopper",
+            ["principalInvestigator"],
+            "Example University",
+            "0000-0000-0000-0000",
+            ["grace@example.org"],  # a single 'email:' is read too
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["", "contacts: []", "just a sentence", "contacts: [unclosed"],
+    ids=["empty", "no-contacts", "not-a-mapping", "broken-yaml"],
+)
+def test_unusable_contacts_file_falls_back(tmp_path, monkeypatch, text):
+    # A missing, empty or broken file never stops the scan.
+    monkeypatch.setattr(sourcing, "_full_name_of", lambda user: None)
+    exp_root = UPath(tmp_path)
+    _write_general(exp_root, {"user": "a123456"})
+    _write_contacts_file(exp_root / "catalog", text)
+
+    metadata = source_experiment(exp_root)
+
+    assert [(c.name, c.roles) for c in metadata.contacts] == [
+        ("a123456", ["author"])
+    ]
+
+
+def test_contacts_file_is_read_from_a_separate_catalog_dir(tmp_path, monkeypatch):
+    # With --catalog-dir elsewhere (e.g. scanning someone else's run), the
+    # contacts file lives next to that catalog, not in the experiment.
+    monkeypatch.setattr(sourcing, "_full_name_of", lambda user: None)
+    exp_root = UPath(tmp_path / "experiment")
+    catalog = UPath(tmp_path / "my_catalogs" / "run01")
+    _write_general(exp_root, {"user": "b654321"})
+    _write_contacts_file(catalog, "contacts:\n    - name: Alan Turing\n")
+
+    with_catalog = source_experiment(exp_root, catalog=catalog)
+    without_catalog = source_experiment(exp_root)
+
+    assert [c.name for c in with_catalog.contacts] == ["Alan Turing"]
+    assert [c.name for c in without_catalog.contacts] == ["b654321"]
+
+
 def test_load_run_cfgs_reports_progress_per_file(tmp_path):
     # The sequential (non-distributed) path is the common case; without this
     # callback a slow remote load of many finished_configs is silent for its
@@ -540,3 +743,47 @@ def test_walk_restart_local_root_never_stats_an_entry(tmp_path, monkeypatch):
 
     (only,) = list(_walk_restart(UPath(tmp_path)))
     assert only.component == "fesom"
+
+
+# --------------------------------------------------------------------------- #
+# Collection id: a random stamp, made once per catalog folder.
+# --------------------------------------------------------------------------- #
+
+
+def test_collection_stamp_is_made_once_and_reused(tmp_path, monkeypatch):
+    exp_root = UPath(tmp_path / "run01")
+    _write_general(exp_root, {})
+
+    first = source_experiment(exp_root).collection_id
+    monkeypatch.chdir(tmp_path / "run01")
+    from_inside = source_experiment(UPath(".")).collection_id
+
+    stamp = first.rsplit("-", 1)[1]
+    assert len(stamp) == 8 and int(stamp, 16) >= 0  # 8 hex digits
+    assert from_inside == first
+    saved = json.loads((exp_root / "catalog" / "esm-catalog.json").read_text())
+    assert saved["collection_stamp"] == stamp
+
+
+def test_same_name_in_the_same_place_gets_a_new_id_after_a_move(tmp_path):
+    exp_root = UPath(tmp_path / "run01")
+    _write_general(exp_root, {})
+    old_id = source_experiment(exp_root).collection_id
+
+    (tmp_path / "run01").rename(tmp_path / "moved")  # old experiment moved away...
+    moved_id = source_experiment(UPath(tmp_path / "moved")).collection_id
+    _write_general(exp_root, {})  # ...and a new one with the same name in its place
+    new_id = source_experiment(exp_root).collection_id
+
+    assert moved_id == old_id  # the moved experiment keeps its id
+    assert new_id != old_id  # the new one does not overwrite it
+
+
+def test_existing_catalog_keeps_its_collection_id(tmp_path):
+    exp_root = UPath(tmp_path / "run01")
+    _write_general(exp_root, {})
+    catalog = exp_root / "catalog"
+    catalog.mkdir()
+    (catalog / "collection.json").write_text(json.dumps({"id": f"{_EXPID}-c7b37639"}))
+
+    assert source_experiment(exp_root).collection_id == f"{_EXPID}-c7b37639"

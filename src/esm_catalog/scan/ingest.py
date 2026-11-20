@@ -603,7 +603,7 @@ def scan_experiment(
             "sourcing", loaded, total, detail=f"{loaded}/{total} run configs loaded"
         ),
     )
-    exp_metadata = source_experiment(exp_root, run_cfgs=run_cfgs)
+    exp_metadata = source_experiment(exp_root, run_cfgs=run_cfgs, catalog=catalog)
     files = source_files(
         exp_root,
         on_file=lambda n: _emit("sourcing", detail=f"walking outdata — {n} files found"),

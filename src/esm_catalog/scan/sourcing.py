@@ -32,8 +32,10 @@ parsed with f90nml.
 from __future__ import annotations
 
 import io
+import json
 import os
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import date, datetime
 from itertools import chain
@@ -52,6 +54,7 @@ from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
 from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.types import Md5, OutputFile, RunStamp, Stream
+from esm_catalog.scan.workspace import WorkspaceState, catalog_dir, load_state, save_state
 from esm_catalog.types import ComponentName, ExperimentId
 
 FinishedConfigDoc = dict[str, Any]
@@ -77,6 +80,7 @@ class GeneralBlock(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     expid: Any = None
+    user: Any = None
     start_date: Any = None
     initial_date: Any = None
     current_date: Any = None
@@ -157,7 +161,10 @@ class _RunConfig:
 
 
 def source_experiment(
-    exp_root: UPath, *, run_cfgs: Optional[list[_RunConfig]] = None
+    exp_root: UPath,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
+    catalog: Optional[UPath] = None,
 ) -> ExperimentMetadata:
     """Build :class:`ExperimentMetadata` from an experiment's finished_config(s).
 
@@ -170,6 +177,9 @@ def source_experiment(
         Pre-parsed run configs, when the caller already has them (e.g.
         :func:`~esm_catalog.scan.ingest.scan_experiment` shares one parse with
         :func:`output_files`). Parsed from *exp_root* when omitted.
+    catalog : UPath, optional
+        The catalog directory, where a ``catalog_contacts.yaml`` may live.
+        Defaults to ``<exp_root>/catalog``.
 
     Returns
     -------
@@ -189,15 +199,21 @@ def source_experiment(
     general_metadata = list(_general_metadata_blocks(docs))
     run_start, run_end = _run_span(run_cfgs)
     components = _components(docs)
+    experiment_id = _experiment_id(run_cfgs)
+    if catalog is None:
+        catalog = catalog_dir(exp_root)
 
     return ExperimentMetadata(
-        experiment_id=_experiment_id(run_cfgs),
+        experiment_id=experiment_id,
         # Keep the real UPath (storage_options and all) -- stringifying and
         # rewrapping it loses the host for remote protocols (sftp://, ...).
         experiment_path=exp_root,
+        collection_stamp=collection_stamp(catalog, experiment_id),
         description=_first_value(general_metadata, "Description"),
         data_license=_first_value(general_metadata, "License"),
-        contacts=_contacts(general_metadata),
+        contacts=_file_contacts(catalog)
+        or _contacts(general_metadata)
+        or _fallback_contacts(docs),
         paleo_config=_paleo_config(docs),
         cmip6_config=_cmip6_config(general_metadata),
         run_start=run_start,
@@ -206,6 +222,35 @@ def source_experiment(
         namelists_by_component=_namelists_by_component(exp_root),
         model_dirs=_model_dirs(docs, components),
     )
+
+
+def collection_stamp(catalog: UPath, experiment_id: str) -> str:
+    """The random part of the Collection id: 8 hex digits of a uuid4.
+
+    Made at the first scan, saved in ``esm-catalog.json`` and reused
+    afterwards. A catalog folder that already has a ``collection.json``
+    keeps the stamp of its id.
+    """
+    state = load_state(catalog)
+    if state is not None and state.collection_stamp:
+        return state.collection_stamp
+    stamp = _existing_stamp(catalog, experiment_id) or uuid.uuid4().hex[:8]
+    state = state or WorkspaceState(experiment_id=experiment_id)
+    state.collection_stamp = stamp
+    save_state(catalog, state)
+    return stamp
+
+
+def _existing_stamp(catalog: UPath, experiment_id: str) -> Optional[str]:
+    """The stamp of the id in ``<catalog>/collection.json``, if any."""
+    try:
+        collection_id = json.loads((catalog / "collection.json").read_text()).get("id", "")
+    except (FileNotFoundError, ValueError, AttributeError):
+        return None
+    prefix = f"{experiment_id}-"
+    if isinstance(collection_id, str) and collection_id.startswith(prefix):
+        return collection_id[len(prefix):] or None
+    return None
 
 
 def _components(docs: Iterable[FinishedConfigDoc]) -> list[ComponentName]:
@@ -749,6 +794,61 @@ def _first_value(blocks: Iterable[MetadataBlock], key: str) -> Optional[str]:
     return None
 
 
+CONTACTS_FILE = "catalog_contacts.yaml"
+"""Per-experiment contacts file, in the catalog directory. Example::
+
+    institution: Example Institute  # optional, default for every contact below
+    contacts:
+        - name: Ada Lovelace
+          roles: [author]
+        - name: Grace Hopper
+          roles: [principalInvestigator]
+          orcid: 0000-0000-0000-0000
+          emails: [grace@example.org, grace.hopper@example.com]  # one or several
+
+Takes priority over ``general.metadata.Authors`` and the ``general.user`` fallback.
+"""
+
+
+def _file_contacts(catalog: UPath) -> list[Contact]:
+    """The contacts listed in ``<catalog>/catalog_contacts.yaml``, if present."""
+    path = catalog / CONTACTS_FILE
+    if not path.exists():
+        return []
+    try:
+        doc = _load_yaml(path)  # {} unless the file holds a mapping
+    except Exception as error:  # a broken file must not stop the scan
+        logger.warning(f"Ignoring {path}: could not read it ({error})")
+        return []
+    institution = doc.get("institution")
+    contacts: list[Contact] = []
+    for entry in _as_list(doc.get("contacts")):
+        contact = _to_contact(entry, institution)
+        if contact is not None and contact not in contacts:
+            contacts.append(contact)
+    return contacts
+
+
+def write_contacts_file(catalog: UPath, contacts: list[Contact]) -> UPath:
+    """Save *contacts* as ``<catalog>/catalog_contacts.yaml``; return its path.
+
+    Only filled-in fields are written, in the same form the file is read.
+    """
+    entries = []
+    for contact in contacts:
+        entry: dict[str, Any] = {"name": contact.name, "roles": list(contact.roles)}
+        if contact.institution:
+            entry["institution"] = contact.institution
+        if contact.orcid:
+            entry["orcid"] = contact.orcid
+        if contact.emails:
+            entry["emails"] = list(contact.emails)
+        entries.append(entry)
+    path = catalog / CONTACTS_FILE
+    _dump_yaml(path, {"contacts": entries})
+    return path
+
+
 def _contacts(blocks: Iterable[MetadataBlock]) -> list[Contact]:
     """The de-duplicated :class:`Contact` list parsed from every ``Authors`` block."""
     contacts: list[Contact] = []
@@ -773,22 +873,62 @@ def _as_list(value: object) -> list:
     return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
+DEFAULT_AUTHOR_ROLES = ["author"]
+"""Roles given to an author entry that does not name its own roles."""
+
+
 def _to_contact(author: object, institution: Optional[str]) -> Optional[Contact]:
-    """Coerce one ``Authors`` entry (a name string or a mapping) into a Contact."""
+    """One ``Authors`` entry (a name or a mapping) as a Contact; roles default to author."""
     if isinstance(author, str):
         name = author.strip()
-        return Contact(name=name, institution=institution) if name else None
+        if not name:
+            return None
+        return Contact(name=name, institution=institution, roles=DEFAULT_AUTHOR_ROLES)
     if isinstance(author, dict):
         name = author.get("name") or author.get("Name")
+        roles = _as_list(author.get("roles") or author.get("role"))
         return Contact(
             name=str(name).strip() if name else None,
             orcid=author.get("orcid") or author.get("ORCID"),
+            emails=_emails(author),
             institution=author.get("institution")
             or author.get("Institute")
             or author.get("affiliation")
             or institution,
+            roles=[str(role) for role in roles] or DEFAULT_AUTHOR_ROLES,
         )
     return None
+
+
+def _emails(author: dict) -> list[str]:
+    """The addresses under ``emails`` or ``email`` (one address or a list)."""
+    value = author.get("emails") or author.get("email") or author.get("Email")
+    return [str(email).strip() for email in _as_list(value) if str(email).strip()]
+
+
+def _fallback_contacts(docs: Iterable[FinishedConfigDoc]) -> list[Contact]:
+    """The user who ran the experiment (``general.user``) as a contact, if recorded."""
+    for doc in docs:
+        user = _general(doc).user
+        if user and str(user).strip():
+            user = str(user).strip()
+            full_name = _full_name_of(user)
+            name = f"{full_name} ({user})" if full_name else user
+            return [Contact(name=name, roles=DEFAULT_AUTHOR_ROLES)]
+    return []
+
+
+def _full_name_of(user: str) -> Optional[str]:
+    """The account's full name as the system records it (``getent passwd``), or None."""
+    try:
+        import pwd  # Unix only
+
+        comment = pwd.getpwnam(user).pw_gecos
+    except (ImportError, KeyError):
+        return None
+    # The field may hold "Name,room,phone,..."; the name comes first.
+    name = comment.split(",")[0].strip()
+    return name or None
 
 
 def _cmip6_config(blocks: Iterable[MetadataBlock]) -> Optional[Cmip6Config]:
@@ -977,6 +1117,15 @@ def _load_yaml(path: UPath) -> FinishedConfigDoc:
     """
     doc = YAML(typ="safe").load(io.BytesIO(path.read_bytes()))
     return doc if isinstance(doc, dict) else {}
+
+
+def _dump_yaml(path: UPath, doc: dict) -> None:
+    """Write *doc* to *path* as YAML (the counterpart of :func:`_load_yaml`)."""
+    stream = io.StringIO()
+    yaml = YAML()
+    yaml.indent(mapping=4, sequence=4, offset=2)
+    yaml.dump(doc, stream)
+    path.write_text(stream.getvalue())
 
 
 def _tidy_log_outdata(doc: FinishedConfigDoc) -> Iterable[TidyOutdataEntry]:

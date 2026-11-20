@@ -61,6 +61,8 @@ class WorkspaceState(BaseModel):
     """The persisted ``esm-catalog.json`` — scan bookkeeping for incremental re-scans."""
 
     experiment_id: ExperimentId
+    collection_stamp: Optional[str] = None
+    """Random part of the Collection id (see ``sourcing.collection_stamp``)."""
     scanned: dict[ScannedPath, Md5] = {}
     schema_by_stream: dict[StreamKey, FileMetadata] = {}
     occurrences_since_check: dict[StreamKey, int] = {}

@@ -490,7 +490,7 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
         return []
 
     # cd into thisrun_work_dir -- matches legacy's write_simple_runscript,
-    # which does this for every sub_plan unconditionally (batch or shell).
+    # which does this for every multi_step unconditionally (batch or shell).
     # The MPMD execution_command (srun --multi-prog hostfile_srun, see
     # multiprog_hostfile_content) names the hostfile by bare relative
     # filename, so the job has to actually be running from this directory

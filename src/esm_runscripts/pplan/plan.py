@@ -524,10 +524,31 @@ def _collect_extra_multi_steps(config: dict):
                     exclude=frozenset({"preceded_by", "step_of_plan"}),
                 ),
             )
+            # A raw script subjob (``script``/``script_dir``, e.g.
+            # fesom.tripyview's "Tripy_Fesom") has no recipe -- it's not
+            # driven through esm_plugin_manager steps at all, just a
+            # shell/batch call to the configured script, still via
+            # legacy's dataprocess.sub_plan_tasks (generation.command_lines
+            # branches on this kind). ``conf`` never carries an explicit
+            # "kind" key (that's native-only vocabulary), so "has a
+            # script" is the only signal available to tell them apart
+            # from an actual ``ESM_MULTISTEP``.
+            kind = MultiStepKind.BASH if conf.get("script") else MultiStepKind.ESM_MULTISTEP
             execution = MultiStepExecution(
-                **_only_known_fields(MultiStepExecution, conf)
+                kind=kind,
+                **_only_known_fields(
+                    MultiStepExecution, conf, exclude=frozenset({"kind"})
+                ),
             )
             extra_multi_step_execution[name] = execution
+            if kind == MultiStepKind.BASH:
+                # dataprocess.sub_plan_tasks (legacy, unchanged) still reads
+                # the raw conf off ``config["general"]["workflow"]
+                # ["sub_plans"][name]`` -- native's Workflow.resolve/default
+                # never populates that dict, so bridge it here rather than
+                # porting dataprocess.py's script-launching logic natively.
+                workflow_bridge = config["general"].setdefault("workflow", {})
+                workflow_bridge.setdefault("sub_plans", {})[name] = conf
             # run_on_queue/submit_to_batch_system are cluster-level facts
             # (same Plan, same batch submission) -- read off the raw conf,
             # not the MultiStep/MultiStepExecution. Default False, matching

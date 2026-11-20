@@ -33,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoes
 from pydantic import ConfigDict
 
 from .. import dataprocess
+from ..log_events import ExecutionEvent, jsonl_path as _jsonl_path
 from ..pplan.plan import Executor, LaunchMode, MultiStepKind, Workflow
 from .batch_system import by_name as batch_system_by_name
 
@@ -452,6 +453,29 @@ def observe_call_line(config: dict, multi_step_name: str) -> str:
     )
 
 
+def execution_started_line(config: dict, multi_step_name: str, executor: Executor) -> str:
+    """One shell line emitting an :class:`~esm_runscripts.log_events.
+    ExecutionEvent.STARTED` JSON event, right before the real command
+    runs -- the only point that knows true wall-clock start, since
+    Python returns immediately after backgrounding (fire-and-forget) and
+    never itself observes the spawned process actually beginning.
+    ``FINISHED``/``FAILED`` are emitted later, from Python, by
+    :func:`~esm_runscripts.execution.observe.wait_and_observe`'s caller,
+    once it detects the watched PID actually exiting."""
+    general = config["general"]
+    template = _ENV.get_template("execution_started.sh.j2")
+    return template.render(
+        event=ExecutionEvent.STARTED,
+        expid=general.get("expid"),
+        run_number=general.get("run_number"),
+        current_date=general.get("current_date"),
+        jobid=general.get("jobid"),
+        multi_step_name=multi_step_name,
+        executor=executor.value,
+        jsonl_path=_jsonl_path(config),
+    ).rstrip("\n")
+
+
 def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_batch: bool) -> List[str]:
     execution = _multi_step_execution(workflow, multi_step_name)
     if execution.kind != MultiStepKind.ESM_MULTISTEP:
@@ -477,6 +501,8 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     # needs $SLURM_JOB_NODELIST, only set once the job's actually running)
     # -- empty for anything else (see hostlist_gen_lines).
     lines += hostlist_gen_lines(config)
+    executor = workflow.execution_of(multi_step_name).executor
+    lines.append(execution_started_line(config, multi_step_name, executor))
 
     write_log = computer.get("write_execution_log", "")
     command = f"time {computer['execution_command']} 2>&1{write_log}"

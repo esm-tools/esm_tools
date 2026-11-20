@@ -104,17 +104,18 @@ def set_jsonl_event_sink(config):
     Callers must call it exactly once per process (matches
     :func:`set_progress_level`'s own, pre-existing assumption).
     """
-    experiment_log_file = config["general"]["experiment_log_file"]
-    jsonl_path = f"{experiment_log_file}.jsonl"
+    from .log_events import jsonl_path as _jsonl_path
+
+    path = _jsonl_path(config)
     logger.add(
-        lambda message: _write_jsonl_event(jsonl_path, message.record),
+        lambda message: _write_jsonl_event(path, message.record),
         level="DEBUG",
         # Only messages a dispatch call explicitly logger.bind(event=...)'d
         # go to this sink -- everything else (including PROGRESS/legacy
         # messages) is ignored here.
         filter=lambda record: record["extra"].get("event") is not None,
     )
-    return jsonl_path
+    return path
 
 
 def initialize_logging(command_line_config):

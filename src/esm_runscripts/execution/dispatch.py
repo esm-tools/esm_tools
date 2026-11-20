@@ -10,36 +10,9 @@ deciding *how* a sub-plan's work actually runs belongs.
 
 import time
 
-from loguru import logger
-
-from esm_tools._compat import StrEnum
-
+from ..log_events import DispatchEvent, log_event
 from ..pplan import plan as plan_module
 from . import launch, steps as steps_module
-
-
-class DispatchEvent(StrEnum):
-    """Controlled vocabulary for the ``event`` field
-    :func:`~esm_runscripts.logfiles.set_jsonl_event_sink`'s structured
-    log emits -- a fixed, closed set (not a free-form string), same
-    convention as :class:`~esm_runscripts.pplan.plan.Executor`/
-    :class:`~esm_runscripts.pplan.plan.MultiStepKind`. Dotted
-    ``dispatch.<verb>`` names, one event name per :func:`_cascade`
-    outcome."""
-
-    DISPATCHED = "dispatch.dispatched"
-    """A step is about to run -- emitted right before :func:`_dispatch_one`."""
-
-    FINISHED = "dispatch.finished"
-    """An ``IN_PROCESS`` step actually ran to completion, synchronously,
-    in this call."""
-
-    LAUNCHED = "dispatch.launched"
-    """A ``LOCAL``/``BATCH`` step was launched (subprocess spawned or
-    scheduler job submitted) -- fire-and-forget, not "finished"."""
-
-    FAILED = "dispatch.failed"
-    """A step raised while dispatching."""
 
 
 def run_in_process(workflow: "plan_module.Workflow", multi_step_name: str, config: dict) -> dict:
@@ -100,27 +73,6 @@ def _dispatch_one(workflow: "plan_module.Workflow", multi_step_name: str, config
     return strategy(workflow, multi_step_name, config)
 
 
-def _log_dispatch_event(config: dict, multi_step_name: str, executor, **fields) -> None:
-    """Structured event, picked up only by
-    :func:`~esm_runscripts.logfiles.set_jsonl_event_sink`'s JSONL sink
-    (via its ``record["extra"]["event"]`` filter) -- a no-op if that sink
-    was never added (e.g. ``--wf-engine legacy``, which never calls
-    :func:`_cascade` at all). ``multi_step_name`` is the real step name,
-    read straight from this function's own parameter, not
-    ``config["general"]["jobtype"]`` (CLI's ``-t`` default, never updated
-    as dispatch walks the chain -- the bug this fixes by construction)."""
-    general = config.get("general", {})
-    logger.bind(
-        expid=general.get("expid"),
-        run_number=general.get("run_number"),
-        current_date=str(general.get("current_date")) if general.get("current_date") else None,
-        jobid=general.get("jobid"),
-        multi_step_name=multi_step_name,
-        executor=executor.value if executor is not None else None,
-        **fields,
-    ).debug(fields.get("event"))
-
-
 def _cascade(workflow: "plan_module.Workflow", multi_step_name: str, config: dict, caller: str) -> dict:
     """Dispatch ``multi_step_name``, then keep cascading through
     ``Workflow.resubmit_triggers`` for as long as the step just dispatched
@@ -134,21 +86,20 @@ def _cascade(workflow: "plan_module.Workflow", multi_step_name: str, config: dic
     this call actually dispatched, entry point included.
     """
     executor = workflow.execution_of(multi_step_name).executor
-    _log_dispatch_event(config, multi_step_name, executor, event=DispatchEvent.DISPATCHED)
+    log_event(config, DispatchEvent.DISPATCHED, multi_step_name, executor)
     started = time.monotonic()
     try:
         result = _dispatch_one(workflow, multi_step_name, config, caller=caller)
     except Exception as exc:
-        _log_dispatch_event(
-            config, multi_step_name, executor,
-            event=DispatchEvent.FAILED,
+        log_event(
+            config, DispatchEvent.FAILED, multi_step_name, executor,
             duration_ms=int((time.monotonic() - started) * 1000),
             error=str(exc),
         )
         raise
     duration_ms = int((time.monotonic() - started) * 1000)
     finished_event = DispatchEvent.FINISHED if executor == plan_module.Executor.IN_PROCESS else DispatchEvent.LAUNCHED
-    _log_dispatch_event(config, multi_step_name, executor, event=finished_event, duration_ms=duration_ms)
+    log_event(config, finished_event, multi_step_name, executor, duration_ms=duration_ms)
 
     results = {multi_step_name: result}
     if executor != plan_module.Executor.IN_PROCESS:

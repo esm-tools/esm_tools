@@ -245,19 +245,33 @@ def _run_observe(multi_step_name, workflow, config):
     an uncaught exception already gives a real traceback and a nonzero
     exit).
     """
+    import time
+
     from .execution import cycle, dispatch, observe
     from .execution.errors import JobCrashedError
+    from .log_events import ExecutionEvent, log_event
     from .runscript.generation import observe_log_path
 
     log_file = observe_log_path(config, multi_step_name)
+    executor = workflow.execution_of(multi_step_name).executor
+    started = time.monotonic()
     try:
         observe.wait_and_observe(config["general"]["launcher_pid"], config, log_file)
-    except JobCrashedError:
+    except JobCrashedError as exc:
         import subprocess
 
+        log_event(
+            config, ExecutionEvent.FAILED, multi_step_name, executor,
+            duration_ms=int((time.monotonic() - started) * 1000),
+            error=str(exc),
+        )
         logger.error("Will kill the run now...")
         subprocess.run(["scancel", str(config["general"]["jobid"])])
         raise
+    log_event(
+        config, ExecutionEvent.FINISHED, multi_step_name, executor,
+        duration_ms=int((time.monotonic() - started) * 1000),
+    )
 
     config = cycle.advance_date(config)
     config = cycle.advance_run_number(config)

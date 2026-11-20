@@ -16,6 +16,7 @@ def _config():
             "thisrun_work_dir": "/tmp/work",
             "expid": "test",
             "run_datestamp": "20260101",
+            "experiment_log_file": "/tmp/test.log",
         },
         "fesom": {"nproc": 128},
         "computer": {
@@ -255,16 +256,20 @@ def test_command_lines_backgrounds_compute_and_appends_observe_call():
     lines = generation.command_lines(workflow, "compute", config, is_batch=True)
 
     assert lines[0] == "cd /tmp/work"
-    assert lines[1] == "time ./fesom 2>&1 &"
-    assert lines[2] == "process=$!"
+    # execution.started -- the only point that knows true wall-clock
+    # start (Python returns immediately after backgrounding).
+    assert '\\"event\\":\\"execution.started\\"' in lines[1]
+    assert '\\"multi_step_name\\":\\"compute\\"' in lines[1]
+    assert lines[2] == "time ./fesom 2>&1 &"
+    assert lines[3] == "process=$!"
     # cd back to thisrun_scripts_dir before the observe re-entry -- it
     # resolves scriptname relative to cwd, and the runscript yaml lives in
     # scripts_dir, not work_dir (see the "cd into thisrun_work_dir" cd
     # above, needed by the MPMD/taskset hostfile).
-    assert lines[3] == "cd /tmp/scripts"
-    assert lines[4].startswith("esm_runscripts my.yaml -e test")
-    assert "-t observe_compute" in lines[4]
-    assert "-p ${process}" in lines[4]
+    assert lines[4] == "cd /tmp/scripts"
+    assert lines[5].startswith("esm_runscripts my.yaml -e test")
+    assert "-t observe_compute" in lines[5]
+    assert "-p ${process}" in lines[5]
 
 
 def test_hostlist_gen_lines_empty_without_heterogeneous_taskset():

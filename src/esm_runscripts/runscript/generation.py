@@ -361,6 +361,20 @@ def batch_header_lines(
     execution = _multi_step_execution(workflow, multi_step_name)
     if execution.kind == MultiStepKind.ESM_MULTISTEP and multi_step_name in ("prepcompute", "tidy"):
         flags.append("exclusive_flag")
+    # taskset's core-pinning math (prog_<model>.sh, hostlist_gen_lines)
+    # computes each rank's CPU slot as rank % cores_per_node -- only valid
+    # with exclusive node ownership, or another job's processes could
+    # occupy the same core indices. Legacy's own equivalent check reads
+    # config["general"]["jobtype"], which happens to still be "prepcompute"
+    # (the job currently doing the writing) when compute's own header gets
+    # built, so legacy gets --exclusive for compute as a side effect, not
+    # a deliberate decision -- checking the real requirement here instead.
+    if (
+        multi_step_name == "compute"
+        and computer.get("heterogeneous_parallelization", False)
+        and computer.get("taskset", False)
+    ):
+        flags.append("exclusive_flag")
 
     values: List[str] = []
     for flag in flags:

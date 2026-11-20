@@ -174,6 +174,34 @@ def test_batch_header_lines_raises_for_a_flag_referencing_an_unknown_variable():
         generation.batch_header_lines(workflow, "compute", requirements, config)
 
 
+def test_batch_header_lines_adds_exclusive_for_compute_under_taskset():
+    # taskset's core-pinning math (rank % cores_per_node) is only valid
+    # with exclusive node ownership -- unlike prepcompute/tidy, "compute"
+    # doesn't get --exclusive unconditionally, only when taskset is
+    # actually in play.
+    config = _config()
+    config["computer"]["exclusive_flag"] = "--exclusive"
+    config["computer"]["heterogeneous_parallelization"] = True
+    config["computer"]["taskset"] = True
+    workflow = Workflow.default(config)
+    requirements = generation.ResourceRequirements(tasks=128, nodes=4)
+
+    header = generation.batch_header_lines(workflow, "compute", requirements, config)
+
+    assert "#SBATCH --exclusive" in header
+
+
+def test_batch_header_lines_no_exclusive_for_compute_without_taskset():
+    config = _config()
+    config["computer"]["exclusive_flag"] = "--exclusive"
+    workflow = Workflow.default(config)
+    requirements = generation.ResourceRequirements(tasks=128, nodes=4)
+
+    header = generation.batch_header_lines(workflow, "compute", requirements, config)
+
+    assert "#SBATCH --exclusive" not in header
+
+
 def test_build_runscript_context_and_render_for_batch_executor(monkeypatch):
     config = _config()
     workflow = Workflow.default(config)

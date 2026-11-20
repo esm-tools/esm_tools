@@ -1,0 +1,23 @@
+src/esm_runscripts/runscript/templates/hostlist_gen.sh.j2
+  s_0f8b4206b53928::t_4614c8d665de1d 8-9
+src/esm_runscripts/runscript/generation.py
+  s_0f8b4206b53928::t_c36aa6af7b633c 282-292,320-326,330
+tests/test_esm_runscripts/test_generation.py
+  s_0f8b4206b53928::t_91791c05450fd0 281-284,293,299-309
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "91fd5dcd8d27883fa63bc005ca5b0f050ecb78f8",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

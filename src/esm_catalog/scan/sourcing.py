@@ -783,12 +783,9 @@ def _file_contacts(catalog: UPath) -> list[Contact]:
     if not path.exists():
         return []
     try:
-        doc = YAML(typ="safe").load(io.BytesIO(path.read_bytes())) or {}
+        doc = _load_yaml(path)  # {} unless the file holds a mapping
     except Exception as error:  # a broken file must not stop the scan
         logger.warning(f"Ignoring {path}: could not read it ({error})")
-        return []
-    if not isinstance(doc, dict):
-        logger.warning(f"Ignoring {path}: expected a mapping with 'contacts'")
         return []
     institution = doc.get("institution")
     contacts: list[Contact] = []
@@ -815,11 +812,7 @@ def write_contacts_file(catalog: UPath, contacts: list[Contact]) -> UPath:
             entry["emails"] = list(contact.emails)
         entries.append(entry)
     path = catalog / CONTACTS_FILE
-    stream = io.StringIO()
-    yaml = YAML()
-    yaml.indent(mapping=4, sequence=4, offset=2)
-    yaml.dump({"contacts": entries}, stream)
-    path.write_text(stream.getvalue())
+    _dump_yaml(path, {"contacts": entries})
     return path
 
 
@@ -1106,6 +1099,15 @@ def _load_yaml(path: UPath) -> FinishedConfigDoc:
     """
     doc = YAML(typ="safe").load(io.BytesIO(path.read_bytes()))
     return doc if isinstance(doc, dict) else {}
+
+
+def _dump_yaml(path: UPath, doc: dict) -> None:
+    """Write *doc* to *path* as YAML (the counterpart of :func:`_load_yaml`)."""
+    stream = io.StringIO()
+    yaml = YAML()
+    yaml.indent(mapping=4, sequence=4, offset=2)
+    yaml.dump(doc, stream)
+    path.write_text(stream.getvalue())
 
 
 def _tidy_log_outdata(doc: FinishedConfigDoc) -> Iterable[TidyOutdataEntry]:

@@ -133,20 +133,27 @@ def test_workflow_default_synthesizes_prepcompute_compute_tidy():
 
     wf = Workflow.default(config)
 
-    assert wf.entry_point == "prepcompute"
-    assert wf.resubmit_triggers == {"tidy": ["prepcompute"]}
-    assert set(wf.multi_steps) == {"prepcompute", "compute", "tidy"}
+    assert wf.entry_point == "prepexp"
+    assert wf.resubmit_triggers == {
+        "prepexp": ["prepcompute"],
+        "prepcompute": ["compute"],
+        "compute": ["tidy"],
+        "tidy": ["prepcompute"],
+    }
+    assert set(wf.multi_steps) == {"prepexp", "prepcompute", "compute", "tidy"}
     assert wf.multi_step_execution["compute"].nproc == 128 + 8 * 16
+    assert wf.multi_steps["prepcompute"].preceded_by == ["prepexp"]
     assert wf.multi_steps["compute"].preceded_by == ["prepcompute"]
     assert wf.multi_step_execution["compute"].launch_mode == "background"
     assert wf.plan_execution["compute"].run_on_queue == "compute"
     assert wf.plan_execution["compute"].executor == Executor.BATCH
+    assert wf.plan_execution["prepexp"].executor == Executor.IN_PROCESS
     assert wf.plan_execution["prepcompute"].executor == Executor.IN_PROCESS
     assert wf.plan_execution["tidy"].executor == Executor.IN_PROCESS
     assert wf.multi_steps["tidy"].preceded_by == ["compute"]
     assert wf.parent_plan_of("compute").name == "compute"
     # Each sub-plan is its own singleton cluster.
-    assert set(wf.plans) == {"prepcompute", "compute", "tidy"}
+    assert set(wf.plans) == {"prepexp", "prepcompute", "compute", "tidy"}
 
 
 def _no_custom_workflow_config():
@@ -163,7 +170,7 @@ def _no_custom_workflow_config():
 def test_workflow_resolve_uses_default_when_no_custom_block():
     wf = Workflow.resolve(_no_custom_workflow_config())
 
-    assert wf.entry_point == "prepcompute"
+    assert wf.entry_point == "prepexp"
 
 
 def test_workflow_resolve_raises_when_general_workflow_defines_its_own_entry_point():
@@ -188,7 +195,7 @@ def test_workflow_resolve_does_not_raise_for_an_empty_supplemental_block():
 
     wf = Workflow.resolve(config)
 
-    assert wf.entry_point == "prepcompute"
+    assert wf.entry_point == "prepexp"
 
 
 def test_plan_execution_accepts_none_with_provenance():
@@ -223,7 +230,7 @@ def test_workflow_resolve_merges_a_real_supplemental_multi_step():
 
     wf = Workflow.resolve(config)
 
-    assert wf.entry_point == "prepcompute"
+    assert wf.entry_point == "prepexp"
     assert "postprocessing" in wf.multi_steps
     assert wf.multi_steps["postprocessing"].preceded_by == ["tidy"]
     assert "postprocessing" in wf.plans
@@ -231,6 +238,8 @@ def test_workflow_resolve_merges_a_real_supplemental_multi_step():
     assert wf.plan_execution["postprocessing"].executor == Executor.BATCH
     # Fan-out: tidy still triggers the next cycle AND the new sub-plan.
     assert wf.resubmit_triggers["tidy"] == ["prepcompute", "postprocessing"]
+    # prepexp's own trigger (bootstrapping prepcompute) stays untouched.
+    assert wf.resubmit_triggers["prepexp"] == ["prepcompute"]
 
 
 def test_collect_extra_multi_steps_defaults_executor_to_local_when_omitted():

@@ -13,8 +13,10 @@ def _config():
             "submit_to_batch_system": True,
             "sh_interpreter": "/bin/bash",
             "thisrun_scripts_dir": "/tmp/scripts",
+            "thisrun_work_dir": "/tmp/work",
             "expid": "test",
             "run_datestamp": "20260101",
+            "experiment_log_file": "/tmp/test.log",
         },
         "fesom": {"nproc": 128},
         "computer": {
@@ -40,6 +42,76 @@ def test_compute_requirements_aggregates_esm_multistep_nproc():
 
     assert requirements.tasks == 128
     assert requirements.nodes == 4
+
+
+def test_compute_requirements_assigns_contiguous_mpmd_ranks_per_model():
+    # Legacy's calculate_requirements side effect: each model gets a
+    # contiguous start_proc/end_proc range, in valid_model_names order --
+    # the ranges an MPMD hostfile maps each model's binary onto.
+    config = _config()
+    config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
+    config["oifs"] = {"nproc": 12, "omp_num_threads": 2}
+    config["fesom"] = {"nproc": 128}
+    config["oasis3mct"] = {}  # library component -- no cores of its own
+    workflow = Workflow.default(config)
+
+    generation.compute_requirements(workflow, "compute", config)
+
+    assert config["oifs"]["start_proc"] == 0
+    assert config["oifs"]["end_proc"] == 11
+    assert config["fesom"]["start_proc"] == 12
+    assert config["fesom"]["end_proc"] == 139
+    assert "start_proc" not in config["oasis3mct"]
+
+
+def test_compute_requirements_applies_mpi_num_groups_multiplier():
+    config = _config()
+    config["fesom"] = {"nproc": 10, "mpi_num_groups": 3}
+    workflow = Workflow.default(config)
+
+    generation.compute_requirements(workflow, "compute", config)
+
+    assert config["fesom"]["nproc"] == 30
+    assert config["fesom"]["tasks"] == 30
+    assert config["fesom"]["end_proc"] == 29
+
+
+def test_multiprog_hostfile_content_one_line_per_model_for_srun():
+    config = _config()
+    config["computer"]["launcher"] = "srun"
+    config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
+    config["oifs"] = {"nproc": 12, "execution_command": "oifs_exe"}
+    config["fesom"] = {"nproc": 128, "executable": "fesom_exe"}
+    config["oasis3mct"] = {}
+    workflow = Workflow.default(config)
+    generation.compute_requirements(workflow, "compute", config)
+
+    content = generation.multiprog_hostfile_content(config)
+
+    assert content == "0-11  ./oifs_exe\n12-139  ./fesom_exe\n"
+
+
+def test_multiprog_hostfile_content_colon_joined_for_mpirun():
+    config = _config()
+    config["computer"]["launcher"] = "mpirun"
+    config["general"]["valid_model_names"] = ["oifs", "fesom"]
+    config["oifs"] = {"nproc": 12, "execution_command": "oifs_exe"}
+    config["fesom"] = {"nproc": 128, "executable": "fesom_exe"}
+    workflow = Workflow.default(config)
+    generation.compute_requirements(workflow, "compute", config)
+
+    content = generation.multiprog_hostfile_content(config)
+
+    assert content == " -np 12 ./oifs_exe : -np 128 ./fesom_exe"
+
+
+def test_multiprog_hostfile_content_empty_when_no_model_has_ranks():
+    config = _config()
+    config["computer"]["launcher"] = "srun"
+    config["general"]["valid_model_names"] = ["oasis3mct"]
+    config["oasis3mct"] = {}
+
+    assert generation.multiprog_hostfile_content(config) == ""
 
 
 def test_compute_requirements_uses_execution_nproc_for_bash_kind():
@@ -103,6 +175,34 @@ def test_batch_header_lines_raises_for_a_flag_referencing_an_unknown_variable():
         generation.batch_header_lines(workflow, "compute", requirements, config)
 
 
+def test_batch_header_lines_adds_exclusive_for_compute_under_taskset():
+    # taskset's core-pinning math (rank % cores_per_node) is only valid
+    # with exclusive node ownership -- unlike prepcompute/tidy, "compute"
+    # doesn't get --exclusive unconditionally, only when taskset is
+    # actually in play.
+    config = _config()
+    config["computer"]["exclusive_flag"] = "--exclusive"
+    config["computer"]["heterogeneous_parallelization"] = True
+    config["computer"]["taskset"] = True
+    workflow = Workflow.default(config)
+    requirements = generation.ResourceRequirements(tasks=128, nodes=4)
+
+    header = generation.batch_header_lines(workflow, "compute", requirements, config)
+
+    assert "#SBATCH --exclusive" in header
+
+
+def test_batch_header_lines_no_exclusive_for_compute_without_taskset():
+    config = _config()
+    config["computer"]["exclusive_flag"] = "--exclusive"
+    workflow = Workflow.default(config)
+    requirements = generation.ResourceRequirements(tasks=128, nodes=4)
+
+    header = generation.batch_header_lines(workflow, "compute", requirements, config)
+
+    assert "#SBATCH --exclusive" not in header
+
+
 def test_build_runscript_context_and_render_for_batch_executor(monkeypatch):
     config = _config()
     workflow = Workflow.default(config)
@@ -155,11 +255,64 @@ def test_command_lines_backgrounds_compute_and_appends_observe_call():
 
     lines = generation.command_lines(workflow, "compute", config, is_batch=True)
 
-    assert lines[0] == "time ./fesom 2>&1 &"
-    assert lines[1] == "process=$!"
-    assert lines[2].startswith("esm_runscripts my.yaml -e test")
-    assert "-t observe_compute" in lines[2]
-    assert "-p ${process}" in lines[2]
+    assert lines[0] == "cd /tmp/work"
+    # execution.started -- the only point that knows true wall-clock
+    # start (Python returns immediately after backgrounding).
+    assert '\\"event\\":\\"execution.started\\"' in lines[1]
+    assert '\\"multi_step_name\\":\\"compute\\"' in lines[1]
+    assert lines[2] == "time ./fesom 2>&1 &"
+    assert lines[3] == "process=$!"
+    # cd back to thisrun_scripts_dir before the observe re-entry -- it
+    # resolves scriptname relative to cwd, and the runscript yaml lives in
+    # scripts_dir, not work_dir (see the "cd into thisrun_work_dir" cd
+    # above, needed by the MPMD/taskset hostfile).
+    assert lines[4] == "cd /tmp/scripts"
+    assert lines[5].startswith("esm_runscripts my.yaml -e test")
+    assert "-t observe_compute" in lines[5]
+    assert "-p ${process}" in lines[5]
+
+
+def test_hostlist_gen_lines_empty_without_heterogeneous_taskset():
+    config = _config()
+    assert generation.hostlist_gen_lines(config) == []
+
+    config["computer"]["heterogeneous_parallelization"] = True
+    # taskset not set -> still empty (packjob/het-par-without-taskset path,
+    # not ported, see runscript/batch_system/__init__.py).
+    assert generation.hostlist_gen_lines(config) == []
+
+
+def test_hostlist_gen_lines_builds_hostlist_shell_snippet():
+    # All per-rank index math (current_core // cores_per_node) happens in
+    # Python at generation time -- the template only resolves the
+    # resulting indices to real hostnames at runtime (host assignment
+    # isn't known until the job is actually running).
+    config = _config()
+    config["general"]["thisrun_work_dir"] = "/tmp/work"
+    config["general"]["valid_model_names"] = ["oifs", "fesom", "oasis3mct"]
+    config["oifs"] = {"nproc": 12, "omp_num_threads": 2, "execution_command": "oifs_exe"}
+    config["fesom"] = {"nproc": 128, "omp_num_threads": 1, "executable": "fesom_exe"}
+    config["oasis3mct"] = {}
+    config["computer"]["heterogeneous_parallelization"] = True
+    config["computer"]["taskset"] = True
+    config["computer"]["partitions"]["compute"]["cores_per_node"] = 32
+
+    lines = generation.hostlist_gen_lines(config)
+
+    text = "\n".join(lines)
+    assert "export SLURM_HOSTFILE=/tmp/work/hostlist" in text
+    # No shell math at all -- just 140 (12 oifs + 128 fesom) literal
+    # "echo ${listnodes[N]} >> hostlist" lines.
+    echo_lines = [l for l in lines if l.startswith("echo ${listnodes[")]
+    assert len(echo_lines) == 140
+    # oifs' 12 ranks (24 cores, omp=2 each) all fit in node 0 (32 cores).
+    assert echo_lines[:12] == ["echo ${listnodes[0]} >> hostlist"] * 12
+    # fesom's first 8 ranks fill out the rest of node 0 (24+8=32 cores).
+    assert echo_lines[12:20] == ["echo ${listnodes[0]} >> hostlist"] * 8
+    # fesom's next 32 ranks (1 core each) fill node 1 entirely.
+    assert echo_lines[20:52] == ["echo ${listnodes[1]} >> hostlist"] * 32
+    # oasis3mct (no command) contributes no ranks at all.
+    assert "oasis3mct" not in text
 
 
 def test_write_runscript_writes_file_and_chmods_executable(tmp_path):

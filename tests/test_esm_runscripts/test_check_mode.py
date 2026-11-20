@@ -11,7 +11,12 @@ def test_is_check_mode_true_when_check_flag_set():
     assert is_check_mode({"general": {"check": True}}) is True
 
 
-def test_run_in_process_does_not_run_steps_in_check_mode(monkeypatch):
+def test_run_in_process_runs_steps_even_in_check_mode(monkeypatch):
+    # Matches legacy's resubmit.py: check_if_check only ever gates the next
+    # job's *submission* (submit()/kill_after_submit) -- never a step's own
+    # real work. An IN_PROCESS step builds the experiment tree/config that
+    # a later LOCAL/BATCH dispatch's own check-mode guard depends on
+    # actually existing, so it must always really run.
     from esm_runscripts.execution import steps as steps_module
     from esm_runscripts.execution.dispatch import run_in_process
     from esm_runscripts.pplan import plan as plan_module
@@ -34,7 +39,7 @@ def test_run_in_process_does_not_run_steps_in_check_mode(monkeypatch):
 
     run_in_process(workflow, "prepcompute", config)
 
-    assert calls == []
+    assert calls == ["prepcompute"]
 
 
 def test_launch_local_writes_script_but_does_not_run_it_in_check_mode(tmp_path, monkeypatch):

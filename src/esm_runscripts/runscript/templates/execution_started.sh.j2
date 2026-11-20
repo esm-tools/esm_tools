@@ -1,0 +1,1 @@
+echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",\"level\":\"INFO\",\"event\":\"{{ event }}\",\"expid\":\"{{ expid }}\",\"run_number\":{{ run_number }},\"current_date\":\"{{ current_date }}\",\"jobid\":\"{{ jobid }}\",\"multi_step_name\":\"{{ multi_step_name }}\",\"executor\":\"{{ executor }}\",\"duration_ms\":null,\"error\":null}" >> {{ jsonl_path }}

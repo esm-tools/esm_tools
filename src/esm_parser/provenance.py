@@ -49,6 +49,7 @@ from esm_tools import user_error
 CATEGORY_HIERARCHY = [
     None,
     "defaults",  # Lowest in the hierarchy
+    "esm_software",
     "other_software",
     "machines",
     "components",

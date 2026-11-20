@@ -33,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoes
 from pydantic import ConfigDict
 
 from .. import dataprocess
+from ..log_events import ExecutionEvent, jsonl_path as _jsonl_path
 from ..pplan.plan import Executor, LaunchMode, MultiStepKind, Workflow
 from .batch_system import by_name as batch_system_by_name
 
@@ -115,9 +116,16 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
     ``prepcompute``/``compute``/``tidy``/...), aggregates per-model
     ``nproc``/``nproca``*``nprocb``(+``nprocar``*``nprocbr``)/``nprocio``
     across ``general.valid_model_names``, matching legacy's
-    ``calculate_requirements``. For a :attr:`MultiStepKind.BASH` step,
-    reads the already-known ``MultiStepExecution.nproc`` directly instead
-    of re-deriving it from the legacy workflow dict.
+    ``calculate_requirements`` -- including that function's side effect:
+    assigning each model a contiguous ``start_proc``/``end_proc`` MPI-rank
+    range (and ``start_core``/``end_core``, ``tasks``, ``threads``) in
+    ``config[model]``, in ``valid_model_names`` order. Those ranges are
+    what an MPMD launch's hostfile (:func:`multiprog_hostfile_content`)
+    maps each model's binary onto -- without this, a coupled run's
+    hostfile would have no ranks to write. For a :attr:`MultiStepKind.BASH`
+    step, reads the already-known ``MultiStepExecution.nproc`` directly
+    instead of re-deriving it from the legacy workflow dict, and does not
+    touch any model's config (single-executable, no MPMD ranks to assign).
     """
     execution = _multi_step_execution(workflow, multi_step_name)
     parent_execution = workflow.execution_of(multi_step_name)
@@ -130,11 +138,18 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
 
     tasks = 0
     nodes = 0
+    start_proc = 0
+    start_core = 0
     for model in config["general"]["valid_model_names"]:
         model_conf = config[model]
         omp_num_threads = int(model_conf.get("omp_num_threads", 1))
 
         if "nproc" in model_conf:
+            # kh 21.04.22: multi-group support -- (nproc * mpi_num_groups)
+            # MPI processes to start a program multiple times (used for
+            # FESOM-REcoM tracer loop parallelization).
+            mpi_num_groups = model_conf.get("mpi_num_groups", 1)
+            model_conf["nproc"] *= mpi_num_groups
             model_tasks = model_conf["nproc"]
         elif "nproca" in model_conf and "nprocb" in model_conf:
             model_tasks = model_conf["nproca"] * model_conf["nprocb"]
@@ -145,13 +160,177 @@ def compute_requirements(workflow: Workflow, multi_step_name: str, config: dict)
             ):
                 model_tasks += model_conf["nprocar"] * model_conf["nprocbr"]
         else:
+            # A library component (e.g. oasis3mct) needs no cores of its
+            # own -- no start_proc/end_proc assigned, so it's skipped when
+            # building the MPMD hostfile too.
             continue
 
         model_tasks += model_conf.get("nprocio", 0)
+        model_conf["tasks"] = model_tasks
+        model_conf["threads"] = model_tasks * omp_num_threads
         tasks += model_tasks
         nodes += math.ceil(model_tasks * omp_num_threads / cores_per_node)
 
+        end_proc = start_proc + model_tasks - 1
+        end_core = start_core + model_conf["threads"] - 1
+        model_conf["start_proc"] = start_proc
+        model_conf["end_proc"] = end_proc
+        model_conf["start_core"] = start_core
+        model_conf["end_core"] = end_core
+        start_proc = end_proc + 1
+        start_core = end_core + 1
+
     return ResourceRequirements(tasks=tasks, nodes=nodes)
+
+
+def multiprog_hostfile_entries(config: dict) -> List[dict]:
+    """One entry per model :func:`compute_requirements` assigned a
+    ``start_proc``/``end_proc`` range to -- the data
+    ``hostfile_srun.j2`` renders into the MPMD hostfile content, for
+    whichever launcher (``srun``/``mpirun``) ``computer.launcher`` names.
+    A model with no range (a library component, e.g. ``oasis3mct``), or
+    no command to run, contributes no entry.
+
+    When ``computer.heterogeneous_parallelization`` is set, a model's
+    ``execution_command_het_par`` (set by
+    :func:`~esm_runscripts.runscript.batch_system.slurm.
+    SlurmBatchSystem.write_taskset_wrappers` -- the ``taskset``-wrapping
+    ``prog_<model>.sh``) takes priority over its own ``execution_command``/
+    ``executable``, matching legacy's ``Slurm.write_one_hostfile``
+    exactly: the hostfile launches the wrapper, not the model directly.
+    """
+    heterogeneous = config["computer"].get("heterogeneous_parallelization", False)
+    entries = []
+    for model in config["general"]["valid_model_names"]:
+        model_conf = config[model]
+        start_proc = model_conf.get("start_proc")
+        end_proc = model_conf.get("end_proc")
+        if start_proc is None or end_proc is None:
+            continue
+
+        if heterogeneous and model_conf.get("execution_command_het_par"):
+            command = f'./{model_conf["execution_command_het_par"]}'
+        elif "execution_command" in model_conf:
+            command = f'./{model_conf["execution_command"]}'
+        elif "executable" in model_conf:
+            command = f'./{model_conf["executable"]}'
+        else:
+            continue
+
+        entries.append(
+            {
+                "start": start_proc,
+                "end": end_proc,
+                "ncpus": end_proc - start_proc + 1,
+                "command": command,
+            }
+        )
+    return entries
+
+
+def multiprog_hostfile_content(config: dict) -> str:
+    """The MPMD hostfile content for ``compute``'s launcher
+    (``srun --multi-prog hostfile_srun`` or ``mpirun $(cat hostfile_srun)``
+    -- see ``configs/other_software/batch_system/slurm.yaml``), rendered
+    from :func:`multiprog_hostfile_entries` via ``hostfile_srun.j2``
+    (``srun``'s ``--multi-prog`` format is one ``"{start}-{end}
+    ./command"`` line per model; ``mpirun``'s is `` -np {n} ./command``
+    `` : ``-joined on one line) -- matching legacy's ``Slurm.
+    write_one_hostfile``'s two formats, built here via the template this
+    module's docstring says generation should use, not manual string
+    concatenation. Must run after :func:`compute_requirements` has
+    populated ``start_proc``/``end_proc`` on each model; empty if no
+    model got a range.
+    """
+    entries = multiprog_hostfile_entries(config)
+    if not entries:
+        return ""
+    launcher = config["computer"].get("launcher")
+    template = _ENV.get_template("hostfile_srun.j2")
+    return template.render(launcher=launcher, entries=entries)
+
+
+def taskset_wrapper_entries(config: dict) -> List[dict]:
+    """One entry per model the ``taskset`` mechanism wraps -- skips
+    ``oasis3mct`` (a library, matching legacy's ``write_het_par_wrappers``
+    exactly) and any model with no command to run."""
+    entries = []
+    for model in config["general"]["valid_model_names"]:
+        if model == "oasis3mct":
+            continue
+        model_conf = config[model]
+        if "execution_command" in model_conf:
+            command = f'./{model_conf["execution_command"]}'
+        elif "executable" in model_conf:
+            command = f'./{model_conf["executable"]}'
+        else:
+            continue
+        entries.append(
+            {
+                "model": model,
+                "omp_num_threads": model_conf.get("omp_num_threads", 1),
+                "command": command,
+            }
+        )
+    return entries
+
+
+def hostlist_gen_lines(config: dict) -> List[str]:
+    """The runtime shell lines that build ``hostlist`` (and export it as
+    ``SLURM_HOSTFILE``) for a ``taskset``-mode heterogeneous MPI+OMP job
+    -- one hostname line per MPI rank, spaced by each model's
+    ``omp_num_threads`` so co-located threads land on the same physical
+    node. The rank -> node-index assignment is pure arithmetic on data
+    already known at script-generation time (``mpi_tasks``/
+    ``omp_num_threads``/``cores_per_node``), so it's computed once, here,
+    in Python -- not recomputed by a shell loop every time the job runs.
+    Only resolving that index to an actual hostname stays in shell
+    (``hostlist_gen.sh.j2``): physical node assignment
+    (``$SLURM_JOB_NODELIST``) isn't known until the job is actually
+    running. Ported from legacy's ``Slurm.add_hostlist_file_gen_lines``
+    (same per-rank math, same resulting ``hostlist`` content). Empty (no
+    lines) unless ``computer.heterogeneous_parallelization`` and
+    ``computer.taskset`` are both set.
+    """
+    computer = config["computer"]
+    if not (computer.get("heterogeneous_parallelization", False) and computer.get("taskset", False)):
+        return []
+
+    entries = []
+    for model in config["general"]["valid_model_names"]:
+        model_conf = config[model]
+        if model == "oasis3mct" or not (
+            model_conf.get("execution_command") or model_conf.get("executable")
+        ):
+            continue
+        if "nproca" in model_conf:
+            mpi_tasks = model_conf["nproca"] * model_conf["nprocb"]
+        else:
+            mpi_tasks = model_conf["nproc"]
+        entries.append(
+            {
+                "model": model,
+                "mpi_tasks": mpi_tasks,
+                "omp_num_threads": model_conf.get("omp_num_threads", 1),
+            }
+        )
+    if not entries:
+        return []
+
+    cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
+    host_indices = []
+    current_core = 0
+    for entry in entries:
+        for _ in range(entry["mpi_tasks"]):
+            host_indices.append(current_core // cores_per_node)
+            current_core += entry["omp_num_threads"]
+
+    template = _ENV.get_template("hostlist_gen.sh.j2")
+    rendered = template.render(
+        thisrun_work_dir=config["general"]["thisrun_work_dir"],
+        host_indices=host_indices,
+    )
+    return rendered.splitlines()
 
 
 def shell_header_lines(config: dict) -> List[str]:
@@ -184,7 +363,7 @@ def batch_header_lines(
         "jobtype": multi_step_name,
     }
 
-    flags = ["partition_flag", "time_flag", batch_system.tasks_or_nodes_flag(), "output_flags", "name_flag"]
+    flags = ["partition_flag", "time_flag", batch_system.tasks_or_nodes_flag(config), "output_flags", "name_flag"]
     for conditional in ("accounting_flag", "notification_flag", "hyperthreading_flag", "additional_flags", "overcommit_flag"):
         if conditional not in computer:
             continue
@@ -195,6 +374,20 @@ def batch_header_lines(
 
     execution = _multi_step_execution(workflow, multi_step_name)
     if execution.kind == MultiStepKind.ESM_MULTISTEP and multi_step_name in ("prepcompute", "tidy"):
+        flags.append("exclusive_flag")
+    # taskset's core-pinning math (prog_<model>.sh, hostlist_gen_lines)
+    # computes each rank's CPU slot as rank % cores_per_node -- only valid
+    # with exclusive node ownership, or another job's processes could
+    # occupy the same core indices. Legacy's own equivalent check reads
+    # config["general"]["jobtype"], which happens to still be "prepcompute"
+    # (the job currently doing the writing) when compute's own header gets
+    # built, so legacy gets --exclusive for compute as a side effect, not
+    # a deliberate decision -- checking the real requirement here instead.
+    if (
+        multi_step_name == "compute"
+        and computer.get("heterogeneous_parallelization", False)
+        and computer.get("taskset", False)
+    ):
         flags.append("exclusive_flag")
 
     values: List[str] = []
@@ -260,6 +453,29 @@ def observe_call_line(config: dict, multi_step_name: str) -> str:
     )
 
 
+def execution_started_line(config: dict, multi_step_name: str, executor: Executor) -> str:
+    """One shell line emitting an :class:`~esm_runscripts.log_events.
+    ExecutionEvent.STARTED` JSON event, right before the real command
+    runs -- the only point that knows true wall-clock start, since
+    Python returns immediately after backgrounding (fire-and-forget) and
+    never itself observes the spawned process actually beginning.
+    ``FINISHED``/``FAILED`` are emitted later, from Python, by
+    :func:`~esm_runscripts.execution.observe.wait_and_observe`'s caller,
+    once it detects the watched PID actually exiting."""
+    general = config["general"]
+    template = _ENV.get_template("execution_started.sh.j2")
+    return template.render(
+        event=ExecutionEvent.STARTED,
+        expid=general.get("expid"),
+        run_number=general.get("run_number"),
+        current_date=general.get("current_date"),
+        jobid=general.get("jobid"),
+        multi_step_name=multi_step_name,
+        executor=executor.value,
+        jsonl_path=_jsonl_path(config),
+    ).rstrip("\n")
+
+
 def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_batch: bool) -> List[str]:
     execution = _multi_step_execution(workflow, multi_step_name)
     if execution.kind != MultiStepKind.ESM_MULTISTEP:
@@ -273,13 +489,41 @@ def command_lines(workflow: Workflow, multi_step_name: str, config: dict, is_bat
     if "execution_command" not in computer:
         return []
 
+    # cd into thisrun_work_dir -- matches legacy's write_simple_runscript,
+    # which does this for every multi_step unconditionally (batch or shell).
+    # The MPMD execution_command (srun --multi-prog hostfile_srun, see
+    # multiprog_hostfile_content) names the hostfile by bare relative
+    # filename, so the job has to actually be running from this directory
+    # for the launcher to find it.
+    lines = [f'cd {config["general"]["thisrun_work_dir"]}']
+    # taskset-mode heterogeneous MPI+OMP jobs need SLURM_HOSTFILE/hostlist
+    # built at runtime, from inside the allocation (scontrol show hostnames
+    # needs $SLURM_JOB_NODELIST, only set once the job's actually running)
+    # -- empty for anything else (see hostlist_gen_lines).
+    lines += hostlist_gen_lines(config)
+    executor = workflow.execution_of(multi_step_name).executor
+    lines.append(execution_started_line(config, multi_step_name, executor))
+
     write_log = computer.get("write_execution_log", "")
     command = f"time {computer['execution_command']} 2>&1{write_log}"
 
     if execution.launch_mode != LaunchMode.BACKGROUND:
-        return [command]
+        return lines + [command]
 
-    return [f"{command} &", "process=$!", observe_call_line(config, multi_step_name)]
+    # observe_call_line's "esm_runscripts {scriptname}" resolves scriptname
+    # relative to cwd -- the runscript yaml lives in thisrun_scripts_dir,
+    # not thisrun_work_dir (cd'd into above for the actual compute
+    # command). Without this, the observe re-entry fails immediately
+    # ("runscript not found"), silently dropping the rest of the cascade
+    # (tidy, next-cycle resubmission) -- matches legacy's own
+    # write_simple_runscript, which cd's back to scripts_dir right before
+    # its equivalent resubmission call.
+    return lines + [
+        f"{command} &",
+        "process=$!",
+        f'cd {config["general"]["thisrun_scripts_dir"]}',
+        observe_call_line(config, multi_step_name),
+    ]
 
 
 def build_runscript_context(workflow: Workflow, multi_step_name: str, config: dict) -> RunscriptContext:

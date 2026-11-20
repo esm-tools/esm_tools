@@ -23,8 +23,24 @@ from typing import List
 import esm_plugin_manager
 import esm_tools
 
-from .. import helpers
+from .. import filetype_groups, helpers
 from ..pplan.plan import Step
+
+# Legacy's own per-job-type ``run_job(config)`` (prepcompute.py/compute.py/
+# tidy.py) sets ``general.relevant_filetypes`` before ever calling
+# ``helpers.evaluate`` -- it's not a recipe step itself, just a bare
+# assignment the wrapper function does first. Native dispatch calls
+# straight into the recipe (no ``run_job`` wrapper -- see this module's
+# docstring for why), so without this, a step that reads
+# ``relevant_filetypes`` (``log_used_files``, in both prepcompute's and
+# tidy's own recipes) raises ``KeyError`` the first time it's reached.
+# Reads the same named groups ``run_job`` itself now imports from
+# ``filetype_groups`` -- one source for both call paths, not a second copy.
+_RELEVANT_FILETYPES_BY_JOB_TYPE = {
+    "prepcompute": filetype_groups.PREPCOMPUTE_COMPUTE,
+    "compute": filetype_groups.PREPCOMPUTE_COMPUTE,
+    "tidy": filetype_groups.TIDY,
+}
 
 
 def resolve_steps(config: dict, job_type: str) -> List[Step]:
@@ -44,6 +60,9 @@ def run_steps(config: dict, job_type: str) -> dict:
     steps = resolve_steps(config, job_type)
     if not steps:
         return config
+
+    if job_type in _RELEVANT_FILETYPES_BY_JOB_TYPE:
+        config["general"]["relevant_filetypes"] = list(_RELEVANT_FILETYPES_BY_JOB_TYPE[job_type])
 
     recipe = {"recipe": [step.name for step in steps], "job_type": job_type}
     plugins_bare = (

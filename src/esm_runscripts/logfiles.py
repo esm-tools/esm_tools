@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -56,6 +57,65 @@ def set_progress_level(config):
         # Only log PROGRESS level messages to the experiment log file
         filter=lambda record: record["level"].name == "PROGRESS",
     )
+
+
+def _write_jsonl_event(path, record):
+    """A plain function (not a loguru format string) as the sink itself --
+    gives full control over the emitted shape, a fixed small set of
+    fields (one JSON object per line, matching Google/OpenTelemetry/
+    ``tracing``-style structured logging), rather than loguru's own much
+    noisier ``serialize=True`` record dump."""
+    extra = record["extra"]
+    event = {
+        "ts": record["time"].strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "level": record["level"].name,
+        "event": extra.get("event"),
+        "expid": extra.get("expid"),
+        "run_number": extra.get("run_number"),
+        "current_date": extra.get("current_date"),
+        "jobid": extra.get("jobid"),
+        "multi_step_name": extra.get("multi_step_name"),
+        "executor": extra.get("executor"),
+        "duration_ms": extra.get("duration_ms"),
+        "error": extra.get("error"),
+    }
+    with open(path, "a") as jsonl_file:
+        jsonl_file.write(json.dumps(event) + "\n")
+
+
+def set_jsonl_event_sink(config):
+    """Add the structured, native-pplan-only JSONL event sink -- a
+    sibling file next to ``general.experiment_log_file``
+    (``<experiment_log_file>.jsonl``), one compact JSON object per
+    dispatch event (see :func:`esm_runscripts.execution.dispatch._cascade`/
+    :mod:`esm_runscripts.execution.launch`, the only emitters).
+
+    Deliberately additive, not a replacement: never touches
+    :func:`set_progress_level`/``logger.progress`` or
+    ``general.experiment_log_file`` itself -- the legacy ``--wf-engine
+    legacy`` path (and anything else that reads that file in its current
+    human-readable form) is untouched. Only called from the native pplan
+    dispatch entry points (``cli.py``'s pplan branch, the ``-t
+    observe_<step>`` re-entry path) -- never from legacy code -- so this
+    sink only ever exists for a pplan run.
+
+    Idempotent per *loguru sink*, not per call: calling this more than
+    once in the same process adds a second sink and double-writes.
+    Callers must call it exactly once per process (matches
+    :func:`set_progress_level`'s own, pre-existing assumption).
+    """
+    from .log_events import jsonl_path as _jsonl_path
+
+    path = _jsonl_path(config)
+    logger.add(
+        lambda message: _write_jsonl_event(path, message.record),
+        level="DEBUG",
+        # Only messages a dispatch call explicitly logger.bind(event=...)'d
+        # go to this sink -- everything else (including PROGRESS/legacy
+        # messages) is ignored here.
+        filter=lambda record: record["extra"].get("event") is not None,
+    )
+    return path
 
 
 def initialize_logging(command_line_config):

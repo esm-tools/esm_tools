@@ -1,0 +1,10 @@
+
+#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job
+rm -f ./hostlist
+export SLURM_HOSTFILE={{ thisrun_work_dir }}/hostlist
+IFS=$'\n'; set -f
+listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))
+unset IFS; set +f
+{% for index in host_indices -%}
+echo ${listnodes[{{ index }}]} >> hostlist
+{% endfor -%}

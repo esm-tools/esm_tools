@@ -253,6 +253,70 @@ def test_start_dispatches_the_entry_point(monkeypatch):
     }
 
 
+def test_advance_bumps_current_date_only_after_exit_point_not_before(monkeypatch, tmp_path):
+    """Regression for a real bug: cli._run_observe used to advance
+    current_date/run_number *before* dispatching anything, so "tidy" (meant
+    to clean up the cycle that just finished) ran against the next cycle's
+    not-yet-created directories. Now the advance happens inside the
+    cascade itself, right after "tidy" (workflow.exit_point) dispatches,
+    and before "prepcompute" (the next cycle) does."""
+    from esm_runscripts.execution import dispatch as dispatch_module
+    from esm_runscripts.execution import steps as steps_module
+    from esm_runscripts.pplan import plan as plan_module
+
+    seen_dates = {}
+    monkeypatch.setattr(
+        steps_module,
+        "run_steps",
+        lambda config, job_type: seen_dates.setdefault(
+            job_type, config["general"]["current_date"]
+        )
+        or config,
+    )
+    monkeypatch.setitem(
+        dispatch_module._DISPATCHERS,
+        plan_module.Executor.BATCH,
+        lambda workflow, multi_step_name, config: seen_dates.setdefault(
+            multi_step_name, config["general"]["current_date"]
+        )
+        or config,
+    )
+
+    class _FakeDate(int):
+        def format(self, **kwargs):
+            return str(int(self))
+
+        def output(self):
+            return str(int(self))
+
+        def __add__(self, other):
+            return _FakeDate(int(self) + int(other))
+
+    config = _default_config()
+    config["general"].update(
+        {
+            "current_date": _FakeDate(1),
+            "delta_date": 1,
+            "next_date": 2,
+            "final_date": 99,
+            "run_number": 1,
+            "expid": "test",
+            "setup_name": "fesom",
+            "experiment_scripts_dir": str(tmp_path),
+            "command_line_config": {},
+        }
+    )
+
+    workflow = plan_module.Workflow.default(config)
+    dispatch_module.advance(workflow, "compute", config)
+
+    assert seen_dates["tidy"] == 1
+    assert seen_dates["prepcompute"] == 2
+    assert seen_dates["compute"] == 2
+    assert config["general"]["current_date"] == 2
+    assert config["general"]["run_number"] == 2
+
+
 def test_start_raises_when_the_entry_points_executor_has_no_registered_strategy(monkeypatch):
     from esm_runscripts.execution import dispatch as dispatch_module
     from esm_runscripts.pplan import plan as plan_module

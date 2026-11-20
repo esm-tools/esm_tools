@@ -69,6 +69,9 @@ def test_run_observe_logs_an_execution_finished_event_on_success(monkeypatch):
         executor = Executor.BATCH
 
     class _StubWorkflow:
+        resubmit_triggers = {}
+        exit_point = "tidy"
+
         def execution_of(self, multi_step_name):
             return _StubExecution()
 

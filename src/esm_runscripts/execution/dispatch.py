@@ -104,6 +104,23 @@ def _cascade(workflow: "plan_module.Workflow", multi_step_name: str, config: dic
     results = {multi_step_name: result}
     if executor != plan_module.Executor.IN_PROCESS:
         return results
+
+    if multi_step_name == workflow.exit_point:
+        # The cycle that just tidied up is over -- current_date/run_number
+        # must advance before anything cascades into resubmit_triggers'
+        # target(s) (e.g. "prepcompute"), which prepares the *next* date's
+        # tree. Advancing any earlier would make exit_point itself (e.g.
+        # "tidy") run against a date whose directories were never created.
+        from . import cycle
+
+        cycle.advance_date(config)
+        cycle.advance_run_number(config)
+        cycle.sync_command_line_config(config)
+        cycle.write_date_file(config)
+        if cycle.is_experiment_over(config):
+            config["general"]["experiment_over"] = True
+            return results
+
     for next_name in workflow.resubmit_triggers.get(multi_step_name, []):
         results.update(_cascade(workflow, next_name, config, caller=caller))
     return results

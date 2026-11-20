@@ -207,6 +207,14 @@ class Workflow(ProvenanceFreeModel):
     model_config = ConfigDict(frozen=True)
 
     entry_point: str
+    exit_point: str = "tidy"
+    """The multi_step after which a cycle is actually *finished* --
+    legacy's ``next_iteration_trigger`` (default ``"tidy"``). Dispatch
+    advances ``current_date``/``run_number`` right after this step, before
+    cascading into its resubmit_triggers target(s): that target (e.g.
+    ``prepcompute``) has not been prepared yet for the new date, while
+    ``exit_point`` itself just finished tidying up the *old* one -- the
+    two must not share a single shared-mutation point in the config."""
     resubmit_triggers: Dict[str, List[str]] = {}
     plans: Dict[str, Plan]
     plan_execution: Dict[str, PlanExecution]
@@ -284,6 +292,7 @@ class Workflow(ProvenanceFreeModel):
         exit_point = gw_config["exit_point"]
         return cls(
             entry_point=gw_config["entry_point"],
+            exit_point=exit_point,
             resubmit_triggers={exit_point: [gw_config["entry_point"]]},
             plans=plans,
             plan_execution=plan_execution,
@@ -475,6 +484,7 @@ class Workflow(ProvenanceFreeModel):
 
         return cls(
             entry_point=wf.entry_point,
+            exit_point=wf.exit_point,
             resubmit_triggers=merged_triggers,
             plans={**wf.plans, **extra_plans},
             plan_execution={**wf.plan_execution, **extra_plan_execution},

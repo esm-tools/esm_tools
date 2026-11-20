@@ -233,9 +233,10 @@ def _build_config(command_line_config):
 
 def _run_observe(multi_step_name, workflow, config):
     """Watch the backgrounded PID this job's runscript captured
-    (``config["general"]["launcher_pid"]``), advance the run date/number
-    for the next cycle, and -- unless the experiment is now over --
-    dispatch whatever ``multi_step_name`` triggers next.
+    (``config["general"]["launcher_pid"]``), then dispatch whatever
+    ``multi_step_name`` triggers next (``dispatch.advance`` itself handles
+    advancing the run date/number, and stopping once the experiment is
+    over -- see ``dispatch._cascade``).
 
     Invoked via the ``-t observe_<multi_step_name>`` CLI re-entry a
     backgrounded command's runscript makes (see
@@ -247,7 +248,7 @@ def _run_observe(multi_step_name, workflow, config):
     """
     import time
 
-    from .execution import cycle, dispatch, observe
+    from .execution import dispatch, observe
     from .execution.errors import JobCrashedError
     from .log_events import ExecutionEvent, log_event
     from .runscript.generation import observe_log_path
@@ -273,13 +274,12 @@ def _run_observe(multi_step_name, workflow, config):
         duration_ms=int((time.monotonic() - started) * 1000),
     )
 
-    config = cycle.advance_date(config)
-    config = cycle.advance_run_number(config)
-    config = cycle.sync_command_line_config(config)
-    cycle.write_date_file(config)
-    if cycle.is_experiment_over(config):
-        config["general"]["experiment_over"] = True
-        return
+    # Advancing current_date/run_number is dispatch.py's job now (see
+    # dispatch._cascade: it happens right after workflow.exit_point --
+    # "tidy" -- finishes, before cascading into the next cycle's
+    # "prepcompute"). Doing it here, unconditionally before any dispatch,
+    # used to run "tidy" itself against the *next* date's not-yet-created
+    # directories instead of the one that just finished.
     dispatch.advance(workflow, multi_step_name, config)
 
 

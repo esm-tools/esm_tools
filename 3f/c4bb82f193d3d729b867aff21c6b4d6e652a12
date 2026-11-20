@@ -1,0 +1,44 @@
+src/esm_runscripts/runscript/generation.py
+  s_0f8b4206b53928::t_471df0cd0d78e6 36
+  s_0f8b4206b53928::t_755bb6f4d8cf7d 456-478
+  s_0f8b4206b53928::t_188bb4997af81d 504-505
+src/esm_runscripts/log_events.py
+  s_0f8b4206b53928::t_c407ef0f8319ac 1-89
+src/esm_runscripts/execution/dispatch.py
+  s_0f8b4206b53928::t_b1f580f720ea3c 89,94-95,102
+  s_0f8b4206b53928::t_a58e18e39a6c0b 13
+src/esm_runscripts/runscript/templates/execution_started.sh.j2
+  s_0f8b4206b53928::t_0da5debd06d980 1
+tests/test_esm_runscripts/test_generation.py
+  s_0f8b4206b53928::t_bc5d6c3017d87d 259-260,263-264,269-272
+  s_0f8b4206b53928::t_5069fef6f96177 261-262
+  s_0f8b4206b53928::t_57ac3f8d7896e5 19
+tests/test_esm_runscripts/test_log_events.py
+  s_0f8b4206b53928::t_7d324e11c7d47e 1-81
+src/esm_runscripts/logfiles.py
+  s_0f8b4206b53928::t_900456e838597b 107-109,111
+  s_0f8b4206b53928::t_f24e655129a193 118
+tests/test_esm_runscripts/test_cli.py
+  s_0f8b4206b53928::t_4598a29ea45d66 60
+  s_0f8b4206b53928::t_259be01a4d2069 41-59,61-82
+  s_0f8b4206b53928::t_3226da93bbd017 28-35,38
+src/esm_runscripts/cli.py
+  s_0f8b4206b53928::t_aea9dbd02a9311 248-249,252,257,260,263,265-267,271,273-274
+  s_0f8b4206b53928::t_92777fbd55198f 256,264,272
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3fc4bb82f193d3d729b867aff21c6b4d6e652a12",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

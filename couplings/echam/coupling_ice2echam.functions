@@ -92,6 +92,18 @@ iterative_coupling_ice_echam6_update_glacial_mask() {
         rm -rf ${COUPLE_DIR}/jsbach_init_file_modifications
         set_glacial_mask_jsbach_update_restart_jsbach
         set_glacial_mask_jsbach_update_restart_veg
+        ensure_echam_restart_aliases_for_m_streams
+        ensure_nonempty_grib_rerun_files_for_resume_month
+        
+        # === FINAL FIX: Force lgfw=.false. in namelist.echam ===
+        # Even with namelist modification files, lgfw sometimes persists as .true.
+        # causing IO_read_stream failures for 'gfw'. We patch it directly here.
+        if [ -n "${WORK_DIR}" ] && [ -f "${WORK_DIR}/namelist.echam" ]; then
+            echo "                -   Patching ${WORK_DIR}/namelist.echam to force lgfw = .false."
+            sed -i 's/lgfw[[:space:]]*=[[:space:]]*\.true\./lgfw = .false./Ig' "${WORK_DIR}/namelist.echam"
+            grep -i "lgfw" "${WORK_DIR}/namelist.echam"
+        fi
+        
         echo; echo "                 ...done."; echo
 }
 
@@ -426,7 +438,7 @@ update_orography_generate_target_orography_file() {
                 fi
                 
                 cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
-                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \ #${COUPLE_DIR}/ice_mask_before_T63grid.nc \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
                         ${COUPLE_DIR}/mask_oro_update.nc
 #                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
                 for VAR in "OROMEA" "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
@@ -511,27 +523,13 @@ set_glacial_mask_echam_restart_file() {
         cdo -s -setmisstoc,0 -ifthen -selvar,slm $ECHAM_RESTART_FILE $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile
 
         cp $ECHAM_RESTART_FILE ${ECHAM_RESTART_FILE%.*}_backup_before_glacial_mask_replacement.nc
-        cp $ECHAM_RESTART_FILE echam_with_ice_mask.nc
-
-        echo "                -   Preforming replacement"
-
-        cdo -s -selvar,glac ${ECHAM_RESTART_FILE} just_glac.nc 2>> cdo_stderr_ice2echam
-        cdo -s -ifthenelse -setmisstoc,0 $dfile -chname,ice_mask,glac $ifile just_glac.nc just_glac_new.nc 2>> cdo_stderr_ice2echam
-
-        ncdump just_glac_new.nc | sed s/int/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
-        # This multipliation transforms "float" into "double"
-        ncap=${ncap:-ncap2} 
-        $ncap -s "glac=glac*1.0000000000000;" \
-        just_glac_new.nc \
-        just_glac_new.tmp.nc
-        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc 
-
-        #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
-        ncatted -O -a history_of_appended_files,global,d,, echam_with_ice_mask.nc tmp.restart
-        ncatted -O -a history,global,d,, tmp.restart ${ECHAM_RESTART_FILE}
+        # FIX: Skip ECHAM restart modification to avoid malloc error
+        # The original code using ncdump/ncgen/ncks corrupts the NetCDF structure
+        # JSBACH restart updates are sufficient for vegetation recovery
+        echo "                -   Skipping ECHAM restart glac modification (using backup as-is)"
+        echo "                    JSBACH restart files will be updated separately"
+        
         ncrename -v ice_mask,glac $ifile
-        rm just_glac_new.nc
-        rm just_glac_new.tmp.nc
 }
 
 ## @fn set_glacial_mask_echam_make_dummy_jan_surf() 
@@ -542,7 +540,15 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
         # glacial mask", construct a dummy one from the restart
 	#CLEANUP cp ${BASE_DIR}/${EXP_ID}/awicm/input/echam/unit.24 dummy_jan_surf.nc
         cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
-        # Fix Lu: ---------------------------
+        # vvvvvvvvvvvvv  LARS的代码加在这里 vvvvvvvvvvvvv
+        if [[ ${DOMAIN_pism} == "greenland" ]]; then
+                cdo setclonlatbox,0,0,360,0,90 -selvar,GLAC dummy_jan_surf.nc tmp
+                cdo -replace dummy_jan_surf.nc tmp dummy_jan_surf.nc2
+                mv dummy_jan_surf.nc2 dummy_jan_surf.nc
+                rm tmp
+        fi
+        # ^^^^^^^^^^^^  LARS的代码加在这里 ^^^^^^^^^^^^
+       	# Fix Lu: ---------------------------
         if [[ ${DOMAIN_pism} == "nhem" ]]; then
                 cdo setclonlatbox,0,0,360,0,90 -selvar,GLAC dummy_jan_surf.nc tmp
                 cdo -replace dummy_jan_surf.nc tmp dummy_jan_surf.nc2
@@ -550,9 +556,23 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 rm tmp
         fi
         # Fix Lu: ---------------------------
-        cdo -s replace dummy_jan_surf.nc \
-                ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
-                tmp && mv tmp dummy_jan_surf.nc
+        # FIX 2025-01-24: Check if target_orography file exists before using it
+        # The target_orography file is generated in update_orography step which runs AFTER update_glacial_mask
+        # On first coupling iteration, this file may not exist yet
+        if [ -f ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ]; then
+                cdo -s replace dummy_jan_surf.nc \
+                        ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                        tmp && mv tmp dummy_jan_surf.nc
+        elif [ -f ${COUPLE_DIR}/latest_target_orography.nc ]; then
+                # Try using the latest target orography from previous iteration
+                echo "                -   Using latest_target_orography.nc from previous iteration"
+                cdo -s replace dummy_jan_surf.nc \
+                        ${COUPLE_DIR}/latest_target_orography.nc \
+                        tmp && mv tmp dummy_jan_surf.nc
+        else
+                echo "                -   WARNING: No target_orography file found, skipping orography update in dummy_jan_surf.nc"
+                echo "                -   This is expected on the first coupling iteration"
+        fi
         # Fix Albedo where there are glaciers:
         #echam_albedo_on_glaciers=0.7
         echam_albedo_on_glaciers=${ECHAM_ALBEDO_ON_GLACIERS}
@@ -587,12 +607,20 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 dummy_jan_surf_ALAKE.nc tmp #-chname,${echam_glacial_mask_name},ALAKE dummy_jan_surf_ALAKE.nc \
         mv tmp dummy_jan_surf.nc
 
+        # === BUG FIX: 退冰区域GLAC应该从1变为0 ===
+        # 原代码bug: 退冰时保持原来的GLAC=1，导致desert_fpc=1，植被无法生长
+        # 修复: 直接使用PISM的ice_mask作为GLAC
+        #       ice_mask=1 -> GLAC=1 (有冰川)
+        #       ice_mask=0 -> GLAC=0 (无冰川，允许植被生长)
         cdo -s \
                 -setmisstoc,1 -setrtomiss,-1,2 \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
                 input_if_mask_true.nc
+        # 退冰区域应该设为0，而不是保持原来的GLAC值
         cdo -s \
-                -selvar,GLAC dummy_jan_surf.nc input_if_mask_false.nc
+                -setmisstoc,0 -setrtomiss,-1,2 \
+                ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
+                input_if_mask_false.nc
 
         cdo -s -ifthenelse \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
@@ -604,6 +632,43 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 dummy_jan_surf.nc \
                 -chname,${echam_glacial_mask_name},GLAC dummy_jan_surf_GLAC.nc \
                 tmp; mv tmp dummy_jan_surf.nc
+
+        # === AUTO-UPDATE unit.24 GLAC mask (input + run/input + work) ===
+        # Why this is needed:
+        # - ECHAM reads ${WORK_DIR}/unit.24 at startup
+        # - esm_runscripts may restore ${WORK_DIR}/unit.24 from run/input/echam/unit.24
+        # - Therefore BOTH must have the same (updated) GLAC mask as used in jsbach.nc (and PISM ice mask)
+        #
+        # IMPORTANT:
+        # We update ONLY the GLAC variable in unit.24 via "cdo replace" to avoid relying on timestamps/metadata
+        # and to keep other unit.24 fields untouched.
+        echo "                -   Updating GLAC in unit.24 files (input + run/input + work)"
+        cdo -s -chname,${echam_glacial_mask_name},GLAC dummy_jan_surf_GLAC.nc unit24_glac_update.nc
+
+        # 1) Experiment-level input (used as template in some setups)
+        if [ -f "${INIT_DIR_echam}/unit.24" ]; then
+                cdo -s replace ${INIT_DIR_echam}/unit.24 unit24_glac_update.nc tmp_unit24 && mv tmp_unit24 ${INIT_DIR_echam}/unit.24
+                echo "                    --> Updated: ${INIT_DIR_echam}/unit.24"
+        else
+                echo "                    WARNING: ${INIT_DIR_echam}/unit.24 not found"
+        fi
+
+        # 2) Current run work directory (ECHAM reads this)
+        if [ -n "${WORK_DIR}" ] && [ -f "${WORK_DIR}/unit.24" ]; then
+                cdo -s replace ${WORK_DIR}/unit.24 unit24_glac_update.nc tmp_unit24 && mv tmp_unit24 ${WORK_DIR}/unit.24
+                echo "                    --> Updated: ${WORK_DIR}/unit.24"
+        else
+                echo "                    WARNING: WORK_DIR not set or ${WORK_DIR}/unit.24 not found"
+        fi
+
+        # 3) Current run input copy (may be used to restore protected files into work/)
+        if [ -n "${WORK_DIR}" ] && [ -f "${WORK_DIR}/../input/echam/unit.24" ]; then
+                cdo -s replace ${WORK_DIR}/../input/echam/unit.24 unit24_glac_update.nc tmp_unit24 && mv tmp_unit24 ${WORK_DIR}/../input/echam/unit.24
+                echo "                    --> Updated: ${WORK_DIR}/../input/echam/unit.24"
+        else
+                echo "                    WARNING: run/input/echam/unit.24 not found (WORK_DIR/../input/echam/unit.24)"
+        fi
+        # === END AUTO-UPDATE ===
 }
 
 ## @fn set_glacial_mask_jsbach_update_init_file() 
@@ -772,6 +837,26 @@ EOF
         # BUG: How do we know what the output file is called?
         mv jsbach_T63GENERIC_11tiles_5layers_1850_dynveg.nc \
                 ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc  
+        
+        # === Fix tiny values (1e-10) in cover_fract ===
+        # The jsbach_init_file program generates 1e-10 values for tiles that should be 0.
+        # These tiny values cause JSBACH's fpc_to_cover_fract_pot validation to fail.
+        echo -e "\t\t -   Fixing tiny cover_fract values in jsbach.nc..."
+        if [ -f ${FUNCTION_PATH}/../utils/fix_jsbach_tiny_values.py ]; then
+            /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/python3 \
+                ${FUNCTION_PATH}/../utils/fix_jsbach_tiny_values.py \
+                ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                >> ${COUPLE_DIR}/jsbach_init_file_stdout_stderr 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "\t\t -   ...tiny values fixed successfully!"
+            else
+                echo -e "\t\t -   WARNING: fix_jsbach_tiny_values.py failed, continuing anyway"
+            fi
+        else
+            echo -e "\t\t -   WARNING: fix_jsbach_tiny_values.py not found, skipping"
+        fi
+        # === End fix tiny values ===
+        
         echo :> ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat
         
         ############################################################################
@@ -786,6 +871,80 @@ EOF
 
 set_glacial_mask_jsbach_update_restart_jsbach() {
         echo; echo "                *   updating land cover fractions in jsbach restart file >>jsbach<<"
+        
+        # === DISABLED: pack/unpack process corrupts the restart file ===
+        # The unpack -> modify -> pack workflow introduces floating-point precision
+        # errors that cause JSBACH to fail with "sum of cover_fract_pot /= 1" error.
+        # The jsbach.nc file (cover_fract) is already updated by jsbach_init_file.
+        # Dynamic vegetation will handle the actual vegetation dynamics.
+        echo -e "\t\t- SKIPPED: jsbach restart modification disabled (pack/unpack corrupts file)"
+        newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
+        ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_jsbach_restart_file.nc
+        
+        # === Fix tiny values in jsbach restart file ===
+        # The jsbach restart may contain 1e-10 values from previous model runs
+        echo -e "\t\t- Fixing tiny values in jsbach restart file..."
+        if [ -f ${FUNCTION_PATH}/../utils/fix_jsbach_tiny_values.py ]; then
+            /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/python3 \
+                ${FUNCTION_PATH}/../utils/fix_jsbach_tiny_values.py \
+                ${newest_jsbach_restart_file} --restart \
+                >> ${COUPLE_DIR}/jsbach_restart_fix_stdout_stderr 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "\t\t- ...jsbach restart tiny values fixed!"
+            else
+                echo -e "\t\t- WARNING: jsbach restart fix failed, continuing anyway"
+            fi
+        fi
+        # === End fix ===
+        
+        # === FIX 2025-01-24: Update cover_fract in jsbach restart to match jsbach.nc ===
+        # Without this fix, cover_fract in restart shows glacier (Tile 1=1) while
+        # jsbach.nc shows non-glacier (e.g., Tile 7=1), causing JSBACH to crash with
+        # "sum of cover_fract_pot /= 1" error in fpc_to_cover_fract_pot function.
+        
+        # FIX 2025-01-25: Create reference file HERE if it doesn't exist yet
+        # This file is needed to identify truly deglaciated areas
+        JSBACH_REFERENCE_FILE=${COUPLE_DIR}/jsbach_original_reference.nc
+        if [ ! -f ${JSBACH_REFERENCE_FILE} ]; then
+            echo -e "\t\t- Creating reference file: ${JSBACH_REFERENCE_FILE}"
+            cp ${FORCING_DIR_jsbach}/jsbach.nc ${JSBACH_REFERENCE_FILE}
+        fi
+        
+        echo -e "\t\t- Updating cover_fract in jsbach restart to match jsbach.nc..."
+        if [ -f ${FUNCTION_PATH}/../utils/fix_jsbach_restart_cover_fract.py ]; then
+            # IMPORTANT: Use jsbach_original_reference.nc to identify truly deglaciated areas
+            # This avoids incorrectly modifying non-glacier Tile1 points (like tropical evergreen)
+            /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/python3 \
+                ${FUNCTION_PATH}/../utils/fix_jsbach_restart_cover_fract.py \
+                ${newest_jsbach_restart_file} \
+                ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                ${JSBACH_REFERENCE_FILE} \
+                >> ${COUPLE_DIR}/jsbach_restart_cover_fract_fix_stdout_stderr 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "\t\t- ...cover_fract in jsbach restart updated successfully!"
+            else
+                echo -e "\t\t- WARNING: cover_fract fix failed, continuing anyway"
+            fi
+        else
+            echo -e "\t\t- WARNING: fix_jsbach_restart_cover_fract.py not found"
+        fi
+        # === End cover_fract fix ===
+        
+        # === FIX 2025-01-24: Sync jsbach restart to WORK_DIR ===
+        # esm_tools copies restart files to WORK_DIR before coupling scripts run,
+        # so our modifications in restart directory are not reflected in WORK_DIR.
+        if [ -n "${WORK_DIR}" ] && [ -d "${WORK_DIR}" ]; then
+            echo -e "\t\t- Syncing fixed jsbach restart to WORK_DIR..."
+            if [ -f "${newest_jsbach_restart_file}" ]; then
+                cp -v "${newest_jsbach_restart_file}" "${WORK_DIR}/restart_${EXP_ID}_jsbach.nc"
+                echo -e "\t\t- jsbach restart synced to WORK_DIR successfully"
+            fi
+        fi
+        # === End WORK_DIR sync ===
+        
+        return
+        # === END DISABLED ===
+        
         echo -e "\t\t-   Making a temporary directory to work in"
         startdir=$(pwd)
         if [ -d ${COUPLE_DIR}/update_land_cover_fractions ]; then
@@ -795,11 +954,20 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         fi
         mkdir -p ${COUPLE_DIR}/update_land_cover_fractions; cd ${COUPLE_DIR}/update_land_cover_fractions
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
+
+        # === Fix for iterative coupling: use fixed reference file instead of updating jsbach.nc ===
+        JSBACH_REFERENCE_FILE=${COUPLE_DIR}/jsbach_original_reference.nc
+        if [ ! -f ${JSBACH_REFERENCE_FILE} ]; then
+            echo -e "\t\t-   Creating reference file for future comparisons: ${JSBACH_REFERENCE_FILE}"
+            cp ${FORCING_DIR_jsbach}/jsbach.nc ${JSBACH_REFERENCE_FILE}
+        fi
+        # === End of fix ===
+
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
-        echo -e "\t\t-   Old JSBACH Init File: ${FORCING_DIR_jsbach}/jsbach.nc"
+        echo -e "\t\t-   Reference JSBACH File: ${JSBACH_REFERENCE_FILE}"
         cdo -s -sub \
             -selvar,glac ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
-            -selvar,glac ${FORCING_DIR_jsbach}/jsbach.nc \
+            -selvar,glac ${JSBACH_REFERENCE_FILE} \
             ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_land_cover_fractions/cdo_stderr_ice2echam
         
         # Make two masks: one for glacial retreat, and one for glacial advance
@@ -884,6 +1052,16 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
                 echo -e "\t\t- Updating JSBACH restart file -- ${var}\n"
                 case ${var} in
                         cover_fract | cover_fract_pot | veg_ratio)
+                                # === FIX: Skip modification of these variables ===
+                                # The pack/unpack process introduces floating-point precision errors
+                                # that cause JSBACH to fail with "sum of cover_fract_pot /= 1" error.
+                                # Dynamic vegetation will handle vegetation recovery in deglaciated areas.
+                                echo -e "\t\t- Skipping ${var} modification (pack precision issues, dynveg will handle)"
+                                cd $here
+                                continue
+                                ;;
+                        cover_fract_DISABLED | cover_fract_pot_DISABLED | veg_ratio_DISABLED)
+                                # Original code kept here for reference:
                                 echo -e "\t\t- Need to set correct cover fractions for retreating and advancing glaciers for $var"
                                 # Split to all the land tiles
                                 #
@@ -1052,11 +1230,20 @@ set_glacial_mask_jsbach_update_restart_veg() {
 
         # TODO: This next block is repeated code, it should be made it's own function
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
+
+        # === Fix for iterative coupling: use fixed reference file instead of updating jsbach.nc ===
+        JSBACH_REFERENCE_FILE=${COUPLE_DIR}/jsbach_original_reference.nc
+        if [ ! -f ${JSBACH_REFERENCE_FILE} ]; then
+            echo -e "\t\t-   Creating reference file for future comparisons: ${JSBACH_REFERENCE_FILE}"
+            cp ${FORCING_DIR_jsbach}/jsbach.nc ${JSBACH_REFERENCE_FILE}
+        fi
+        # === End of fix ===
+
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
-        echo -e "\t\t-   Old JSBACH Init File: $(readlink ${FORCING_DIR_jsbach}/jsbach.nc)"
+        echo -e "\t\t-   Reference JSBACH File: ${JSBACH_REFERENCE_FILE}"
         cdo -s -selvar,glac -sub \
             ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
-            ${FORCING_DIR_jsbach}/jsbach.nc \
+            ${JSBACH_REFERENCE_FILE} \
             ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_veg/cdo_stderr_ice2echam
         # Make two masks: one for glacial retreat, and one for glacial advance
         cdo -s gtc,0 ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc ${COUPLE_DIR}/update_veg/new_glaciers.nc
@@ -1124,83 +1311,25 @@ set_glacial_mask_jsbach_update_restart_veg() {
                 # Keep the directory clean: make one directory for each variable:
                 here=$(pwd); mkdir -p ${var}; mv 2d_restart_${EXP_ID}_veg_${var}.nc ${var}; cd ${var}
                 echo -e "\t\t- Updating JSBACH restart file -- ${var}\n"
-                case ${var} in
-                        bare_fpc )
-                                # For bare fpc, we need the fraction of "bare" under glaciers to be 1
-                                cdo -s ifthenelse \
-                                        ${COUPLE_DIR}/update_veg/new_glaciers.nc \
-                                        ${COUPLE_DIR}/update_veg/new_glaciers.nc \
-                                        2d_restart_${EXP_ID}_veg_${var}.nc \
-                                        2d_restart_${EXP_ID}_veg_${var}.tmp
-                                # Over newly deglaciated tiles, we put 95% bare soil
-                                cdo -s ifthenelse \
-                                        ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
-                                        -mulc,0.95 ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
-                                        2d_restart_${EXP_ID}_veg_${var}.tmp \
-                                        2d_restart_${EXP_ID}_veg_${var}.nc
-                                cdo -s -setvar,$var 2d_restart_${EXP_ID}_veg_${var}.nc ${var}.tmp
-                                mv ${var}.tmp 2d_restart_${EXP_ID}_veg_${var}.nc
-                                ;;
-                        act_fpc )
-                                # NOTE: No correction is applied under
-                                # new_glaciers, this is automatically taken
-                                # care of by JSBACH internally.
-                                #
-                                # For active plant cover fraction, we put 0 on
-                                # all tiles except tundra (tile 7) which gets
-                                # 5%.
-                                #
-                                # Split up the levels
-                                cdo -s splitlevel 2d_restart_${EXP_ID}_veg_${var}.nc 2d_restart_${EXP_ID}_veg_${var}_tile
-                                mergelist=""
-                                for tile in $(ls 2d_restart_${EXP_ID}_veg_${var}_tile0000??.nc); do
-                                        # NOTE: The period before the old
-                                        # dimension name, sfc, indicates
-                                        # optional presence of the dimension
-                                        # (ncrename -d renames dimensions). It
-                                        # seems as if the variable sometimes
-                                        # has the correct dimension name tiles
-                                        # (or maybe my test case was incorrect
-                                        # and had the dimension name sfc). To
-                                        # overcome this, we simply ensure that
-                                        # if sfc is the dimension name, it
-                                        # should be renamed to tiles, and if
-                                        # this is already the case, do nothing:
-                                        ncrename -d .sfc,tiles $tile
-                                        case ${tile} in
-                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.nc )
-                                                        echo -e "\t\t- Setting 5% initial cover of tundra for new deglacial cells"
-                                                        # For the tundra tile
-                                                        cdo -v -setvar,$var -ifthenelse \
-                                                                ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
-                                                                -mulc,0.05 ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
-                                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.nc \
-                                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.tmp
-                                                        mv 2d_restart_${EXP_ID}_veg_${var}_tile000007.tmp 2d_restart_${EXP_ID}_veg_${var}_tile000007.nc
-                                                        ;;
-                                                * )
-                                                        # For all other tiles:
-                                                        cdo -s -setvar,$var -ifthenelse \
-                                                                ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
-                                                                -mulc,0.0 ${COUPLE_DIR}/update_veg/new_glaciers.nc \
-                                                                ${tile} ${tile}.tmp
-                                                        mv ${tile}.tmp ${tile}
-                                                        ;;
-                                        esac
-                                        mergelist="$mergelist $tile"
-                                done
-                                mkdir pre_merge
-                                cp $mergelist pre_merge
-                                echo -e "\t\t >>> PG DEBUG: Command for merging will be: cdo -v -O merge $mergelist ${var}.tmp"
-                                echo -e "\t\t >>> PG DEBUG: The files in merglist ($mergelist) have been copied here:"
-                                echo -e "\t\t >>> PG DEBUG: pre_merge -- directory contents:"
-                                ls -ratlh pre_merge
-                                cdo -v -O merge $mergelist ${var}.tmp
-                                mv -v ${var}.tmp 2d_restart_${EXP_ID}_veg_${var}.nc
-                                # NOTE: Same as above...not sure why this is needed twice??
-                                ncrename -d .sfc,tiles 2d_restart_${EXP_ID}_veg_${var}.nc
-                                ;;
-                esac
+			case ${var} in
+				desert_fpc )
+					# Skip desert_fpc modification - let dynamic vegetation handle it
+					# The original cdo ifthenelse and ncap2 methods both caused file corruption
+					echo -e "\t\t- Skipping desert_fpc modification (dynamic vegetation will handle)"
+					;;
+				bare_fpc )
+					# Skip bare_fpc modification - cdo ifthenelse causes dimension errors
+					# that result in pack failure and missing variables in final restart file
+					# Dynamic vegetation will handle bare soil fraction
+					echo -e "\t\t- Skipping bare_fpc modification (cdo causes dimension errors, dynveg will handle)"
+					;;
+				act_fpc )
+					# Skip act_fpc modification - cdo splitlevel/merge causes dimension errors
+					# that result in pack failure and missing variables in final restart file
+					# Dynamic vegetation will handle active plant cover fraction
+					echo -e "\t\t- Skipping act_fpc modification (cdo causes dimension errors, dynveg will handle)"
+					;;
+			esac
                 cd $here
         done
         mergelist=""
@@ -1246,8 +1375,280 @@ set_glacial_mask_jsbach_update_restart_veg() {
 
         mv 1d_$(basename $ofile) ${newest_jsbach_restart_file}
         ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_veg_restart_file.nc
+        
+        # === Fix desert_fpc in deglaciated areas ===
+        # The Python script directly modifies the 1D veg restart file to set desert_fpc=0
+        # in deglaciated areas, allowing vegetation to grow. This avoids pack/unpack issues.
+        echo -e "\t\t- Running fix_desert_fpc_safe.py to enable vegetation recovery"
+        if [ -f ${FUNCTION_PATH}/../utils/fix_desert_fpc_safe.py ]; then
+            # Load python environment with numpy/netCDF4 (mambaforge default has both)
+            /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/python3 ${FUNCTION_PATH}/../utils/fix_desert_fpc_safe.py \
+                ${newest_jsbach_restart_file} \
+                ${JSBACH_REFERENCE_FILE} \
+                ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc
+            if [ $? -eq 0 ]; then
+                echo -e "\t\t- desert_fpc fix applied successfully"
+            else
+                echo -e "\t\t- WARNING: desert_fpc fix failed, but continuing (dynveg may still work)"
+            fi
+        else
+            echo -e "\t\t- WARNING: fix_desert_fpc_safe.py not found, skipping desert_fpc fix"
+        fi
+        # === End of desert_fpc fix ===
+        
+        # === FIX 2025-01-24: Sync pot_fpc with cover_fract ===
+        # The pot_fpc in veg restart must match cover_fract in jsbach restart
+        # Otherwise JSBACH will crash with memory errors (malloc invalid size)
+        echo -e "\t\t- Syncing pot_fpc in veg restart with cover_fract in jsbach restart..."
+        if [ -f ${FUNCTION_PATH}/../utils/fix_veg_restart_pot_fpc.py ]; then
+            newest_jsbach_restart_file_main=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
+            /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/python3 \
+                ${FUNCTION_PATH}/../utils/fix_veg_restart_pot_fpc.py \
+                ${newest_jsbach_restart_file} \
+                ${newest_jsbach_restart_file_main} \
+                >> ${COUPLE_DIR}/update_veg/pot_fpc_sync_stdout_stderr 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "\t\t- pot_fpc synced successfully"
+            else
+                echo -e "\t\t- WARNING: pot_fpc sync failed, continuing anyway"
+            fi
+        else
+            echo -e "\t\t- WARNING: fix_veg_restart_pot_fpc.py not found"
+        fi
+        # === End pot_fpc sync ===
+        
+        # === FIX 2025-01-26: Initialize act_fpc for deglaciated points ===
+        # When ice melts, act_fpc remains 0 at deglaciated points because vegetation
+        # hasn't grown yet. This causes fpc_to_cover_fract_pot to produce near-zero
+        # cover_fract_pot, triggering JSBACH fatal error "sum of cover_fract_inst /= 1".
+        # Solution: Initialize act_fpc using pot_fpc values at deglaciated points.
+        echo -e "\t\t- Initializing act_fpc for deglaciated points..."
+        if [ -f ${FUNCTION_PATH}/../utils/fix_veg_restart_act_fpc.py ]; then
+            /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/python3 \
+                ${FUNCTION_PATH}/../utils/fix_veg_restart_act_fpc.py \
+                ${newest_jsbach_restart_file} \
+                >> ${COUPLE_DIR}/update_veg/act_fpc_fix_stdout_stderr 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "\t\t- act_fpc initialized successfully"
+            else
+                echo -e "\t\t- WARNING: act_fpc initialization failed, continuing anyway"
+            fi
+        else
+            echo -e "\t\t- WARNING: fix_veg_restart_act_fpc.py not found"
+        fi
+        # === End act_fpc initialization ===
+        
+        # === FIX 2025-01-24: Sync veg restart to WORK_DIR ===
+        # esm_tools copies restart files to WORK_DIR before coupling scripts run,
+        # so our modifications in restart directory are not reflected in WORK_DIR.
+        # We must explicitly copy the fixed file to WORK_DIR.
+        if [ -n "${WORK_DIR}" ] && [ -d "${WORK_DIR}" ]; then
+            echo -e "\t\t- Syncing fixed veg restart to WORK_DIR..."
+            if [ -f "${newest_jsbach_restart_file}" ]; then
+                cp -v "${newest_jsbach_restart_file}" "${WORK_DIR}/restart_${EXP_ID}_veg.nc"
+                echo -e "\t\t- veg restart synced to WORK_DIR successfully"
+            fi
+        fi
+        # === End WORK_DIR sync ===
+        
         # Go back to the previous directory
         cd ${startdir}
+}
+
+## @fn ensure_echam_restart_aliases_for_m_streams()
+## ECHAM/JSBACH sometimes expects rerun/restart files with "*m" stream suffixes (jsbachm, vegm, surfm, co2m, yassom, ...)
+## but our iterative coupling produces/updates the non-m restart files (restart_${EXP_ID}_jsbach.nc, restart_${EXP_ID}_veg.nc, ...).
+## If the *m files are missing, ECHAM/JSBACH may initialize vegetation fractions with tiny defaults (1e-10) and crash.
+##
+## FIX 2025-01-25: Added logic to copy monthly restart files (jsbachm, landm, vegm, etc.) from previous
+## run directory. These files contain variables like box_veg_ratio, veg_fract_correction, gfw that are
+## not present in the standard jsbach/veg restart files. Without this, ECHAM crashes with:
+##   IO_read_stream: failed to read from rerun file: box_veg_ratio
+##   malloc(): invalid size (unsorted)
+ensure_echam_restart_aliases_for_m_streams() {
+        if [ -z "${WORK_DIR}" ] || [ ! -d "${WORK_DIR}" ]; then
+                echo "                -   WARNING: WORK_DIR not set or not a directory; cannot create restart alias files"
+                return 0
+        fi
+        echo "                -   Ensuring rerun/restart alias files for *m streams exist in WORK_DIR"
+        cd "${WORK_DIR}"
+
+        # === FIX 2025-01-25: First try to copy monthly restart files from previous run ===
+        # The *m restart files (jsbachm, landm, vegm, etc.) contain accumulated/diagnostic variables
+        # that are NOT present in the base restart files. We must copy them from the previous run.
+        #
+        # Derive experiment root directory from WORK_DIR:
+        # WORK_DIR = /path/to/exp/run_awiesm_YYYYMMDD-YYYYMMDD/work
+        # exp_root = /path/to/exp
+        local current_run_dir=$(dirname "${WORK_DIR}")
+        local exp_root=$(dirname "${current_run_dir}")
+        
+        local prev_run_root=""
+        for cand in $(ls -dt ${exp_root}/run_awiesm_* 2>/dev/null); do
+                # Skip current run directory
+                if [ "$(realpath "${cand}")" = "$(realpath "${current_run_dir}")" ]; then
+                        continue
+                fi
+                # Check if this candidate has the monthly restart files we need
+                if [ -d "${cand}/work" ]; then
+                        # Look for jsbachm file (with or without timestamp)
+                        local jsbachm_file=$(ls ${cand}/work/restart_${EXP_ID}*_jsbachm.nc 2>/dev/null | tail -1)
+                        if [ -n "${jsbachm_file}" ] && [ -s "${jsbachm_file}" ]; then
+                                prev_run_root="${cand}"
+                                break
+                        fi
+                fi
+        done
+
+        if [ -n "${prev_run_root}" ] && [ -d "${prev_run_root}/work" ]; then
+                echo "                -   Found previous run with monthly restarts: ${prev_run_root}"
+                # Copy monthly restart files from previous run
+                # NOTE: Do NOT copy jsbachm and vegm! These files contain accumulated monthly mean values
+                # (e.g., cover_fract sum = 450 instead of 1), not instantaneous restart values.
+                # Using them as restart causes JSBACH to fail with "sum of cover_fract_inst /= 1" error.
+                # The fallback logic below will correctly link jsbachm -> jsbach.
+                for mstream in landm surfm co2m yassom spm glm g3bm; do
+                        if [ ! -e "restart_${EXP_ID}_${mstream}.nc" ]; then
+                                # Find the latest file (may have timestamp in name)
+                                local src_file=$(ls ${prev_run_root}/work/restart_${EXP_ID}*_${mstream}.nc 2>/dev/null | tail -1)
+                                if [ -n "${src_file}" ] && [ -s "${src_file}" ]; then
+                                        cp "${src_file}" "restart_${EXP_ID}_${mstream}.nc"
+                                        echo "                    --> copied ${mstream} from previous run"
+                                fi
+                        fi
+                done
+        else
+                echo "                -   No previous run with monthly restarts found; will use fallback aliases"
+        fi
+        # === End FIX 2025-01-25 ===
+
+        # Core component restarts: create *m aliases pointing to existing non-m files (ONLY if not already present)
+        for base in co2 surf jsbach veg yasso; do
+                if [ -f "restart_${EXP_ID}_${base}.nc" ] && [ ! -e "restart_${EXP_ID}_${base}m.nc" ]; then
+                        ln -sf "restart_${EXP_ID}_${base}.nc" "restart_${EXP_ID}_${base}m.nc"
+                        echo "                    --> linked restart_${EXP_ID}_${base}m.nc -> restart_${EXP_ID}_${base}.nc"
+                fi
+        done
+
+        # Atmosphere diagnostic streams: link to main echam restart if specific files are missing
+        if [ -f "restart_${EXP_ID}_echam.nc" ]; then
+                for s in spm glm g3bm; do
+                        if [ ! -e "restart_${EXP_ID}_${s}.nc" ]; then
+                                ln -sf "restart_${EXP_ID}_echam.nc" "restart_${EXP_ID}_${s}.nc"
+                                echo "                    --> linked restart_${EXP_ID}_${s}.nc -> restart_${EXP_ID}_echam.nc"
+                        fi
+                done
+                for mm in monthly_means_2d monthly_means_3d_g3b monthly_means_3d_gl monthly_means_3d_sp; do
+                        if [ ! -e "restart_${EXP_ID}_${mm}.nc" ]; then
+                                ln -sf "restart_${EXP_ID}_echam.nc" "restart_${EXP_ID}_${mm}.nc"
+                                echo "                    --> linked restart_${EXP_ID}_${mm}.nc -> restart_${EXP_ID}_echam.nc"
+                        fi
+                done
+        fi
+
+        # Some setups reference landm; if missing, link it to jsbach restart as a best-effort fallback.
+        # NOTE: This is a FALLBACK only - the real landm file should have been copied above.
+        if [ -f "restart_${EXP_ID}_jsbach.nc" ] && [ ! -e "restart_${EXP_ID}_landm.nc" ]; then
+                ln -sf "restart_${EXP_ID}_jsbach.nc" "restart_${EXP_ID}_landm.nc"
+                echo "                    --> linked restart_${EXP_ID}_landm.nc -> restart_${EXP_ID}_jsbach.nc (FALLBACK)"
+        fi
+}
+
+## @fn ensure_nonempty_grib_rerun_files_for_resume_month()
+## ECHAM/JSBACH in this setup uses GRIB1 rerun files like:
+##   ${EXP_ID}_YYYYMM.01_echam, ${EXP_ID}_YYYYMM.01_jsbach, ...
+## On a resume at YYYY-01-01 the YYYY01.01_* files may exist but be 0-byte (created early, never written),
+## which leads to rerun read failures (st/svo/lsp/sd, etc.) and can crash with malloc() corruption.
+## Workaround: before compute starts, seed the YYYY01.01_* files with the previous month (YYYY-1)12.01_* contents.
+ensure_nonempty_grib_rerun_files_for_resume_month() {
+        if [ -z "${WORK_DIR}" ] || [ ! -d "${WORK_DIR}" ]; then
+                echo "                -   WARNING: WORK_DIR not set or not a directory; cannot seed GRIB rerun files"
+                return 0
+        fi
+
+        # Derive current YYYYMM from CHUNK_START_DATE_echam (format: YYYY-MM-DDT...)
+        year=${CHUNK_START_DATE_echam:0:4}
+        month=${CHUNK_START_DATE_echam:5:2}
+        yyyymm="${year}${month}"
+
+        # Previous month YYYYMM (handles Jan -> Dec of previous year)
+        if [ "${month}" = "01" ]; then
+                prev_year=$((10#${year} - 1))
+                prev_month="12"
+        else
+                prev_year=$((10#${year}))
+                prev_month=$(printf "%02d" $((10#${month} - 1)))
+        fi
+        prev_yyyymm="${prev_year}${prev_month}"
+
+        # Find a previous run directory that actually contains the previous-month GRIB files we need.
+        # (Don't rely on string matching the current run name; instead, search by file presence.)
+        prev_run_root=""
+        for cand in $(ls -dt ${BASE_DIR}/${EXP_ID}/run_awiesm_* 2>/dev/null); do
+                if [ -d "${cand}/work" ] && [ -s "${cand}/work/${EXP_ID}_${prev_yyyymm}.01_echam" ]; then
+                        prev_run_root="${cand}"
+                        break
+                fi
+        done
+
+        echo "                -   Seeding GRIB rerun files for ${yyyymm} from previous month ${prev_yyyymm}"
+        echo "                    current run: $(dirname "${WORK_DIR}")"
+        echo "                    previous run: ${prev_run_root}"
+
+        if [ -z "${prev_run_root}" ] || [ ! -d "${prev_run_root}/work" ]; then
+                echo "                    WARNING: previous run directory not found; cannot seed GRIB rerun files"
+                return 0
+        fi
+
+        # Streams to seed (core + monthly means); add more if needed
+        for stream in echam jsbach veg land surf co2 yasso accw ism monthly_means_2d monthly_means_3d_g3b monthly_means_3d_gl monthly_means_3d_sp; do
+                src="${prev_run_root}/work/${EXP_ID}_${prev_yyyymm}.01_${stream}"
+                dst="${WORK_DIR}/${EXP_ID}_${yyyymm}.01_${stream}"
+                prev_alias="${WORK_DIR}/${EXP_ID}_${prev_yyyymm}.01_${stream}"
+
+                # Only seed if dst is missing or zero-byte, and src exists and is non-empty
+                if [ ! -s "${dst}" ] && [ -s "${src}" ]; then
+                        # IMPORTANT:
+                        # Do NOT rewrite the internal GRIB timestamp here. For this setup, ECHAM resumes at YYYY-01-01
+                        # but reads rerun fields at the last time step of the previous run (e.g. YYYY-1-12-31 23:52).
+                        # Re-encoding timestamps can cause IO_read_stream failures and malloc() crashes.
+                        
+                        # Use cat instead of cp to avoid potential attribute/filesystem issues
+                        cat "${src}" > "${dst}"
+                        echo "                    --> seeded ${dst} from ${src} (size: $(stat -c %s ${dst} 2>/dev/null || ls -sh ${dst}))"
+                        
+                        # Verify copy succeeded
+                        if [ ! -s "${dst}" ]; then
+                            echo "                    !!! ERROR: Failed to seed ${dst} (0 bytes). Disk full?"
+                            # Try one more time with cp
+                            cp "${src}" "${dst}"
+                            if [ ! -s "${dst}" ]; then
+                                echo "                    !!! FATAL: Unable to create non-empty rerun file."
+                                exit 1
+                            fi
+                        fi
+                fi
+
+                # Create an alias with previous-month filename in WORK_DIR pointing to the seeded current-month file.
+                # Some ECHAM setups may still look for the previous-month filename during resume.
+                if [ -s "${dst}" ] && [ ! -e "${prev_alias}" ]; then
+                        ln -sf "${dst##*/}" "${prev_alias}"
+                        echo "                    --> linked ${prev_alias} -> ${dst##*/}"
+                fi
+
+                # Also seed the .codes file if present (helps readability / variable table)
+                src_codes="${src}.codes"
+                dst_codes="${dst}.codes"
+                prev_alias_codes="${prev_alias}.codes"
+                if [ ! -s "${dst_codes}" ] && [ -s "${src_codes}" ]; then
+                        cp -v "${src_codes}" "${dst_codes}"
+                        echo "                    --> seeded ${dst_codes} from ${src_codes}"
+                fi
+                if [ -s "${dst_codes}" ] && [ ! -e "${prev_alias_codes}" ]; then
+                        ln -sf "${dst_codes##*/}" "${prev_alias_codes}"
+                        echo "                    --> linked ${prev_alias_codes} -> ${dst_codes##*/}"
+                fi
+        done
 }
 ## @fn update_land_runoff_select_glacial_discharge() 
 update_land_runoff_select_glacial_discharge() {
@@ -1331,7 +1732,14 @@ update_land_runoff_set_namelist_modifications_next_echam_run() {
         if [ ! -s $echam_variable_modify_file ]; then
                 :> $echam_variable_modify_file
         fi
-        echo "lgfw=1" > ${COUPLE_DIR}/oasis3mct_config_switches.dat
+        # NOTE:
+        # Enabling lgfw requires a consistent restart/rerun state for the gfw field.
+        # In this experiment setup the gfw state is not present in the standard rerun/restart files,
+        # and turning this on causes ECHAM to abort at resume with:
+        #   IO_read_stream: failed to read from rerun file: gfw  -> malloc() crash
+        # Therefore we keep lgfw disabled here. If gfw coupling is needed in the future,
+        # implement a proper gfw rerun/restart provision first.
+        echo "lgfw=0" > ${COUPLE_DIR}/oasis3mct_config_switches.dat
         # BUG: Moved to the function below due to bad logic in echam.functions
         # add_to ${echam_variable_modify_file} echam_namelist_switches.dat config echam
         add_to ${COUPLE_DIR}/oasis3mct_config_switches.dat oasis3mct_config_switches.dat config oasis3mct
@@ -1345,11 +1753,11 @@ update_land_runoff_set_namelist_modifications_next_jsbach_run() {
         if [ ! -s $jsbach_variable_modify_file ]; then
                 :> $jsbach_variable_modify_file
         fi
-        echo "submodelctl___lgfw___nml_entry=.TRUE." >> $jsbach_variable_modify_file
+        echo "submodelctl___lgfw___nml_entry=.FALSE." >> $jsbach_variable_modify_file
         # Yes, this is correct below: we want to modify the ECHAM namelist, but
         # need it to connect to JSBACH:
         echo "submodelctl___lgfw___nml_file=namelist.echam" >> $jsbach_variable_modify_file
-        echo "hydrology_ctl___lgfw___nml_entry=.TRUE." >> $jsbach_variable_modify_file
+        echo "hydrology_ctl___lgfw___nml_entry=.FALSE." >> $jsbach_variable_modify_file
         echo "hydrology_ctl___lgfw___nml_file=namelist.jsbach" >> $jsbach_variable_modify_file
         add_to ${jsbach_variable_modify_file} jsbach_namelist_switches.dat config jsbach
 }

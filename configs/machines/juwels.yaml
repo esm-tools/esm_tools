@@ -22,7 +22,7 @@ computer:
     hyperthreading_flag: ""
 
     use_hyperthreading: False
-    taskset: False
+    hetjob_strategy: taskset
     choose_use_hyperthreading:
             "1":
                     hyperthreading_flag: ""

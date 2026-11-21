@@ -36,10 +36,11 @@ computer:
     pool_dir: "${computer.pool_directories.pool}"
 
     hyper_flag: "" # No hyperthreading on albedo is supported in esm-tools (yet)!
+    hetjob_strategy: taskset
     choose_heterogeneous_parallelization:
         True:
-            choose_taskset:
-                False:
+            choose_hetjob_strategy:
+                taskset:
                     add_export_vars:
                         I_MPI_SLURM_EXT: 0
                 "*":

@@ -18,7 +18,7 @@ computer:
     # I think we can use mpirun, for example:
     # mpirun OMP_NUM_THREADS=4 -np 168 ./oifs -e ECE3 : -np 432 ./oceanx
     # but it needs to be tested
-    taskset: true
+    hetjob_strategy: taskset
     choose_use_hyperthreading:
             "1":
                     hyperthreading_flag: ""

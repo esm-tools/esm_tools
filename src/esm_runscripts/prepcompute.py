@@ -7,6 +7,7 @@ from loguru import logger
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
+from .filetype_groups import PREPCOMPUTE_COMPUTE as _RELEVANT_FILETYPES
 from .helpers import evaluate
 from .namelists import Namelist
 
@@ -16,13 +17,7 @@ from .namelists import Namelist
 
 
 def run_job(config):
-    config["general"]["relevant_filetypes"] = [
-        "bin",
-        "config",
-        "forcing",
-        "input",
-        "restart_in",
-    ]
+    config["general"]["relevant_filetypes"] = list(_RELEVANT_FILETYPES)
     config = evaluate(config, "prepcompute", "prepcompute_recipe")
     return config
 

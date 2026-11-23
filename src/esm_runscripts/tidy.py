@@ -10,22 +10,11 @@ from loguru import logger
 
 from . import coupler, database_actions, helpers, logfiles
 from .filelists import copy_files, resolve_symlinks
+from .filetype_groups import TIDY as _RELEVANT_FILETYPES
 
 
 def run_job(config):
-    config["general"]["relevant_filetypes"] = [
-        "log",
-        "mon",
-        "outdata",
-        "restart_out",
-        # "bin",
-        # "config",
-        # "forcing",
-        # "input",
-        # "restart_in",
-        "ignore",
-        "unknown",
-    ]
+    config["general"]["relevant_filetypes"] = list(_RELEVANT_FILETYPES)
     helpers.evaluate(config, "tidy", "tidy_recipe")
     return config
 

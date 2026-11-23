@@ -148,7 +148,7 @@ def test_pplan_branch_runs_full_crash_path_without_raising(tmp_path, monkeypatch
     # this assertion only passes if the tail steps ran on that deepcopy's
     # output, not on an un-enriched config (which never gets the memo key).
     assert "modify_config_memo" not in sim.config["general"]
-    assert sim.plan.entry_point == "prepcompute"
+    assert sim.plan.entry_point == "prepexp"
 
 
 def test_run_is_the_renamed_dispatch_method():

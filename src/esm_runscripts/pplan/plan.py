@@ -207,6 +207,14 @@ class Workflow(ProvenanceFreeModel):
     model_config = ConfigDict(frozen=True)
 
     entry_point: str
+    exit_point: str = "tidy"
+    """The multi_step after which a cycle is actually *finished* --
+    legacy's ``next_iteration_trigger`` (default ``"tidy"``). Dispatch
+    advances ``current_date``/``run_number`` right after this step, before
+    cascading into its resubmit_triggers target(s): that target (e.g.
+    ``prepcompute``) has not been prepared yet for the new date, while
+    ``exit_point`` itself just finished tidying up the *old* one -- the
+    two must not share a single shared-mutation point in the config."""
     resubmit_triggers: Dict[str, List[str]] = {}
     plans: Dict[str, Plan]
     plan_execution: Dict[str, PlanExecution]
@@ -284,6 +292,7 @@ class Workflow(ProvenanceFreeModel):
         exit_point = gw_config["exit_point"]
         return cls(
             entry_point=gw_config["entry_point"],
+            exit_point=exit_point,
             resubmit_triggers={exit_point: [gw_config["entry_point"]]},
             plans=plans,
             plan_execution=plan_execution,
@@ -324,7 +333,12 @@ class Workflow(ProvenanceFreeModel):
                         tasks += model_conf["nprocar"] * model_conf["nprocbr"]
 
         multi_steps = {
-            "prepcompute": MultiStep(name="prepcompute", step_of_plan="prepcompute"),
+            "prepexp": MultiStep(name="prepexp", step_of_plan="prepexp"),
+            "prepcompute": MultiStep(
+                name="prepcompute",
+                step_of_plan="prepcompute",
+                preceded_by=["prepexp"],
+            ),
             "compute": MultiStep(
                 name="compute",
                 step_of_plan="compute",
@@ -352,6 +366,7 @@ class Workflow(ProvenanceFreeModel):
             else Executor.LOCAL
         )
         plans = {
+            "prepexp": Plan(name="prepexp"),
             "prepcompute": Plan(
                 name="prepcompute", preceded_by=multi_steps["prepcompute"].preceded_by
             ),
@@ -361,6 +376,11 @@ class Workflow(ProvenanceFreeModel):
             "tidy": Plan(name="tidy", preceded_by=multi_steps["tidy"].preceded_by),
         }
         plan_execution = {
+            "prepexp": PlanExecution(
+                multi_step_names=["prepexp"],
+                nproc=1,
+                executor=Executor.IN_PROCESS,
+            ),
             "prepcompute": PlanExecution(
                 multi_step_names=["prepcompute"],
                 nproc=multi_step_execution["prepcompute"].nproc,
@@ -380,8 +400,26 @@ class Workflow(ProvenanceFreeModel):
         }
 
         return cls(
-            entry_point="prepcompute",
-            resubmit_triggers={"tidy": ["prepcompute"]},
+            # A fresh run's real first step is prepexp -- it creates the
+            # thisrun_<filetype>_dir tree (_create_setup_folders /
+            # _create_component_folders) that prepcompute's create_new_files
+            # assumes already exists (bare os.mkdir, not makedirs). Matches
+            # legacy's assemble_workflow, which always submits prepexp
+            # before prepcompute.
+            #
+            # The full bootstrap chain: prepexp -> prepcompute -> compute,
+            # then tidy -> prepcompute again for the next cycle. dispatch.
+            # start()/advance() cascade through every IN_PROCESS link here
+            # synchronously, stopping at the first LOCAL/BATCH dispatch
+            # (fire-and-forget -- that job's own observe re-entry resumes
+            # the chain later by calling advance() itself).
+            entry_point="prepexp",
+            resubmit_triggers={
+                "prepexp": ["prepcompute"],
+                "prepcompute": ["compute"],
+                "compute": ["tidy"],
+                "tidy": ["prepcompute"],
+            },
             plans=plans,
             plan_execution=plan_execution,
             multi_steps=multi_steps,
@@ -446,6 +484,7 @@ class Workflow(ProvenanceFreeModel):
 
         return cls(
             entry_point=wf.entry_point,
+            exit_point=wf.exit_point,
             resubmit_triggers=merged_triggers,
             plans={**wf.plans, **extra_plans},
             plan_execution={**wf.plan_execution, **extra_plan_execution},
@@ -495,10 +534,31 @@ def _collect_extra_multi_steps(config: dict):
                     exclude=frozenset({"preceded_by", "step_of_plan"}),
                 ),
             )
+            # A raw script subjob (``script``/``script_dir``, e.g.
+            # fesom.tripyview's "Tripy_Fesom") has no recipe -- it's not
+            # driven through esm_plugin_manager steps at all, just a
+            # shell/batch call to the configured script, still via
+            # legacy's dataprocess.sub_plan_tasks (generation.command_lines
+            # branches on this kind). ``conf`` never carries an explicit
+            # "kind" key (that's native-only vocabulary), so "has a
+            # script" is the only signal available to tell them apart
+            # from an actual ``ESM_MULTISTEP``.
+            kind = MultiStepKind.BASH if conf.get("script") else MultiStepKind.ESM_MULTISTEP
             execution = MultiStepExecution(
-                **_only_known_fields(MultiStepExecution, conf)
+                kind=kind,
+                **_only_known_fields(
+                    MultiStepExecution, conf, exclude=frozenset({"kind"})
+                ),
             )
             extra_multi_step_execution[name] = execution
+            if kind == MultiStepKind.BASH:
+                # dataprocess.sub_plan_tasks (legacy, unchanged) still reads
+                # the raw conf off ``config["general"]["workflow"]
+                # ["sub_plans"][name]`` -- native's Workflow.resolve/default
+                # never populates that dict, so bridge it here rather than
+                # porting dataprocess.py's script-launching logic natively.
+                workflow_bridge = config["general"].setdefault("workflow", {})
+                workflow_bridge.setdefault("sub_plans", {})[name] = conf
             # run_on_queue/submit_to_batch_system are cluster-level facts
             # (same Plan, same batch submission) -- read off the raw conf,
             # not the MultiStep/MultiStepExecution. Default False, matching

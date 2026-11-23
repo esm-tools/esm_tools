@@ -148,6 +148,14 @@ def main(**command_line_config):
 
     if command_line_config["wf_engine"] == "pplan":
         from .execution import dispatch
+        from .logfiles import set_jsonl_event_sink
+
+        # Native-only structured event log -- see dispatch._cascade for
+        # the emitters. One call per process: covers this branch's three
+        # sub-paths (observe re-entry, debug, and the normal start()
+        # bootstrap) alike, since each is its own process invocation of
+        # this same main().
+        set_jsonl_event_sink(sim.config)
 
         if observing_multi_step is not None:
             _run_observe(observing_multi_step, sim.plan, sim.config)
@@ -225,9 +233,10 @@ def _build_config(command_line_config):
 
 def _run_observe(multi_step_name, workflow, config):
     """Watch the backgrounded PID this job's runscript captured
-    (``config["general"]["launcher_pid"]``), advance the run date/number
-    for the next cycle, and -- unless the experiment is now over --
-    dispatch whatever ``multi_step_name`` triggers next.
+    (``config["general"]["launcher_pid"]``), then dispatch whatever
+    ``multi_step_name`` triggers next (``dispatch.advance`` itself handles
+    advancing the run date/number, and stopping once the experiment is
+    over -- see ``dispatch._cascade``).
 
     Invoked via the ``-t observe_<multi_step_name>`` CLI re-entry a
     backgrounded command's runscript makes (see
@@ -237,27 +246,40 @@ def _run_observe(multi_step_name, workflow, config):
     an uncaught exception already gives a real traceback and a nonzero
     exit).
     """
-    from .execution import cycle, dispatch, observe
+    import time
+
+    from .execution import dispatch, observe
     from .execution.errors import JobCrashedError
+    from .log_events import ExecutionEvent, log_event
     from .runscript.generation import observe_log_path
 
     log_file = observe_log_path(config, multi_step_name)
+    executor = workflow.execution_of(multi_step_name).executor
+    started = time.monotonic()
     try:
         observe.wait_and_observe(config["general"]["launcher_pid"], config, log_file)
-    except JobCrashedError:
+    except JobCrashedError as exc:
         import subprocess
 
+        log_event(
+            config, ExecutionEvent.FAILED, multi_step_name, executor,
+            duration_ms=int((time.monotonic() - started) * 1000),
+            error=str(exc),
+        )
         logger.error("Will kill the run now...")
         subprocess.run(["scancel", str(config["general"]["jobid"])])
         raise
+    log_event(
+        config, ExecutionEvent.FINISHED, multi_step_name, executor,
+        duration_ms=int((time.monotonic() - started) * 1000),
+    )
 
-    config = cycle.advance_date(config)
-    config = cycle.advance_run_number(config)
-    config = cycle.sync_command_line_config(config)
-    cycle.write_date_file(config)
-    if cycle.is_experiment_over(config):
-        config["general"]["experiment_over"] = True
-        return
+    # Advancing current_date/run_number is dispatch.py's job now (see
+    # dispatch._cascade: it happens right after workflow.exit_point --
+    # "tidy" -- finishes, before cascading into the next cycle's
+    # "prepcompute"). Doing it here, unconditionally before any dispatch,
+    # used to run "tidy" itself against the *next* date's not-yet-created
+    # directories instead of the one that just finished.
     dispatch.advance(workflow, multi_step_name, config)
 
 

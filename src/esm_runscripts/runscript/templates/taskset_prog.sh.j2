@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi
+(( init = $PMI_RANK ))
+(( index = init * {{ omp_num_threads }} ))
+(( slot = index % {{ cores_per_node }} ))
+echo {{ model }} taskset -c $slot-$((slot + {{ omp_num_threads }} - 1))
+taskset -c $slot-$((slot + {{ omp_num_threads }} - 1)) ./script_{{ model }}.sh

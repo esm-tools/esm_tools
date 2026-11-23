@@ -68,8 +68,13 @@ ice2echam() {
                 echo " S T O P  72"
                 exit 72
         fi
+        # ... and delivered them anew, not last chunk's again
+        ice_domain_check_fresh
 
         define_echam_names
+
+        # anomalies and fluxes of the domains are added up: no overlaps
+        ice_domain_check_overlap ${RES_echam}grid
 
         # The high-resolution orography before this chunk, chosen once for
         # all domains (and, at the first update, checked against the restart).
@@ -115,7 +120,34 @@ ice2echam_per_domain() {
                 update_land_runoff_select_glacial_discharge
                 regrid_to_echam ${ICE_COUPLE_DIR}/ice_discharge.nc
                 change_lonlat ${ICE_COUPLE_DIR}/ice_discharge_${RES_echam}grid.nc $ice_mass_loss_varname
+                update_land_runoff_conserve_integral
         fi
+}
+
+## @fn update_land_runoff_conserve_integral()
+## PER DOMAIN. The remapping to the ECHAM grid does not keep the integral of
+## the mass-loss flux (remapbil is not conservative, and remapcon2 conserves
+## true spherical areas, not PISM's projected dx*dy cells). Correct
+## ice_discharge_${RES_echam}grid.nc so that it carries exactly the mass PISM
+## lost (utils/conserve_remapped_flux.py). Also writes
+## ice_discharge.cell_area.nc (dx*dy), which the hosing correction uses.
+update_land_runoff_conserve_integral() {
+        ice_domain_require_selected update_land_runoff_conserve_integral
+        typeset _cr_nat=${ICE_COUPLE_DIR}/ice_discharge.nc
+        typeset _cr_rem=${ICE_COUPLE_DIR}/ice_discharge_${RES_echam}grid.nc
+        echo; echo "                *   keeping the integral of the mass-loss flux through the regridding (${ICE_DOMAIN})"
+        cdo -s gridarea ${_cr_rem} ${_cr_rem%.nc}.gridarea.nc 2>> cdo_stderr_ice2echam
+        if ! ( module load python3 >/dev/null 2>&1
+               python3 ${FUNCTION_PATH}/../utils/ice_cell_area.py ${_cr_nat} ${_cr_nat%.nc}.cell_area.nc \
+                       --varname ${ice_mass_loss_varname} \
+               && python3 ${FUNCTION_PATH}/../utils/conserve_remapped_flux.py \
+                       ${_cr_nat} ${_cr_nat%.nc}.cell_area.nc ${_cr_rem} ${_cr_rem%.nc}.gridarea.nc \
+                       --varname ${ice_mass_loss_varname} ); then
+                echo " !!! could not make ${_cr_rem} carry the integral of ${_cr_nat}"
+                echo " S T O P  47"
+                exit 47
+        fi
+        rm -f ${_cr_rem%.nc}.gridarea.nc
 }
 
 ## @fn ice2echam_reduce()
@@ -215,17 +247,7 @@ update_orography_to_echam_grid() {
             update_orography_select_field
         fi
 
-        if [ "$MACHINE" == "levante" ]; then
-            if [ "$paleo_time" == "eot" ]; then
-                echo " time $paleo_time"
-                hi_res_init_oro="/work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc"
-            elif [ "$paleo_time" == "omt" ]; then
-                echo " time $paleo_time"
-            else
-                echo " time $paleo_time"
-                hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc"
-            fi
-        fi
+        update_orography_set_hi_res_init_oro
 
         # oro_regrid_method (see update_orography_check_options):
         #   remapcon -- every ECHAM cell gets the area mean of the ice sheet
@@ -255,7 +277,7 @@ update_orography_to_echam_grid() {
                         # Mean over the part of the ECHAM cell that the ice
                         # grid covers (fracarea): an absolute height must not be
                         # diluted towards 0 at the edge of the ice domain.
-                        CDO_REMAP_NORM=fracarea cdo -s remapcon,${_u2e_res}grid \
+                        CDO_REMAP_NORM=frac cdo -s remapcon,${_u2e_res}grid \
                                 -setgrid,${ICE_COUPLE_DIR}/ice.griddes ${ice_orog_file} \
                                 ${ICE_COUPLE_DIR}/ice_orog_${_u2e_res}grid.nc
                 else
@@ -303,9 +325,11 @@ update_orography_to_echam_grid() {
             # the part of a cell outside the ice domain counts as "no change".
             # With fracarea a cell that the domain only grazes would get the
             # full change of the few ice cells inside it. (No effect on
-            # remapbil.)
+            # remapbil.) cdo 2 accepts only "dest"/"frac" here; the spelled-out
+            # "destarea" used before was ignored with a warning, so fracarea
+            # was used.
             _u2e_norm=${CDO_REMAP_NORM-unset}
-            export CDO_REMAP_NORM=destarea
+            export CDO_REMAP_NORM=dest
             if [ -f "${hi_res_init_oro}" ]; then
                 regrid_to_echam ${ICE_COUPLE_DIR}/ice_orog_difference.nc ${_u2e_method} T511
             fi
@@ -339,15 +363,7 @@ update_orography_to_echam_grid() {
 ## @fn iterative_coupling_ice_echam6_update_orography()
 ## GLOBAL. Works on the already reduced orography anomaly.
 iterative_coupling_ice_echam6_update_orography() {
-        if [ "$MACHINE" == "levante" ]; then
-            if [ "$paleo_time" == "eot" ]; then
-                hi_res_init_oro="/work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc"
-            elif [ "$paleo_time" == "omt" ]; then
-                :
-            else
-                hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc"
-            fi
-        fi
+        update_orography_set_hi_res_init_oro
 
         # Use the high resolution (T511) path whenever the reduced T511 anomaly
         # exists and there is a high resolution background to add it to --
@@ -689,16 +705,51 @@ update_orography_init_high_res_reference() {
 }
 
 ## @fn update_orography_set_hi_res_init_oro()
-## Sets hi_res_init_oro, the reference T511 orography, as the two orography
-## steps below do.
+## Sets hi_res_init_oro, the reference T511 orography (variable OROMEA) that
+## the high-resolution orography path adds the ice sheet changes to. The only
+## place that decides it; every orography step calls this.
+##
+##   echam.oro_high_res_reference_file  (ORO_HIGH_RES_REFERENCE_FILE)
+##       a file   use it; stops with exit 48 if it does not exist
+##       none     no high-resolution reference: the low-resolution path
+##       unset    the old defaults, which exist on levante only:
+##                  paleo_time eot  /work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc
+##                  paleo_time omt  none
+##                  otherwise       /pool/data/ECHAM5/T511/T511_jan_surf.nc
+##                on any other machine: none, with a note
 update_orography_set_hi_res_init_oro() {
-        if [ "$MACHINE" == "levante" ]; then
-            case "$paleo_time" in
-                eot) hi_res_init_oro="/work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc" ;;
-                omt) : ;;
-                *)   hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc" ;;
-            esac
+        typeset _ref=${ORO_HIGH_RES_REFERENCE_FILE:-}
+        if [ -z "${_ref}" ]; then
+                if [ "$MACHINE" == "levante" ]; then
+                        case "$paleo_time" in
+                                eot) _ref=/work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc ;;
+                                omt) _ref=none ;;
+                                *)   _ref=/pool/data/ECHAM5/T511/T511_jan_surf.nc ;;
+                        esac
+                else
+                        _ref=none
+                        if [ "x${_hi_res_init_oro_said}" != "x1" ]; then
+                                echo "                -   no default T511 reference orography on ${MACHINE}: low-resolution"
+                                echo "                    orography path (set echam.oro_high_res_reference_file to use T511)"
+                                _hi_res_init_oro_said=1
+                        fi
+                fi
         fi
+        case "${_ref}" in
+                none|NONE)
+                        hi_res_init_oro=""
+                        ;;
+                *)
+                        if [ ! -f "${_ref}" ]; then
+                                echo " !!! T511 reference orography not found: ${_ref}"
+                                echo " !!! (echam.oro_high_res_reference_file, or the default for paleo_time=${paleo_time} on ${MACHINE};"
+                                echo " !!!  'none' runs the low-resolution orography path instead)"
+                                echo " S T O P  48"
+                                exit 48
+                        fi
+                        hi_res_init_oro=${_ref}
+                        ;;
+        esac
 }
 
 ## @fn update_orography_prepare_high_res_base()
@@ -973,7 +1024,11 @@ update_orography_run_calnoro() {
         change_lonlat topodata.nc OROMEA
         
         module list
-        if [ "$MACHINE" == "levante" ]; then
+        # netcdf-fortran library CALNORO was linked against:
+        # echam.calnoro_ld_library_path, else the default of the machine
+        if [ -n "${CALNORO_LD_LIBRARY_PATH}" ]; then
+            export LD_LIBRARY_PATH=${CALNORO_LD_LIBRARY_PATH}:$LD_LIBRARY_PATH
+        elif [ "$MACHINE" == "levante" ]; then
             export LD_LIBRARY_PATH=/sw/spack-levante/netcdf-fortran-4.5.3-jlxcfz/lib/:$LD_LIBRARY_PATH
         elif [ "$MACHINE" == "albedo" ]; then
             export LD_LIBRARY_PATH=/albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-yb7woqz/lib/:$LD_LIBRARY_PATH
@@ -1161,25 +1216,39 @@ set_glacial_mask_to_echam_grid() {
 
         ifile=${ICE_COUPLE_DIR}/ice_mask_current.nc
         dfile=${ICE_COUPLE_DIR}/ice_domain_current.nc
-        cdo -s setrtoc,0,1,1 $ifile $dfile
+        # The domain's footprint: where it may hold ice (ice_domain_active.nc
+        # from pism2atmosphere: the grid minus the cells the prescribed front
+        # retreat keeps ice-free). Older couple dirs without that file: the
+        # whole grid, as before.
+        if [ -f ${ICE_COUPLE_DIR}/ice_domain_active.nc ]; then
+                cdo -s -selname,ice_domain ${ICE_COUPLE_DIR}/ice_domain_active.nc $dfile
+        else
+                cdo -s setrtoc,0,1,1 $ifile $dfile
+                ncrename -v ${ice_glacial_mask_name},ice_domain $dfile
+        fi
 
         echo; echo "                *   ice mask of domain ${ICE_DOMAIN}"
               echo "                                   from: $ifile"
               echo "                           using region: $dfile"
 
-        # Define the entire area where this ice domain is defined:
         ncrename -v ${ice_glacial_mask_name},ice_mask   $ifile
-        ncrename -v ${ice_glacial_mask_name},ice_domain $dfile
-
         regrid_to_echam $ifile
+
+        # Footprint as the covered fraction of each ECHAM cell (destarea: the
+        # part outside the domain counts as 0), then binary: a cell is inside
+        # when at least half of it is. Before, any cell the grid only grazed
+        # counted as inside and lost its prescribed glacier.
+        typeset _sg_norm=${CDO_REMAP_NORM-unset}
+        export CDO_REMAP_NORM=dest
         regrid_to_echam $dfile
+        if [ "x${_sg_norm}" = "xunset" ]; then unset CDO_REMAP_NORM; else export CDO_REMAP_NORM=${_sg_norm}; fi
 
         ifile=${ifile%.*}_${RES_echam}grid.nc
         dfile=${dfile%.*}_${RES_echam}grid.nc
 
         cdo -s -setmisstoc,0 $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile
         cdo -s -gec,${ECHAM_GLACIAL_THRESHOLD} $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
-        cdo -s -setmisstoc,0 $dfile tmp 2>> cdo_stderr_ice2echam; mv tmp $dfile
+        cdo -s -gec,0.5 -setmisstoc,0 $dfile tmp 2>> cdo_stderr_ice2echam; mv tmp $dfile
 
         change_lonlat $ifile ice_mask
         change_lonlat $dfile ice_domain
@@ -1269,6 +1338,31 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 input_if_mask_true.nc
         cdo -s \
                 -selvar,ALB dummy_jan_surf.nc input_if_mask_false.nc
+        # Where unit.24 has a (present-day) glacier but the ice sheet has
+        # none, inside the ice domains: ALB would keep the glacier albedo of
+        # unit.24 on bare ground. Give those cells the albedo of the nearest
+        # land cell that is no glacier in unit.24 instead.
+        if [ -f ${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc ]; then
+                cdo -s -O -mul -mul -gtc,0.5 -selvar,GLAC ${INIT_DIR_echam}/unit.24 \
+                        -gtc,0.5 -selvar,SLM ${INIT_DIR_echam}/unit.24 \
+                        -mul -setmisstoc,0 ${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc \
+                             -eqc,0 -setmisstoc,0 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
+                        deglaciated.nc 2>> cdo_stderr_ice2echam
+                _alb_n=$(cdo -s outputf,%.0f -fldsum deglaciated.nc 2>> cdo_stderr_ice2echam | tr -d ' ')
+                if [ "${_alb_n:-0}" -gt 0 ]; then
+                        echo "                -   ALB of ${_alb_n} deglaciated cells from the nearest non-glacier land"
+                        cdo -s -O -setmisstonn \
+                                -ifthen -mul -gtc,0.5 -selvar,SLM ${INIT_DIR_echam}/unit.24 \
+                                             -ltc,0.5 -selvar,GLAC ${INIT_DIR_echam}/unit.24 \
+                                        -selvar,ALB ${INIT_DIR_echam}/unit.24 \
+                                alb_bare_land.nc 2>> cdo_stderr_ice2echam
+                        cdo -s -O -ifthenelse deglaciated.nc alb_bare_land.nc input_if_mask_false.nc \
+                                alb_tmp.nc 2>> cdo_stderr_ice2echam
+                        mv alb_tmp.nc input_if_mask_false.nc
+                fi
+                rm -f deglaciated.nc alb_bare_land.nc
+                unset _alb_n
+        fi
         cdo -s -ifthenelse \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
                 input_if_mask_true.nc \
@@ -1327,8 +1421,10 @@ set_glacial_mask_jsbach_update_init_file() {
                 cd ${currentdir}
                 cp -v ${FUNCTION_PATH}/../utils/jsbach_init_file .
         else
-                echo -e "\t\t E R O R R --- binary missing, don't know how to proceed"
-                exit
+                echo " !!! ${FUNCTION_PATH}/../utils/jsbach_init_file is missing, and so is"
+                echo " !!! install_jsbach_init_file.sh to build it"
+                echo " S T O P  42"
+                exit 42
         fi
         cp ${FUNCTION_PATH}/../utils/_build/mo_kinds.mod .
         cp ${FUNCTION_PATH}/../utils/_build/mo_vegparams.mod .
@@ -1338,7 +1434,11 @@ set_glacial_mask_jsbach_update_init_file() {
         res_oce=GENERIC
         ntiles=11                   # number of jsbach tiles
 
-        dynveg=true                 # setup for dynamic vegetation 
+        # jsbach.jsbach_init_dynveg (default true)
+        case "$(echo ${JSBACH_INIT_DYNVEG:-true} | tr 'A-Z' 'a-z')" in
+                true|1|.true.|yes) dynveg=true ;;
+                *)                 dynveg=false ;;
+        esac
         c3c4crop=true               # differentiate between C3 and C4 crops
 
         lpasture=true               # distinguish pastures from grasses
@@ -1347,8 +1447,11 @@ set_glacial_mask_jsbach_update_init_file() {
                                     # false: no separate input file for crops and pastures
         pasture_rule=true           # allocate pastures primarily on grass lands
 
-        year_ct=1850                # year the cover_types are derived from
-        year_cf=1850                # year cover fractions are derived from
+        # jsbach.jsbach_init_year (default 1850): year of the pool's cover
+        # types and fractions. Only cells whose glacier mask changed take them
+        # (jsbach_init_update, below); the rest keeps the current jsbach.nc.
+        year_ct=${JSBACH_INIT_YEAR:-1850}   # year the cover_types are derived from
+        year_cf=${JSBACH_INIT_YEAR:-1850}   # year cover fractions are derived from
 
         landcover_series=false      # generate a series of files with cover_types of 
                                     # year_ct and fractions from year_cf to year_cf2
@@ -1476,9 +1579,53 @@ EOF
                 echo "error in jsbach_init_file"
                 exit 1
         fi
-        # BUG: How do we know what the output file is called?
-        mv jsbach_T63GENERIC_11tiles_5layers_1850_dynveg.nc \
-                ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc  
+        # jsbach_init_file names its output after resolution, tiles, layers,
+        # year and dynveg, and prints the name
+        typeset _ji_gen _ji_out _ji_cur
+        _ji_gen=$(sed -n 's/^ *output: *//p' ${COUPLE_DIR}/jsbach_init_file_stdout_stderr | tail -1 | tr -d '[:space:]')
+        if [ -z "${_ji_gen}" ] || [ ! -f "${_ji_gen}" ]; then
+                echo " !!! jsbach_init_file did not write the file it named (>${_ji_gen}<);"
+                echo " !!! see ${COUPLE_DIR}/jsbach_init_file_stdout_stderr"
+                echo " S T O P  42"
+                exit 42
+        fi
+        _ji_out=${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc
+        _ji_cur=$(readlink -f ${FORCING_DIR_jsbach}/jsbach.nc)
+        # jsbach.jsbach_init_update:
+        #   changed_cells (default)  the regenerated values only where the
+        #                            glacier mask changed, the current
+        #                            jsbach.nc elsewhere (keeps a paleo land
+        #                            surface outside the ice sheets)
+        #   full                     the regenerated file everywhere (legacy)
+        case ${JSBACH_INIT_UPDATE:-changed_cells} in
+                full)
+                        echo "                -   jsbach_init_update=full: ${_ji_gen} replaces jsbach.nc everywhere"
+                        mv ${_ji_gen} ${_ji_out}
+                        ;;
+                changed_cells)
+                        if [ ! -f "${_ji_cur}" ]; then
+                                echo " !!! current JSBACH init file not found: ${FORCING_DIR_jsbach}/jsbach.nc"
+                                echo " S T O P  42"
+                                exit 42
+                        fi
+                        echo "                -   jsbach_init_update=changed_cells: ${_ji_gen} only where glac changed against"
+                        echo "                    ${_ji_cur}"
+                        if ! ( module load python3 >/dev/null 2>&1
+                               python3 ${FUNCTION_PATH}/../utils/jsbach_merge_changed_cells.py \
+                                       ${_ji_cur} ${_ji_gen} ${_ji_out} ); then
+                                echo " !!! could not merge ${_ji_gen} into ${_ji_cur}"
+                                echo " S T O P  42"
+                                exit 42
+                        fi
+                        rm -f ${_ji_gen}
+                        ;;
+                *)
+                        echo " !!! jsbach_init_update = >${JSBACH_INIT_UPDATE}<: only changed_cells or full"
+                        echo " S T O P  42"
+                        exit 42
+                        ;;
+        esac
+        unset _ji_gen _ji_out _ji_cur
         echo :> ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat
         
         ############################################################################

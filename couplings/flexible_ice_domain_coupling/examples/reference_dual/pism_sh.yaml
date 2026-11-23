@@ -48,6 +48,7 @@ pism_sh:
         # lapse rate
         lapse_rate: -0.005
         iceberg_coupling: 1
+        cavity_coupling: 1               # FESOM use_cavity: PISM sub-shelf melt left out of the mass loss
         USE_CAV_fesom: 1
         # Anomaly coupling
         ANOMALY_AIR_TEMPERATURE: 1 #True

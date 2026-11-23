@@ -253,8 +253,10 @@ they are the parts worth reviewing.
 
 6. **`ocean_file_for_ice.nc` is no longer moved away.** `regrid_none` did
    `mv ${COUPLE_DIR}/ocean_file_for_ice.nc ...`, which would have deleted the
-   shared file from under the second domain. It now moves the staged per-domain
-   copy.
+   shared file from under the second domain. The `NONE` regrid method is now
+   removed in both directions (`iter_coup_regrid_method_oce2ice` and
+   `_ice2oce`): it assumed identical ocean and ice grids, which FESOM's mesh and
+   a PISM grid never are.
 
 7. **`apply_hosing_correction.py`** takes `--pair DISCHARGE AREA` any number of
    times and sums the integrals. The old four-positional-argument form still

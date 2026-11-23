@@ -49,6 +49,128 @@ fractions → the JSBACH and vegetation restarts.
 *To reproduce the reference behaviour:* set `ISM_TO_ECHAM_reset_glac_in_ice_domain=0`
 in the coupling environment (it is a plain shell switch read by `ice2echam`).
 
+**Ocean forcing for PICO / `th`: sea floor left out of the depth mean.**
+FESOM writes T = S = 0 below the sea floor, and `ocean2pism` averaged these
+zeros into the 0–410 m mean (FESOM levels 1–20) handed to PISM. On the
+continental shelf, where PICO reads its input, mean salinity was about 22 g/kg
+instead of about 32, and temperature was pulled towards 0 °C. With too fresh
+water the freezing point is too high, so PICO melted far too little: in
+standalone tests with the correct salinity, floating ice area dropped by about a
+third and sub-shelf melt rose by about 30%. Now (`iterative_coupling_ocean_pism_depth_mean`):
+
+* points below the sea floor are missing and left out of the mean;
+* the depth range is set by `ocean_depth_top` / `ocean_depth_bottom`
+  (default 0 / 410 m, the old range), and each level is weighted by the
+  metres of water it stands for (before, the levels at 0, 5 and 10 m had as
+  much weight as those 70 m apart further down);
+* `ocean_depth_mean: bottom` uses the deepest water down to
+  `ocean_depth_bottom` instead, the shelf bottom water PICO is calibrated with;
+* where the sea floor is shallower than `ocean_depth_top`, the deepest water
+  above it is used;
+* the mean is taken on the FESOM grid **before** the regridding, so that the
+  horizontal extrapolation (`fillmiss2`) does not refill the masked points
+  from neighbouring columns.
+
+*Propagates to:* `theta_ocean` / `salinity_ocean` in the PISM ocean forcing
+(`ocean_ablation_method: PICO_OCEAN` or `OCEANTEMPSALT`) → sub-shelf melt →
+shelf extent, discharge and the ice-to-ocean fluxes.
+
+*To reproduce the reference behaviour:* `ocean_depth_mean: legacy` in the
+ice domain's section. This is also the default when ocean anomaly forcing
+(`ANOMALY_OCEAN_TEMPERATURE` / `ANOMALY_OCEAN_SALINITY`) is on: the anomaly is
+taken against `BASE_STATE_OCEAN_FNAME`, which was made with the old mean, and
+the shelf error only cancels if forcing and base state are made the same way.
+Mixing them adds the difference of the two means (several g/kg of salinity on
+the shelf) to the reference ocean. Set `ocean_depth_mean: wet` together with a
+base state made with it.
+
+**Ice sheet freshwater: the amount the ice sheet lost, on every grid.**
+Before, the mass-loss flux was remapped to the ECHAM grid for the rivers
+(`gfw_atmo`) and integrated there for the FESOM hosing. On grids without cell
+corners in `ice.griddes` the remapping fell back to `remapbil`, which is not
+conservative: in `dual_hemisphere_t02` the Antarctic (8 km) integral changed
+sign (−1.64·10⁷ kg/s on the PISM grid, +2.84·10⁶ kg/s in the run's T63
+file). The NH grid has corners and was remapped with `remapcon2`, 0.8 % off.
+The Antarctic grid had no corners because
+`make_ice_griddes.py` ran without the python3 module (`import numpy` failed).
+Now:
+
+* `ice_griddes_ensure_corners` loads the python3 module, so the corners are
+  made and the remapping is `remapcon2`;
+* the hosing integrates each domain on its own grid with dx·dy, the cell area
+  PISM books its mass on (`utils/ice_cell_area.py`); `cdo gridarea` and its
+  exit 46 for grids without corners are no longer needed there;
+* the ECHAM-grid copy is corrected to the same integral after the remapping
+  (`utils/conserve_remapped_flux.py`), which also removes the 1–7 % that
+  `remapcon2` is off by between spherical and projected areas.
+
+*Propagates to:* `gfw_atmo` (rivers) and `landice_yearly_mass_loss.out`
+(FESOM hosing): amount and, for Antarctica, sign.
+
+*To reproduce the reference behaviour:* not possible by a switch; this is a
+bug fix.
+
+**Ice sheet freshwater: total from PISM's own budget, real ice density.**
+The mass-loss flux is ρ_ice · Δthk over the chunk, with Δthk = restart at the
+end minus the chunk's input file. That also holds whatever happens to the
+input when PISM starts from it: in `dual_hemisphere_t02` Antarctica gave
+−518 Gt/yr against −662 Gt/yr in PISM's budget (NH: +252 against +250). The
+total is now set to PISM's budget for the chunk (scalar time series:
+surface + basal mass flux + discharge), keeping the Δthk pattern
+(`mass_loss_total: pism_budget`). ρ_ice is read from the restart instead of
+the fixed 910 kg m⁻³.
+
+*Propagates to:* `gfw_atmo` and the FESOM hosing (amount).
+
+*To reproduce the reference behaviour:* `mass_loss_total: thk_difference`
+(the density is read in both cases).
+
+**Constant hosing: region 2 is read.** `landice_yearly_mass_loss.out` said
+1 region and the constant flux was appended below it, so FESOM never read it.
+`apply_hosing_correction.py` now writes the number of regions and all fluxes
+itself (`constant_landice_hosing`, see RUNNING.md).
+
+**Ice domain footprint: where the domain may hold ice, whole ECHAM cells.**
+Inside a domain's footprint the ice sheet decides ECHAM's glaciers, sub-grid
+orography and albedo; outside, `unit.24` stays. The footprint was every ECHAM
+cell the PISM grid touched at all. Now it is the area where the domain may
+hold ice (the grid minus the cells the prescribed front retreat keeps
+ice-free), and an ECHAM cell counts when at least half of it is covered: 356
+instead of 442 T63 cells for the NH 5 km grid. Prescribed glaciers in
+front-retreat areas (Tibet, the Canadian Arctic in a Greenland grid) and at the
+grid edge are no longer removed.
+
+*Propagates to:* `glac` in the ECHAM restart, `GLAC`/`ALB` in the JSBACH init
+file, the sub-grid orography mask.
+
+**Orography anomaly at the edge of a domain: `CDO_REMAP_NORM` now takes effect.**
+The anomaly regridding was meant to normalise by the full ECHAM cell
+(`destarea`), so that a cell the domain only grazes gets a share of the change.
+cdo 2 accepts only `dest`/`frac` and ignored `destarea` with a warning, so the
+default `fracarea` was used: such cells got the full change of the few ice
+cells inside them. Fixed (also for the footprint above).
+
+*Propagates to:* `OROMEA`, `GEOSP` and the sub-grid parameters along the edges
+of the ice domains.
+
+**JSBACH init file: only the cells whose glacier changed.** It used to be
+regenerated from the pool's 1850 maps every coupling and replaced `jsbach.nc`
+as a whole; in `AWIESM2.6_full01` that changed `cover_fract` on 3602 cells for
+12 cells of glacier change. Now (`jsbach.jsbach_init_update: changed_cells`)
+the regenerated values are taken only where the glacier mask changed. Year
+and dynamic vegetation are keys (`jsbach_init_year`, `jsbach_init_dynveg`),
+and the generated file is found by the name the program prints instead of the
+hard-coded T63 name.
+
+*To reproduce the reference behaviour:* `jsbach_init_update: full`.
+
+**Albedo on deglaciated cells.** Where `unit.24` has a glacier and the ice
+sheet has none (inside a domain), `ALB` kept the glacier value (mean 0.63 on 47
+cells in `dual_hemisphere_t02`). It now takes the albedo of the nearest land
+cell without a `unit.24` glacier (mean 0.34 there). Effective only with
+JSBACH `use_albedo = .false.`: with `.true.` (the AWI-ESM 2.6 setups) JSBACH
+does not read this field, and ECHAM does not read `ALB` from `unit.24`.
+
 **ECHAM orography: physical surface, area-mean regridding, one source.**
 Three defaults change; together they take the spikes out of the T63
 `OROMEA`. In the old coupling, `OROMEA` was the 5 km PISM `thk+topg`

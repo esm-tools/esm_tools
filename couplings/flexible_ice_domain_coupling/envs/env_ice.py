@@ -85,6 +85,21 @@ def prepare_environment(config):
         "PISM_OCEAN_PICO_BASINS_FILE": ice.get(
             "PICO_basins_only_file", ice.get("basin_file", "")
         ),
+        # Ocean T/S for PICO / th (iterative_coupling_ocean_pism_depth_mean):
+        #   "wet"    = thickness-weighted mean over the water between
+        #              ocean_depth_top and ocean_depth_bottom (m below sea
+        #              level, default 0-410 m = FESOM levels 1-20), sea floor
+        #              left out;
+        #   "bottom" = deepest wet level down to ocean_depth_bottom (shelf
+        #              bottom water, as PICO is calibrated with);
+        #   "legacy" = old mean over FESOM levels 1-20 including the zeros
+        #              below the sea floor (base states made with the old
+        #              coupling need it for the ocean anomaly forcing).
+        # Unset: "legacy" with ANOMALY_OCEAN_*, else "wet" (decided in
+        # ocean2pism). Empty depths: the shell defaults 0 / 410.
+        "OCEAN_DEPTH_MEAN": str(ice.get("ocean_depth_mean", "")),
+        "OCEAN_DEPTH_TOP": ice.get("ocean_depth_top", ""),
+        "OCEAN_DEPTH_BOTTOM": ice.get("ocean_depth_bottom", ""),
         "DOWNSCALING_LAPSE_RATE": ice.get("lapse_rate", -0.005),
         # PDD path: also hand PISM ice_surface_temp (see atmosphere2pism)
         "PDD_ICE_SURFACE_TEMP": int(ice.get("PDD_ICE_SURFACE_TEMP", 1)),

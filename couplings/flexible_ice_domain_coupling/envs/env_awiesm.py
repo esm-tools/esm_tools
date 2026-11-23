@@ -13,6 +13,35 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ice_domain_env  # noqa: E402
 
 
+def fesom_use_cavity(config):
+    """FESOM's use_cavity as 0/1, from the runscript's namelist changes.
+
+    Falls back to the top level keys use_cavity / use_cav some runscripts set.
+    """
+    fesom = config["fesom"]
+    changes = (fesom.get("namelist_changes") or {}).get("namelist.config") or {}
+    value = (changes.get("run_config") or {}).get(
+        "use_cavity", fesom.get("use_cavity", fesom.get("use_cav", False))
+    )
+    if isinstance(value, str):
+        value = value.strip().strip(".").lower() in ("true", "t", "1", "yes")
+    return int(bool(value))
+
+
+def fesom_disch_files(config):
+    """FESOM's disch_file (the iceberg plugin's input) as a space separated list.
+
+    Empty when FESOM has no icebergs, and in the first chunk, where the plugin
+    reads ini_disch_file instead (ice2fesom_check_disch_files then skips).
+    """
+    if config["general"].get("chunk_number", 1) == 1:
+        return ""
+    value = config["fesom"].get("disch_file", "")
+    if isinstance(value, (list, tuple)):
+        return " ".join(str(v) for v in value if v)
+    return str(value or "")
+
+
 def prepare_environment(config):
     environment_dict = {
             # general
@@ -26,6 +55,9 @@ def prepare_environment(config):
             "FUNCTION_PATH": config["echam"]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "MACHINE": config["computer"]["name"],
             "CHUNK_SIZE": config["general"]["this_chunk_size"],  #!!!
+            # run counter, compared with the stamp of each domain's
+            # ice_file_for_atmosphere.nc (ice_domain_check_fresh)
+            "CHUNK_NUMBER_awiesm": config["general"]["chunk_number"],
             
             # ECHAM
             "ICE_TO_ECHAM": int(config["general"]["first_run_in_chunk"]),
@@ -40,6 +72,12 @@ def prepare_environment(config):
             "END_MONTH_echam": config["general"]["chunk_end_date"].smonth,
             "END_DAY_echam": config["general"]["chunk_end_date"].sday,
             "FORCING_DIR_jsbach": config["jsbach"]["experiment_input_dir"],
+            # regenerated JSBACH init file (set_glacial_mask_jsbach_update_init_file):
+            # year of the pool's cover types, dynamic vegetation, and whether
+            # it replaces jsbach.nc only where the glacier mask changed
+            "JSBACH_INIT_YEAR": config["jsbach"].get("jsbach_init_year", 1850),
+            "JSBACH_INIT_DYNVEG": str(config["jsbach"].get("jsbach_init_dynveg", True)),
+            "JSBACH_INIT_UPDATE": config["jsbach"].get("jsbach_init_update", "changed_cells"),
             "RESTART_DIR_jsbach": config["jsbach"]["experiment_restart_out_dir"],
             "POOL_DIR_jsbach": config["computer"]["pool_dir"],
             "POOL_DIR_echam": config["computer"]["pool_dir"],
@@ -80,10 +118,21 @@ def prepare_environment(config):
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             "paleo_time": config["echam"].get("paleo_time", "pi"),
+            # T511 reference orography: a file, "none" (low-resolution path),
+            # or empty for the defaults (update_orography_set_hi_res_init_oro)
+            "ORO_HIGH_RES_REFERENCE_FILE": config["echam"].get("oro_high_res_reference_file", ""),
+            # netcdf-fortran library path for CALNORO; empty: machine default
+            "CALNORO_LD_LIBRARY_PATH": config["echam"].get("calnoro_ld_library_path", ""),
             
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"], #??? TEST
             "iter_coup_regrid_method_ice2oce": config["fesom"].get("iter_coup_regrid_method_ice2oce", "INTERPOLATE"),
             
+            # constant hosing into one region of FESOM nodes, on top of the
+            # ice sheet hosing (distribute_total_discharge_over_ocean)
+            "CONSTANT_FRESHWATER_HOSING": config["fesom"].get("constant_landice_hosing", ""),
+            "CONSTANT_FRESHWATER_HOSING_UNIT": config["fesom"].get("constant_landice_hosing_unit", "Sv"),
+            "CONSTANT_FRESHWATER_HOSING_NODES": config["fesom"].get("constant_landice_hosing_nodes", ""),
+            # old spelling: a file holding the value in m/s
             "CONSTANT_FRESHWATER_HOSING_FILE": config["fesom"].get("constant_landice_hosing_file", ""),
             "CELL_AREA_FESOM_FILE": config["fesom"].get("cell_area_fesom_file", "fesom.mesh.diag.nc"),
             "PYFESOM_PATH": config["fesom"].get("pyfesom_path", "/pf/a/a270124/pyfesom2/"),
@@ -104,6 +153,18 @@ def prepare_environment(config):
                     ),
                 )
             )),
+
+            # FESOM ice shelf cavities (namelist.config run_config:use_cavity).
+            # ice2fesom checks it against each ice domain's cavity_coupling
+            # (distribute_total_discharge_over_ocean). The namelist FESOM
+            # actually reads wins over the runscript's namelist changes.
+            "FESOM_USE_CAVITY_OCEAN": fesom_use_cavity(config),
+            # checked against the discharge files the ice domains made
+            # (ice2fesom_check_disch_files)
+            "FESOM_DISCH_FILES": fesom_disch_files(config),
+            "FESOM_NAMELIST_CONFIG": os.path.join(
+                config["fesom"].get("thisrun_config_dir", ""), "namelist.config"
+            ),
 
             # Wherever the ice sheets have to be merged into one global field
             # (iceberg discharge for the FESOM iceberg module) the domains may

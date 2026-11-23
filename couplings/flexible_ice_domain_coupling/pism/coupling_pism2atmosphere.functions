@@ -58,6 +58,21 @@ function pism2atmosphere {
         # agrees (distribute_total_discharge_over_ocean).
         FESOM_USE_ICEBERGS=${fesom_use_iceberg:-0}
         echo " * iceberg_coupling = ${FESOM_USE_ICEBERGS}"
+        # iceberg_discharge.nc is only rewritten with iceberg coupling, but
+        # pism2ocean takes it whenever it exists. Without iceberg coupling
+        # (e.g. switched off at a restart) an old file must not stay behind
+        # to be seeded as icebergs again (cf. latest_discharge.nc in pism2ocean).
+        if [[ "x${FESOM_USE_ICEBERGS}" != "x1" && -f ${ICE_COUPLE_DIR}/iceberg_discharge.nc ]]; then
+                echo " * removing stale ${ICE_COUPLE_DIR}/iceberg_discharge.nc (no iceberg coupling)"
+                rm -f ${ICE_COUPLE_DIR}/iceberg_discharge.nc
+        fi
+
+        # Melt under the ice shelves goes to the ocean through FESOM's
+        # cavities when this domain's runscript has cavity_coupling; PISM's
+        # own sub-shelf melt is then taken out of the mass loss as well
+        # (generate_mass_loss_flux), so that it does not reach the ocean twice.
+        FESOM_USE_CAVITY=${FESOM_USE_CAVITY:-0}
+        echo " * cavity_coupling = ${FESOM_USE_CAVITY}"
 
         if [[ $PISM_TO_ATMOSPHERE -eq 1 ]]; then
                 iterative_coupling_pism_atmosphere_write_grid
@@ -108,6 +123,10 @@ function pism_atmosphere_get_newest_output {
 
         # Define list of variables selected from PISM output depending on whether icebergs are used or not
         CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_discharge"
+        # sub-shelf melt, subtracted in generate_mass_loss_flux with cavity_coupling
+        if [[ "x${FESOM_USE_CAVITY:-0}" == "x1" ]]; then
+            CDO_SELECT_VAR_LIST="${CDO_SELECT_VAR_LIST},basal_mass_flux_floating"
+        fi
         
         LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
         echo; echo "                 *   OUTPUT_DIR_pism = ${OUTPUT_DIR_pism} "
@@ -288,6 +307,52 @@ function pism_atmosphere_assemble_final_file {
         fi
         cdo -s -O merge $files_needed ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc
 	    ncwa -a time ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc
+        # which run wrote it: ice_domain_check_fresh refuses to use it twice
+        ncatted -O -h -a coupling_chunk_number,global,o,l,${CHUNK_NUMBER_pism} \
+                -a coupling_chunk,global,o,c,"${CHUNK_START_DATE_pism} - ${CHUNK_END_DATE_pism}" \
+                ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc
+
+        # Where this domain may hold ice: its footprint for ECHAM's glaciers,
+        # sub-grid orography and albedo (set_glacial_mask_to_echam_grid). Cells
+        # the prescribed front retreat keeps ice-free stay outside, so their
+        # prescribed glaciers survive.
+        echo "                  -   active area of the domain -> ice_domain_active.nc"
+        if ! ( module load python3 >/dev/null 2>&1
+               python3 ${FUNCTION_PATH}/../utils/ice_active_area.py \
+                       ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc ${ICE_COUPLE_DIR}/ice_domain_active.nc \
+                       ${PISM_FRONT_RETREAT_FILE:+--front-retreat ${PISM_FRONT_RETREAT_FILE}} ); then
+                echo " !!! could not write ${ICE_COUPLE_DIR}/ice_domain_active.nc"
+                echo " S T O P  42"
+                exit 42
+        fi
+
+        # Where this domain has floating ice at the end of the chunk, for the
+        # check against FESOM's cavities (ice2fesom_check_cavity_geometry).
+        # PISM's own mask (3 = floating) of the chunk's last output step, so
+        # that PISM's sea level (forcing) is respected. Without it: thicker
+        # than 1 m and afloat at sea level 0,
+        # topg + thk * rho_ice / rho_sea_water < 0, with a note.
+        typeset _fl_ri _fl_rw _fl_chunk _fl_n
+        _fl_chunk=${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+        echo "                  -   floating ice of the domain -> ice_floating.nc"
+        if [ -f ${_fl_chunk} ] && ncdump -h ${_fl_chunk} 2>/dev/null | grep -q "[[:space:]]mask("; then
+                _fl_n=$(cdo -s ntime ${_fl_chunk} 2>/dev/null)
+                cdo -s -O -setname,floating -mul -gtc,2.5 -selname,mask -seltimestep,${_fl_n:-1} ${_fl_chunk} \
+                        -ltc,3.5 -selname,mask -seltimestep,${_fl_n:-1} ${_fl_chunk} \
+                        ${ICE_COUPLE_DIR}/ice_floating.nc 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+        else
+                _fl_ri=$(ncdump -h ${last_year_in_chunk_restart} 2>/dev/null \
+                        | sed -n 's/^[[:space:]]*pism_config:\(constants\.ice\.density\|ice_density\) = \([0-9.eE+-]*\).*/\2/p' | head -1)
+                _fl_rw=$(ncdump -h ${last_year_in_chunk_restart} 2>/dev/null \
+                        | sed -n 's/^[[:space:]]*pism_config:\(constants\.sea_water\.density\|sea_water_density\) = \([0-9.eE+-]*\).*/\2/p' | head -1)
+                echo "                  !   no PISM mask in ${_fl_chunk}: floating ice from thk/topg at sea level 0"
+                cdo -s -O -expr,"floating=(thk>1)*((topg+thk*${_fl_ri:-910}/${_fl_rw:-1028})<0)" \
+                        -selname,thk,topg ${last_year_in_chunk_restart} ${ICE_COUPLE_DIR}/ice_floating.nc \
+                        2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+        fi
+        if [ ! -s ${ICE_COUPLE_DIR}/ice_floating.nc ]; then
+                echo "                  !   could not write ice_floating.nc; FESOM's cavity check will skip this domain"
+        fi
         #rm $files_needed $rmlist
         echo; echo "                  ...done"
         unset files_needed
@@ -471,8 +536,13 @@ function generate_iceberg_discharge {
                 echo " S T O P  42"
                 exit 42
         fi
-        cdo -s -O -timmean -selname,tendency_of_ice_amount_due_to_discharge ${_src} ${_out} \
-                2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+        rm -f ${_out}  # a failed cdo below must not leave last year's file in place
+        if ! cdo -s -O -timmean -selname,tendency_of_ice_amount_due_to_discharge ${_src} ${_out} \
+                2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm; then
+                echo " !!! cdo failed to write ${_out}"
+                echo " S T O P  42"
+                exit 42
+        fi
         if [ -n "${PISM_FRONT_RETREAT_FILE}" ]; then
                 echo "                 -   no discharge where ${PISM_FRONT_RETREAT_FILE} allows no ice"
                 if ! ( module load python3 >/dev/null 2>&1
@@ -498,6 +568,10 @@ function generate_iceberg_discharge {
 ## and is subtracted here,
 ## so that it reaches the ocean once. The standard_name then says
 ## "excluding_calving", which ice2fesom checks against FESOM's setting.
+## With cavity_coupling (FESOM_USE_CAVITY=1) FESOM melts the ice shelves in
+## its cavities, so PISM's sub-shelf melt (basal_mass_flux_floating, chunk
+## mean, negative for melt) is subtracted as well: the flux then contains
+## surface mass balance and grounded basal melt only.
 ## PISM 1.x only.
 function generate_mass_loss_flux {
         typeset _out=${ICE_COUPLE_DIR}/ice_runoff_flux_total.nc
@@ -511,16 +585,23 @@ function generate_mass_loss_flux {
                 ;;
         esac
 
-        echo ""; echo "                 *   ice mass change of this chunk as a flux"
+        # ice density PISM ran with (PISM 1.x: constants.ice.density)
+        typeset _rho
+        _rho=$(ncdump -h ${last_year_in_chunk_restart} 2>/dev/null \
+                | sed -n 's/^[[:space:]]*pism_config:\(constants\.ice\.density\|ice_density\) = \([0-9.eE+-]*\).*/\2/p' | head -1)
+        _rho=${_rho:-910.}
+
+        echo ""; echo "                 *   ice mass change of this chunk as a flux (ice density ${_rho} kg m-3)"
         cdo -s -setattribute,total_ice_mass_loss_flux@units="kg m-2 s-1" \
                 -chname,thk_diff,total_ice_mass_loss_flux \
-                -divc,${_sec_per_year} -divc,${CHUNK_SIZE_pism_standalone} -mulc,910 \
+                -divc,${_sec_per_year} -divc,${CHUNK_SIZE_pism_standalone} -mulc,${_rho} \
                 -setmisstoc,0 ${ICE_COUPLE_DIR}/ice_thk_difference.nc \
                 ${_out} 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
         # not a thickness any more (the standard_name came along from thk)
         ncatted -O -h -a standard_name,total_ice_mass_loss_flux,d,, \
                 -a long_name,total_ice_mass_loss_flux,o,c,"ice mass change as a flux (mass gain positive)" \
                 ${_out}
+        mass_loss_correct_to_pism_budget ${_out} ${_sec_per_year}
 
         if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
                 echo "                 -   minus the calving, which goes to the FESOM iceberg model"
@@ -535,6 +616,115 @@ function generate_mass_loss_flux {
                         -a long_name,total_ice_mass_loss_flux,o,c,"ice mass change except the calving, which FESOM gets as icebergs" \
                         ${_out}
         fi
+
+        if [[ "x${FESOM_USE_CAVITY:-0}" == "x1" ]]; then
+                typeset _src=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+                echo "                 -   minus the sub-shelf melt, which FESOM computes in its cavities"
+                if ! ncdump -h ${_src} 2>/dev/null | grep -q "basal_mass_flux_floating("; then
+                        echo " !!! no basal_mass_flux_floating in ${_src};"
+                        echo " !!! sub-shelf melt would reach the ocean twice. Add it to PISM's extra output."
+                        echo " S T O P  42"
+                        exit 42
+                fi
+                # mass gain positive, so subtracting the (negative) melt removes it
+                cdo -s -sub ${_out} \
+                        -divc,${_sec_per_year} -setmisstoc,0 \
+                        -timmean -selname,basal_mass_flux_floating ${_src} \
+                        ${_out}.tmp 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+                mv ${_out}.tmp ${_out}
+                if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
+                        ncatted -O -h -a long_name,total_ice_mass_loss_flux,o,c,"ice mass change except the calving (FESOM icebergs) and the sub-shelf melt (FESOM cavities)" ${_out}
+                else
+                        ncatted -O -h -a long_name,total_ice_mass_loss_flux,o,c,"ice mass change except the sub-shelf melt, which FESOM computes in its cavities" ${_out}
+                fi
+        fi
+        # read by ice2fesom (distribute_total_discharge_over_ocean), which
+        # checks it against FESOM's use_cavity
+        ncatted -O -h -a excludes_sub_shelf_melt,total_ice_mass_loss_flux,o,s,${FESOM_USE_CAVITY:-0} ${_out}
+}
+
+## @fn mass_loss_correct_to_pism_budget()
+## Call: mass_loss_correct_to_pism_budget FILE SEC_PER_YEAR
+## The thickness difference over the chunk (restart at the end minus the
+## chunk's input file) also holds whatever happens to the input when PISM
+## starts from it (regridding, bootstrapping, a restart from another file): in
+## dual_hemisphere_t02 the Antarctic one was -518 Gt/yr against -662 Gt/yr in
+## PISM's own budget. So the total of FILE is set to PISM's budget for the
+## chunk, the mean over the scalar time series (${EXP_ID}_${EXE_pism}_ts_*.nc)
+## of
+##     tendency_of_ice_mass_due_to_surface_mass_flux
+##   + tendency_of_ice_mass_due_to_basal_mass_flux
+##   + tendency_of_ice_mass_due_to_discharge
+##   (+ tendency_of_ice_mass_due_to_conservation_error, if written),
+## which for the NH domain there matched the change of ice_mass (+250 vs
+## +251 Gt/yr). The pattern stays that of the thickness difference; the
+## difference is spread in proportion to |F| (conserve_remapped_flux.py).
+## The log shows both totals every chunk.
+##
+## MASS_LOSS_TOTAL (ice domain key mass_loss_total):
+##   pism_budget (default)  as above; without the ts file or its variables a
+##                          warning, and the thickness difference is kept
+##   thk_difference         keep the total of the thickness difference (legacy)
+function mass_loss_correct_to_pism_budget {
+        typeset _f=$1 _spy=$2 _ts _terms="" _v _budget _kgs
+        case ${MASS_LOSS_TOTAL:-pism_budget} in
+                thk_difference)
+                        echo "                 -   mass_loss_total=thk_difference: total of the thickness difference kept"
+                        return 0 ;;
+                pism_budget) ;;
+                *)
+                        echo " !!! mass_loss_total = >${MASS_LOSS_TOTAL}<: only pism_budget or thk_difference"
+                        echo " S T O P  42"
+                        exit 42 ;;
+        esac
+        # one ts file per PISM run; a chunk may consist of several runs (the
+        # same loop as pism_atmosphere_get_newest_output for the extra files)
+        typeset _i _j _tsf _tslist="" _tsmiss=""
+        for _i in $(seq ${CHUNK_START_YEAR_pism} ${NYEAR} ${CHUNK_END_YEAR_pism}); do
+                _j=$(( _i + NYEAR - 1 ))
+                [ ${_i} -lt 10 ] && _i=0${_i}
+                _tsf=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_ts_${_i}0101-${_j}1231.nc
+                if [ -f ${_tsf} ]; then _tslist="${_tslist} ${_tsf}"; else _tsmiss="${_tsmiss} ${_tsf}"; fi
+        done
+        if [ -z "${_tslist}" ] || [ -n "${_tsmiss}" ]; then
+                echo "                 !   PISM time series missing for this chunk:${_tsmiss:- (none found)}"
+                echo "                 !   total of the thickness difference kept (may hold a start-of-chunk jump)"
+                return 0
+        fi
+        _ts=${ICE_COUPLE_DIR}/pism_ts_chunk.nc
+        if ! cdo -s -O cat ${_tslist} ${_ts} 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm; then
+                echo "                 !   could not join the PISM time series of this chunk; total of the thickness difference kept"
+                return 0
+        fi
+        for _v in surface_mass_flux basal_mass_flux discharge conservation_error; do
+                if ncdump -h ${_ts} | grep -q "tendency_of_ice_mass_due_to_${_v}("; then
+                        _terms="${_terms}${_terms:++}tendency_of_ice_mass_due_to_${_v}"
+                elif [ ${_v} != conservation_error ]; then
+                        echo "                 !   tendency_of_ice_mass_due_to_${_v} not in ${_ts}:"
+                        echo "                 !   total of the thickness difference kept"
+                        return 0
+                fi
+        done
+        if ! ncdump -h ${_ts} | grep -q 'tendency_of_ice_mass_due_to_discharge:units = "Gt year-1"'; then
+                echo "                 !   ${_ts}: budget not in Gt year-1; total of the thickness difference kept"
+                return 0
+        fi
+        _budget=$(cdo -s outputf,%.10e -timmean -expr,"budget=${_terms}" ${_ts} 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm | tr -d ' ')
+        if [ -z "${_budget}" ]; then
+                echo "                 !   could not read PISM's budget from ${_ts}; total of the thickness difference kept"
+                return 0
+        fi
+        _kgs=$(awk -v b=${_budget} -v s=${_spy} 'BEGIN{printf "%.10e", b * 1e12 / s}')
+        echo "                 -   total set to PISM's budget for the chunk: ${_budget} Gt/yr (${_terms}; $(echo ${_tslist} | wc -w) run(s))"
+        if ! ( module load python3 >/dev/null 2>&1
+               python3 ${FUNCTION_PATH}/../utils/ice_cell_area.py ${_f} ${_f%.nc}.cell_area.nc \
+               && python3 ${FUNCTION_PATH}/../utils/conserve_remapped_flux.py - - \
+                       ${_f} ${_f%.nc}.cell_area.nc --target-integral=${_kgs} ); then
+                echo " !!! could not set the total of ${_f} to PISM's budget"
+                echo " S T O P  42"
+                exit 42
+        fi
+        rm -f ${_f%.nc}.cell_area.nc
 }
 
 function correct_lonlat_order { 

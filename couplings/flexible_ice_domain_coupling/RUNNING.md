@@ -81,9 +81,11 @@ config. Nothing in the coupling scripts changes.
 | switch | where | effect |
 |---|---|---|
 | `ice_domain: True` | `modelN` | this model is an ice domain; its exchange files go to `${couple_dir}/<setup_name>/` |
-| `ice_domain_box` | `modelN` or the domain's own section | `lon1,lon2,lat1,lat2`; clips this domain's contribution before the domains are combined. Only needed when the remapping halos of two neighbouring domains would overlap |
+| `ice_domain_box` | `modelN` or the domain's own section | `lon1,lon2,lat1,lat2`; clips this domain's contribution before the domains are combined. Needed when two domain grids overlap on the ECHAM grid (an NH grid and a Greenland grid, or the remapping halos of two neighbours) |
 | `ice_domain_weight` | `modelN` or the domain's own section | scales this domain's contribution |
 | `general.ice_domains` | coupling runscript | explicit list, overrides the `ice_domain: True` markers: `ice_domains: [pism_nh, pism_sh]` |
+| (no key) | | every coupling, each domain's `ice_file_for_atmosphere.nc` must be new: `pism2atmosphere` stamps it with the run's chunk number, and `ice2echam`/`ice2fesom` stop with exit 78 if a later chunk finds a stamp that was already used (the domain's PISM run did not deliver; its orography change would be added twice). A rerun of the same chunk is fine |
+| `general.ice_domains_allow_overlap` | coupling runscript | default `False`. The domains' orography changes and freshwater are **added** up, so overlapping domain grids would count them twice there. `ice2echam` remaps every domain's footprint (where it may hold ice, `ice_domain_active.nc`; before the first coupling the whole grid), clipped to its `ice_domain_box`, to the ECHAM grid and stops with exit 77 if two overlap, naming the pairs and the number of cells. Note that `ice_domain_box` is a plain lon/lat box over the whole domain: clipping an NH grid to 0–58°N to make room for a Greenland domain also removes Svalbard and Arctic Canada from it. `True` turns the stop into a warning. Checked again whenever domains, boxes or active areas change (`couple/ice_domains_overlap.checked`) |
 
 **Three layouts**, decided in this order:
 
@@ -168,6 +170,22 @@ Both components use **`env_awiesm.py`** (there is no separate `env_echam.py` /
 | `albedo_on_glaciers` | `0.7` | albedo prescribed on new glacier points |
 | `glacial_threshold` | `0.5` | glacier fraction above which a cell counts as glaciated |
 | `paleo_time` | `pi` | background state used for the orography/land surface |
+| `oro_high_res_reference_file` | see effect | T511 reference orography (`OROMEA`) the high-resolution orography path adds the ice sheet changes to (`hi_res_init_oro`). A file (exit 48 if missing), or `none` for the low-resolution path. Unset: on levante `/pool/data/ECHAM5/T511/T511_jan_surf.nc`, for `paleo_time: eot` the EOT file, for `omt` none; on any other machine none (low-resolution path), so set it there to use T511 |
+| `calnoro_ld_library_path` | machine default | netcdf-fortran library directory CALNORO was linked against; defaults exist for levante and albedo |
+
+**Glaciers, sub-grid orography and albedo inside a domain.** Inside each ice
+domain's footprint the ice sheet decides; outside, the prescribed `unit.24`
+state stays. The footprint is where the domain may hold ice:
+`pism2atmosphere` writes `ice_domain_active.nc` (the PISM grid minus the cells
+the prescribed front retreat keeps ice-free, `utils/ice_active_area.py`), and
+an ECHAM cell is inside when at least half of it is covered. Inside, cells
+with a `unit.24` glacier where the ice sheet has none get the albedo (`ALB`) of
+the nearest land cell that is no glacier in `unit.24`, instead of keeping the
+glacier albedo. This `ALB` only reaches the model as the JSBACH init file's
+`albedo`, which JSBACH reads only with `use_albedo = .false.` (ECHAM does not
+read `ALB` from `unit.24`). With `use_albedo = .true.`, as in the AWI-ESM 2.6
+setups, land albedo comes from `albedo_soil_vis/nir` and `albedo_veg_vis/nir`
+of the init file instead.
 
 ### 3a. Paleo setups: the orography reference (glacial `unit.24`)
 
@@ -237,6 +255,14 @@ setups need nothing: `unit.24` passes (greenland_only: 10 of 2031 glacier cells
 > 500 m off, 0.5 %; LGM_glac1d: 1305 of 3292, 40 %) and `OROMEA` is
 bit-identical to before (checked).
 
+### Switches read from `jsbach:`
+
+| key | default | effect |
+|---|---|---|
+| `jsbach_init_update` | `changed_cells` | how the JSBACH init file follows the new glacier mask. It is regenerated each coupling from the pool's maps (`jsbach_init_file`). `changed_cells`: the regenerated values are taken only on the cells whose glacier mask changed, the current `jsbach.nc` stays everywhere else (keeps a paleo land surface outside the ice sheets; `utils/jsbach_merge_changed_cells.py`). `full`: the regenerated file replaces `jsbach.nc` everywhere (legacy) |
+| `jsbach_init_year` | `1850` | year of the pool's cover types and fractions in the regenerated file |
+| `jsbach_init_dynveg` | `True` | regenerated file for dynamic vegetation |
+
 ### Switches read from `fesom:`
 
 | key | default | effect |
@@ -244,11 +270,58 @@ bit-identical to before (checked).
 | `use_icebergs` (or `fesom_use_iceberg`, or `general.with_icb`) | `False` | gates building the iceberg discharge in `ice2fesom` |
 | `ice_discharge_target_grid` | `${echam.resolution}grid` | common grid used **only** when several domains have to be summed into one discharge file |
 | `ice_discharge_remap` | `remapcon2` | cdo operator for that remapping |
-| `iter_coup_regrid_method_ice2oce` | `INTERPOLATE` | `INTERPOLATE` / `REMAP` / `EXTRAPOLATE` / `NONE` (`NONE` = ice and ocean grid are identical) |
+| `iter_coup_regrid_method_ice2oce` | `INTERPOLATE` | `INTERPOLATE` / `REMAP` / `EXTRAPOLATE` |
 | `iter_coup_interact_method_oce2ice` | `OCEANTEMPSALT` | what the ocean hands to the ice sheet (see §4) |
 | `cell_area_fesom_file` | `fesom.mesh.diag.nc` | used by the hosing correction (was `fesom_cell_area_file`) |
-| `constant_landice_hosing_file` | — | appended to `landice_yearly_mass_loss.out` |
+| `constant_landice_hosing` | — | constant freshwater flux into one region of FESOM nodes (FESOM hosing region 2), on top of the ice sheet hosing. `0` = off. Stops (exit 46) if the node list is missing |
+| `constant_landice_hosing_unit` | `Sv` | `Sv` (spread evenly over the region's node area) or `m/s` |
+| `constant_landice_hosing_nodes` | `${couple_dir}/landice_nodes_in_region_2.out` | the region: FESOM node list, first line the number of nodes, then 1-based node numbers |
+| `constant_landice_hosing_file` | — | old spelling: a file whose first line is the constant flux in m/s; the nodes as above. Without the node list it is skipped, as before. Ignored when `constant_landice_hosing` is set |
 | `pyfesom_path` | `/pf/a/a270124/pyfesom2/` | pyfesom2 checkout |
+
+### Freshwater from the ice sheets
+
+Each ice domain's `pism2atmosphere` writes `total_ice_mass_loss_flux`
+[kg m⁻² s⁻¹, mass gain positive]: ρ_ice · Δthk over the chunk (ρ_ice as PISM
+ran with, from the restart's `pism_config`), its total set to PISM's own mass
+budget for the chunk (`mass_loss_total`, see §4), minus the calving
+(with `iceberg_coupling`, it goes to FESOM as icebergs) and minus the sub-shelf
+melt (with `cavity_coupling`, FESOM melts the shelves in its cavities). This
+one field goes to the ocean by two routes, both on by design, because they do
+different things:
+
+* **rivers**: `ice2echam` remaps it to the ECHAM grid, `gfw_atmo` → JSBACH HD
+  (`lgfw`) → river mouths;
+* **hosing**: `ice2fesom` integrates it over all domains and spreads it evenly
+  over the FESOM ocean (`landice_yearly_mass_loss.out`, `use_landice_water`).
+
+FESOM balances the `gfw_atmo` input internally, so the river route puts the
+water where the ice sheet loses it but does not change the ocean's net
+salinity. The net change comes from the hosing alone. The freshwater is
+therefore not counted twice.
+
+**Amounts are conserved.** The integral is taken on each ice grid with PISM's
+own cell area dx·dy (`utils/ice_cell_area.py`), the area PISM books its mass
+on. The copy on the ECHAM grid is corrected to exactly that integral after the
+remapping (`utils/conserve_remapped_flux.py`; the log shows native and
+remapped integral). Without that, `remapbil` (used when `ice.griddes` has no
+cell corners) flipped the sign of the Antarctic 8 km integral in
+`dual_hemisphere_t02`, and even `remapcon2` is 1–7 % off (NH 5 km −0.8 %,
+Antarctica −6.6 %), because it conserves true spherical areas and not the
+projected cells.
+
+**The pattern is not.** Δthk includes the ice flow: where ice moves in, the
+thickness grows without any mass being gained. Locally the field is therefore
+not a runoff: interior thinning shows up as loss, thickening shelves and
+margins as gain, so some ECHAM cells get negative `gfw_atmo` (HD then takes
+water out there). Only the integral over a domain is the ice sheet's mass
+change. Known limitation; a fix would take the pattern from PISM's local
+terms (surface runoff, basal melt) and scale it to the integral.
+
+**Constant hosing.** `constant_landice_hosing` adds a constant flux in one
+region of FESOM nodes (keys above). FESOM gives each node the flux of the last
+region that lists it, and region 1 is the whole ocean, so the value written
+for region 2 is the ice sheet hosing plus the constant.
 
 ### Iceberg discharge: one file per domain, or one combined file
 
@@ -338,12 +411,16 @@ pism_nh:
 | `iter_coup_interact_method_oce2ice` (or `ocean_ablation_method`) | `OCEANTEMPSALT` | `DIRECT` / `OCEANTEMP` / `OCEANTEMPSALT` / `PICO_OCEAN` / `TEMP2FLUX` / `TEMPSALT2FLUX` / `MIXED` |
 | `PICO_basins_only_file` (or `basin_file`) | — | file holding the PICO `basins` field, required by `PICO_OCEAN`. Must be on the same grid as the domain's ocean forcing. Both spellings are accepted: the dual-hemisphere tree used the first, the single ice sheet tree the second |
 | `iceberg_coupling` | `False` | this domain delivers ice→ocean forcing / iceberg discharge. The calving (PISM's discharge, chunk mean) then goes to FESOM as icebergs and is taken out of the mass loss sent to the rivers and the hosing; must match FESOM's `use_icebergs` (else exit 74). With `geometry.front_retreat.prescribed.file` in `kv_pairs` the discharge is 0 wherever that file allows no ice (e.g. Tibet), since PISM books cleared ice there as discharge |
+| `mass_loss_total` | `pism_budget` | total of the mass-loss flux. Δthk (restart at the end minus the chunk's input) also holds whatever happens to the input when PISM starts from it (regridding, bootstrapping): −518 instead of −662 Gt/yr for Antarctica in `dual_hemisphere_t02`. `pism_budget`: the total is set to the chunk mean of PISM's scalar budget (the `*_ts_*.nc` of all runs of the chunk, joined: surface + basal mass flux + discharge, + conservation error if written), the pattern stays that of Δthk; both totals are logged. If a run's ts file or the variables are missing: a warning, Δthk kept. `thk_difference`: Δthk's own total (legacy) |
+| `cavity_coupling` | `False` | FESOM resolves the melt under this domain's ice shelves in its cavities (`use_cavity`). PISM's sub-shelf melt (`basal_mass_flux_floating`, chunk mean) is then taken out of the mass loss sent to the rivers and the hosing, so that it reaches the ocean once. Needs `basal_mass_flux_floating` in PISM's extra output (else exit 42). Set it only for domains whose shelves lie in FESOM's cavity mask (Antarctica). Checked in `ice2fesom` against FESOM's `use_cavity` (from the `namelist.config` FESOM reads, else the runscript's namelist changes): `cavity_coupling: 1` without FESOM cavities stops with exit 75 (the melt would reach the ocean nowhere); Then the geometry: each domain's floating ice at the end of its chunk (`ice_floating.nc`, written by `pism2atmosphere` from PISM's own `mask` = 3 of the last extra output step, so PISM's sea level is respected; without `mask` from thk/topg at sea level 0, with a note) is put on the FESOM nodes and compared with FESOM's cavity nodes (`cavity_depth@node.out` in the mesh). A domain without `cavity_coupling` that has ≥ 10 % of its floating nodes in cavities stops with exit 75 (that melt would reach the ocean twice; below 10 % a warning). A domain with `cavity_coupling` but no floating ice in the cavities at all stops too. The share of a domain's floating ice outside FESOM's cavities is logged; that melt reaches the ocean nowhere (warning from 10 %; `dual_hemisphere_t02`: 20 % for Antarctica). Without `ocean.griddes` or `cavity_depth@node.out` only the flag check above is done |
 | `thk_threshold` | `5.0` | ice thickness above which a cell counts as glaciated |
 | `select_min_glacial_depth` | `1` | glacial mask criterion |
 | `glacial_mask_from_pos_smb` | `1` | ECHAM glacier mask: `1` = ice thicker than `thk_threshold` **or** positive SMB, `0` = ice thickness only (ice-free land with positive SMB does not become glacier) |
 | `orog_reference_pism` | `1` | reference the orography anomaly is taken against. **Only `0` or `1`**, checked like `oro_update_var`: anything else stops `pism2atmosphere` with exit 43. `0` = legacy (anomaly against this chunk's PISM input every chunk); `1` = at the first coupling of each ice domain hand ECHAM the absolute ice sheet surface (ECHAM's orography becomes the ice model's there), afterwards only the change over each chunk. "First" = no earlier `ice_file_for_atmosphere.nc` in the domain's couple dir (repeat-safe via `ice_orog_absolute.chunk`); not tied to a chunk number |
 | `orog_surface_definition` | `physical` | surface height handed to the atmosphere. `physical` = what is actually there above sea level: `topg+thk` on grounded ice and land, the freeboard on floating ice, 0 over open ocean. `thk_plus_topg` = legacy, `topg+thk` everywhere (the bed depth over open ocean, so a retreat onto a marine bed pulled ECHAM's orography below sea level). Anything else: exit 49 |
 | `sea_level_forcing` | `0` | apply a sea level forcing |
+| `ocean_depth_mean` | `wet`, or `legacy` with `ANOMALY_OCEAN_*` | how the ocean temperature/salinity handed to PICO or `th` is reduced to one layer; points below the sea floor (FESOM writes T = S = 0 there) are never used. `wet` = mean over the water between `ocean_depth_top` and `ocean_depth_bottom`, each level weighted by the metres of water it stands for (layer between the midpoints to its neighbours, cut to the range); where the sea floor is shallower than `ocean_depth_top`, the deepest water above it. `bottom` = the deepest wet level not deeper than `ocean_depth_bottom`: the water at the sea floor on the shelf, the water at `ocean_depth_bottom` in deeper ocean (PICO is calibrated with shelf bottom water); `ocean_depth_top` is not used. `legacy` = the old plain mean over FESOM levels 1–20 after the regridding, the zeros below the sea floor included (shelf salinity far too low); the depth range is ignored. Unset, it is `legacy` when ocean anomaly forcing is on, because `BASE_STATE_OCEAN_FNAME` was made with the old mean and only the same mean cancels its errors: set `wet` or `bottom` once the base state is made with it. Anything else: exit 17 |
+| `ocean_depth_top`, `ocean_depth_bottom` | `0`, `410` | depth range in m below sea level, both ends included, for `ocean_depth_mean: wet` (`bottom` uses only `ocean_depth_bottom`). `0`–`410` m = FESOM levels 1–20, the range used before. Stops with exit 16 if no ocean level lies in the range |
 | `ANOMALY_AIR_TEMPERATURE`, `ANOMALY_PRECIPITATION` | `0` | atmospheric anomaly coupling; need `REFERENCE_ATMOS_FNAME` and `BASE_STATE_ATMOS_FNAME` |
 | `ANOMALY_OCEAN_TEMPERATURE`, `ANOMALY_OCEAN_SALINITY` | `0` | ocean anomaly forcing per ice domain: `theta_ocean` / `salinity_ocean` = reference + (ocean model − base state), salinity clipped at 0. Needs `REFERENCE_OCEAN_FNAME` and `BASE_STATE_OCEAN_FNAME` in the domain's section (PISM names, domain grid); stops with exit 2 if either is missing |
 | `chunk_size` (in the `modelN` block) | — | the domain's own chunk size; each domain may have its own |

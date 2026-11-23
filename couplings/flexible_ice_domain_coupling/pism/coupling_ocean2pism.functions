@@ -32,6 +32,8 @@ function ocean2pism {
     read_names ocean ice
     save_griddes ice
 
+    iterative_coupling_ocean_pism_depth_mean_method
+
     NOCOLOR='\033[0m'
     GREEN='\033[32m'
 
@@ -132,14 +134,11 @@ function ocean2pism {
             iterative_coupling_ocean_pism_regrid_interpolate
             iterative_coupling_ocean_pism_regrid_extrapolate
             ;;
-        "NONE")
-	    # Ocean and ice sheet grid are identical !!
-	    INTERPOL_TYPE_OCE=none
-    SM_OCEAN_FORCING_FILE3        iterative_coupling_ocean_pism_regrid_none
-            ;;
         *)
+            # (NONE, "grids are identical", was removed: FESOM's mesh and a
+            # PISM grid never are, and the branch handed on the raw file.)
             echo " UNKNOWN regrid method selected!"
-	    echo "   Known: INTERPOLATE = REMAP, EXTRAPOLATE, NONE"
+	    echo "   Known: INTERPOLATE = REMAP, EXTRAPOLATE"
 	    echo " S T O P   2"
             exit 2
     esac
@@ -429,6 +428,14 @@ EOF
     # This method allows only one time step
     iterative_coupling_ocean_pism_fesom2pism_collapse_time ocean_file_for_ice.pism_names.nc
 
+    # One layer of T and S for PISM. Done here on the ocean grid, before the
+    # regridding: its horizontal extrapolation would otherwise fill the masked
+    # points below the sea floor from neighbouring columns. The legacy mean is
+    # taken after the regridding (compute_ocean_tempsalt_forcing), as before.
+    if [ "x${OCEAN_DEPTH_MEAN}" != "xlegacy" ] ; then
+        iterative_coupling_ocean_pism_depth_mean ocean_file_for_ice.pism_names.nc
+    fi
+
     echo "     ...done."
 }
 
@@ -684,17 +691,6 @@ function iterative_coupling_ocean_pism_regrid_extrapolate {
     unset _cdo_flag _tmp_file
 }
 
-function iterative_coupling_ocean_pism_regrid_none {
-    echo " *   Grid-identical GCM forcing (no interpolation)..."
-
-    test_file_or_exit ${ICE_COUPLE_DIR}/ocean_file_for_ice.nc 7
-
-    mv ${ICE_COUPLE_DIR}/ocean_file_for_ice.nc \
-	ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc
-
-    cleanup_list="${cleanup_list}" # $(pwd)/ocean_file_for_ice.nc"
-}
-
 #
 # Compute actual boundary conditions for ice sheet/shelf if wanted
 #
@@ -732,17 +728,19 @@ function iterative_coupling_ocean_pism_compute_ocean_temp_forcing {
 
 function iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing {
     _file=$1
-    if [ 0 -eq 1 ] ; then
-	_action_string=": vertical mean (150-600m) of temperature and salinity" ;
-	cdovert_flag="-sellevel,150/600"
+    if [ "x${OCEAN_DEPTH_MEAN}" == "xlegacy" ] ; then
+        # old behaviour: plain mean over FESOM levels 1-20 on the ice grid,
+        # the zeros below the sea floor included
+        echo " *   Building ocean temperature/salinity forcing (${PISM_OCEAN_SWITCH:-Unknown}): legacy vertical mean (index 1-20) -> $_file ..."
+        $cdo -vertmean -sellevidx,1/20 ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc ${ICE_COUPLE_DIR}/$(basename ${_file})
+        echo "       ^ Note: Warnings about missing levels are commonly OK"
+        cleanup_list="${cleanup_list} $(pwd)/ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc"
     else
-	_action_string=": vertical mean (index 1-20) of temperature and salinity"
-	cdovert_flag="-sellevidx,1/20"
+        # The depth mean was already taken before the regridding
+        # (iterative_coupling_ocean_pism_depth_mean), so only rename the file.
+        echo " *   Building ocean temperature/salinity forcing (${PISM_OCEAN_SWITCH:-Unknown}): rename file -> $_file ..."
+        mv -f ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc ${ICE_COUPLE_DIR}/$(basename ${_file})
     fi
-    echo " *   Building ocean temperature-based forcing (${PISM_OCEAN_SWITCH:-Unknown}) $_action_string -> $_file ..."
-
-    iterative_coupling_ocean_pism_fesom2pism_collapse_depth ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc ${ICE_COUPLE_DIR}/$(basename ${_file}) "${cdovert_flag}"
-
     echo "     ...done."
 }
 
@@ -911,51 +909,186 @@ function iterative_coupling_ocean_pism_fesom2pism_collapse_time {
 }
 
 
-function iterative_coupling_ocean_pism_fesom2pism_collapse_depth {
-    # NOTE: Could be called ONLY AFTER reshuffling data with pyfesom
-    # script, because the depth axis is not established before.
-    #
-    # Example:
-    # iterative_coupling_ocean_pism_fesom2pism_collapse_depth ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc ${ICE_COUPLE_DIR}/$(basename ${_file}) "-sellevel,150/600"
-    #
-    _file_input=$1
-    echo ""; echo " *   collapse depth axis/dimension of >>${_file_input}<<"
-    test_file_or_exit ${_file_input:?Missing file name to collapse depth dimension} 13
-
-    if [ $# -ge 2 ] ; then
-	_file_output=$2
-    else
-	# Swap input / output, because  input and output file name are identical
-	_file_output=${_file_input}
-	_file_input=${_file_input}_before_vertmean.nc
-	mv -f ${_file_output} ${_file_input}
+## @fn iterative_coupling_ocean_pism_depth_mean_method()
+## Sets OCEAN_DEPTH_MEAN (runscript key ocean_depth_mean) to "wet", "bottom"
+## or "legacy", see iterative_coupling_ocean_pism_depth_mean. Unset: "legacy"
+## when ocean anomaly forcing is on, because its BASE_STATE_OCEAN_FNAME was
+## made with the old mean and only the same mean cancels its errors; else
+## "wet". Anything else stops with exit 17.
+function iterative_coupling_ocean_pism_depth_mean_method {
+    if [ -z "${OCEAN_DEPTH_MEAN}" ] ; then
+        if [ "x${ANOMALY_OCEAN_TEMPERATURE:-0}" == "x1" ] || [ "x${ANOMALY_OCEAN_SALINITY:-0}" == "x1" ] ; then
+            OCEAN_DEPTH_MEAN=legacy
+            echo " * ocean_depth_mean not set and ocean anomaly forcing is on -> legacy"
+            echo "   (the base state has to be made with the same depth mean; set"
+            echo "    ocean_depth_mean: wet once BASE_STATE_OCEAN_FNAME is made with it)"
+        else
+            OCEAN_DEPTH_MEAN=wet
+        fi
     fi
-    if [ $# -ge 3 ] ; then
-	_cdovert_sel_flag=$3
+    case ${OCEAN_DEPTH_MEAN} in
+        wet)
+            echo " * ocean_depth_mean = wet (${OCEAN_DEPTH_TOP:-0}-${OCEAN_DEPTH_BOTTOM:-410} m, thickness-weighted, sea floor left out)"
+            ;;
+        bottom)
+            echo " * ocean_depth_mean = bottom (deepest wet level down to ${OCEAN_DEPTH_BOTTOM:-410} m)"
+            ;;
+        legacy)
+            echo " * ocean_depth_mean = legacy (FESOM levels 1-20, zeros below the sea floor included)"
+            if [ -n "${OCEAN_DEPTH_TOP}${OCEAN_DEPTH_BOTTOM}" ] ; then
+                echo "   ! ocean_depth_top / ocean_depth_bottom are ignored with legacy"
+            fi
+            ;;
+        *)
+            echo " !!! ocean_depth_mean = >${OCEAN_DEPTH_MEAN}<: only wet, bottom or legacy"
+            echo " S T O P  17"
+            exit 17
+            ;;
+    esac
+}
+
+## @fn iterative_coupling_ocean_pism_depth_mean()
+## Call: iterative_coupling_ocean_pism_depth_mean FILE
+## Reduces the 3D ocean temperature and salinity in FILE (ocean grid, PISM
+## names) to one layer, in place. FESOM writes T = S = 0 below the sea floor;
+## these points are set to missing (wet = salinity > 0) and never used. Before,
+## they were averaged in and pulled the shelf salinity far down
+## (CHANGES-vs-REFERENCE.md); that mean is still available as
+## ocean_depth_mean: legacy. Depths are metres below sea level; the levels
+## have to run from the surface down, as in FESOM.
+##
+## OCEAN_DEPTH_MEAN (runscript key ocean_depth_mean):
+##   wet     mean over the water from OCEAN_DEPTH_TOP to OCEAN_DEPTH_BOTTOM
+##           (both ends included; defaults 0 and 410 m = FESOM levels 1-20),
+##           each level weighted by the thickness of water it stands for:
+##           the layer between the midpoints to its neighbours, cut to the
+##           range. (Equal weights gave the levels at 0, 5 and 10 m as much
+##           say as those 70 m apart further down.) Where the sea floor is
+##           shallower than OCEAN_DEPTH_TOP, so that no level of the range is
+##           wet, the deepest wet level is used.
+##   bottom  the deepest wet level not deeper than OCEAN_DEPTH_BOTTOM: the
+##           water at the sea floor on the shelf, the water at
+##           OCEAN_DEPTH_BOTTOM in deeper ocean. PICO is calibrated with
+##           bottom water on the continental shelf. OCEAN_DEPTH_TOP is not
+##           used.
+##
+## Stops (exit 16) if no level lies in the depth range.
+function iterative_coupling_ocean_pism_depth_mean {
+    typeset _file=$1
+    typeset _mode=${OCEAN_DEPTH_MEAN:-wet}
+    typeset _top=${OCEAN_DEPTH_TOP:-0} _bot=${OCEAN_DEPTH_BOTTOM:-410}
+    typeset _levels _weights _in_range _above _upto _iw _i _w _var
+    if [ "x${_mode}" == "xbottom" ] ; then
+        echo ""; echo " *   bottom water (deepest wet level down to ${_bot} m) of temperature and salinity >>${_file}<<"
     else
-	#_cdovert_sel_flag="-sellevel,150/600"
-	_cdovert_sel_flag="-sellevidx,1/20"
+        echo ""; echo " *   thickness-weighted mean ${_top}-${_bot} m of temperature and salinity >>${_file}<<"
+    fi
+    test_file_or_exit ${_file} 13
+
+    # Level numbers (1 = first level). Level values are negative in some
+    # files and positive in others, so compare |depth|.
+    #   _weights  "i:w" for the levels in the range, w = metres of water
+    #   _above    levels shallower than the range (wet fallback)
+    #   _upto     levels down to the bottom of the range (bottom mode)
+    _levels=$($cdo -s showlevel -selvar,salinity_ocean ${_file})
+    _weights=$(echo ${_levels} | awk -v top=${_top} -v bot=${_bot} '{
+        n = NF
+        for (i = 1; i <= n; i++) d[i] = ($i < 0) ? -$i : $i
+        for (i = 1; i <= n; i++) {
+            if (d[i] < top || d[i] > bot) continue
+            ub = (i == 1) ? d[1] : (d[i-1] + d[i]) / 2
+            lb = (i == n) ? d[n] : (d[i] + d[i+1]) / 2
+            if (ub < top) ub = top
+            if (lb > bot) lb = bot
+            w = lb - ub
+            if (w <= 0) w = 1e-3      # a range that is a single level
+            s = s " " i ":" w
+        }
+        print s }')
+    _in_range=$(echo ${_weights} | tr ' ' '\n' | cut -d: -f1 | paste -sd, -)
+    _above=$(echo ${_levels} | awk -v top=${_top} '{
+        for (i = 1; i <= NF; i++) { d = ($i < 0) ? -$i : $i
+            if (d < top) s = s " " i }
+        print s }')
+    _upto=$(echo ${_levels} | awk -v bot=${_bot} '{
+        for (i = 1; i <= NF; i++) { d = ($i < 0) ? -$i : $i
+            if (d <= bot) s = s " " i }
+        print s }')
+    if [ -z "${_in_range}" ] ; then
+        echo " !!! no ocean level between ${_top} and ${_bot} m; levels: ${_levels}"
+        echo " S T O P  16"
+        exit 16
     fi
 
-    #--> This depth is not recognized since depth(level)
-    # level is the vertical dimension
-    ##
-    ## Ensure depth axis is present by adding the
-    ## corresponding file array/axis
-    ##
-    #_file_depth=${FileName_depth4levels_FESOM:-fesom_depth_axis.nc}
-    #if [ -f ${_file_depth} ] ; then
-    #	echo "     - adding depth array from >>${_file_depth}<<"
-    #	ncks -A ${_file_depth} ${_file_input}
-    #fi
+    # wet mask: 1 in the water, missing below the sea floor
+    $cdo -s -O setctomiss,0 -gtc,0 -selvar,salinity_ocean ${_file} ocean_wet.nc
 
-    echo "     - collapse type ${_cdovert_sel_flag} -> $(basename ${_file_output})"
-    $cdo -vertmean ${_cdovert_sel_flag} ${_file_input} ${_file_output}
-    echo "       ^ Note: Warnings about missing levels are commonly OK"
+    if [ "x${_mode}" != "xbottom" ] ; then
+        echo "     - levels:weights (m) in the range:${_weights}"
+        # 1 where at least one level of the range is wet, 0 where the sea floor is above it
+        $cdo -s -O setmisstoc,0 -vertmax -sellevidx,${_in_range} ocean_wet.nc ocean_wet_in_range.nc
+        # metres of water in the range (denominator of the mean)
+        _iw=0
+        for _w in ${_weights} ; do
+            _i=${_w%%:*}; _w=${_w#*:}
+            $cdo -s -O mulc,${_w} -setmisstoc,0 -setlevel,0 -sellevidx,${_i} ocean_wet.nc ocean_wet_w.nc
+            if [ ${_iw} -eq 0 ] ; then mv -f ocean_wet_w.nc ocean_wet_sum.nc
+            else $cdo -s -O add ocean_wet_sum.nc ocean_wet_w.nc ocean_wet_tmp.nc; mv -f ocean_wet_tmp.nc ocean_wet_sum.nc
+            fi
+            _iw=$((_iw + 1))
+        done
+    fi
 
-    cleanup_list="${cleanup_list} $(pwd)/${_file_input}"
+    for _var in theta_ocean salinity_ocean ; do
+        $cdo -s -O ifthen ocean_wet.nc -selvar,${_var} ${_file} ${_var}_wet.nc
 
-    unset _cdovert_sel_flag _file_depth _file_input
+        if [ "x${_mode}" == "xbottom" ] ; then
+            # start at the top level, walk down to the bottom of the range and
+            # keep each wet value, so the deepest wet one is left
+            $cdo -s -O setlevel,0 -sellevidx,1 ${_var}_wet.nc ${_var}_layer.nc
+            for _i in ${_upto} ; do
+                $cdo -s -O ifthenelse -setmisstoc,0 -setlevel,0 -sellevidx,${_i} ocean_wet.nc \
+                    -setlevel,0 -sellevidx,${_i} ${_var}_wet.nc ${_var}_layer.nc ${_var}_tmp.nc
+                mv -f ${_var}_tmp.nc ${_var}_layer.nc
+            done
+            continue
+        fi
+
+        # thickness-weighted mean over the wet levels of the range
+        _iw=0
+        for _w in ${_weights} ; do
+            _i=${_w%%:*}; _w=${_w#*:}
+            $cdo -s -O mulc,${_w} -setmisstoc,0 -setlevel,0 -sellevidx,${_i} ${_var}_wet.nc ${_var}_w.nc
+            if [ ${_iw} -eq 0 ] ; then mv -f ${_var}_w.nc ${_var}_sum.nc
+            else $cdo -s -O add ${_var}_sum.nc ${_var}_w.nc ${_var}_tmp.nc; mv -f ${_var}_tmp.nc ${_var}_sum.nc
+            fi
+            _iw=$((_iw + 1))
+        done
+        # dividing by 0 m of water (sea floor above the range) gives missing
+        $cdo -s -O setname,${_var} -div ${_var}_sum.nc ocean_wet_sum.nc ${_var}_layer.nc
+
+        # sea floor above the range: start at the top level, walk down the
+        # levels above the range and keep each wet value, so the deepest wet
+        # one is left; use it where the range is dry
+        if [ -n "${_above}" ] ; then
+            $cdo -s -O setlevel,0 -sellevidx,1 ${_var}_wet.nc ${_var}_bottom.nc
+            for _i in ${_above} ; do
+                $cdo -s -O ifthenelse -setmisstoc,0 -setlevel,0 -sellevidx,${_i} ocean_wet.nc \
+                    -setlevel,0 -sellevidx,${_i} ${_var}_wet.nc ${_var}_bottom.nc ${_var}_tmp.nc
+                mv -f ${_var}_tmp.nc ${_var}_bottom.nc
+            done
+            $cdo -s -O ifthenelse ocean_wet_in_range.nc ${_var}_layer.nc ${_var}_bottom.nc ${_var}_tmp.nc
+            mv -f ${_var}_tmp.nc ${_var}_layer.nc
+        fi
+    done
+
+    $cdo -s -O merge theta_ocean_layer.nc salinity_ocean_layer.nc ${_file}
+    for _var in theta_ocean salinity_ocean ; do
+        cleanup_list="${cleanup_list} $(pwd)/${_var}_wet.nc $(pwd)/${_var}_layer.nc $(pwd)/${_var}_bottom.nc"
+        cleanup_list="${cleanup_list} $(pwd)/${_var}_sum.nc $(pwd)/${_var}_w.nc"
+    done
+    cleanup_list="${cleanup_list} $(pwd)/ocean_wet.nc $(pwd)/ocean_wet_in_range.nc"
+    cleanup_list="${cleanup_list} $(pwd)/ocean_wet_sum.nc $(pwd)/ocean_wet_w.nc"
 }
 
 ## @fn ic_oce2pism_anomaly()

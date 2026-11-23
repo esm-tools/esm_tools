@@ -132,8 +132,11 @@ fesom:
     # With more than one ice domain ICE_DISCHARGE_MERGE defaults to 0, so the
     # coupling writes ${couple_dir}/<domain>/latest_discharge.nc for each
     # domain and no combined file. Each domain keeps its native ice grid, which
-    # is what the iceberg module wants: basin_file, domain and scaling_factor
-    # are per-entry too, and the order of the lists must match disch_file.
+    # is what the iceberg module wants: basin_file and domain are per entry
+    # too, in the order of disch_file. scaling_factor is not per file: it has
+    # one value per berg size class and holds for all files. disch_file must
+    # list exactly the domains with iceberg_coupling (else exit 76; checked from
+    # the second chunk on, the first reads ini_disch_file).
     # (To get a single combined file instead, export ICE_DISCHARGE_MERGE=1 and
     # set ice_discharge_target_grid -- the two native grids differ, so they have
     # to be summed on a common one.)

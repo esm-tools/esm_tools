@@ -431,6 +431,147 @@ ice_domain_wait_for() {
         return 1
 }
 
+## @fn ice_domain_check_overlap()
+## Call: ice_domain_check_overlap TARGET_GRID
+## The domains are combined by adding their anomalies and fluxes
+## (ice_domain_reduce add). Where two domain grids overlap on TARGET_GRID (an
+## NH grid and a Greenland grid, or the remapping halos of two neighbours),
+## orography change and freshwater would be counted twice. Each domain's
+## footprint is where it may hold ice (ice_domain_active.nc from
+## pism2atmosphere: the grid minus what the prescribed front retreat keeps
+## ice-free; before the first coupling the whole ice grid), remapped
+## bilinearly onto TARGET_GRID (nothing outside the ice grid) and clipped to
+## its BOX. Stops with exit 77 if footprints overlap, naming the pairs;
+## ice_domain_box is the fix. ICE_DOMAINS_ALLOW_OVERLAP=1
+## (general.ice_domains_allow_overlap) turns the stop into a warning.
+## The result is cached in ${COUPLE_DIR}/ice_domains_overlap.checked for the
+## same domains, boxes, active areas and grid.
+ice_domain_check_overlap() {
+        typeset _ico_grid=$1 _ico_d _ico_e _ico_key="" _ico_n _ico_pairs="" _ico_fp _ico_cache
+        typeset _ico_list
+        _ico_list=$(ice_domain_list)
+        set -- ${_ico_list}
+        [ $# -gt 1 ] || return 0
+        for _ico_d in ${_ico_list}; do
+                _ico_key="${_ico_key} ${_ico_d}:$(ice_domain_attr "${_ico_d}" BOX)"
+                if [ -f "$(ice_domain_couple_dir "${_ico_d}")/ice_domain_active.nc" ]; then
+                        _ico_key="${_ico_key}:$(cksum < $(ice_domain_couple_dir "${_ico_d}")/ice_domain_active.nc | cut -d' ' -f1)"
+                fi
+        done
+        _ico_key="${_ico_grid}${_ico_key}"
+        _ico_cache=${COUPLE_DIR}/ice_domains_overlap.checked
+        if [ -f ${_ico_cache} ] && [ "$(cat ${_ico_cache})" == "${_ico_key}" ]; then
+                return 0
+        fi
+
+        echo "                *   checking that the ice domains do not overlap on ${_ico_grid}"
+        for _ico_d in ${_ico_list}; do
+                _ico_fp=${COUPLE_DIR}/ice_domain_footprint.$(ice_domain_sanitize "${_ico_d}").nc
+                if [ ! -f "$(ice_domain_couple_dir "${_ico_d}")/ice.griddes" ]; then
+                        echo "                -   ${_ico_d}: no ice.griddes yet, not checked"
+                        rm -f ${_ico_fp}
+                        continue
+                fi
+                if [ -f "$(ice_domain_couple_dir "${_ico_d}")/ice_domain_active.nc" ]; then
+                        ${ice_domains_cdo} -s -O -gtc,0.5 -setmisstoc,0 -remapbil,${_ico_grid} \
+                                -setgrid,$(ice_domain_couple_dir "${_ico_d}")/ice.griddes \
+                                -selname,ice_domain $(ice_domain_couple_dir "${_ico_d}")/ice_domain_active.nc \
+                                ${_ico_fp} || return 1
+                else
+                        ${ice_domains_cdo} -s -O -gtc,0.5 -setmisstoc,0 -remapbil,${_ico_grid} \
+                                -const,1,$(ice_domain_couple_dir "${_ico_d}")/ice.griddes ${_ico_fp} || return 1
+                fi
+                ice_domain_apply_box "${_ico_d}" ${_ico_fp}
+        done
+        for _ico_d in ${_ico_list}; do
+                for _ico_e in ${_ico_list}; do
+                        [[ "${_ico_d}" < "${_ico_e}" ]] || continue
+                        [ -f ${COUPLE_DIR}/ice_domain_footprint.$(ice_domain_sanitize "${_ico_d}").nc ] || continue
+                        [ -f ${COUPLE_DIR}/ice_domain_footprint.$(ice_domain_sanitize "${_ico_e}").nc ] || continue
+                        _ico_n=$(${ice_domains_cdo} -s -outputf,%.0f -fldsum -mul \
+                                ${COUPLE_DIR}/ice_domain_footprint.$(ice_domain_sanitize "${_ico_d}").nc \
+                                ${COUPLE_DIR}/ice_domain_footprint.$(ice_domain_sanitize "${_ico_e}").nc | tr -d ' ')
+                        if [ "${_ico_n:-0}" -gt 0 ]; then
+                                _ico_pairs="${_ico_pairs} ${_ico_d}+${_ico_e}:${_ico_n}"
+                        fi
+                done
+        done
+        rm -f ${COUPLE_DIR}/ice_domain_footprint.*.nc
+        if [ -z "${_ico_pairs}" ]; then
+                echo "                -   no overlap"
+                echo "${_ico_key}" > ${_ico_cache}
+                return 0
+        fi
+        echo ""
+        echo " !!! Ice domains overlap on ${_ico_grid} (pair:cells):${_ico_pairs}"
+        echo " !!! Their orography changes and freshwater are added up there, i.e."
+        echo " !!! counted twice. Clip one of each pair with ice_domain_box"
+        echo " !!! (lon1,lon2,lat1,lat2) in its modelN or own section. The box is"
+        echo " !!! a plain lon/lat box over the whole domain: check that it cuts only"
+        echo " !!! the overlap and not ice the domain needs elsewhere."
+        if [ "x${ICE_DOMAINS_ALLOW_OVERLAP:-0}" == "x1" ]; then
+                echo " !!! ice_domains_allow_overlap is set: going on."
+                echo "${_ico_key}" > ${_ico_cache}
+                return 0
+        fi
+        echo " S T O P  77"
+        exit 77
+}
+
+## @fn ice_domain_check_fresh()
+## Call: ice_domain_check_fresh
+## ice_domain_wait_for only checks that every domain's ice_file_for_atmosphere.nc
+## exists, and last chunk's file does. If a domain's PISM run failed or was
+## skipped, its old file would be used again: its orography change added a
+## second time (anomaly mode adds the change every chunk) and its freshwater
+## reused. pism2atmosphere stamps the file with the run's chunk number
+## (coupling_chunk_number); here the stamp and the consuming chunk
+## (CHUNK_NUMBER_awiesm) are recorded in <domain>/ice_file_for_atmosphere.used.
+## Finding the same stamp again in a later chunk stops with exit 78; a repeat
+## of the same chunk is fine. Files without a stamp (older scripts) are not
+## checked.
+ice_domain_check_fresh() {
+        typeset _icf_d _icf_dir _icf_stamp _icf_used _icf_us _icf_uc _icf_stale=""
+        if [ -z "${CHUNK_NUMBER_awiesm}" ]; then
+                return 0
+        fi
+        for _icf_d in $(ice_domain_list); do
+                _icf_dir=$(ice_domain_couple_dir "${_icf_d}")
+                [ -f ${_icf_dir}/ice_file_for_atmosphere.nc ] || continue
+                _icf_stamp=$(ncdump -h ${_icf_dir}/ice_file_for_atmosphere.nc 2>/dev/null \
+                        | sed -n 's/^[[:space:]]*:coupling_chunk_number = \([0-9]*\).*/\1/p' | head -1)
+                if [ -z "${_icf_stamp}" ]; then
+                        echo "                -   ${_icf_d}: ice_file_for_atmosphere.nc has no chunk stamp (older scripts), not checked"
+                        continue
+                fi
+                _icf_used=${_icf_dir}/ice_file_for_atmosphere.used
+                if [ -f ${_icf_used} ]; then
+                        read _icf_us _icf_uc < ${_icf_used}
+                        if [ "x${_icf_us}" == "x${_icf_stamp}" ] && [ "x${_icf_uc}" != "x${CHUNK_NUMBER_awiesm}" ]; then
+                                _icf_stale="${_icf_stale} ${_icf_d}(written in run ${_icf_stamp}, used in ${_icf_uc})"
+                                continue
+                        fi
+                fi
+        done
+        if [ -n "${_icf_stale}" ]; then
+                echo ""
+                echo " !!! These ice domains delivered nothing new since the last coupling:${_icf_stale}"
+                echo " !!! Their ice_file_for_atmosphere.nc was already used; using it again would add"
+                echo " !!! their orography change twice and reuse their freshwater. Did their PISM"
+                echo " !!! run (couple_out) fail? This run: ${CHUNK_NUMBER_awiesm}."
+                echo " S T O P  78"
+                exit 78
+        fi
+        for _icf_d in $(ice_domain_list); do
+                _icf_dir=$(ice_domain_couple_dir "${_icf_d}")
+                [ -f ${_icf_dir}/ice_file_for_atmosphere.nc ] || continue
+                _icf_stamp=$(ncdump -h ${_icf_dir}/ice_file_for_atmosphere.nc 2>/dev/null \
+                        | sed -n 's/^[[:space:]]*:coupling_chunk_number = \([0-9]*\).*/\1/p' | head -1)
+                [ -n "${_icf_stamp}" ] && echo "${_icf_stamp} ${CHUNK_NUMBER_awiesm}" > ${_icf_dir}/ice_file_for_atmosphere.used
+        done
+        return 0
+}
+
 ## @fn ice_domain_report()
 ice_domain_report() {
         echo "                =================================================================="

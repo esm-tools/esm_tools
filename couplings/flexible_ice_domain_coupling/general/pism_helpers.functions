@@ -153,7 +153,11 @@ ice_griddes_ensure_corners() {
         fi
 
         echo " *   deriving cell corners for ice.griddes from $(basename ${_src})"
-        if ${PYTHON:-python3} "${_mk}" "${_src}" "${_gd}.with_corners" ; then
+        # numpy/netCDF4 come with the python3 module; the plain system
+        # python3 of a batch job does not have them (import numpy failed and
+        # left the Antarctic grid without corners, i.e. on remapbil).
+        if ( module load python3 >/dev/null 2>&1
+             ${PYTHON:-python3} "${_mk}" "${_src}" "${_gd}.with_corners" ); then
                 if [ -f "${_gd}" ]; then
                         _bak=${_gd}.no_corners
                         [ -f "${_bak}" ] || mv "${_gd}" "${_bak}"

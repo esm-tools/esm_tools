@@ -219,26 +219,19 @@ function iterative_coupling_pism_ocean_prepare_ocean_iceberg_pdf_forcing {
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # iceberg coupling LA
     #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-    # the calving pism2atmosphere took out of the mass loss
-    # (generate_iceberg_discharge), else PISM's own output
-    if [[ -f ${ICE_COUPLE_DIR}/iceberg_discharge.nc ]]; then
-        pism_discharge_file=${ICE_COUPLE_DIR}/iceberg_discharge.nc
-    elif [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
-        pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
-    elif [[ -f ${SPINUP_FILE_pism} ]]; then
-        pism_discharge_file=${SPINUP_FILE_pism}
-        echo; echo " * WARNING: latest_ex_file_pism.nc not found; icebergs are seeded from"
-        echo "   the PISM SPIN-UP file ${SPINUP_FILE_pism}"; echo
-    else
-        pism_discharge_file=""
-    fi
+    # Only the calving that pism2atmosphere took out of this domain's mass
+    # loss (generate_iceberg_discharge, written with iceberg_coupling only)
+    # may be seeded as icebergs. Without it the calving stays in the mass
+    # loss, and seeding PISM's raw discharge (or the spin-up file's) as well
+    # would put it into the ocean twice.
+    pism_discharge_file=${ICE_COUPLE_DIR}/iceberg_discharge.nc
 
     # Remove last year's file first: if no new one is made below, a stale file
     # must not stay in place to be seeded as icebergs a second time.
     rm -f ${ICE_COUPLE_DIR}/latest_discharge.nc
 
-    if [[ -z ${pism_discharge_file} ]]; then
-        echo " *   domain ${ICE_DOMAIN}: no discharge source found, no latest_discharge.nc"
+    if [[ ! -f ${pism_discharge_file} ]]; then
+        echo " *   domain ${ICE_DOMAIN}: no iceberg_coupling (no iceberg_discharge.nc), no icebergs seeded"
         return 0
     fi
 

@@ -35,6 +35,8 @@ function ice2fesom {
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
 
     ice_domain_report
+    # every domain's ice_file_for_atmosphere.nc is from this coupling
+    ice_domain_check_fresh
 
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
     if [[ "x$ICE_TO_FESOM" == "x0" ]]; then
@@ -196,14 +198,11 @@ function ice2fesom_regrid_domain {
             iterative_coupling_ice_ocean_regrid_interpolate
             iterative_coupling_ice_ocean_regrid_extrapolate
             ;;
-        "NONE")
-	    # Ocean and ice sheet grid are identical !!
-	    INTERPOL_TYPE_OCE=none
-            iterative_coupling_ice_ocean_regrid_none
-            ;;
         *)
+            # (NONE, "grids are identical", was removed: a PISM grid never is
+            # FESOM's mesh.)
             echo " UNKNOWN regrid method selected!"
-	    echo "   Known: INTERPOLATE = REMAP, EXTRAPOLATE, NONE"
+	    echo "   Known: INTERPOLATE = REMAP, EXTRAPOLATE"
 	    echo " S T O P   2"
             exit 2
     esac
@@ -284,9 +283,15 @@ function ice2fesom_prepare_iceberg_discharge {
             echo "     - $(ice_domain_couple_dir "${_icb_d}")/latest_discharge.nc"
         done
         echo "     List these in the FESOM runscript as disch_file (with a matching"
-        echo "     basin_file / domain / scaling_factor entry each), or set"
+        echo "     basin_file / domain entry each), or set"
         echo "     ICE_DISCHARGE_MERGE=1 to get one combined file instead."
-        unset _icb_n _icb_merge _icb_d
+        typeset _icb_expect=""
+        for _icb_d in $(ice_domain_list); do
+            [ -f "$(ice_domain_couple_dir "${_icb_d}")/latest_discharge.nc" ] \
+                && _icb_expect="${_icb_expect} $(ice_domain_couple_dir "${_icb_d}")/latest_discharge.nc"
+        done
+        ice2fesom_check_disch_files "${_icb_expect}"
+        unset _icb_n _icb_merge _icb_d _icb_expect
         return 0
     fi
 
@@ -308,9 +313,55 @@ function ice2fesom_prepare_iceberg_discharge {
         echo " *   summing the iceberg discharge of ${_icb_n} ice domains on ${_icb_grid}"
     fi
 
-    ice_domain_reduce latest_discharge.nc ${COUPLE_DIR}/latest_discharge.nc \
-        add "${_icb_grid}" "${ICE_DISCHARGE_REMAP:-remapcon2}"
+    if ice_domain_reduce latest_discharge.nc ${COUPLE_DIR}/latest_discharge.nc \
+        add "${_icb_grid}" "${ICE_DISCHARGE_REMAP:-remapcon2}"; then
+        ice2fesom_check_disch_files "${COUPLE_DIR}/latest_discharge.nc"
+    else
+        ice2fesom_check_disch_files ""
+    fi
     unset _icb_grid _icb_n _icb_merge
+}
+
+## @fn ice2fesom_check_disch_files()
+## Call: ice2fesom_check_disch_files "EXPECTED_FILES"
+## FESOM's iceberg plugin (fesom_icb_pism) seeds icebergs from the files in
+## the runscript's disch_file. They have to be exactly the discharge files
+## made here: a domain with iceberg_coupling that is missing from the list has
+## its calving taken out of the mass loss but never seeded (lost), and a file
+## no domain wrote this chunk (no iceberg_coupling, a typo, an old path) is
+## missing or stale. The plugin itself already checks that basin_file and
+## domain match disch_file in length.
+## disch_file comes from env_awiesm.py (FESOM_DISCH_FILES); it is not set in
+## the first chunk, where FESOM reads ini_disch_file, and the check is skipped.
+## Stops with exit 76.
+ice2fesom_check_disch_files() {
+        typeset _cd_expect _cd_given _cd_f _cd_missing="" _cd_extra=""
+        if [ -z "${FESOM_DISCH_FILES}" ]; then
+                echo " *   FESOM's disch_file not known here (first chunk?), not checked"
+                return 0
+        fi
+        # compare normalised paths (the runscript paths often carry "//")
+        _cd_expect=" $(for _cd_f in $1; do echo ${_cd_f} | tr -s /; done | sort -u | tr '\n' ' ')"
+        _cd_given=" $(for _cd_f in ${FESOM_DISCH_FILES}; do echo ${_cd_f} | tr -s /; done | sort -u | tr '\n' ' ')"
+        for _cd_f in ${_cd_expect}; do
+                case "${_cd_given}" in *" ${_cd_f} "*) ;; *) _cd_missing="${_cd_missing} ${_cd_f}" ;; esac
+        done
+        for _cd_f in ${_cd_given}; do
+                case "${_cd_expect}" in *" ${_cd_f} "*) ;; *) _cd_extra="${_cd_extra} ${_cd_f}" ;; esac
+        done
+        if [ -z "${_cd_missing}${_cd_extra}" ]; then
+                echo " *   FESOM's disch_file matches the ice domains with iceberg_coupling"
+                return 0
+        fi
+        echo ""
+        echo " !!! FESOM's disch_file does not match the discharge files made for icebergs."
+        [ -n "${_cd_missing}" ] && echo " !!!   made but not in disch_file (calving would be lost):${_cd_missing}"
+        [ -n "${_cd_extra}" ] && echo " !!!   in disch_file but not made this chunk (missing or stale):${_cd_extra}"
+        echo " !!! disch_file lists the latest_discharge.nc of every ice domain with"
+        echo " !!! iceberg_coupling (ICE_DISCHARGE_MERGE=0), or only"
+        echo " !!! \${general.experiment_couple_dir}/latest_discharge.nc (ICE_DISCHARGE_MERGE=1)."
+        echo " S T O P  76"
+        exit 76
 }
 
 ## Wet/dry mesh — Python/R utils and templates under coupling_CIS_wetdry/utils/wetdry/ (from gen_wetdry_v2).
@@ -949,18 +1000,6 @@ function iterative_coupling_ice_ocean_regrid_extrapolate {
 }
 
 
-function iterative_coupling_ice_ocean_regrid_none {
-    echo " *   Grid-identical GCM forcing (no interpolation)..."
-
-    test_file_or_exit ${COMBINED_OUTPUT} 10
-
-    mv ${COMBINED_OUTPUT} \
-	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
-
-    cleanup_list="${cleanup_list} $(pwd)/${COMBINED_OUTPUT}"
-}
-
-
 function iterative_coupling_ice_fesom_rename_vars {
     echo " *   Set final FESOM variable names..."
 
@@ -983,53 +1022,27 @@ function iterative_coupling_ice_fesom_rename_vars {
 ########################################################################
 # Lars Ackermann 07.09.2020
 ########################################################################
-## PER DOMAIN. Every ice domain writes its own latest_discharge.nc on its own
-## grid; ice2fesom_prepare_iceberg_discharge sums them afterwards.
-## The output directory is named after the ice domain instance ("pism",
-## "pism_nh", ...), so it must not be hard coded.
+## PER DOMAIN. Every ice domain with iceberg_coupling writes its own
+## latest_discharge.nc on its own grid, from the calving pism2atmosphere took
+## out of its mass loss; ice2fesom_prepare_iceberg_discharge sums them
+## afterwards or hands them to FESOM one by one.
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     ice_domain_require_selected iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
 
-    typeset _icb_outdir=${ICE_EXP_DIR}/outdata/${ICE_DOMAIN:-pism}
-    [ "x${ICE_DOMAIN}" = "x." ] && _icb_outdir=${ICE_EXP_DIR}/outdata/pism
-
-    counter=0
-    COUNT_MAX=12
-    while [ ${counter} -lt ${COUNT_MAX} ]
-    do
-        echo "          * inside while loop "
-        if [ -f ${_icb_outdir}/latest_ex_file_pism.nc ]; then
-            break
-        fi
-
-        echo; echo "        * File ${_icb_outdir}/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
-        sleep 10
-        counter=$((counter+1))
-    done
-
-    latest_pism_output=${_icb_outdir}/latest_ex_file_pism.nc
-    # the calving pism2atmosphere took out of the mass loss
-    # (generate_iceberg_discharge), else PISM's own output
-    if [[ -f ${ICE_COUPLE_DIR}/iceberg_discharge.nc ]]; then
-        pism_discharge_file=${ICE_COUPLE_DIR}/iceberg_discharge.nc
-    elif [[ -f ${latest_pism_output} ]]; then
-        pism_discharge_file=${latest_pism_output}
-    elif [[ -f ${SPINUP_FILE_pism} ]]; then
-        pism_discharge_file=${SPINUP_FILE_pism}
-        echo; echo " * WARNING: latest_ex_file_pism.nc not found; icebergs are seeded from"
-        echo "   the PISM SPIN-UP file ${SPINUP_FILE_pism}"; echo
-    else
-        pism_discharge_file=""
-    fi
+    # Only the calving that pism2atmosphere took out of this domain's mass
+    # loss (generate_iceberg_discharge, written with iceberg_coupling only)
+    # may be seeded as icebergs. A domain without iceberg_coupling keeps its
+    # calving in the mass loss and gets no icebergs; seeding PISM's raw
+    # discharge (or the spin-up file's) for it would count the calving twice.
+    pism_discharge_file=${ICE_COUPLE_DIR}/iceberg_discharge.nc
 
     # Remove last year's file first: if no new one is made below, a stale file
     # must not stay in place to be seeded (or merged) a second time.
     # ice2fesom_prepare_iceberg_discharge skips domains without the file.
     rm -f ${ICE_COUPLE_DIR}/latest_discharge.nc
 
-    if [[ -z ${pism_discharge_file} ]]; then
-        echo " *   domain ${ICE_DOMAIN}: no discharge source found, skipped"
-        unset _icb_outdir
+    if [[ ! -f ${pism_discharge_file} ]]; then
+        echo " *   domain ${ICE_DOMAIN}: no iceberg_coupling (no iceberg_discharge.nc), no icebergs seeded"
         return 0
     fi
 
@@ -1042,7 +1055,6 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         || { echo " * ERROR: cdo failed to create ${ICE_COUPLE_DIR}/latest_discharge.nc"; exit 42; }
 
     use_icesheet_coupling=1
-    unset _icb_outdir
 }
 
 ###########################################################################
@@ -1054,18 +1066,129 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
 ## sheets, so every domain contributes one (discharge, cell area) pair. The
 ## fields live on different ice grids and are integrated separately by
 ## apply_hosing_correction.py, which accepts an arbitrary number of pairs.
+## @fn ice2fesom_use_cavity()
+## Prints 1 if FESOM runs with ice shelf cavities, else 0: use_cavity from the
+## namelist.config FESOM reads (FESOM_NAMELIST_CONFIG) if it is there, else
+## FESOM_USE_CAVITY_OCEAN (runscript, env_awiesm.py).
+ice2fesom_use_cavity() {
+        typeset _nml=${FESOM_NAMELIST_CONFIG:-} _v
+        if [ -n "${_nml}" ] && [ -f "${_nml}" ]; then
+                _v=$(sed -n 's/!.*//; s/^[[:space:]]*use_cavity[[:space:]]*=[[:space:]]*\([^,[:space:]]*\).*/\1/Ip' "${_nml}" | tail -1)
+                if [ -n "${_v}" ]; then
+                        case $(echo "${_v}" | tr 'A-Z' 'a-z') in
+                                .true.|t|.t.|true) echo 1 ;;
+                                *) echo 0 ;;
+                        esac
+                        return
+                fi
+        fi
+        echo ${FESOM_USE_CAVITY_OCEAN:-0}
+}
+
+## @fn ice2fesom_check_cavity_geometry()
+## Call: ice2fesom_check_cavity_geometry "DOMAINS_WITH_CAVITY_COUPLING"
+## Whether the sub-shelf melt reaches the ocean once, by geometry: each
+## domain's floating ice at the end of its chunk (ice_floating.nc from
+## pism2atmosphere, on its own grid) is put on the FESOM nodes (remapbil onto
+## ocean.griddes; nothing outside the ice grid) and compared with FESOM's
+## cavity nodes (cavity_depth@node.out < 0 in MESH_DIR_fesom).
+##
+##   no cavity_coupling, floating ice in the cavities: FESOM melts those
+##     shelves and PISM's melt of them is in the mass loss as well, so it
+##     reaches the ocean twice. Stops (exit 75) when >= 10 % of the domain's
+##     floating nodes lie in cavities, warns below that.
+##   cavity_coupling, no floating ice in the cavities at all: the domain's
+##     melt is taken out and replaced by nothing. Stops (exit 75).
+##   cavity_coupling, floating ice outside the cavities: that part of the
+##     melt reaches the ocean nowhere (PISM's shelves beyond FESOM's static
+##     cavity mask). Reported as a share; warns from 10 % on.
+## Counts are FESOM nodes. Sets _cav_geometry_checked=1 when at least one
+## domain could be compared.
+ice2fesom_check_cavity_geometry() {
+        typeset _cg_cav_domains=" $1 " _cg_d _cg_dir _cg_grid _cg_cav _cg_fl _cg_nf _cg_nc _cg_pct
+        typeset _cg_stop=""
+        _cav_geometry_checked=0
+        _cg_grid=${COUPLE_DIR}/${GRIDDES_OCE:-ocean.griddes}
+        _cg_cav=${COUPLE_DIR}/fesom_cavity_nodes.nc
+        if [ ! -f ${_cg_grid} ] || [ ! -f "${MESH_DIR_fesom}/cavity_depth@node.out" ]; then
+                echo "            * cavity geometry not checked (no ${_cg_grid} or ${MESH_DIR_fesom}/cavity_depth@node.out)"
+                return 0
+        fi
+        # 1 on FESOM's cavity nodes; rebuilt when the mesh file changes
+        if [ ! -f ${_cg_cav} ] || [ "${MESH_DIR_fesom}/cavity_depth@node.out" -nt ${_cg_cav} ]; then
+                if ! cdo -s -O -f nc -ltc,0 -input,${_cg_grid} ${_cg_cav} \
+                        < "${MESH_DIR_fesom}/cavity_depth@node.out" 2>/dev/null; then
+                        echo "            * cavity geometry not checked: cavity_depth@node.out does not fit ${_cg_grid}"
+                        rm -f ${_cg_cav}
+                        return 0
+                fi
+        fi
+        echo "            * floating ice of each domain against FESOM's cavities ($(cdo -s outputf,%.0f -fldsum ${_cg_cav} | tr -d ' ') cavity nodes):"
+        for _cg_d in $(ice_domain_list); do
+                _cg_dir=$(ice_domain_couple_dir "${_cg_d}")
+                if [ ! -f ${_cg_dir}/ice_floating.nc ] || [ ! -f ${_cg_dir}/ice.griddes ]; then
+                        echo "              ${_cg_d}: no ice_floating.nc yet, not checked"
+                        continue
+                fi
+                _cg_fl=${_cg_dir}/ice_floating_on_fesom.nc
+                if ! cdo -s -O -gec,0.5 -setmisstoc,0 -remapbil,${_cg_grid} \
+                        -setgrid,${_cg_dir}/ice.griddes ${_cg_dir}/ice_floating.nc ${_cg_fl} 2>/dev/null; then
+                        echo "              ${_cg_d}: could not put the floating ice on the FESOM mesh, not checked"
+                        continue
+                fi
+                _cav_geometry_checked=1
+                _cg_nf=$(cdo -s outputf,%.0f -fldsum ${_cg_fl} | tr -d ' ')
+                _cg_nc=$(cdo -s outputf,%.0f -fldsum -mul ${_cg_fl} ${_cg_cav} | tr -d ' ')
+                rm -f ${_cg_fl}
+                if [ "${_cg_nf:-0}" -eq 0 ]; then
+                        _cg_pct=0
+                else
+                        _cg_pct=$(( 100 * _cg_nc / _cg_nf ))
+                fi
+                case "${_cg_cav_domains}" in
+                *" ${_cg_d} "*)
+                        echo "              ${_cg_d} (cavity_coupling): ${_cg_nf} floating nodes, ${_cg_nc} (${_cg_pct} %) in cavities"
+                        if [ "${_cg_nf:-0}" -gt 0 ] && [ "${_cg_nc:-0}" -eq 0 ]; then
+                                _cg_stop="${_cg_stop}\n !!!   ${_cg_d} has cavity_coupling, but none of its floating ice lies in FESOM's cavities:\n !!!     its sub-shelf melt is taken out of the mass loss and replaced by nothing."
+                        elif [ "${_cg_nf:-0}" -gt 0 ] && [ $(( 100 - _cg_pct )) -ge 10 ]; then
+                                echo "              ! $(( 100 - _cg_pct )) % of ${_cg_d}'s floating ice is outside FESOM's cavities: its melt reaches the ocean nowhere"
+                        fi
+                        ;;
+                *)
+                        echo "              ${_cg_d}: ${_cg_nf} floating nodes, ${_cg_nc} (${_cg_pct} %) in cavities"
+                        if [ "${_cg_nc:-0}" -gt 0 ] && [ ${_cg_pct} -ge 10 ]; then
+                                _cg_stop="${_cg_stop}\n !!!   ${_cg_d} has no cavity_coupling, but ${_cg_pct} % of its floating ice lies in FESOM's cavities:\n !!!     FESOM melts those shelves and PISM's melt of them is in the mass loss too."
+                        elif [ "${_cg_nc:-0}" -gt 0 ]; then
+                                echo "              ! ${_cg_nc} of ${_cg_d}'s floating nodes lie in FESOM's cavities: their melt reaches the ocean twice"
+                        fi
+                        ;;
+                esac
+        done
+        if [ -n "${_cg_stop}" ]; then
+                echo ""
+                echo " !!! Sub-shelf melt does not reach the ocean exactly once:"
+                echo -e "${_cg_stop}"
+                echo " !!! Set cavity_coupling in the ice domain's runscript to match where FESOM has cavities."
+                echo " S T O P  75"
+                exit 75
+        fi
+}
+
 distribute_total_discharge_over_ocean() {
         echo; echo "                *   integrate discharge over the ice grid(s)"
 
         typeset _hos_pairs=""
         typeset _hos_domain _hos_dir _hos_disch _hos_area _hos_excl
+        typeset _cav_fesom _cav_domains=""
+        _cav_fesom=$(ice2fesom_use_cavity)
         for _hos_domain in $(ice_domain_list); do
                 _hos_dir=$(ice_domain_couple_dir "${_hos_domain}")
                 _hos_disch=${_hos_dir}/ice_discharge.nc
 
-                # ice2echam may not have run yet in this chunk, so fall back to
-                # cutting the discharge out of the ice sheet's own product.
-                if [ ! -f "${_hos_disch}" ] && [ -f "${_hos_dir}/ice_file_for_atmosphere.nc" ]; then
+                # Always cut it from this coupling's ice_file_for_atmosphere.nc:
+                # ice2echam only rewrites ice_discharge.nc with
+                # ISM_TO_ECHAM_update_land_runoff, and may run after this.
+                if [ -f "${_hos_dir}/ice_file_for_atmosphere.nc" ]; then
                         cdo -s -selvar,${ice_mass_loss_varname:-total_ice_mass_loss_flux} \
                                 "${_hos_dir}/ice_file_for_atmosphere.nc" "${_hos_disch}"
                 fi
@@ -1077,50 +1200,82 @@ distribute_total_discharge_over_ocean() {
                 # Calving has to reach the ocean exactly once: as FESOM
                 # icebergs, or inside this mass loss. pism2atmosphere takes it
                 # out (and says so in standard_name) when the domain has
-                # iceberg_coupling; FESOM seeds icebergs when it uses them.
+                # iceberg_coupling, and only then are icebergs seeded for the
+                # domain. So domains may differ (e.g. icebergs for Antarctica,
+                # none for Greenland), but a domain with iceberg_coupling needs
+                # FESOM's icebergs, or its calving reaches the ocean nowhere.
+                # (That FESOM also reads the domain's discharge file is checked
+                # in ice2fesom_check_disch_files.)
                 if [ -f "${_hos_dir}/ice_file_for_atmosphere.nc" ]; then
                         if ncdump -h "${_hos_dir}/ice_file_for_atmosphere.nc" | grep -q "excluding_calving"; then
                                 _hos_excl=1
                         else
                                 _hos_excl=0
                         fi
-                        if [ "x${_hos_excl}" != "x${FESOM_PREP_ICEBERG_DISCHARGE:-0}" ]; then
+                        if [ "x${_hos_excl}" == "x1" ] && [ "x${FESOM_PREP_ICEBERG_DISCHARGE:-0}" != "x1" ]; then
                                 echo ""
-                                echo " !!! Ice domain ${_hos_domain} and FESOM disagree about icebergs:"
-                                echo " !!!   FESOM icebergs (use_icebergs):              ${FESOM_PREP_ICEBERG_DISCHARGE:-0}"
-                                echo " !!!   calving taken out of the mass loss (iceberg_coupling): ${_hos_excl}"
-                                echo " !!! Calving would reach the ocean twice (1/0) or not at all (0/1)."
-                                echo " !!! Set iceberg_coupling in the ice domain's runscript to match FESOM."
+                                echo " !!! Ice domain ${_hos_domain} has iceberg_coupling, but FESOM has no icebergs"
+                                echo " !!! (use_icebergs). Its calving is taken out of the mass loss and would"
+                                echo " !!! reach the ocean nowhere. Set iceberg_coupling: 0 for the domain, or"
+                                echo " !!! switch FESOM's icebergs on."
                                 echo " S T O P  74"
                                 exit 74
                         fi
+
+                        # Sub-shelf melt likewise: pism2atmosphere takes it out
+                        # of the mass loss (cavity_coupling) only if FESOM's
+                        # cavities melt the shelves instead.
+                        if ncdump -h "${_hos_dir}/ice_file_for_atmosphere.nc" \
+                                | grep -q "total_ice_mass_loss_flux:excludes_sub_shelf_melt = 1s*"; then
+                                _cav_domains="${_cav_domains} ${_hos_domain}"
+                                if [ "x${_cav_fesom}" != "x1" ]; then
+                                        echo ""
+                                        echo " !!! Ice domain ${_hos_domain} and FESOM disagree about ice shelf cavities:"
+                                        echo " !!!   FESOM cavities (use_cavity):                         ${_cav_fesom}"
+                                        echo " !!!   sub-shelf melt taken out of the mass loss (cavity_coupling): 1"
+                                        echo " !!! The sub-shelf melt would not reach the ocean at all."
+                                        echo " !!! Set cavity_coupling: 0 in the ice domain's runscript, or use_cavity in FESOM."
+                                        echo " S T O P  75"
+                                        exit 75
+                                fi
+                        fi
                 fi
 
-                # "cdo gridarea" needs cell corners, which the ice sheet's own
-                # grid may not carry. So integrate the copy on the ECHAM grid
-                # (written by ice2echam, as in the released coupling) when it
-                # exists. Like ice_discharge.nc it is ice2echam's: from this
-                # coupling if ice2echam ran before ice2fesom, otherwise from the
-                # previous one.
-                if [ -f "${_hos_dir}/ice_discharge_${RES_echam}grid.nc" ]; then
-                        _hos_disch=${_hos_dir}/ice_discharge_${RES_echam}grid.nc
-                fi
-
-                _hos_area=${_hos_disch%.nc}.gridarea.nc
-                if ! cdo -s gridarea "${_hos_disch}" "${_hos_area}" 2>/dev/null \
+                # Integrate on the ice sheet's own grid with its projected
+                # cell area dx*dy, the area PISM books its mass on
+                # (utils/ice_cell_area.py; needs no cell corners). The copy on
+                # the ECHAM grid that goes to the rivers is corrected to the
+                # same integral (update_land_runoff_conserve_integral).
+                _hos_area=${_hos_disch%.nc}.cell_area.nc
+                if ! ( module load python3 >/dev/null 2>&1
+                       python3 ${FUNCTION_PATH}/../utils/ice_cell_area.py "${_hos_disch}" "${_hos_area}" \
+                               --varname ${ice_mass_loss_varname:-total_ice_mass_loss_flux} ) \
                    || [ ! -s "${_hos_area}" ]; then
                         echo ""
-                        echo " !!! Cannot compute grid cell areas for"
+                        echo " !!! Cannot compute the cell areas (dx*dy) of"
                         echo " !!!   ${_hos_disch}"
-                        echo " !!! cdo gridarea needs cell corner coordinates, which the ice"
-                        echo " !!! sheet's native curvilinear grid does not carry. The field on"
-                        echo " !!! the ECHAM grid (ice_discharge_${RES_echam}grid.nc) does; it is"
-                        echo " !!! written by ice2echam when ISM_TO_ECHAM_update_land_runoff=1."
+                        echo " !!! It needs the x/y coordinate variables of the ice grid."
                         echo " S T O P  46"
                         exit 46
                 fi
                 _hos_pairs="${_hos_pairs} --pair ${_hos_disch} ${_hos_area}"
         done
+        # The flags alone cannot tell whether a domain's shelves lie in FESOM's
+        # cavities (FESOM may have cavities under shelves no ice domain
+        # models, e.g. Antarctica in a Greenland-only setup), so compare the
+        # geometry. The warning below is what is left where that is not
+        # possible.
+        if [ "x${_cav_fesom}" == "x1" ]; then
+                ice2fesom_check_cavity_geometry "${_cav_domains}"
+        fi
+        if [ "x${_cav_fesom}" == "x1" ] && [ -z "${_cav_domains}" ] && [ "x${_cav_geometry_checked}" != "x1" ]; then
+                echo ""
+                echo " ! FESOM has ice shelf cavities (use_cavity), but no ice domain has cavity_coupling."
+                echo " ! If an ice domain's shelves lie in FESOM's cavities, their melt reaches the"
+                echo " ! ocean twice (FESOM's cavity melt and PISM's in the mass loss)."
+        elif [ -n "${_cav_domains}" ]; then
+                echo "            * sub-shelf melt left to FESOM's cavities for:${_cav_domains}"
+        fi
 
         if [ "x${_hos_pairs}" = "x" ]; then
                 echo "            * no ice domain delivered a discharge field, no hosing correction"
@@ -1134,17 +1289,49 @@ distribute_total_discharge_over_ocean() {
             rm ${COUPLE_DIR}/landice_yearly_mass_loss.out
         fi
 
-        python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py \
+        # Constant hosing into one region on top of the ice sheet hosing
+        # (FESOM region 2). New keys: constant_landice_hosing (value),
+        # constant_landice_hosing_unit (Sv or m/s), constant_landice_hosing_nodes
+        # (FESOM node list). Old setups: constant_landice_hosing_file holds
+        # the value in m/s, the nodes are a hand-placed
+        # landice_nodes_in_region_2.out in the couple dir.
+        # A value of 0 means off. Without a node file there is no region:
+        # the old spelling then skips it silently, as it always did; the new
+        # key stops, since a constant hosing was asked for explicitly.
+        typeset _hos_const="" _hos_val="" _hos_unit _hos_nodes
+        _hos_nodes=${CONSTANT_FRESHWATER_HOSING_NODES:-${COUPLE_DIR}/landice_nodes_in_region_2.out}
+        if [ -n "${CONSTANT_FRESHWATER_HOSING}" ]; then
+                _hos_val=${CONSTANT_FRESHWATER_HOSING}
+                _hos_unit=${CONSTANT_FRESHWATER_HOSING_UNIT:-Sv}
+        elif [ -n "${CONSTANT_FRESHWATER_HOSING_FILE}" ] && [ -f "${CONSTANT_FRESHWATER_HOSING_FILE}" ]; then
+                _hos_val=$(head -1 ${CONSTANT_FRESHWATER_HOSING_FILE} | tr -d '[:space:]')
+                _hos_unit=m/s
+        fi
+        if [ -n "${_hos_val}" ] && awk -v v="${_hos_val}" 'BEGIN{exit !(v+0 != 0)}'; then
+                if [ -f "${_hos_nodes}" ]; then
+                        _hos_const="--constant_region ${_hos_nodes} ${_hos_val} ${_hos_unit}"
+                elif [ -n "${CONSTANT_FRESHWATER_HOSING}" ]; then
+                        echo " !!! constant_landice_hosing is set, but its node list is missing: ${_hos_nodes}"
+                        echo " !!! (constant_landice_hosing_nodes)"
+                        echo " S T O P  46"
+                        exit 46
+                else
+                        echo "            * constant_landice_hosing_file without ${_hos_nodes}: no constant hosing (as before)"
+                fi
+        fi
+        [ -n "${_hos_const}" ] && echo "            * constant hosing: ${_hos_const#--constant_region }"
+
+        if ! python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py \
                 --fesom_cell_area "${MESH_DIR_fesom}/${CELL_AREA_FESOM_FILE}" \
                 --hosing_dir "${COUPLE_DIR}" \
-                ${_hos_pairs}
-        module unload python3
-        if [ -f "${COUPLE_DIR}/landice_nodes_in_region_2.out" ]; then
-            echo >> ${COUPLE_DIR}/landice_yearly_mass_loss.out
-            cat ${CONSTANT_FRESHWATER_HOSING_FILE} >> ${COUPLE_DIR}/landice_yearly_mass_loss.out
+                ${_hos_pairs} ${_hos_const}; then
+                echo " !!! apply_hosing_correction.py failed"
+                echo " S T O P  46"
+                exit 46
         fi
+        module unload python3
         echo; echo "            * Finished apply_hosing_correction.py "
-        unset _hos_pairs _hos_domain _hos_dir _hos_disch _hos_area
+        unset _hos_pairs _hos_domain _hos_dir _hos_disch _hos_area _hos_const _hos_val _hos_unit _hos_nodes
 }
 
 ## @fn wetdry_resolve_cut_nc()

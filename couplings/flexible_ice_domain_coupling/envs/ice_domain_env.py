@@ -87,6 +87,10 @@ def ice_domain_environment(config):
     environment = {
         "ICE_DOMAINS": ",".join(names),
         "ICE_EXP_DIR": config["general"]["experiment_couple_dir"] + "/..",
+        # overlapping domains are added up twice; ice_domain_check_overlap
+        # stops unless this is set
+        "ICE_DOMAINS_ALLOW_OVERLAP": int(bool(
+            config["general"].get("ice_domains_allow_overlap", False))),
     }
 
     for name in names:

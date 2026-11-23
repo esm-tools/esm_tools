@@ -32,6 +32,13 @@ def prepare_environment(config):
         "PISM_TO_OCEAN": int(ice.get("iceberg_coupling", False).__bool__()),
         "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
         "fesom_use_iceberg": int(ice.get("iceberg_coupling", False).__bool__()),
+        # FESOM resolves the melt under this domain's ice shelves in its
+        # cavities; PISM's sub-shelf melt is then left out of the mass loss
+        # (generate_mass_loss_flux)
+        "FESOM_USE_CAVITY": int(bool(ice.get("cavity_coupling", False))),
+        # total of the mass-loss flux: PISM's budget for the chunk
+        # (pism_budget) or the thickness difference (thk_difference)
+        "MASS_LOSS_TOTAL": ice.get("mass_loss_total", "pism_budget"),
         # PISM's prescribed front retreat: no iceberg discharge where it
         # allows no ice (generate_iceberg_discharge)
         "PISM_FRONT_RETREAT_FILE": (ice.get("kv_pairs") or {}).get(

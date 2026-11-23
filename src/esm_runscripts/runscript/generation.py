@@ -92,12 +92,20 @@ def _cores_per_node(config: dict, queue: Optional[str]) -> int:
         # matching legacy's own assumption that every computer defines at
         # least "compute" or "pp".
         return next(iter(partitions.values()))["cores_per_node"]
-    if queue not in partitions:
-        raise ValueError(
-            f"run_on_queue={queue!r} names a partition that doesn't exist "
-            f"in computer.partitions (known: {sorted(partitions)})."
-        )
-    return partitions[queue]["cores_per_node"]
+    # ``run_on_queue`` holds the *resolved* SLURM partition name (e.g.
+    # "mpp" on albedo -- see Workflow.default()'s
+    # ``computer.partitions.compute.name``), not the partitions dict's own
+    # key ("compute"/"pp"). The two happen to coincide on levante/DKRZ
+    # (partition name == key there), which is why a bare ``partitions[queue]``
+    # lookup worked there but not on albedo.
+    for info in partitions.values():
+        if info.get("name") == queue:
+            return info["cores_per_node"]
+    raise ValueError(
+        f"run_on_queue={queue!r} names a partition that doesn't exist "
+        f"in computer.partitions (known names: "
+        f"{sorted(info.get('name') for info in partitions.values())})."
+    )
 
 
 def _multi_step_execution(workflow: Workflow, multi_step_name: str):

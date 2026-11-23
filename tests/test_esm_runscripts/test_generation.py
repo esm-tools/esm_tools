@@ -144,6 +144,20 @@ def test_cores_per_node_raises_for_an_unknown_queue():
         generation._cores_per_node(config, "pp")
 
 
+def test_cores_per_node_matches_by_resolved_name_not_partitions_key():
+    """Regression: on albedo, computer.partitions' dict key ("compute")
+    and its resolved SLURM partition name ("mpp") differ -- run_on_queue
+    is always the resolved name (Workflow.default() reads it off
+    computer.partitions.compute.name), so the lookup must match by name,
+    not treat run_on_queue as a partitions dict key."""
+    config = _config()
+    config["computer"]["partitions"] = {
+        "compute": {"name": "mpp", "cores_per_node": 128}
+    }
+
+    assert generation._cores_per_node(config, "mpp") == 128
+
+
 def test_compute_requirements_raises_for_an_unknown_multi_step():
     config = _config()
     workflow = Workflow.default(config)

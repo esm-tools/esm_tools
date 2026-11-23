@@ -361,8 +361,11 @@ def batch_header_lines(
 
     parent_execution = workflow.execution_of(multi_step_name)
     partitions = computer["partitions"]
-    partition_name = parent_execution.run_on_queue or next(iter(partitions))
-    partition = partitions[partition_name]["name"]
+    # ``run_on_queue`` is already the *resolved* SLURM partition name (see
+    # _cores_per_node's docstring) -- not a key into ``partitions``, so it
+    # is used as-is; only the no-queue-named fallback needs to resolve a
+    # dict key to its name.
+    partition = parent_execution.run_on_queue or next(iter(partitions.values()))["name"]
 
     flag_vars = {
         "tasks": requirements.tasks,

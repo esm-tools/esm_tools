@@ -179,6 +179,23 @@ def test_batch_header_lines_substitutes_tags():
     assert "#SBATCH --job-name=compute" in header
 
 
+def test_batch_header_lines_uses_resolved_partition_name_not_dict_key():
+    """Regression: on albedo, computer.partitions' dict key ("compute")
+    differs from its resolved SLURM partition name ("mpp"); run_on_queue
+    is always the resolved name, so the header must emit that name
+    directly rather than treat it as a partitions dict key."""
+    config = _config()
+    config["computer"]["partitions"] = {
+        "compute": {"name": "mpp", "cores_per_node": 128}
+    }
+    workflow = Workflow.default(config)
+    requirements = generation.ResourceRequirements(tasks=128, nodes=1)
+
+    header = generation.batch_header_lines(workflow, "compute", requirements, config)
+
+    assert "#SBATCH --partition=mpp" in header
+
+
 def test_batch_header_lines_raises_for_a_flag_referencing_an_unknown_variable():
     config = _config()
     config["computer"]["name_flag"] = "--job-name={{ typo }}"

@@ -2264,6 +2264,20 @@ xios:
     # full 2D+3D set. Override per-experiment if a coarser grid is wanted.
     fesom_regular_res_lon: 720
     fesom_regular_res_lat: 360
+    # LR (CORE3): 1 degree regular output, cell centres on whole degrees (bounds -0.5..359.5,
+    # centres 0..359 and -89.5..89.5), which is the registered grid g150 that WAM is also
+    # delivered on. XIOS would otherwise centre the 1 degree cells on half degrees.
+    choose_fesom.resolution:
+        CORE3:
+            fesom_regular_res_lon: 360
+            fesom_regular_res_lat: 180
+            fesom_regular_bounds_lon_start: -0.5
+            fesom_regular_bounds_lon_end: 359.5
+        CORE3_nocav:
+            fesom_regular_res_lon: 360
+            fesom_regular_res_lat: 180
+            fesom_regular_bounds_lon_start: -0.5
+            fesom_regular_bounds_lon_end: 359.5
     read_weight: false
     truncation: "${oifs.truncation}"
     choose_truncation:

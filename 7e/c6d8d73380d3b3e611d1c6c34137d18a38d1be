@@ -1,0 +1,21 @@
+src/esm_runscripts/runscript/generation.py
+  s_0f8b4206b53928::t_b83087e42147a9 95-108
+tests/test_esm_runscripts/test_generation.py
+  s_0f8b4206b53928::t_28041d7befbde5 147-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7ec6d8d73380d3b3e611d1c6c34137d18a38d1be",
+  "prompts": {},
+  "sessions": {
+    "s_0f8b4206b53928": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "932feaf8-b912-47df-9dee-606e8f37a41e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

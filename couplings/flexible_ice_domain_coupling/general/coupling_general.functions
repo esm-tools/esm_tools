@@ -438,30 +438,54 @@ function iterative_coupling_pism_regrid_add_xy_array {
     # couple directory wins over the pool, the same way ice.griddes does --
     # a grid that deviates from the pool default (different nx/ny, e.g. the
     # "handbook" Greenland grid) can then be used without touching the pool.
+    # Only a candidate whose x/y size matches the forcing file is taken. If
+    # none does (or the pool has no file for this resolution), the axis is
+    # taken from the PISM file the domain runs on and stored in its couple
+    # directory, so the next chunk finds it there.
+    type ice_pism_grid_file >/dev/null 2>&1 || \
+        . ${FUNCTION_PATH}/../general/pism_helpers.functions
     _xy_basename=pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    _xy_want=$(ice_nc_xy_size ${_file_name_add_xy})
+    _xy_source=""
     for _xy_candidate in ${ICE_COUPLE_DIR}/${_xy_basename} \
                          ${COUPLE_DIR}/${_xy_basename} \
                          ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${_xy_basename} ; do
-        if [ -f "${_xy_candidate}" ] ; then
+        [ -f "${_xy_candidate}" ] || continue
+        _xy_have=$(ice_nc_xy_size ${_xy_candidate})
+        if [ -z "${_xy_want}" ] || [ "${_xy_have}" = "${_xy_want}" ] ; then
             _xy_source=${_xy_candidate}
             break
         fi
+        echo -e "\t\t!   skipping ${_xy_candidate}: ${_xy_have/ /x}, the forcing file is ${_xy_want/ /x}"
     done
+    if [ -z "${_xy_source}" ] ; then
+        _xy_pism=$(ice_pism_grid_file)
+        if [ -n "${_xy_pism}" ] && [ "$(ice_nc_xy_size ${_xy_pism})" = "${_xy_want}" ] \
+           && ncks -O -v x,y ${_xy_pism} ${ICE_COUPLE_DIR}/${_xy_basename} ; then
+            echo -e "\t\t*   x/y axis derived from >>${_xy_pism}<<"
+            echo -e "\t\t    and kept as ${ICE_COUPLE_DIR}/${_xy_basename}"
+            _xy_source=${ICE_COUPLE_DIR}/${_xy_basename}
+        fi
+    fi
+    # Nothing fits: carry on with the pool file so that the check below
+    # reports both grids and stops (exit 44).
     _xy_source=${_xy_source:-${POOL_DIR_pism}/grids/${DOMAIN_pism}/${_xy_basename}}
     echo -e "\t\t*   x/y axis taken from >>${_xy_source}<<"
 
-    if [ 1 -eq 0 ] ; then
-	# Problems with float vs double: does not work as expected when using directly: "ncks -A .."
-	PISM_GRID_XY_FILE=${_xy_source}
-    else
-        # This is the standard case: generate both float and double files, just in case something strange happens
-	INITIAL_FILE_pism=${_xy_source}
-	PISM_GRID_xy_file_double=${PISM_GRID_xy_file_double:-xy_file_double.$(basename ${INITIAL_FILE_pism})}
-	PISM_GRID_xy_file_float=${PISM_GRID_xy_file_float:-xy_file_float.$(basename ${INITIAL_FILE_pism})}
-	pism_helpers_create_xy_axis ${INITIAL_FILE_pism} ${PISM_GRID_xy_file_double} ${PISM_GRID_xy_file_float}
-
-	PISM_GRID_XY_FILE=${PISM_GRID_xy_file_double}
-    fi
+    # The double/float copies are cached per domain and per source. A cached
+    # copy of another size (left by an earlier attempt with the wrong source)
+    # would be reused by pism_helpers_create_xy_axis, so it goes first.
+    _axy_dbl=${ICE_COUPLE_DIR}/xy_file_double.$(basename ${_xy_source})
+    _axy_flt=${ICE_COUPLE_DIR}/xy_file_float.$(basename ${_xy_source})
+    for _xy_cached in ${_axy_dbl} ${_axy_flt} ; do
+        if [ -f ${_xy_cached} ] && \
+           [ "$(ice_nc_xy_size ${_xy_cached})" != "$(ice_nc_xy_size ${_xy_source})" ] ; then
+            echo -e "\t\t!   ${_xy_cached} has another size, made anew"
+            rm -f ${_xy_cached}
+        fi
+    done
+    pism_helpers_create_xy_axis ${_xy_source} ${_axy_dbl} ${_axy_flt}
+    PISM_GRID_XY_FILE=${_axy_dbl}
 
     test_file_or_exit $PISM_GRID_XY_FILE 11
 
@@ -487,4 +511,5 @@ function iterative_coupling_pism_regrid_add_xy_array {
     fi
 
     unset _file_name_add_xy _model _xy_basename _xy_candidate _xy_source
+    unset _xy_want _xy_have _xy_pism _axy_dbl _axy_flt _xy_cached
 }

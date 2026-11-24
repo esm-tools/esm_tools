@@ -106,6 +106,18 @@ ice_domain_couple_dir() {
         unset _icd_name
 }
 
+## @fn ice_domain_make_dirs()
+## Create the couple directory of every configured domain. Called at the
+## first AWI-ESM coupling step, so that each domain's directory exists before
+## any of its ice sheets has run (otherwise a domain's directory appears only
+## when that domain is first selected).
+ice_domain_make_dirs() {
+        for _imd_domain in $(ice_domain_list); do
+                mkdir -p "$(ice_domain_couple_dir "${_imd_domain}")"
+        done
+        unset _imd_domain
+}
+
 ## @fn ice_domain_select()
 ## Call: ice_domain_select DOMAIN
 ## Make DOMAIN the current one and make sure its couple directory exists.

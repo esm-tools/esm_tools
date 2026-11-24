@@ -424,10 +424,18 @@ ic_atm2pism_prepare_define_constants() {
 ic_atm2pism_prepare_save_griddes() {
     if [ ! -f ${ICE_COUPLE_DIR}/ice.griddes ]; then
         echo; echo -e "\t\t* Saving ice.griddes"
+        # Normally ice_griddes_ensure_corners (couple_in, before this) has
+        # already derived it from the PISM file. Otherwise: the pool, checked
+        # against the PISM grid, and if that does not fit, one more attempt to
+        # derive it.
+        type ice_griddes_ensure_corners >/dev/null 2>&1 || \
+            . ${FUNCTION_PATH}/../general/pism_helpers.functions
         if [ -f ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes ]; then
             cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
             ${ICE_COUPLE_DIR}/ice.griddes
-        else
+        fi
+        ice_griddes_ensure_corners ${ICE_COUPLE_DIR}/ice.griddes
+        if [ ! -f ${ICE_COUPLE_DIR}/ice.griddes ]; then
             echo " Was Looking for: ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes"
             echo "Could not find griddes file, exiting..."
             exit 3

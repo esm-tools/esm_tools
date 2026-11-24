@@ -36,6 +36,11 @@ echam2ice() {
         . ${FUNCTION_PATH}/../general/general_lists.functions
         . ${FUNCTION_PATH}/../general/coupling_general.functions
         . ${FUNCTION_PATH}/../general/general_helpers.functions
+        . ${FUNCTION_PATH}/../general/ice_domains.functions
+
+        # Every ice domain gets its exchange directory now, before the first
+        # ice sheet runs.
+        ice_domain_make_dirs
 
         :> ${COUPLE_DIR}/cdo_stderr_echam2ice
         iterative_coupling_echam6_ice_make_forcing

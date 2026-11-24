@@ -95,6 +95,19 @@ The Antarctic grid had no corners because
 `make_ice_griddes.py` ran without the python3 module (`import numpy` failed).
 Now:
 
+* the ice grid no longer has to match the pool. `ice_griddes_ensure_corners`
+  compares `ice.griddes` with the PISM file the domain runs on and derives a
+  new one when the size differs (the old one is kept as
+  `ice.griddes.wrong_size`); `ic_atm2pism_prepare_save_griddes` derives it
+  when the pool has none (before: exit 3). The x/y axis for the PISM forcing
+  takes only a candidate of the forcing file's size and otherwise extracts it
+  from the PISM file into `${couple_dir}/<domain>/` (before: exit 44 for the
+  Greenland 5 km restart of 301×561 against the pool's 337×577, and a failure
+  for Antarctica 8 km, where the pool has no `_xy.nc`). Its cached
+  double/float copies live in the domain's couple directory and are made anew
+  when their size does not fit;
+* `echam2ice` creates every domain's couple directory at the first AWI-ESM
+  coupling, before any ice sheet has run;
 * `ice_griddes_ensure_corners` loads the python3 module, so the corners are
   made and the remapping is `remapcon2`;
 * the hosing integrates each domain on its own grid with dx·dy, the cell area

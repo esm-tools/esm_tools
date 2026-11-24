@@ -121,13 +121,26 @@ pism_helpers_create_xy_axis() {
 ## one does not. utils/make_ice_griddes.py derives them from the projection,
 ## calibrating against the PISM file's own lon/lat so a wrongly rotated grid is
 ## refused rather than written. A griddes that already has corners, including
-## one staged by hand, is left untouched.
+## one staged by hand, is left untouched -- as long as its size matches the
+## PISM grid. A griddes of another size (a pool file for a different grid
+## extent, e.g. Greenland 5 km 337x577 vs. a 301x561 restart) is moved aside
+## to ice.griddes.wrong_size and derived anew from the PISM file.
 ice_griddes_ensure_corners() {
         typeset _gd=${1:-${ICE_COUPLE_DIR:-${COUPLE_DIR}}/ice.griddes}
-        shift 2>/dev/null
-        typeset _src _mk _bak
+        [ $# -gt 0 ] && shift   # a bare shift without arguments ends a ksh script
+        typeset _src _mk _bak _want _have
 
-        if [ -f "${_gd}" ] && grep -qm1 -E '^[[:space:]]*(xbounds|ybounds)' "${_gd}" 2>/dev/null; then
+        _src=$(ice_pism_grid_file "$@")
+        _want=""
+        [ -n "${_src}" ] && _want=$(ice_nc_xy_size "${_src}")
+        _have=""
+        [ -f "${_gd}" ] && _have=$(ice_griddes_xy_size "${_gd}")
+
+        if [ -n "${_want}" ] && [ -n "${_have}" ] && [ "${_want}" != "${_have}" ]; then
+                echo " !   ice.griddes is ${_have/ /x}, the PISM grid ($(basename ${_src})) is ${_want/ /x}:"
+                echo " !   moved aside to $(basename ${_gd}).wrong_size, deriving a new one"
+                mv -f "${_gd}" "${_gd}.wrong_size"
+        elif [ -f "${_gd}" ] && grep -qm1 -E '^[[:space:]]*(xbounds|ybounds)' "${_gd}" 2>/dev/null; then
                 echo " *   ice.griddes already carries cell corners"
                 return 0
         fi
@@ -138,14 +151,6 @@ ice_griddes_ensure_corners() {
                 return 0
         fi
 
-        # First PISM file that exists and can describe the grid.
-        for _src in "$@" \
-                    "${first_year_in_chunk_input}" \
-                    "${INPUT_FILE_pism}" \
-                    "${SPINUP_FILE_pism}" ; do
-                [ -n "${_src}" ] && [ -f "${_src}" ] && break
-                _src=""
-        done
         if [ -z "${_src}" ]; then
                 echo " !   no PISM file available to derive cell corners from"
                 echo " !   (tried first_year_in_chunk_input, INPUT_FILE_pism, SPINUP_FILE_pism)"
@@ -170,5 +175,43 @@ ice_griddes_ensure_corners() {
                 echo " !   remapcon2 will fall back to remapbil (not conservative) and the"
                 echo " !   iceberg plugin will fail if this domain feeds it a discharge file."
         fi
-        unset _gd _src _mk _bak
+        unset _gd _src _mk _bak _want _have
+}
+
+## @fn ice_pism_grid_file()
+## Call: ice_pism_grid_file [PISM_FILE ...]
+## Echo the first existing PISM file that describes this domain's grid: the
+## arguments, then first_year_in_chunk_input, INPUT_FILE_pism, SPINUP_FILE_pism.
+ice_pism_grid_file() {
+        typeset _f
+        for _f in "$@" \
+                  "${first_year_in_chunk_input}" \
+                  "${INPUT_FILE_pism}" \
+                  "${SPINUP_FILE_pism}" ; do
+                if [ -n "${_f}" ] && [ -f "${_f}" ]; then
+                        echo "${_f}"
+                        return 0
+                fi
+        done
+        return 1
+}
+
+## @fn ice_nc_xy_size()
+## Call: ice_nc_xy_size FILE  ->  "NX NY" (empty if FILE has no x/y dimension)
+ice_nc_xy_size() {
+        ncdump -h "$1" 2>/dev/null | awk '
+                /^dimensions:/ {d = 1; next}
+                /^variables:/  {d = 0}
+                d && $1 == "x" {nx = $3}
+                d && $1 == "y" {ny = $3}
+                END {if (nx != "" && ny != "") print nx+0, ny+0}'
+}
+
+## @fn ice_griddes_xy_size()
+## Call: ice_griddes_xy_size GRIDDES  ->  "NX NY" of its first grid
+ice_griddes_xy_size() {
+        awk -F= '
+                $1 ~ /^[[:space:]]*xsize[[:space:]]*$/ && nx == "" {nx = $2 + 0}
+                $1 ~ /^[[:space:]]*ysize[[:space:]]*$/ && ny == "" {ny = $2 + 0}
+                END {if (nx != "" && ny != "") print nx, ny}' "$1"
 }

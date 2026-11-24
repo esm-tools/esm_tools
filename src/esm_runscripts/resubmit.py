@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-from . import chunky_parts, helpers, logfiles, workflow
+from . import chunky_parts, helpers, hold_allocation, logfiles, workflow
 
 
 def submit(config):
@@ -22,6 +22,16 @@ def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
         config, cluster, batch_or_shell
     )
     if not check_if_check(config):
+        # hold_allocation: the next compute leg may run in the allocation this tail
+        # is already in, instead of queueing as a new job (see hold_allocation.py)
+        if (
+            batch_or_shell == "batch"
+            and cluster == "compute"
+            and hold_allocation.try_hold_compute(
+                config, config["general"]["batch"].get_run_filename(config, cluster)
+            )
+        ):
+            return config
         config = submit(config)
     return config
 
@@ -88,6 +98,29 @@ def end_of_experiment(config):
     return False
 
 
+def _experiment_over_marker(config):
+    """Marker that end_of_experiment_all_models() looks for in a sibling model's log.
+
+    Both writers of the marker (sim_objects.py and end_of_experiment() below) emit
+    it through logger.progress as a bare "Experiment over", but this check was
+    written against a "# Experiment over" form that nothing produces. The match
+    therefore never succeeds, end_of_experiment_all_models() always returns False,
+    and an iteratively-coupled chain resubmits past its final_date indefinitely.
+
+    Fixing that unconditionally would change the behaviour of the existing
+    awiesm2 / awicm-pism ice-sheet setups, which have always run this way and are
+    stopped by hand. So the working match is opt-in: set
+
+        general:
+            honor_final_date: True
+
+    in the coupling runscript to have the chain actually stop at final_date.
+    """
+    if config["general"].get("honor_final_date", False):
+        return "Experiment over"
+    return "# Experiment over"
+
+
 def end_of_experiment_all_models(config):
     index = 1
     expid = config["general"]["expid"]
@@ -107,11 +140,12 @@ def end_of_experiment_all_models(config):
                 + setup_name
                 + ".log"
             )
+            marker = _experiment_over_marker(config)
             if os.path.isfile(logfile):
                 with open(logfile, "r") as open_logfile:
                     logfile_array = open_logfile.readlines()
                     for line in logfile_array:
-                        if "# Experiment over" in line:
+                        if marker in line:
                             logger.info(f"    ...{setup_name} is done.")
                             experiment_done = True
                             break
@@ -142,13 +176,49 @@ def maybe_resubmit(config):
         config = _increment_date_and_run_number(config)
         config = _write_date_file(config)
 
+        concurrent = (
+            config["general"].get("coupling_mode", "serial") == "concurrent"
+        )
+        if concurrent:
+            # NOTE(PG-style non-top-level import: avoid circular dependency)
+            from . import concurrent_coupling
+
+            # our couple_out just wrote this leg's marker: revive a parked
+            # sibling before anything else (even if we are done ourselves)
+            concurrent_coupling.revive_parked_sibling(config)
+
         if end_of_experiment(config):
+            if concurrent:
+                # each chain ends independently; falling through would restart
+                # this chain past its final_date
+                logger.info(
+                    "Concurrent coupling: this chain reached final_date; the "
+                    "sibling chain finishes independently."
+                )
+                return config
             if config["general"].get("iterative_coupling", False):
                 if end_of_experiment_all_models(config):
                     return config
             else:
                 # config = chunky_parts._update_chunk_date_file(config)
                 return config
+
+        if concurrent and hold_allocation.active(config):
+            # keep the nodes and wait here for the sibling's marker; if it does not
+            # come in time, park_if_needed below parks as without hold_allocation
+            hold_allocation.wait_for_marker(
+                config,
+                concurrent_coupling.required_marker(
+                    config, config["general"]["next_chunk_number"]
+                ),
+            )
+
+        if concurrent and concurrent_coupling.park_if_needed(
+            config, config["general"]["next_chunk_number"]
+        ):
+            # sibling marker for our next chunk is missing: chain parked (pure
+            # disk state); the sibling's leg end revives us
+            return config
 
         cluster = config["general"]["workflow"]["first_task_in_queue"]
         nextrun = resubmit_recursively(

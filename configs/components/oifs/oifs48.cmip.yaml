@@ -1,4 +1,14 @@
 oifs:
+    cmip7_data_dir: ${input_dir}/cmip7-data
+    # OIFS opens composition/onlinedust_v4_rmp.nc at init regardless of MIP,
+    # so stage it unconditionally (was previously only in the cmip7 branch,
+    # which crashed cmip6 setups like oifsamip). The file is mip-independent.
+    add_input_files:
+        dust_clim: dust_clim
+    add_input_sources:
+        dust_clim: ${cmip7_data_dir}/dust/onlinedust_v4_rmp.nc
+    add_input_in_work:
+        dust_clim: composition/onlinedust_v4_rmp.nc
     choose_mip:
         "cmip5":
             add_namelist_changes:
@@ -40,8 +50,121 @@ oifs:
                             NAMECECMIP:
                                 SCENARIONAME: "SSP1-2.6"
         "cmip7":
+            choose_scenario:
+                "piControl":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                "abrupt4xCO2":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                                LANxCO2: True
+                                RNxCO2: 4.00
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                "1pctCO2":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                                L1pctCO2: True
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                "historical":
+                    add_namelist_changes:
+                        fort.4:
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                # ScenarioMIP. The scenario key is the short name the CMIP7 forcing files
+                # carry (vl, ln, l, ml, m, hl, h): OpenIFS builds the names of the greenhouse
+                # gas, ozone and MACv2-SP plume files for model years from 2023 from
+                # SCENARIONAME. Before 2023 the historical files are read, so a run can
+                # start in the historical period and cross into the scenario.
+                # Inputs in the albedo pool on 2026-10-08: complete for h and vl; the other
+                # five have greenhouse gases only (no ozone, no plume file).
+                "vl":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "vl"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "ln":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "ln"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "l":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "l"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "ml":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "ml"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "m":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "m"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "hl":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "hl"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                "h":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "h"
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
             add_namelist_changes:
                 fort.4:
                     NAMECECMIP:
-                        LCMIP7: ".true."
-                        CMIP7DATADIR: "${oifs.cmip7_data_dir_nml}"
+                        LCMIP7: True
+                        LCMIP6: False
+                        CMIP7DATADIR: '${cmip7_data_dir}'
+                        LMACV2SP: True
+                        LMACV2SP_CCNF: True
+                    NAERAD:
+                        NO3CMIP: 7
+                        CO3DATADIR: '${cmip7_data_dir}'
+                        CCMIP_STRAT_FULL: '${cmip7_data_dir}/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_historical_1750-2023_2-2-1_${levels}.nc'
+                        CCMIP_STRAT_FULL_CLIM: '${cmip7_data_dir}/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_climatology2-2-1_${levels}.nc'
+                    NAEPHY:
+                        LRDALB: False

@@ -979,21 +979,50 @@ def _compute_checksums_for_dir(config, target):
 
 def check_for_unknown_files(config):
     # files = os.listdir(config["general"]["thisrun_work_dir"])
+    work_dir = config["general"]["thisrun_work_dir"]
     all_files = glob.iglob(
-        config["general"]["thisrun_work_dir"] + "**/*", recursive=True
+        work_dir + "**/*", recursive=True
     )
 
     known_files = [
-        config["general"]["thisrun_work_dir"] + "/" + "hostfile_srun",
-        config["general"]["thisrun_work_dir"] + "/" + "namcouple",
-        config["general"]["thisrun_work_dir"] + "/" + "coupling.xml",
+        work_dir + "/" + "hostfile_srun",
+        work_dir + "/" + "namcouple",
+        work_dir + "/" + "coupling.xml",
     ]
+
+    # Framework-generated runtime artifacts that exist for every run
+    # regardless of which components are active: SLURM hostlists and the
+    # per-component prog_/script_ launcher wrappers written by
+    # esm_runscripts. Globbed against the work dir; non-matching patterns
+    # are no-ops.
+    framework_runtime_globs = [
+        "hostlist",
+        "prog_*.sh",
+        "script_*.sh",
+    ]
+    for pattern in framework_runtime_globs:
+        known_files += glob.glob(os.path.join(work_dir, pattern))
 
     for filetype in config["general"]["all_model_filetypes"]:
         for model in esm_parser.get_components(config, include=["model"]):
             if filetype + "_sources" in config[model]:
                 known_files += list(config[model][filetype + "_sources"].values())
                 known_files += list(config[model][filetype + "_targets"].values())
+
+    # Expand ``ignore_in_work`` glob patterns from each component config and
+    # treat the matched files as known. Without this, components like
+    # lpj_guess that intentionally leave large numbers of intermediate
+    # output files in ``work/`` see them all copied to ``unknown/`` at tidy
+    # time. Patterns are matched recursively relative to ``work_dir``.
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        ignore_in_work = config[model].get("ignore_in_work", {})
+        if not isinstance(ignore_in_work, dict):
+            continue
+        for pattern in ignore_in_work.values():
+            if not isinstance(pattern, str):
+                continue
+            full_pattern = os.path.join(work_dir, pattern)
+            known_files += glob.glob(full_pattern, recursive=True)
 
     # Sets, and one realpath per file below: with lists the membership test is
     # linear, which makes the scan quadratic in the number of files in work.
@@ -1546,6 +1575,12 @@ def movement(func):
             # If source_path is a template use jinja and copy, otherwise run the movement
             # function
             if source_path.endswith(".j2"):
+                # Parallel movements pass no config. Rendering then only fails for
+                # templates that hit an undefined variable; one that guards with
+                # ``is defined`` or ``| default`` renders silently with the wrong
+                # values. Return False so the serial retry renders it with the config.
+                if not config:
+                    return False
                 jinja.render_template(config, source_path, target_path)
             else:
                 func(source_path, target_path)
@@ -1560,6 +1595,36 @@ def movement(func):
 @movement
 def actually_copy(source_path, target_path):
     shutil.copy2(source_path, target_path)
+    check_copy_size(source_path, target_path)
+
+
+def check_copy_size(source_path, target_path):
+    """
+    Make sure a copy is complete. ``shutil.copy2`` can end early without raising:
+    on Linux it copies with ``os.sendfile`` and stops as soon as that returns 0.
+    On Lustre, with many copies running in parallel, this left a 22.9 MB copy of a
+    92.9 MB OASIS weight file in the work folder (antg065e10, 1923). copy2 then set
+    the source's time stamp, and the model died in OASIS initialisation. Compare
+    the sizes and copy again without sendfile if they differ. If the sizes still
+    differ, raise an error so the run stops before the model starts.
+    """
+    size_source = os.path.getsize(source_path)
+    size_target = os.path.getsize(target_path)
+    if size_source == size_target:
+        return
+    logger.warning(
+        f"Incomplete copy of {source_path} to {target_path} "
+        f"({size_target} of {size_source} bytes), copying again"
+    )
+    with open(source_path, "rb") as fsrc, open(target_path, "wb") as fdst:
+        shutil.copyfileobj(fsrc, fdst, 16 * 1024 * 1024)
+    shutil.copystat(source_path, target_path)
+    size_target = os.path.getsize(target_path)
+    if size_target != size_source:
+        raise RuntimeError(
+            f"Copy of {source_path} to {target_path} is still incomplete after a "
+            f"second try ({size_target} of {size_source} bytes)"
+        )
 
 
 @movement

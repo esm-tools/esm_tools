@@ -1,0 +1,11 @@
+# Drake Passage — canonical ACC transect.
+# Two-waypoint line from Cape Horn (Chile) to the Antarctic Peninsula tip
+# (Elephant Island area), so total transport across this line ≈ ACC
+# throughflow.
+#
+# Reference values: cDrake (2007-2011) gives ~173 Sv mean ACC transport.
+# CORE2 LR is too coarse to resolve fronts so expect O(100 Sv).
+#
+# lon, lat
+-68.0, -55.0
+-58.0, -65.0

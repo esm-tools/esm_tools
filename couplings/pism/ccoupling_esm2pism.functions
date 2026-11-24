@@ -1,0 +1,10 @@
+#!/bin/ksh
+
+function esm2pism() {
+    . ${FUNCTION_PATH}/fakecoupling_atmosphere2pism.functions
+    . ${FUNCTION_PATH}/fakecoupling_ocean2pism.functions
+    . ${FUNCTION_PATH}/../general/pism_helpers.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    fatmosphere2pism
+    focean2pism
+}

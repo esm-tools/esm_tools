@@ -1,0 +1,13 @@
+#!/bin/ksh
+
+function esm2pism() {
+    . ${FUNCTION_PATH}/fakecoupling_ocean2pism.functions
+    . ${FUNCTION_PATH}/../general/pism_helpers.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+     cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/latest_atmo_forcing_file.nc ${COUPLE_DIR}/.
+     cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_names_for_ice.dat ${COUPLE_DIR}/atmosphere_names_for_ice.dat
+    cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple//atmosphere_file_for_ice.nc ${COUPLE_DIR}/.
+
+    #fatmosphere2pism
+    focean2pism
+}

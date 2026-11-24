@@ -1,0 +1,9 @@
+&remap_config
+    path_base        = './my_core/'
+    path_old         = './my_core/'
+    path_new         = '/work/ab0246/a270122/lars_and_paul/experiments/test_env/couple//submesh_5007-12-31T00:00:00/'
+    path_restart_old = '/work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled2/restart/fesom/fesom.5076.oce.restart/'
+    path_restart_new = './restart_new/'
+    restart_year     = 5043
+    nod2D_base       = 126858
+/

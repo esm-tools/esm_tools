@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<file_definition type="one_file" format="netcdf4" par_access="collective"
+                 compression_level="{{xios.compression_level}}"
+                 time_counter_name="time" time_counter="exclusive">
+
+  <!-- Verification of the WAM XIOS output against the native GRIB output of the
+       same run: every integrated parameter instantaneous at every sample
+       (IDELINT), and the 2D spectra instantaneous every 6 h, the times at which
+       WAM writes its native GRIB spectra with IREST=1 and IDELRES=6 h. Needs
+       GFLAG for all 83 parameters. The altimeter parameters (awh, acwh, arrc)
+       are left out: WAM only computes them with altimeter data assimilation,
+       natively as well. Not for production. -->
+  <file id="w_verify_int" name="wam_verify_int_%start_date%" output_freq="{{ oifs.wam_xios_idelint }}h" split_freq="1y" split_freq_format="%y" enabled="true">
+    <field field_ref="swh" operation="instant"/>
+    <field field_ref="mwd" operation="instant"/>
+    <field field_ref="mwp" operation="instant"/>
+    <field field_ref="ustar" operation="instant"/>
+    <field field_ref="dwi" operation="instant"/>
+    <field field_ref="pp1d" operation="instant"/>
+    <field field_ref="cdww" operation="instant"/>
+    <field field_ref="tauw" operation="instant"/>
+    <field field_ref="msqs" operation="instant"/>
+    <field field_ref="wind" operation="instant"/>
+    <field field_ref="shww" operation="instant"/>
+    <field field_ref="shts" operation="instant"/>
+    <field field_ref="mdww" operation="instant"/>
+    <field field_ref="mdts" operation="instant"/>
+    <field field_ref="mpww" operation="instant"/>
+    <field field_ref="mpts" operation="instant"/>
+    <field field_ref="mp1" operation="instant"/>
+    <field field_ref="mp2" operation="instant"/>
+    <field field_ref="wdw" operation="instant"/>
+    <field field_ref="p1ww" operation="instant"/>
+    <field field_ref="p1ps" operation="instant"/>
+    <field field_ref="p2ww" operation="instant"/>
+    <field field_ref="p2ps" operation="instant"/>
+    <field field_ref="dwww" operation="instant"/>
+    <field field_ref="dwps" operation="instant"/>
+    <field field_ref="wsk" operation="instant"/>
+    <field field_ref="bfi" operation="instant"/>
+    <field field_ref="wsp" operation="instant"/>
+    <field field_ref="wmb" operation="instant"/>
+    <field field_ref="hmax" operation="instant"/>
+    <field field_ref="tmax" operation="instant"/>
+    <field field_ref="ust" operation="instant"/>
+    <field field_ref="vst" operation="instant"/>
+    <field field_ref="ocu" operation="instant"/>
+    <field field_ref="ocv" operation="instant"/>
+    <field field_ref="phioc" operation="instant"/>
+    <field field_ref="phiaw" operation="instant"/>
+    <field field_ref="tauoc" operation="instant"/>
+    <field field_ref="swh1" operation="instant"/>
+    <field field_ref="mwd1" operation="instant"/>
+    <field field_ref="mwp1" operation="instant"/>
+    <field field_ref="swh2" operation="instant"/>
+    <field field_ref="mwd2" operation="instant"/>
+    <field field_ref="mwp2" operation="instant"/>
+    <field field_ref="swh3" operation="instant"/>
+    <field field_ref="mwd3" operation="instant"/>
+    <field field_ref="mwp3" operation="instant"/>
+    <field field_ref="mswsi" operation="instant"/>
+    <field field_ref="sh10" operation="instant"/>
+    <field field_ref="rhoao" operation="instant"/>
+    <field field_ref="wstar" operation="instant"/>
+    <field field_ref="ci_wam" operation="instant"/>
+    <field field_ref="sit_wam" operation="instant"/>
+    <field field_ref="wss" operation="instant"/>
+    <field field_ref="oce_sst" operation="instant"/>
+    <field field_ref="oce_ci" operation="instant"/>
+    <field field_ref="oce_sit" operation="instant"/>
+    <field field_ref="oce_u" operation="instant"/>
+    <field field_ref="oce_v" operation="instant"/>
+    <field field_ref="wefxm" operation="instant"/>
+    <field field_ref="wefxd" operation="instant"/>
+    <field field_ref="h1012" operation="instant"/>
+    <field field_ref="h1214" operation="instant"/>
+    <field field_ref="h1417" operation="instant"/>
+    <field field_ref="h1721" operation="instant"/>
+    <field field_ref="h2125" operation="instant"/>
+    <field field_ref="h2530" operation="instant"/>
+    <field field_ref="weta" operation="instant"/>
+    <field field_ref="wraf" operation="instant"/>
+    <field field_ref="wnslc" operation="instant"/>
+    <field field_ref="utaua" operation="instant"/>
+    <field field_ref="vtaua" operation="instant"/>
+    <field field_ref="utauo" operation="instant"/>
+    <field field_ref="vtauo" operation="instant"/>
+    <field field_ref="wphio" operation="instant"/>
+    <field field_ref="wam_extra_1" operation="instant"/>
+    <field field_ref="wam_extra_2" operation="instant"/>
+    <field field_ref="wam_extra_3" operation="instant"/>
+    <field field_ref="wam_extra_4" operation="instant"/>
+    <field field_ref="wam_extra_5" operation="instant"/>
+  </file>
+  <file id="w_verify_spec" name="wam_verify_spec_%start_date%" output_freq="6h" split_freq="1y" split_freq_format="%y" enabled="true">
+    <field field_ref="spec2d" operation="instant"/>
+  </file>
+
+  <!-- The averaged products of the production file_def (mean, maximum, and the
+       sine and cosine of the direction), daily, to check them against the
+       hourly instantaneous values above. -->
+  <file id="w_verify_mean" name="wam_verify_mean_%start_date%" output_freq="1d" split_freq="1y" split_freq_format="%y" enabled="true">
+    <field field_ref="swh"/>
+    <field field_ref="swh" name="swh_max" operation="maximum"/>
+    <field field_ref="mwd_sin"/>
+    <field field_ref="mwd_cos"/>
+  </file>
+</file_definition>

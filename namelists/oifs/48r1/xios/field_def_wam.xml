@@ -1,0 +1,131 @@
+<field_definition level="1" prec="4" enabled="true" operation="average" default_value="-999." detect_missing_value="true">
+
+  <!-- WAM integrated parameters. The ids are fixed in wam_xios_mod.F90
+       (CFLDID), one per output parameter of MPCRTBL: the ecCodes short name of
+       its GRIB code, except ustar and tauw (spare codes wx5/wx4), the sea-ice
+       fields and the fields received from the ocean model (would clash with
+       the atmosphere's names) and wam_extra_*. The number in each
+       comment is that parameter, i.e. the index to set in NALINE GFLAG for the
+       model to compute it. A field used in file_def_wam.xml without its GFLAG
+       stops the run at the first output time and names the GFLAG.
+       WAM writes -999 at points it masks (sea ice, too shallow).
+       Directions are not averaged: a mean of angles is meaningless, so they
+       default to instantaneous values; average their sine and cosine instead
+       (wam_dircomp below) and recombine with atan2. The altimeter parameters
+       (17-19) are only computed with altimeter data assimilation. -->
+
+  <field_group id="wam_2d" grid_ref="wam_grid">
+    <field id="swh"     long_name="significant height of combined wind waves and swell" standard_name="sea_surface_wave_significant_height" unit="m"/> <!-- 1 -->
+    <field id="mwd"     long_name="mean wave direction"                 standard_name="sea_surface_wave_from_direction" unit="degree" operation="instant"/> <!-- 2 -->
+    <field id="mwp"     long_name="mean wave period (inverse moment)"   standard_name="sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment" unit="s"/> <!-- 3 -->
+    <field id="ustar"   long_name="friction velocity"                   unit="m s-1"/> <!-- 4 -->
+    <field id="dwi"     long_name="wave model wind direction"           unit="degree" operation="instant"/> <!-- 5 -->
+    <field id="pp1d"    long_name="peak wave period"                    standard_name="sea_surface_wave_period_at_variance_spectral_density_maximum" unit="s"/> <!-- 6 -->
+    <field id="cdww"    long_name="drag coefficient with waves"         unit="1"/> <!-- 7 -->
+    <field id="tauw"    long_name="normalised wave stress"              unit="1"/> <!-- 8 -->
+    <field id="msqs"    long_name="mean square slope of waves"          unit="1"/> <!-- 9 -->
+    <field id="wind"    long_name="wave model wind speed"               unit="m s-1"/> <!-- 10 -->
+    <field id="shww"    long_name="significant height of wind waves"    standard_name="sea_surface_wind_wave_significant_height" unit="m"/> <!-- 11 -->
+    <field id="shts"    long_name="significant height of total swell"   standard_name="sea_surface_swell_wave_significant_height" unit="m"/> <!-- 12 -->
+    <field id="mdww"    long_name="mean direction of wind waves" standard_name="sea_surface_wind_wave_from_direction"        unit="degree" operation="instant"/> <!-- 13 -->
+    <field id="mdts"    long_name="mean direction of total swell" standard_name="sea_surface_swell_wave_from_direction"       unit="degree" operation="instant"/> <!-- 14 -->
+    <field id="mpww"    long_name="mean period of wind waves (inverse moment)" standard_name="sea_surface_wind_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment"   unit="s"/> <!-- 15 -->
+    <field id="mpts"    long_name="mean period of total swell (inverse moment)" standard_name="sea_surface_swell_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment"  unit="s"/> <!-- 16 -->
+    <field id="awh"     long_name="altimeter wave height"               unit="m"/> <!-- 17 -->
+    <field id="acwh"    long_name="altimeter corrected wave height"     unit="m"/> <!-- 18 -->
+    <field id="arrc"    long_name="altimeter range relative correction" unit="m"/> <!-- 19 -->
+    <field id="mp1"     long_name="mean wave period (first moment)"     unit="s"/> <!-- 20 -->
+    <field id="mp2"     long_name="mean zero-crossing wave period"      standard_name="sea_surface_wave_mean_period_from_variance_spectral_density_second_frequency_moment" unit="s"/> <!-- 21 -->
+    <field id="wdw"     long_name="wave spectral directional width"     unit="radian"/> <!-- 22 -->
+    <field id="p1ww"    long_name="mean period of wind waves (first moment)"     unit="s"/> <!-- 23 -->
+    <field id="p1ps"    long_name="mean period of total swell (first moment)"    unit="s"/> <!-- 24 -->
+    <field id="p2ww"    long_name="mean period of wind waves (second moment)"    unit="s"/> <!-- 25 -->
+    <field id="p2ps"    long_name="mean period of total swell (second moment)"   unit="s"/> <!-- 26 -->
+    <field id="dwww"    long_name="directional width of wind waves"     unit="radian"/> <!-- 27 -->
+    <field id="dwps"    long_name="directional width of total swell"    unit="radian"/> <!-- 28 -->
+    <field id="wsk"     long_name="wave spectral kurtosis"              unit="1"/> <!-- 29 -->
+    <field id="bfi"     long_name="Benjamin-Feir index"                 unit="1"/> <!-- 30 -->
+    <field id="wsp"     long_name="wave spectral peakedness"            unit="1"/> <!-- 31 -->
+    <field id="wmb"     long_name="model bathymetry"                    unit="m" operation="once"/> <!-- 32 -->
+    <field id="hmax"    long_name="maximum individual wave height" standard_name="sea_surface_wave_maximum_height"      unit="m"/> <!-- 33 -->
+    <field id="tmax"    long_name="period of maximum individual wave height" unit="s"/> <!-- 34 -->
+    <field id="ust"     long_name="eastward surface Stokes drift"       standard_name="sea_surface_wave_stokes_drift_eastward_velocity" unit="m s-1"/> <!-- 35 -->
+    <field id="vst"     long_name="northward surface Stokes drift"      standard_name="sea_surface_wave_stokes_drift_northward_velocity" unit="m s-1"/> <!-- 36 -->
+    <field id="ocu"     long_name="eastward surface current seen by WAM"  unit="m s-1"/> <!-- 37 -->
+    <field id="ocv"     long_name="northward surface current seen by WAM" unit="m s-1"/> <!-- 38 -->
+    <field id="phioc"   long_name="normalised energy flux into ocean"   unit="1"/> <!-- 39 -->
+    <field id="phiaw"   long_name="normalised energy flux into waves"   unit="1"/> <!-- 40 -->
+    <field id="tauoc"   long_name="normalised stress into ocean"        unit="1"/> <!-- 41 -->
+    <field id="swh1"    long_name="significant wave height of first swell partition"  unit="m"/> <!-- 42 -->
+    <field id="mwd1"    long_name="mean wave direction of first swell partition"      unit="degree" operation="instant"/> <!-- 43 -->
+    <field id="mwp1"    long_name="mean wave period of first swell partition"         unit="s"/> <!-- 44 -->
+    <field id="swh2"    long_name="significant wave height of second swell partition" unit="m"/> <!-- 45 -->
+    <field id="mwd2"    long_name="mean wave direction of second swell partition"     unit="degree" operation="instant"/> <!-- 46 -->
+    <field id="mwp2"    long_name="mean wave period of second swell partition"        unit="s"/> <!-- 47 -->
+    <field id="swh3"    long_name="significant wave height of third swell partition"  unit="m"/> <!-- 48 -->
+    <field id="mwd3"    long_name="mean wave direction of third swell partition"      unit="degree" operation="instant"/> <!-- 49 -->
+    <field id="mwp3"    long_name="mean wave period of third swell partition"         unit="s"/> <!-- 50 -->
+    <field id="mswsi"   long_name="mean square strain in sea ice"       unit="1"/> <!-- 51 -->
+    <field id="sh10"    long_name="significant wave height of waves with period above 10 s" unit="m"/> <!-- 52 -->
+    <field id="rhoao"   long_name="surface air density seen by WAM"     unit="kg m-3"/> <!-- 53 -->
+    <field id="wstar"   long_name="convective velocity scale"           unit="m s-1"/> <!-- 54 -->
+    <field id="ci_wam"  long_name="sea-ice cover seen by WAM"           unit="1"/> <!-- 55 -->
+    <field id="sit_wam" long_name="sea-ice thickness seen by WAM"       unit="m"/> <!-- 56 -->
+    <field id="wss"     long_name="wave spectral skewness"                unit="1"/> <!-- 57 -->
+    <field id="oce_sst" long_name="SST received from the ocean model"   unit="K"/> <!-- 58 -->
+    <field id="oce_ci"  long_name="sea-ice cover received from the ocean model"     unit="1"/> <!-- 59 -->
+    <field id="oce_sit" long_name="sea-ice thickness received from the ocean model" unit="m"/> <!-- 60 -->
+    <field id="oce_u"   long_name="eastward current received from the ocean model"  unit="m s-1"/> <!-- 61 -->
+    <field id="oce_v"   long_name="northward current received from the ocean model" unit="m s-1"/> <!-- 62 -->
+    <field id="wefxm"   long_name="wave energy flux magnitude" standard_name="sea_surface_wave_energy_flux"          unit="W m-1"/> <!-- 63 -->
+    <field id="wefxd"   long_name="wave energy flux mean direction"     unit="degree" operation="instant"/> <!-- 64 -->
+    <field id="h1012"   long_name="significant wave height, periods 10 to 12 s" unit="m"/> <!-- 65 -->
+    <field id="h1214"   long_name="significant wave height, periods 12 to 14 s" unit="m"/> <!-- 66 -->
+    <field id="h1417"   long_name="significant wave height, periods 14 to 17 s" unit="m"/> <!-- 67 -->
+    <field id="h1721"   long_name="significant wave height, periods 17 to 21 s" unit="m"/> <!-- 68 -->
+    <field id="h2125"   long_name="significant wave height, periods 21 to 25 s" unit="m"/> <!-- 69 -->
+    <field id="h2530"   long_name="significant wave height, periods 25 to 30 s" unit="m"/> <!-- 70 -->
+    <field id="weta"    long_name="wave induced mean sea level correction" unit="m"/> <!-- 71 -->
+    <field id="wraf"     long_name="spectral width index"                unit="1"/> <!-- 72 -->
+    <field id="wnslc"     long_name="number of freak wave events"         unit="1"/> <!-- 73 -->
+    <field id="utaua"   long_name="eastward atmospheric stress"         unit="N m-2"/> <!-- 74 -->
+    <field id="vtaua"   long_name="northward atmospheric stress"        unit="N m-2"/> <!-- 75 -->
+    <field id="utauo"   long_name="eastward stress into ocean"          unit="N m-2"/> <!-- 76 -->
+    <field id="vtauo"   long_name="northward stress into ocean"         unit="N m-2"/> <!-- 77 -->
+    <field id="wphio"   long_name="turbulent energy flux into ocean"    unit="W m-2"/> <!-- 78 -->
+    <field id="wam_extra_1" long_name="WAM extra field 1" unit="1"/> <!-- 79 -->
+    <field id="wam_extra_2" long_name="WAM extra field 2" unit="1"/> <!-- 80 -->
+    <field id="wam_extra_3" long_name="WAM extra field 3" unit="1"/> <!-- 81 -->
+    <field id="wam_extra_4" long_name="WAM extra field 4" unit="1"/> <!-- 82 -->
+    <field id="wam_extra_5" long_name="WAM extra field 5" unit="1"/> <!-- 83 -->
+  </field_group>
+
+  <!-- Sine and cosine of the directions, to be averaged and recombined as
+       atan2(mean sin, mean cos). Computed by XIOS from the instantaneous
+       direction, so they need the GFLAG of that direction. -->
+  <field_group id="wam_dircomp" grid_ref="wam_grid" unit="1">
+    <field id="mwd_sin" long_name="sine of mean wave direction"   expr="sin(mwd*0.017453292519943295)"/> <!-- 2 -->
+    <field id="mwd_cos" long_name="cosine of mean wave direction" expr="cos(mwd*0.017453292519943295)"/> <!-- 2 -->
+    <field id="dwi_sin" long_name="sine of wave model wind direction"   expr="sin(dwi*0.017453292519943295)"/> <!-- 5 -->
+    <field id="dwi_cos" long_name="cosine of wave model wind direction" expr="cos(dwi*0.017453292519943295)"/> <!-- 5 -->
+    <field id="mdww_sin" long_name="sine of mean direction of wind waves"   expr="sin(mdww*0.017453292519943295)"/> <!-- 13 -->
+    <field id="mdww_cos" long_name="cosine of mean direction of wind waves" expr="cos(mdww*0.017453292519943295)"/> <!-- 13 -->
+    <field id="mdts_sin" long_name="sine of mean direction of total swell"   expr="sin(mdts*0.017453292519943295)"/> <!-- 14 -->
+    <field id="mdts_cos" long_name="cosine of mean direction of total swell" expr="cos(mdts*0.017453292519943295)"/> <!-- 14 -->
+    <field id="mwd1_sin" long_name="sine of mean wave direction of first swell partition"   expr="sin(mwd1*0.017453292519943295)"/> <!-- 43 -->
+    <field id="mwd1_cos" long_name="cosine of mean wave direction of first swell partition" expr="cos(mwd1*0.017453292519943295)"/> <!-- 43 -->
+    <field id="mwd2_sin" long_name="sine of mean wave direction of second swell partition"   expr="sin(mwd2*0.017453292519943295)"/> <!-- 46 -->
+    <field id="mwd2_cos" long_name="cosine of mean wave direction of second swell partition" expr="cos(mwd2*0.017453292519943295)"/> <!-- 46 -->
+    <field id="mwd3_sin" long_name="sine of mean wave direction of third swell partition"   expr="sin(mwd3*0.017453292519943295)"/> <!-- 49 -->
+    <field id="mwd3_cos" long_name="cosine of mean wave direction of third swell partition" expr="cos(mwd3*0.017453292519943295)"/> <!-- 49 -->
+    <field id="wefxd_sin" long_name="sine of wave energy flux mean direction"   expr="sin(wefxd*0.017453292519943295)"/> <!-- 64 -->
+    <field id="wefxd_cos" long_name="cosine of wave energy flux mean direction" expr="cos(wefxd*0.017453292519943295)"/> <!-- 64 -->
+  </field_group>
+
+  <!-- 2D wave spectra, needs no GFLAG. Sea-ice points carry FLMIN, as in the
+       native GRIB spectra (parameter 140251, which stores log10(F + 1e-10)). -->
+  <field_group id="wam_spec" grid_ref="wam_spec_grid">
+    <field id="spec2d" long_name="2D wave spectral density" standard_name="sea_surface_wave_directional_variance_spectral_density" unit="m2 s rad-1"/>
+  </field_group>
+
+</field_definition>

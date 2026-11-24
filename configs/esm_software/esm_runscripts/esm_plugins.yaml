@@ -38,6 +38,7 @@ core:
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
 
                 prepcompute:
+                        - "count_icebergs_into_namelist"
                         - "compile_model"
                         - "_write_finalized_config"
                         - "_show_simulation_info"

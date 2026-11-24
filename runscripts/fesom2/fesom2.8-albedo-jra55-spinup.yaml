@@ -1,0 +1,42 @@
+general:
+        user: !ENV ${USER}
+        account: "paleodyn.paleodyn"
+        setup_name: fesom
+        compute_time: "11:00:00"
+        # One full JRA55-do v1.4.0 cycle: the forcing is complete for 1958-2020,
+        # so this runs 63 years and stops at the end of 2020.
+        initial_date: '1958-01-01'
+        final_date: '2021-01-01'
+        # On scratch: /albedo/work is running at ~0.2 file creates/s (vs ~1200 on
+        # scratch), which makes the one-off ~675-file staging copy take ~50 min.
+        # Move back to /albedo/work once the filesystem recovers.
+        base_dir: "/albedo/scratch/user/jstreffi/runtime/${general.setup_name}-${general.version}/"
+        nyear: 1
+        nmonth: 0
+        nday: 0
+        use_venv: False
+
+fesom:
+        version: 2.8
+        model_dir: "/albedo/work/user/jstreffi/model_codes/fesom-2.8/"
+        pool_dir: "/albedo/work/projects/p_pool_fesom2"
+        mesh_dir: "/albedo/work/projects/p_pool_fesom2/core2/"
+        climate_data_dir: "/albedo/work/projects/p_pool_fesom2/hydrography/"
+        forcing_data_dir: "/albedo/work/projects/p_pool_fesom2/forcing/"
+        asforcing: JRA55
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'y'
+        resolution: "CORE2"
+        lresume: false
+        time_step: 1800
+        nproc: 1152
+        omp_num_threads: 2
+        # Per-rank derived-type and core-dump restarts serialise badly on
+        # albedo's GPFS (see fesom2.8-albedo-1d.yaml). Only the netCDF restart
+        # is needed to chain legs.
+        add_namelist_changes:
+            namelist.config:
+                restart_log:
+                    raw_restart_length_unit: "off"
+                    bin_restart_length_unit: "off"

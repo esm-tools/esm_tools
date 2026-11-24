@@ -1,6 +1,6 @@
 &namamip
     runlengthsec = 86400
-    timestepsec = 84600
+    timestepsec = 86400
     startyear = 1850
     startmonth = 1
     startday = 1

@@ -1,0 +1,39 @@
+general:
+        user: !ENV ${USER}
+        account: "paleodyn.paleodyn"
+        setup_name: fesom
+        compute_time: "00:30:00"
+        initial_date: '1959-01-01'
+        final_date: '1959-03-01'
+        base_dir: "/albedo/work/user/jstreffi/runtime/${general.setup_name}-${general.version}/"
+        nyear: 0
+        nmonth: 1
+        use_venv: False
+
+fesom:
+        version: 2.6
+        model_dir: "/albedo/home/jstreffi/model_codes/fesom-2.6/"
+        pool_dir: "/albedo/work/user/jstreffi/input/"
+        mesh_dir: "/albedo/work/user/jstreffi/input/fesom2/core2/"
+        forcing_data_dir: "/albedo/work/user/jstreffi/input/fesom2/forcing/"
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm'
+        resolution: "CORE2"
+        lresume: true
+        time_step: 1800
+        nproc: 768
+        # branchoff
+        ini_parent_exp_id: "tuneGMRedi_Kgm1200_cm3.0_Krtapoff_h0s0.7_Scr1.0e-2_Sweeney_03"
+        ini_parent_date: "${prev_date}"
+        ini_restart_dir: "/albedo/scratch/user/pscholz/tuneGMRedi_Kgm1200_cm3.0_Krtapoff_h0s0.7_Scr1.0e-2_Sweeney_03/1/"
+        choose_general.run_number:
+            1:
+                lasttime:
+                    84000
+                restart_in_sources:
+                    par_oce_restart: '/albedo/scratch/user/pscholz/tuneGMRedi_Kgm1200_cm3.0_Krtapoff_h0s0.7_Scr1.0e-2_Sweeney_03/1/fesom.2019.oce.restart/*.nc'
+                    par_ice_restart: '/albedo/scratch/user/pscholz/tuneGMRedi_Kgm1200_cm3.0_Krtapoff_h0s0.7_Scr1.0e-2_Sweeney_03/1/fesom.2019.ice.restart/*.nc'
+
+        
+

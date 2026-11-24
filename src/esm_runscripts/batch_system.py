@@ -10,7 +10,7 @@ import esm_environment
 from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
-from . import dataprocess, helpers, prepare
+from . import dataprocess, helpers, hold_allocation, placement, prepare
 from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
@@ -161,6 +161,17 @@ class batch_system:
             config, cluster, all_values_flat
         )
 
+        # concurrent coupling: per-chain jobnames (expid_<chain>) so the two
+        # chains are distinguishable in squeue and by the chain-doctor guard
+        if config["general"].get("coupling_mode", "serial") == "concurrent":
+            name_flag = this_batch_system.get("name_flag", "")
+            chain = config["general"].get("coupling_chain", "")
+            if name_flag and chain:
+                all_values_flat = [
+                    v + "_" + chain if v == name_flag else v
+                    for v in all_values_flat
+                ]
+
         # loop over all batch flag values and replace the tags
         for value in all_values_flat:
             for tag, repl in replacement_tags:
@@ -194,7 +205,7 @@ class batch_system:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
                 if "nproc" in config[model]:
-                    logger.info(f"nproc: {config[model]['nproc']}")
+                    logger.info(f"{model}: nproc: {config[model]['nproc']}")
 
                     # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
                     # (used for FESOM-REcoM tracer loop parallelization (MPI based))
@@ -245,7 +256,7 @@ class batch_system:
 
                 config[model]["threads"] = config[model]["tasks"] * omp_num_threads
                 tasks += config[model]["tasks"]
-                logger.info(f"tasks: {tasks}")
+                logger.info(f"tasks sum: {tasks}")
                 # Use the number of tasks and threads to update end_proc/core
                 end_proc = start_proc + config[model]["tasks"] - 1
                 end_core = start_core + config[model]["threads"] - 1
@@ -257,6 +268,17 @@ class batch_system:
                 # Reset the start_proc/core variables for the next component
                 start_proc = end_proc + 1
                 start_core = end_core + 1
+
+            # With taskset the placement table decides the nodes: components share
+            # nodes where they meet, and interleaved components add none of their own
+            if (
+                cluster == "compute"
+                and config["computer"].get("taskset", False)
+                and config["computer"].get("heterogeneous_parallelization", False)
+            ):
+                _, nodes = placement.compute_placement(
+                    config, config["computer"]["partitions"]["compute"]["cores_per_node"]
+                )
 
         else:
             # dataprocessing job with user definded name
@@ -545,10 +567,20 @@ class batch_system:
             if config["general"].get("submit_to_batch_system", True):
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
+                    # The launcher runs in the background and observe_compute is not
+                    # its parent, so the exit status would be lost and a failed run
+                    # tidied and advanced like a good one (levante 2026-10-13: fesom
+                    # and rnfma died at start with "libiomp5.so: cannot open shared
+                    # object file", srun exit 127 / task failure, and the workflow
+                    # moved on). Record it for observe.check_compute_failure: "running"
+                    # before the launch, srun's exit status after it.
+                    status = compute_status_file(config)
+                    commands.append(f"echo running > {status}")
                     commands.append(
-                        "time "
+                        "{ time "
                         + batch_system["execution_command"]
-                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
+                        + f" 2>&1{config['computer'].get('write_execution_log', '')}"
+                        + f"; echo $? > {status}; }} &"
                     )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
@@ -639,6 +671,10 @@ class batch_system:
                 for line in header:
                     runfile.write(line + "\n")
                 runfile.write("\n")
+                if cluster == "compute" and hold_allocation.requested(config):
+                    for line in hold_allocation.job_script_head_lines(config):
+                        runfile.write(line + "\n")
+                    runfile.write("\n")
 
             else:
                 header = batch_system.get_shell_header(config, cluster)
@@ -723,6 +759,12 @@ class batch_system:
                             " -m " + config["general"]["modify_config_file_abspath"]
                         )
 
+                # concurrent coupling: chain identity must cross the sbatch boundary
+                if config["general"].get("coupling_mode", "serial") == "concurrent":
+                    observe_call += (
+                        f' --coupling-chain {config["general"]["coupling_chain"]}'
+                    )
+
                 if "--task-log-files" in config["general"]["original_command"]:
                     observe_call += " --task-log-files"
 
@@ -760,6 +802,14 @@ class batch_system:
 
             runfile.write("\n")
             runfile.write("wait\n")
+            if (
+                batch_or_shell == "batch"
+                and cluster == "compute"
+                and hold_allocation.requested(config)
+            ):
+                runfile.write("\n")
+                for line in hold_allocation.job_script_tail_lines(config):
+                    runfile.write(line + "\n")
 
         config["general"]["submit_command"] = batch_system.get_submit_command(
             config, batch_or_shell, runfilename
@@ -1044,6 +1094,11 @@ class batch_system:
         launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
+
+
+def compute_status_file(config):
+    """Where the compute job script leaves the launcher's exit status."""
+    return os.path.join(config["general"]["thisrun_work_dir"], ".esm_compute_exit_status")
 
 
 def submits_another_job(config, cluster):

@@ -6,6 +6,16 @@ xios:
     model: xios
     version: 2.5_r1910
     executable: xios.x
+    # albedo, 2026-09-28: four AWI-ESM3 legs died in an XIOS server rank with
+    # "Bus error: nonexistent physical address" and no other trace (jobs 47459229,
+    # 47459748, 47463924, 47463927). Until the cause is known the servers run under
+    # xios_dbg.sh, which preloads libSegFault so the next one leaves fault address,
+    # backtrace and memory map in work/segfault_xios_*.txt. No overhead until a signal.
+    choose_computer.name:
+        albedo:
+            executable: xios_dbg.sh
+            add_bin_sources:
+                dbg: "${general.esm_configs_dir}/components/xios/xios_dbg.sh"
     xml_dir: ""
 
     metadata:
@@ -36,6 +46,12 @@ xios:
     - 2.5-ece_ogcm
     - 2.5_smhi
     - 2.5_ece
+    - 2.5.1
+    - 2.5.2
+    - 2.5.3
+    - 2.5.4
+    - 2.5.5
+    - 2.5.6
     - 3.0_trunk
 
     branch: esm-tools
@@ -108,6 +124,8 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         archfile: ESMTOOLS_generic_oasis_intel
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: master
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
@@ -148,9 +166,266 @@ xios:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: main
+        # After XIOS itself is built, inline-clone and compile the hdf5-blosc
+        # filter plugin into ${model_dir}/hdf5-blosc/plugin/ if HDF5_ROOT and
+        # C_BLOSC_ROOT are exported by xios.env.yaml for this HPC. XIOS 2.5
+        # patched at netCdfInterface.cpp calls nc_def_var_filter(id=32001)
+        # for blosc+zstd; HDF5 loads libh5blosc.so from $HDF5_PLUGIN_PATH
+        # at runtime (set in xios.env.yaml). Pattern mirrors oasis3mct's
+        # 6.0-YAC inline build of yaxt+yac.
+        # Idempotent: re-runs are a no-op once libh5blosc.so exists.
+        # clean_command above does not touch hdf5-blosc/, so a make clean
+        # of XIOS does not trigger a plugin rebuild.
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # XIOS with oasis dependencies and oasis support
+      2.5.1:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        # MA: yet another block, this time for albedo. We cannot fix this now, but in the
+        # future we should adopt the compiler suite logic for the other computers. Already
+        # included in ESM-Tools clickup
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        # JS: On levante this switch has yet another name. Again only the compiler part matters.
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.1
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+      2.5.2:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI:
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.2
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # 2.5.3: 2.5.2 + the regrid_regular_xios work (cell-bounds-aware
+      # conservative remap for FESOM unstructured -> regular lat/lon) +
+      # magnitude guard in remap update()/move() that fixes NaN propagation
+      # from antipodal-centroid cancellation on global meshes. Required for
+      # CMIP7 regrid output on AWI-ESM3.
+      2.5.3:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI:
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.3
+        # XIOS_EXTRA_CFLAGS, XIOS_EXTRA_FFLAGS and XIOS_BLOSC_OUTBUF_FIX come from
+        # xios.env.yaml and are only set on blogin; elsewhere they are empty and
+        # the build is unchanged. The arch file takes its compilers from $CC and
+        # $MPIFC, so the extra flags go in through those.
+        comp_command: 'export CC="$CC $XIOS_EXTRA_CFLAGS"; export MPIFC="$MPIFC $XIOS_EXTRA_FFLAGS"; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && if [ -n "$XIOS_BLOSC_OUTBUF_FIX" ]; then sed -i -e "s/outbuf_size = nbytes;/outbuf_size = nbytes + BLOSC_MAX_OVERHEAD;/" -e "s/outbuf = malloc(nbytes);/outbuf = malloc(outbuf_size);/" -e "s/buf, outbuf, nbytes);/buf, outbuf, outbuf_size);/" -e "s/assert((size_t)status <= nbytes);/assert((size_t)status <= outbuf_size);/" src/src/blosc_filter.c; fi && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # Release tag (main at 9c33506d), used by awiesm3 v3.5.0. Builds as 2.5-ece.
+      2.5.4:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.4
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # Release tag (main at 61b7c1d): 2.5.4 plus -fopenmp in the gcc link.
+      2.5.5:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.5
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # Release tag (main at 1c2afe3), used by awiesm3 v3.5.2: 2.5.5 plus the flat global-to-local index map on the servers.
+      2.5.6:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+            blogin:
+                archfile: ESMTOOLS_generic_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.6
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && $CC -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
       # XIOS with oasis dependencies and oasis support
       "2.5-yac":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
@@ -422,6 +697,75 @@ xios:
                             axis_def: axis_def
                             grid_def: grid_def
 
+    # WAM output through XIOS (oifs.wam_xios). The "wam" context is only listed
+    # in the merged iodef that comes with fesom.with_xios (iodef.xml.j2), so
+    # that is required. OpenIFS sets the WAM namelist side in oifs.yaml.
+    oifs_in_setup: "$(( 'oifs' in config ))"
+    choose_oifs_in_setup:
+        true:
+            choose_oifs.wam_xios:
+                true:
+                    add_config_files:
+                        context_wam:   context_wam
+                        field_def_wam: field_def_wam
+                        file_def_wam:  file_def_wam
+                    add_config_sources:
+                        context_wam:   ${general.esm_namelist_dir}/oifs/${oifs.version}/xios/context_wam.xml
+                        field_def_wam: ${general.esm_namelist_dir}/oifs/${oifs.version}/xios/field_def_wam.xml
+                        file_def_wam:  ${oifs.wam_xios_file_def}
+                    add_config_in_work:
+                        context_wam:   context_wam.xml
+                        field_def_wam: field_def_wam.xml
+                        file_def_wam:  file_def_wam.xml
+
+
+    # Auto-add FESOM XIOS XML files when FESOM is compiled/run with XIOS.
+    # Mirrors the choose_general.setup_name: oifs pattern above.
+    # Default: minimal FESOM XIOS output (mirrors upstream config/namelist.io
+    # from FESOM/fesom2:main — monthly, ~28 variables). Opt in to the heavy
+    # CMIP7-style set via `fesom.cmip7_cmor_output: true` (see below).
+    # Only wire FESOM's XIOS XML when FESOM is actually in the setup. Without
+    # this guard the choose_fesom.* below dereference the (absent) fesom
+    # namespace and crash non-FESOM setups (e.g. oifsamip). No effect on any
+    # FESOM-bearing setup.
+    fesom_in_setup: "$(( 'fesom' in config ))"
+    choose_fesom_in_setup:
+        true:
+            fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
+            # Target grid for the regridded (regular lat/lon) FESOM output.
+            # domain_def_fesom.xml.j2 always references these, so they need a
+            # value even when regridding is off. The coupled setups override
+            # them; without a default here a standalone FESOM+XIOS run renders
+            # the template with an undefined variable.
+            fesom_regular_res_lon: 720
+            fesom_regular_res_lat: 360
+            choose_fesom.cmip7_cmor_output:
+                true:
+                    fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml_cmip7"
+            choose_fesom.with_xios:
+                true:
+                    add_config_files:
+                        context_fesom:    context_fesom
+                        axis_def_fesom:   axis_def_fesom
+                        domain_def_fesom: domain_def_fesom
+                        grid_def_fesom:   grid_def_fesom
+                        field_def_fesom:  field_def_fesom
+                        file_def_fesom:   file_def_fesom
+                    add_config_sources:
+                        io_def:           ${fesom_xios_xml_dir}/iodef.xml.j2
+                        context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
+                        axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml.j2
+                        domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml.j2
+                        grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
+                        field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
+                        file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml.j2
+                    add_config_in_work:
+                        context_fesom:    context_fesom.xml
+                        axis_def_fesom:   axis_def_fesom.xml
+                        domain_def_fesom: domain_def_fesom.xml
+                        grid_def_fesom:   grid_def_fesom.xml
+                        field_def_fesom:  field_def_fesom.xml
+                        file_def_fesom:   file_def_fesom.xml
 
     config_sources:
             domain_def: ${xml_dir}/domain_def.xml

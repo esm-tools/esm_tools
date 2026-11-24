@@ -1,6 +1,10 @@
 def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
+    concurrent = config["general"].get("coupling_mode", "serial") == "concurrent"
     environment_dict = {
+            "COUPLING_MODE": config["general"].get("coupling_mode", "serial"),
+            "CHUNK_NUMBER": config["general"].get("chunk_number", 0),
+            "COUPLING_FAIL_SUFFIX": ".pism" if concurrent else "",
             "ATMOSPHERE_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "PISM_TO_ATMOSPHERE": int(config["general"]["last_run_in_chunk"]),
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],
@@ -9,6 +13,22 @@ def prepare_environment(config):
             "CHUNK_END_YEAR_pism": config["general"]["chunk_end_date"].syear,
             "NYEAR": config["general"]["nyear"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
+            # Orography feedback to OIFS. With it on, pism2esm writes usurf_oifs
+            # into {prefix}_pism2ece.nc and suorog patches the atmosphere's
+            # orography at the next leg's init. On by default when the partner is
+            # awiesm3, whose -is setup sets ECE_ISM_OROG and stages a chunk-1 file
+            # that already carries usurf_oifs (suorog ABOR1s on a missing varid).
+            # The awiesm3 side takes the same default from its setup, which this
+            # chain does not see; general.ism_orog_coupled overrides both.
+            "ISM_OROG_COUPLED": int(bool(config["general"].get(
+                "ism_orog_coupled",
+                "awiesm3" in config["general"].get("model_named_queue", []),
+            ))),
+            # The writer needs numpy, netCDF4, pyproj and eccodes. The PISM
+            # couple_out environment has no bare `python` at all, and unlike the
+            # fesom side it never sees OCP_WEIGHTGEN_DRIVER_PY, so the
+            # interpreter has to be named here.
+            "ISM_OROG_PY": config["general"].get("ism_orog_python", "python3"),
             "DOWNSCALE_TEMP": 1, 
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
             "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1),
@@ -19,6 +39,7 @@ def prepare_environment(config):
             "RES_pism": config[config["general"]["setup_name"]]["resolution"],
             "RUN_NUMBER_pism": config["general"]["run_number"],
             "EX_INT": config["pism"]["ex_interval"],
+            "orog_reference_pism": config["pism"].get("orog_reference_pism",1),
 
             "YR0_pism": config["general"]["start_date"].syear,
             "M0_pism": config["general"]["start_date"].smonth,

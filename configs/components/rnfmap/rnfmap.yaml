@@ -29,6 +29,11 @@ rnfmap:
     - foci211
     - v1.0
     - v1.1
+    - v1.2
+    - v1.3
+    - v1.4-ismm
+    - v1.4
+    - v1.5
 
     runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -69,6 +74,75 @@ rnfmap:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap
         runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      v1.2:
+        branch: '1.2'
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      v1.3:
+        branch: '1.3'
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      # EC-Earth4's runoff mapper: takes the ice sheet model's basal melt and
+      # discharge, and can drop the atmosphere's calving per drainage basin.
+      # Needs NumCoupledRegions and the NAMRNFMAPARRAYS group, so it comes with
+      # its own namelist.
+      # debm2-runoff is ismm-freshwater plus R_Runoff_<prefix> (the ISM-mapper's
+      # dEBM2 runoff) and IgnoreAtmRunoffBasins; with neither set it maps as
+      # ismm-freshwater does.
+      v1.4-ismm:
+        branch: debm2-runoff
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+        # Versioned directory, not a suffixed filename: the staged name in work/
+        # comes from the source basename, so a namelist.runoffmapper.ismm lands
+        # under that name and the model dies looking for namelist.runoffmapper.
+        config_sources:
+                namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
+        add_namelist_changes:
+                namelist.runoffmapper:
+                        NAMRNFMAP:
+                                NumCoupledRegions: 0
+      # Release tag (ismm-freshwater at 36c888f), used by all three awiesm3 v3.5.0
+      # variants. Same as v1.4-ismm: it behaves as v1.3 while NumCoupledRegions is 0.
+      v1.4:
+        branch: '1.4'
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+        # Versioned directory, not a suffixed filename: the staged name in work/
+        # comes from the source basename, so a namelist.runoffmapper.ismm lands
+        # under that name and the model dies looking for namelist.runoffmapper.
+        config_sources:
+                namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
+        add_namelist_changes:
+                namelist.runoffmapper:
+                        NAMRNFMAP:
+                                NumCoupledRegions: 0
+      # Release tag (debm2-runoff at 4badaf8), used by all three awiesm3 v3.5.2 variants: 1.4 plus
+      # the ice-sheet surface runoff and dropping the atmosphere's runoff per basin. As v1.4
+      # while NumCoupledRegions is 0.
+      v1.5:
+        branch: '1.5'
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+        # Versioned directory, not a suffixed filename: the staged name in work/
+        # comes from the source basename, so a namelist.runoffmapper.ismm lands
+        # under that name and the model dies looking for namelist.runoffmapper.
+        config_sources:
+                namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
+        add_namelist_changes:
+                namelist.runoffmapper:
+                        NAMRNFMAP:
+                                NumCoupledRegions: 0
       agrif:
         branch: agrif
         further_reading:
@@ -109,8 +183,6 @@ rnfmap:
                     ny: 256
                     time_step: ${oasis3mct.time_step}
 
-    nproca: 1
-    nprocb: 1
 
     runoff_method: "old"
     with_agrif: False

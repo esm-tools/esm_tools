@@ -1,0 +1,62 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "v3.4.3"
+    account: "hbk00099"
+    compute_time: "00:30:00"
+    initial_date: "1850-01-01"
+    final_date: "1850-01-02"
+    base_dir: "/scratch/usr/${user}/runtime/${general.setup_name}-${general.version}/"
+    pool_dir: "/scratch/usr/${user}/input"
+    use_venv: false
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/scratch/usr/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE2"
+    time_step: 1800
+    nproc: 128
+    omp_num_threads: 1
+    lresume: false
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+
+lpj_guess:
+    mip: cmip7
+    scenario: piControl
+    nproc: 32
+    omp_num_threads: 2
+    lresume: false
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    time_step: 3600
+    nproc: 128
+    omp_num_threads: 1
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+
+oasis3mct:
+    use_lucia: false
+    lresume: false
+    time_step: 3600
+
+xios:
+    with_model:
+        - oifs
+    nproc: 4
+    omp_num_threads: 8

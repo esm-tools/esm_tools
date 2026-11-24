@@ -1,0 +1,14 @@
+# 90 degree bend test transect for the path_nvec_cs fix validation.
+# Three waypoints in the open North Atlantic so both sub-segments cross
+# ocean (not land like the earlier 0,30 -> 10,30 -> 10,40 attempt which
+# ran over the Sahara + Mediterranean).
+# Sub-seg 1 (E-ward) normal (per tripyview) points N. Sub-seg 2 (N-ward)
+# normal points E. Whole-transect normal points NE. Without the fix,
+# both sub-segments would use the NE normal which is at 45 deg to the
+# correct N (and E) per-sub-segment normals -- ~30% per-cell vflx
+# error.
+#
+# lon, lat
+-40.0, 30.0
+-30.0, 30.0
+-30.0, 40.0

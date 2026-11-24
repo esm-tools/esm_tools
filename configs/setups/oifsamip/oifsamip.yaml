@@ -9,6 +9,24 @@ general:
 
         lresume: False
         coupled_setup: True
+        with_co2_oce_coupling: False
+        with_co2_veg_coupling: False
+
+        # CO2 tracer, and CMIP7 emissions into it from the emissions reader
+        with_co2_tracer: False
+        with_co2_emissions: False
+        choose_general.with_co2_emissions:
+                true:
+                        add_include_models:
+                                - emissions_reader
+
+        # Promote the OIFS prepcompute recipe to the setup level so the OIFS
+        # `preprocess` step actually runs (change_icm_date.sh re-dates ICMGG/ICMSH/
+        # wave init files to the run's initial_date). Without this, the coupled
+        # oifsamip setup fell back to the default framework recipe which has NO
+        # preprocess step -> init files kept their pool dates -> WAM aborted on the
+        # date mismatch at any start year != the wave-init date. (Matches awicm3.yaml:183.)
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
 
         include_models:
                 - amip
@@ -33,6 +51,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
+        parallel_file_movements: 'threads'
 
         reusable_filetypes: [input, bin, src]
 
@@ -43,6 +62,8 @@ general:
                         pool_dir: "/proj/awi/input"
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
+                albedo:
+                        pool_dir: "/albedo/pool"
 
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}
@@ -76,7 +97,17 @@ oifs:
         restart_firstlast: "last"
         restart_rate: 12
 
-        mip: "cmip6"
+        # Flux de-accumulation period (s) used by field_def_lpjg_safe.xml.j2 to
+        # convert OpenIFS accumulated fluxes (ssr/str/tp/tisr/...) into W/m2 and
+        # kg/m2/s. It MUST equal NFRHIS*TSTEP; with NFRHIS=1 (the default) that is
+        # time_step. The retired static field_def_lpjg_safe.xml hard-coded 21600
+        # (6h = the freq_op sampling cadence, NOT the accumulation reset), making
+        # every flux 6x too low -> the offline LPJG spin-up saw ~1/6 NPP (boreal
+        # ~0). Defaulted here so no oifsamip+LPJG runscript can reintroduce it;
+        # override only if NFRHIS!=1.
+        flux_accumulation_period: "${oifs.time_step}"
+
+        mip: "cmip7"
         scenario: "historical"
 
         prepifs_expid: h6mv
@@ -103,6 +134,12 @@ oifs:
                                 - ICMCL_INIT
                 "cy48":
                         version: "48r1"
+                        # Build OIFS WITH XIOS output + coupling (like awicm3/awiesm3).
+                        # Without these flags the binary has no XIOS (so no LPJG forcing
+                        # output) and no cplng2, despite LXIOS:TRUE in the namelist.
+                        with_xios: true
+                        build_type: 'release'
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
                         append_icmcl: ""
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         add_namelist_changes:
@@ -120,6 +157,73 @@ oifs:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
 
+
+        # emission namelists of the v3.5 coupled setup
+        co2_namelist_dir: ${general.esm_namelist_dir}/oifs/48r1/awicm3/v3.5
+        oasis_grid_name_f: "F${oasis_grid_name}"
+        co2_emi_nml: namcompo_emis_co2_none.nml
+        atm_emi_fields: [FCO2FF, FCO2AIR.L001, FCO2AIR.L002, FCO2AIR.L003, FCO2AIR.L004, FCO2AIR.L005,
+            FCO2AIR.L006, FCO2AIR.L007, FCO2AIR.L008, FCO2AIR.L009, FCO2AIR.L010,
+            FCO2AIR.L011, FCO2AIR.L012, FCO2AIR.L013, FCO2AIR.L014, FCO2AIR.L015,
+            FCO2AIR.L016, FCO2AIR.L017, FCO2AIR.L018, FCO2AIR.L019, FCO2AIR.L020,
+            FCO2AIR.L021, FCO2AIR.L022, FCO2AIR.L023, FCO2AIR.L024, FCO2AIR.L025]
+        choose_general.with_co2_tracer:
+                true:
+                        add_add_namelist_changes:
+                                fort.4:
+                                        NAMGFL:
+                                                NGHG: 1
+                                                YGHG_NL(1)%CNAME: "CO2_GHG"
+                                                YGHG_NL(1)%IGRBCODE: 210061
+                                                YGHG_NL(1)%LADV: TRUE
+                                                YGHG_NL(1)%LADV5: TRUE
+                                                YGHG_NL(1)%LREQOUT: TRUE
+                                                YGHG_NL(1)%LMASSFIX: TRUE
+                                                YGHG_NL(1)%LQM: FALSE
+                                                YGHG_NL(1)%LQM3D: TRUE
+                                                YGHG_NL(1)%LNEGFIX: FALSE
+                                                YGHG_NL(1)%BETAMFBC: 2
+                                                YGHG_NL(1)%LASSIM: TRUE
+                                                NMFDIAGLEV: 2
+                                                NOPTVFE: 1
+                                        NAMCOMPO:
+                                                LCHEM_DIA: .false.
+                                                LCHEM_DDFLX: .false.
+                                                LCOMPO_DDFLX_DIR: .false.
+                                                LCHEM_TROPO: .false.
+                                                LCOMPO_DCDD: .false.
+                                        NAEPHY:
+                                                LNEEONLINE: False
+                                                LWETONLINE: False
+                                                LBFASCO2: False
+                        # emission sectors of the tracer (none unless with_co2_emissions), then
+                        # the terminator of the NAMCOMPO_EMIS list
+                        append_to_namelist_method: "
+                                  ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                                    ${co2_namelist_dir}/${co2_emi_nml}
+                                    ${thisrun_config_dir}/fort.4;
+                                  ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
+                                    ${co2_namelist_dir}/namcompo_emis_co2_terminator.nml
+                                    ${thisrun_config_dir}/fort.4"
+        choose_general.with_co2_emissions:
+                true:
+                        add_grids:
+                                atmf:
+                                        name: ${oasis_grid_name_f}
+                                        nx: "${nx}"
+                                        ny: "${ny}"
+                                        oasis_grid_type: "D"
+                                        oyac_grid_type: "LL"
+                                        oyac_io_per_node: 4
+                        add_coupling_fields:
+                                "[[atm_emi_fields-->FIELD]]":
+                                        grid: atmf
+                        add_add_add_namelist_changes:
+                                fort.4:
+                                        NAMECECFG:
+                                                ECE_CPL_EMIS_CO2: true
+                                                ECE_EMIS_CO2_NLEV: 25
+                        co2_emi_nml: namcompo_emis_co2_emi.nml
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -163,12 +267,22 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: ""
+        # AMIP uses the AMIP init (ICMGG${prepifs_expid}INIT_AMIP): the LPJG-capable
+        # OIFS build expects surface fields the base 81-field ICMGG...INIT lacks
+        # (ABOR1 GRID_IN MISSING FIELD 117-120). The _AMIP init (90 flds) supplies them.
+        ICMGG_INIT_name: "_AMIP"
 
 
 
 amip:
         pool_dir: ${general.pool_dir}
+        # albedo has no amip-forcing at the pool root (it is root-owned); the
+        # PCMDI-AMIP files sit in the OpenIFS pool.
+        choose_computer.name:
+                albedo:
+                        input_dir: "/albedo/pool/oifs-48r1/amip-forcing/"
+                "*":
+                        foo: bar
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -185,6 +299,12 @@ amip:
                         ny: 180
                         oasis_grid_type: "LR"
 
+
+#########################################################################################
+
+emissions_reader:
+        # built with every cy48 setup; launched only with general.with_co2_emissions
+        nproc: 1
 
 #########################################################################################
 
@@ -245,8 +365,38 @@ oasis3mct:
                         lag: 0
                         seq: 1
 
+        # Emissions reader -> OpenIFS: no lag, the atmosphere waits for the day's field.
+        choose_general.with_co2_emissions:
+                true:
+                        add_coupling_directions:
+                                'EM05->atmf':
+                                        lag: 0
+                                        seq: 1
+                                        coupling_time_step: ${emissions_reader.time_step}
+                                        lag_overwrite: true
+                        add_coupling_target_fields:
+                                rst_co2_em.nc:
+                                        - 'FCO2FF <--conserv_dest-- EM_CO2FF'
+                                        - 'FCO2AIR.L001:FCO2AIR.L002:FCO2AIR.L003:FCO2AIR.L004:FCO2AIR.L005 <--conserv_dest-- EM_CO2AIR01:EM_CO2AIR02:EM_CO2AIR03:EM_CO2AIR04:EM_CO2AIR05'
+                                        - 'FCO2AIR.L006:FCO2AIR.L007:FCO2AIR.L008:FCO2AIR.L009:FCO2AIR.L010 <--conserv_dest-- EM_CO2AIR06:EM_CO2AIR07:EM_CO2AIR08:EM_CO2AIR09:EM_CO2AIR10'
+                                        - 'FCO2AIR.L011:FCO2AIR.L012:FCO2AIR.L013:FCO2AIR.L014:FCO2AIR.L015 <--conserv_dest-- EM_CO2AIR11:EM_CO2AIR12:EM_CO2AIR13:EM_CO2AIR14:EM_CO2AIR15'
+                                        - 'FCO2AIR.L016:FCO2AIR.L017:FCO2AIR.L018:FCO2AIR.L019:FCO2AIR.L020 <--conserv_dest-- EM_CO2AIR16:EM_CO2AIR17:EM_CO2AIR18:EM_CO2AIR19:EM_CO2AIR20'
+                                        - 'FCO2AIR.L021:FCO2AIR.L022:FCO2AIR.L023:FCO2AIR.L024:FCO2AIR.L025 <--conserv_dest-- EM_CO2AIR21:EM_CO2AIR22:EM_CO2AIR23:EM_CO2AIR24:EM_CO2AIR25'
+                        add_process_ordering:
+                                - emissions_reader
+
 
         coupling_methods:
+                # First-order conservative remapping, normalised by the destination cell
+                # area: with no mask on either grid the global integral of a flux is kept.
+                conserv_dest:
+                        time_transformation: instant
+                        remapping:
+                                conserv:
+                                        search_bin: latitude
+                                        nb_of_search_bins: 40
+                                        normalization: destarea
+                                        order: first
                 gauswgt_i:
                         time_transformation: instant
                         remapping:
@@ -316,6 +466,21 @@ oasis3mct:
 
 
 computer:
+    # albedo: the same toolchain as the coupled awiesm3 build (openmpi 4.1.6 with its
+    # hdf5 / netcdf / eccodes) and a python that has yaml, which the OpenIFS
+    # field-generation step (fypp) needs at build time.
+    choose_name:
+        albedo:
+            mpi_implementation: openmpi_2026
+            load_python: true
+            # Intel 2022 with OpenMPI, as on levante: selects the Intel compile and
+            # link flags (-r8, -qopenmp) for OpenIFS here and for the AMIP forcing
+            # reader in amip.yaml. Without -qopenmp the reader does not link against
+            # the OpenMP-enabled OASIS.
+            compiler_mpi: intel2022_openmpi
+        "*":
+            foo: bar
+
     choose_general.execution_mode:
         run:
             add_export_vars:
@@ -336,3 +501,7 @@ computer:
                         OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
                         OIFS_CFLAG: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
                         OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'
+                # Machines without computer.compiler_mpi (albedo): keep the flags of
+                # oifs48.env.yaml. The "*" arm is what lets the parser skip the block.
+                "*":
+                    foo: bar

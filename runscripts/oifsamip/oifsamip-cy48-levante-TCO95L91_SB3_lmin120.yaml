@@ -1,0 +1,148 @@
+# ---------------------------------------------------------------------------------
+# SB3 --- stable-BL mixing via the LENGTH, RSBLLMIN 30 -> 120 m.  The stability-function
+# coefficient is left at its 5.0 default, so this arm isolates the mixing length.
+#
+# WHY THIS ARM.  SB2 works on the target but bills the tropics.  At 44 yr it gives Arctic
+# DJF inversion -0.713* and mid-latitude land T2m +0.492* at ZERO Siberian summer cost,
+# but its global net TOA +0.175* is SHORTWAVE and cloud-mediated -- SW +0.319, SW CRE
+# +0.284, tcc -0.007, lcc -0.005 -- and the tropics carry essentially all of it: tropical
+# SW CRE +0.515*, tropical net +0.235*.  Subtropical stratocumulus decks ARE stable
+# boundary layers, so a global stability-function change hits them hardest.  That lands on
+# nino34 and tas, exactly where cmpitool already scored 11G worse than 11E
+# (0.8237 -> 0.8446).
+#
+# THE HYPOTHESIS.  RSBLLMIN acts through the mixing LENGTH rather than the stability
+# function, and inside the stable BL the length is clamp(0.1h, 30, 300), so the 30 m floor
+# only binds where the stable layer is shallower than 300 m.  A shallow Arctic winter SBL
+# sits under that; a deep subtropical Sc boundary layer does not.  If that is the whole
+# story, this buys a comparable Arctic response at a fraction of the tropical cost.  It is
+# a REGIME discriminator, not a geographic one -- no latitude-dependent parameter is
+# invented anywhere.
+#
+# WHY IT MAY COME OUT THE OTHER WAY, AND WHY THAT IS WORTH KNOWING.  RSBLLMIN also sets
+# the mixing length ABOVE the stable BL: the ELSE branch of vdfexcu assigns
+# ZKLENT = ZLMIN unconditionally in free-shear layers.  Over a subtropical Sc deck that is
+# more mixing across the capping inversion, i.e. enhanced ENTRAINMENT DRYING, a known way
+# to destroy stratocumulus.  So this arm could make the tropical cloud loss WORSE rather
+# than better.  The regime argument covers the floor-within-the-BL half of what RSBLLMIN
+# does and not the free-shear half; this run settles which dominates.
+#
+# THE DOSE.  The length route saturates: with l = kappa*z*lambda/(kappa*z+lambda), at
+# z = 50 m lambda 30 -> l 12 m, 60 -> 15 m (K x1.56), 120 -> 17.1 m (K x2.03), and
+# lambda -> infinity gives only 20 m (K x2.78).  120 m therefore sits near the SB2 dose,
+# which is the point: it makes tropical-cost-per-Arctic-benefit directly comparable.
+# Going much beyond 120 buys almost nothing.
+#
+# CONTROL: SB0, already complete, SAME BINARY, group absent so the defaults 5.0 and 30 m
+# stand.  This arm changes exactly one number against it.
+#
+# READ AT LEG 2 (16 yr).  Thresholds there are 0.32 K on the Arctic DJF inversion and
+# 0.151 W/m2 on tropical SW CRE, so 16 years already bounds the tropical cost below ~30 %
+# of SB2's and resolves an Arctic response a third of SB2's.  The full 46 years only
+# tightens the tropical bound to ~17 %; let it run if leg 2 is borderline.
+#
+# VERIFY: NODE.001_01 must show "SUVDFS: stable-BL mixing" with iostat=0 and
+# RSBLLMIN= 1.20000E+02, with the stability coefficient still at 5.00000E+00.  grep it
+# with -a; the file is ~2 GB with NUL bytes and reports nothing without it.
+# ---------------------------------------------------------------------------------
+
+general:
+    user: !ENV ${USER}
+    setup_name: "oifsamip"
+    version: "cy48"
+    compute_time: "08:00:00"
+    initial_date: "1870-01-01"
+    final_date: "1916-01-01"   # 46 yr; evaluate 1872-1915
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    account: "ab0246"
+    nday: 0
+    nmonth: 0
+    nyear: 8
+    use_venv: false
+
+computer:
+    taskset: true
+
+oifsamip:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+oifs:
+    icmcl_dir: "/work/ab0246/a270092/input/oifs-48r1/climate.v020/95_4_dms_rev3/"
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    add_namelist_changes:
+        fort.4:
+            NAMECECFG:
+                ECE_CLIMR_DMS: .true.
+                ECE_DMS_CCN_SENS: 0.0    # X4: DMS field READ but the CCN lever OFF
+            NAMCLDP:
+                RVICE: 0.16
+                RSNOWLIN2: 0.04              # match the coupled tuning runs explicitly
+                RCL_INPSEA: 0.2          # D2b: ocean INP -> 20% (marine biogenic floor)
+                RCL_INPPMIN: 50000.0     # D2b: only below ~700 hPa, sparing tropical anvils
+            # NAMSURFTUNE, not NAMECECFG: NAMECECFG is read twice from the same
+            # fort.4 -- by ECE_CONFIG in arpifs/ecearth.F90 and by SURFECE_CONFIG
+            # in surf/surfece.F90 -- and a Fortran namelist read dies with
+            # "invalid reference to variable" on any name the reading module does
+            # not declare.  Verified the hard way, 2026-08-02.
+            # SB3: stable-BL mixing via the LENGTH only.  The stability-function
+            # coefficient is deliberately left unset so it keeps its 5.0 default.
+            NAMVDFS:
+                RSBLLMIN: 120.0
+            NAMSURFTUNE:
+                # --- G4 base ---
+                "ECE_TUNE_RVRSMIN(3)": 1000.0
+                "ECE_TUNE_RVRSMIN(4)": 1000.0
+                "ECE_TUNE_RVRSMIN(9)": 225.0
+                # --- K1: vegetation albedo, types 1 / 10 / 11 only ---
+                "ECE_TUNE_RVVEGALB(1,1)": 0.023500
+                "ECE_TUNE_RVVEGALB(1,2)": 0.030240
+                "ECE_TUNE_RVVEGALB(1,3)": 0.252561
+                "ECE_TUNE_RVVEGALB(1,4)": 0.284663
+                "ECE_TUNE_RVVEGALB(10,1)": 0.022748
+                "ECE_TUNE_RVVEGALB(10,2)": 0.026933
+                "ECE_TUNE_RVVEGALB(10,3)": 0.234026
+                "ECE_TUNE_RVVEGALB(10,4)": 0.253862
+                "ECE_TUNE_RVVEGALB(11,1)": 0.047943
+                "ECE_TUNE_RVVEGALB(11,2)": 0.078395
+                "ECE_TUNE_RVVEGALB(11,3)": 0.185338
+                "ECE_TUNE_RVVEGALB(11,4)": 0.262827
+                # --- K1: bare-soil background scale, all four components ---
+                "ECE_TUNE_SOILALB(1)": 0.95
+                "ECE_TUNE_SOILALB(2)": 0.95
+                "ECE_TUNE_SOILALB(3)": 0.95
+                "ECE_TUNE_SOILALB(4)": 0.95
+                # --- P3: the fitted depletion, taken literally at course scale ---
+                ECE_SNOW_SCF: 3
+                ECE_SNOW_SCF_RHOREF: 200.0
+                ECE_SNOW_SCF_DCL: 0.014     # field / low veg, d_c at rho=200
+                ECE_SNOW_SCF_DCH: 0.026     # forest / high veg
+                ECE_SNOW_SCF_MD: 4.70
+                ECE_SNOW_SCF_BL: 1.46
+                ECE_SNOW_SCF_BH: 0.40
+                ECE_SNOW_SCF_DCMAX: 0.30
+                ECE_SNOW_SCF_SCALE: 1.0
+                ECE_SNOW_SCF_SWEMIN: 15.0
+
+oasis3mct:
+    lresume: false   # generate the rst files for the first leg
+    time_step: 86400
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32
+    # Per-run override so the shared template is untouched: adds daily
+    # sd/rsn/tsn/asn/stl1/stl2.  Retained from N/O because f_full -- the fraction
+    # of the box at cover >= 0.999 -- is the diagnostic that exposed the defect and
+    # is the one that has to come back.
+    add_config_sources:
+        file_def: ${xml_dir}/file_def_snowdiag.xml.j2

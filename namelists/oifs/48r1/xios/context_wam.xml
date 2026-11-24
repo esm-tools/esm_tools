@@ -1,0 +1,33 @@
+<context id="wam">
+  <!-- WAM (the wave model inside OpenIFS). Opened by wam_xios_mod.F90 when
+       NALINE LWAM_XIOS is true. The model fills the domain and the axes at
+       run time: one unstructured point per WAM sea point, with lon/lat and
+       grid-box bounds, and the spectral directions (degree) and frequencies
+       (Hz). The time step is the WAM output interval IDELINT, so every sample
+       sent enters the averages. -->
+  <calendar type="Gregorian"/>
+
+  <axis_definition>
+    <axis id="wam_dir"  long_name="spectral direction bin (WAM TH)" unit="degree"/>
+    <axis id="wam_freq" long_name="spectral frequency bin"          unit="Hz"/>
+  </axis_definition>
+
+  <domain_definition>
+    <domain id="wam_points"/>
+  </domain_definition>
+
+  <grid_definition>
+    <grid id="wam_grid" description="WAM sea points">
+      <domain domain_ref="wam_points"/>
+    </grid>
+    <!-- Order matches the send buffer (point, direction, frequency) -->
+    <grid id="wam_spec_grid" description="WAM 2D spectra on the sea points">
+      <domain domain_ref="wam_points"/>
+      <axis axis_ref="wam_dir"/>
+      <axis axis_ref="wam_freq"/>
+    </grid>
+  </grid_definition>
+
+  <field_definition src="./field_def_wam.xml"/>
+  <file_definition  src="./file_def_wam.xml"/>
+</context>

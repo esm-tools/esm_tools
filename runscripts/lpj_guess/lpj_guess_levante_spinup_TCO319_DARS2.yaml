@@ -1,0 +1,45 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "lpjg-spinup"
+    version: "develop"
+    account: "bb1469"
+    compute_time: "08:00:00"
+    initial_date: "1850-01-01"
+    final_date: "3850-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 0
+    nyear: 500
+
+computer:
+    taskset: true
+
+lpjg-spinup:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    resolution: TCO319
+    fesom_resolution: DARS2
+
+lpj_guess:
+    lresume: false
+    nyear_spinup: 2000
+    freenyears: 100
+    nproc: 384 # originally 16
+    omp_num_threads: 4
+    resolution: TCO319
+    fesom_resolution: DARS2
+    mygrid: TCO319
+    execution_command: ${executable} -parallel -islpjgspinup ${runscript_name}
+    mip: cmip7
+    add_forcing_files:
+        co2_file: co2_file
+    add_forcing_sources:
+        co2_file: ${lpj_guess.co2_source_file}
+        oifs_forcing: ${lpj_guess.input_dir}/oifs_forcing/AWI-ESM3_HR_1350-1353_TCO319_DARS2.nc
+    add_forcing_in_work:
+        co2_file: ${lpj_guess.co2_work_file}
+    nyearifs: 4
+    firemodel: BLAZE
+    fixed_CO2: 1850
+    fixed_ndep: 1850
+    fixed_LU: 1850

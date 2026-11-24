@@ -1,7 +1,35 @@
+import glob
+import os
+
+
+def _bootstrap_forcing_dir(config):
+    """Chunk-1 forcing set for concurrent mode. 'auto' resolves the newest
+    complete harvest matching this PISM grid under <pism.pool_dir>/coupled_bootstrap."""
+    pism = config[config["general"]["setup_name"]]
+    value = pism.get("bootstrap_forcing_dir", "auto")
+    if value != "auto":
+        return value
+    tag = f"{pism.get('domain', '')}-{pism.get('resolution', '')}"
+    pattern = os.path.join(
+        pism.get("pool_dir", ""), "coupled_bootstrap", f"*{tag}*", "*",
+        ".harvest_complete",
+    )
+    hits = glob.glob(pattern)
+    if not hits:
+        return ""
+    return os.path.dirname(max(hits, key=os.path.getmtime))
+
+
 def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
+    concurrent = config["general"].get("coupling_mode", "serial") == "concurrent"
     environment_dict = {
+            "COUPLING_MODE": config["general"].get("coupling_mode", "serial"),
+            "CHUNK_NUMBER": config["general"].get("chunk_number", 0),
+            "COUPLING_FAIL_SUFFIX": ".pism" if concurrent else "",
+            "PISM_BOOTSTRAP_DIR": _bootstrap_forcing_dir(config) if concurrent else "",
             "PISM_TO_OCEAN": 0,
+            "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("oce2ice_method", "OCEANTEMPSALT"),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "VERSION_pism": config[config["general"]["setup_name"]]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
@@ -43,12 +71,25 @@ def prepare_environment(config):
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             "MULTI_YEAR_MEAN_SMB": config[config["general"]["setup_name"]].get("multi_year_mean_smb", 1),
+            "CHANGE_OCEAN":config[config["general"]["setup_name"]].get("change_ocean", 1),  
+            # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
-            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1),
+            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 0),
+
+            # OCP-tool variables (for ice2oifs coupling)
+            "OCP_POOL_DIR": config["general"].get("pool_dir", ""),
+            "OCP_OIFS_RES": config.get("oifs", {}).get("resolution", ""),
+            "OCP_OIFS_RES_NUMBER": config.get("oifs", {}).get("res_number", ""),
+            "OCP_OIFS_TRUNCATION": config.get("oifs", {}).get("truncation", ""),
+            "OCP_OIFS_LEVELS": config.get("oifs", {}).get("levels", ""),
+            "OCP_OIFS_PREPIFS_EXPID": config.get("oifs", {}).get("prepifs_expid", ""),
+            "OCP_OIFS_INPUT_EXPID": config.get("oifs", {}).get("input_expid", ""),
+            "OCP_OIFS_VERSION": config.get("oifs", {}).get("version", ""),
+            "OCP_FESOM_RES": config.get("fesom", {}).get("resolution", ""),
             }
     print (environment_dict)
     return environment_dict

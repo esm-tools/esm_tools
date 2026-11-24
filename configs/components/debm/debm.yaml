@@ -18,6 +18,11 @@ debm:
             branch: "update"
         "esm_tools":
             branch: "esm_tools"
+            # The esm_tools branch holds the Fortran sources under Fortran-v1.0/
+            # (the other branches use Fortran/), so override the build paths here.
+            clean_command: cd Fortran-v1.0; rm -rf build CMakeCache.txt
+            comp_command: cd Fortran-v1.0; mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+            install_bins: Fortran-v1.0/bin/debm
 
     clean_command: cd Fortran; rm -rf build CMakeCache.txt
     comp_command: cd Fortran; mkdir -p build; cd build; cmake ..; make -j `nproc --all`

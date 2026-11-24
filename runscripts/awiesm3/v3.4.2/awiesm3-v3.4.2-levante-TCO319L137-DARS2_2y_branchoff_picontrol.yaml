@@ -1,0 +1,93 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "v3.4.2"
+    account: "bb1469"
+    #account: "ab0246"
+    #account: "ba0989"
+    compute_time: "08:00:00"
+    initial_date: "1850-01-01"
+    final_date: "2250-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 2
+    use_venv: True
+    install_esm_tools_branch: 'AWI-ESM3-v3.4.2-VEG-HR-CMIP7-picontrol'
+    force_overwrite_in_file_movements: True
+
+computer:
+    taskset: true
+    mail_type: "ALL"
+    mail_user: "nadine.wieters@awi.de,jan.streffing@awi.de"
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0995/${user}/model_codes/CAP_dev/DARS2/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "DARS2"
+    namelist_dir: "${general.esm_namelist_dir}/fesom2/CMIP7_HR"
+    time_step: 360    #300
+    nproc: 5120       #6400
+    omp_num_threads: 2
+    lresume: true
+    restart_rate: 2
+    restart_unit: 'y'
+    restart_first: 2
+    ini_parent_exp_id: "foo"
+    cmip7_cmor_output: True
+    regrid_surface_output: true
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.2/AWI-ESM3-VEG-HR-CMIP7-Spinup_cont3/restart/fesom/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.1679.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1679.ice.restart/*.nc
+
+lpj_guess:
+    resolution: "TCO319"
+    mip: cmip7
+    scenario: piControl
+    daily_output: False
+    nproc: 64
+    omp_num_threads: 16
+    lresume: true
+    ini_parent_exp_id: "foo"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.2/AWI-ESM3-VEG-HR-CMIP7-Spinup_cont3/restart/lpj_guess/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_1680/*
+    fixed_CO2: 1850
+    fixed_ndep: 1850
+    fixed_LU: 1850
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: abns
+    input_expid: awi3
+    wam: true
+    time_step: 1200
+    nproc: 640
+    omp_num_threads: 4
+    mip: "cmip7"
+    scenario: "piControl"
+    lresume: false
+    cmip7_cmor_output: True
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 16
+    omp_num_threads: 128
+    compression_level: 3

@@ -1,0 +1,111 @@
+#!/bin/ksh
+# Harvest the concurrent-mode chunk-1 bootstrap sets from a SERIAL run into the
+# pool. Opt-in (HARVEST_PARALLEL_INI=1); once per coupling identity; every
+# problem warns and returns 0 so a harvest can never fail the run.
+#
+# Identity dir: ${HARVEST_POOL_DIR}/<subtree>/${COUPLING_IDENTITY}/
+# Harvest dir : <identity>/<expid>_chunk<N>_<utc-stamp>/ (+ README.md,
+#               MANIFEST.txt, .harvest_complete -- marker written last).
+
+function harvest_guard {
+    # usage: harvest_guard <pool-subtree>  -> sets _harvest_identity_dir
+    [ "${HARVEST_PARALLEL_INI:-0}" = "1" ] || return 1
+    [ "${COUPLING_MODE:-serial}" = "serial" ] || return 1
+    if [ -z "${COUPLING_IDENTITY:-}" ] || [ -z "${HARVEST_POOL_DIR:-}" ]; then
+        echo " *   harvest: COUPLING_IDENTITY / HARVEST_POOL_DIR unset -- skipping"
+        return 1
+    fi
+    _harvest_identity_dir=${HARVEST_POOL_DIR}/$1/${COUPLING_IDENTITY}
+    if ls "${_harvest_identity_dir}"/*/.harvest_complete >/dev/null 2>&1 ; then
+        echo " *   harvest: complete set already in ${_harvest_identity_dir} -- skipping (once)"
+        return 1
+    fi
+    if ! mkdir -p "${_harvest_identity_dir}" 2>/dev/null \
+       || ! touch "${_harvest_identity_dir}/.probe" 2>/dev/null ; then
+        echo " *   WARNING: harvest: pool not writable (${_harvest_identity_dir}) -- skipping"
+        return 1
+    fi
+    rm -f "${_harvest_identity_dir}/.probe"
+    return 0
+}
+
+function _harvest_readme {
+    # usage: _harvest_readme <tmpdir> <set-description>
+    cat > "$1/README.md" <<EOF
+# ${2}
+- experiment: ${EXP_ID:-?}  (serial chunk ${CHUNK_NUMBER:-?})
+- chunk dates: ${CHUNK_START_DATE_fesom:-${CHUNK_START_DATE_awicm:-?}} -> ${CHUNK_END_DATE_fesom:-${CHUNK_END_DATE_awicm:-?}}
+- coupling identity: ${COUPLING_IDENTITY}
+- generated: $(date -u +%Y-%m-%dT%H:%M:%SZ) on $(hostname) (job ${SLURM_JOB_ID:-none})
+- by: couplings/general/harvest.functions (serial-run harvest, see
+  general.harvest_parallel_ini)
+EOF
+}
+
+function _harvest_publish {
+    # usage: _harvest_publish <tmpdir> <destdir>
+    ( cd "$1" && find . -type f ! -name MANIFEST.txt -exec md5sum {} \; > MANIFEST.txt )
+    touch "$1/.harvest_complete"
+    if mv "$1" "$2" 2>/dev/null ; then
+        echo " *   harvest: published $2"
+    else
+        echo " *   WARNING: harvest: publish mv failed for $2"
+        rm -rf "$1"
+    fi
+}
+
+function harvest_pism_bootstrap {
+    # PISM-side set: the AWI chunk-1 couple_out products serial PISM chunk 1
+    # consumed. Call at the end of the AWI leg (just_copy), chunk 1 only.
+    [ "${CHUNK_NUMBER:-0}" = "1" ] || return 0
+    harvest_guard pism/coupled_bootstrap || return 0
+    _hv_dest=${_harvest_identity_dir}/${EXP_ID}_chunk${CHUNK_NUMBER}_$(date -u +%Y%m%d%H%M)
+    _hv_tmp=${_harvest_identity_dir}/.tmp_harvest.$$
+    rm -rf "${_hv_tmp}"; mkdir -p "${_hv_tmp}" || return 0
+    _hv_missing=0
+    for _hv_f in atmosphere_file_for_ice.nc atmosphere_names_for_ice.dat \
+                 ocean_file_for_ice.nc ocean.griddes ocean_names_for_ice.dat ; do
+        cp -L "${COUPLE_DIR}/${_hv_f}" "${_hv_tmp}/" 2>/dev/null \
+            || { echo " *   WARNING: harvest: missing ${_hv_f}"; _hv_missing=1; }
+    done
+    if [ ${_hv_missing} -eq 1 ]; then
+        echo " *   WARNING: harvest: incomplete PISM bootstrap set -- not publishing"
+        rm -rf "${_hv_tmp}"; return 0
+    fi
+    _harvest_readme "${_hv_tmp}" "PISM chunk-1 bootstrap forcing (concurrent coupling_mode)"
+    _harvest_publish "${_hv_tmp}" "${_hv_dest}"
+    unset _hv_dest _hv_tmp _hv_missing _hv_f
+    return 0
+}
+
+function harvest_awi_bootstrap {
+    # AWI-side set: the ice2fesom products an AWI chunk-1 leg stages from the
+    # pool (submesh, OASIS grids/weights, ICMGG, plit, coupling + FESOM
+    # restarts). Call at the end of ice2fesom.
+    harvest_guard fesom2/pism_coupling_ini || return 0
+    _hv_dest=${_harvest_identity_dir}/${EXP_ID}_chunk${CHUNK_NUMBER:-0}_$(date -u +%Y%m%d%H%M)
+    _hv_tmp=${_harvest_identity_dir}/.tmp_harvest.$$
+    rm -rf "${_hv_tmp}"; mkdir -p "${_hv_tmp}/oasis" "${_hv_tmp}/restart_remapped" || return 0
+    _hv_ok=1
+    cp -rL "${COUPLE_DIR}/latest_submesh" "${_hv_tmp}/submesh" 2>/dev/null || _hv_ok=0
+    for _hv_f in grids.nc masks.nc areas.nc ; do
+        cp -L "${COUPLE_DIR}/oasis_regen/${_hv_f}" "${_hv_tmp}/oasis/" 2>/dev/null || _hv_ok=0
+    done
+    cp -L "${COUPLE_DIR}"/oasis_regen/rmp_*.nc "${_hv_tmp}/oasis/" 2>/dev/null || _hv_ok=0
+    cp -L "${COUPLE_DIR}"/oasis_regen/ICMGG*INIT_* "${_hv_tmp}/oasis/" 2>/dev/null || _hv_ok=0
+    cp -L "${COUPLE_DIR}/antar_pism2ece.nc" "${_hv_tmp}/" 2>/dev/null || _hv_ok=0
+    cp -L "${COUPLE_DIR}"/restart_remapped/*.nc "${_hv_tmp}/restart_remapped/" 2>/dev/null || _hv_ok=0
+    ln -sf restart_remapped/rstas.nc "${_hv_tmp}/rstas.nc"
+    ln -sf restart_remapped/rstos.nc "${_hv_tmp}/rstos.nc"
+    cp -L "${COUPLE_DIR}/latest_ice_geometry.nc" "${_hv_tmp}/" 2>/dev/null || _hv_ok=0
+    if [ ${_hv_ok} -eq 0 ]; then
+        echo " *   WARNING: harvest: incomplete AWI bootstrap set -- not publishing"
+        rm -rf "${_hv_tmp}"; return 0
+    fi
+    _harvest_readme "${_hv_tmp}" "AWI-side chunk-1 bootstrap (submesh + OASIS + restarts; concurrent coupling_mode)"
+    _harvest_publish "${_hv_tmp}" "${_hv_dest}"
+    unset _hv_dest _hv_tmp _hv_ok _hv_f
+    return 0
+}
+
+# -- last line

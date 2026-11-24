@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<file_definition>
+
+	<!-- names and long_names according to
+             ECMWF Parameter database https://apps.ecmwf.int/codes/grib/param-db -->
+
+    <file_group
+        type="one_file"
+        format="netcdf4"
+        par_access="collective"
+        name="atm"
+        compression_level="{{xios.compression_level}}"
+        split_freq="1y">
+
+        <file
+            enabled="true"
+            output_freq="1d"
+            name_suffix="_1d"
+            description="ECE4/OIFS daily surface fields for LPJ-GUESS"
+        >
+            <field_group operation="average" grid_ref="reduced_sfc">
+                <!-- Core fields matching AM04 format -->
+                <field field_ref="air_temperature__tas"/>  <!-- tas: Near-Surface Air Temperature [K] -->
+                <field field_ref="air_temperature__tasmin"/>  <!-- tasmin: Daily Min Temperature [K] -->
+                <field field_ref="air_temperature__tasmax"/>  <!-- tasmax: Daily Max Temperature [K] -->
+                <field field_ref="surface_net_solar_radiation__rsns"/>  <!-- rsns: Surface net solar [W m-2] -->
+                <field field_ref="surface_net_thermal_radiation__rlns"/>  <!-- rlns: Surface net thermal [W m-2] -->
+                <field field_ref="wind_speed__sfcWind"/>  <!-- sfcWind: Wind speed magnitude [m s-1] -->
+                <field field_ref="precipitation_flux__pr"/>  <!-- pr: Precipitation [kg m-2 s-1] -->
+                
+                <!-- Additional fields for LPJ-GUESS forcing -->
+                <field field_ref="dew_point_temperature__tdps"/>  <!-- tdps: 2m Dewpoint [K] - for offline hurs calc -->
+                <field field_ref="surface_air_pressure__ps"/>  <!-- ps: Surface pressure [Pa] -->
+                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- psl: Sea level pressure [Pa] -->
+                <field field_ref="cloud_area_fraction__clt"/>  <!-- clt: Total cloud cover [%] -->
+                <field field_ref="snowfall_flux__prsn"/>  <!-- prsn: Snowfall [kg m-2 s-1] -->
+                <field field_ref="water_evapotranspiration_flux__evspsbl"/>  <!-- evspsbl: Evaporation [kg m-2 s-1] -->
+                <field field_ref="atmosphere_mass_content_of_water_vapor__prw"/>  <!-- prw: Water vapor path [kg m-2] -->
+                
+                <!-- Raw fields for problematic conversions -->
+                <field field_ref="sd"/>  <!-- sd: Snow depth water equivalent [m] - for offline snd calc -->
+                <field field_ref="rsn"/>  <!-- rsn: Snow density [kg m-3] - for offline snd calc -->
+            </field_group>
+        </file>
+
+
+    </file_group>
+
+</file_definition>

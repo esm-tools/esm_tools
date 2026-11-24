@@ -1,0 +1,1060 @@
+#!/bin/ksh
+
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+# Prints a '[TIMER] <label> <s>' line at each mark, reporting the wall time since
+# the previous mark. After a run:  grep '[TIMER]' <exp>/log/*couple_in*  gives the
+# per-step breakdown of ice2fesom (mesh regen). Idempotent + side-effect free.
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        _ct_stamp=$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="${_ct_stamp}" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+        else
+            # First mark: there is no previous section to time, but stamp it anyway.
+            # Without this, any time spent BEFORE instrumentation starts (esm_tools
+            # internals, file staging) is invisible -- the absolute stamps let you
+            # line the [TIMER] lines up against the job's own start/end.
+            awk -v t="${_ct_stamp}" -v l="$1" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9s\n", t, "(instrumentation starts: " l ")", "--" }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+    # couple_timer_end: stamp the LAST section, which otherwise never prints (its
+    # duration is only emitted by the *next* mark, and at the end of a function
+    # there isn't one). Call it right before a coupling function returns.
+    couple_timer_end() {
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+            unset COUPLE_TIMER_LAST COUPLE_TIMER_LABEL
+        fi
+    }
+fi
+
+# --- couple_fail: abort a coupling subjob so the WORKFLOW actually stops --------
+# A coupling function runs as a backgrounded process in the generated .run script,
+# and the observe job that watches it is NOT its parent -- so it can never see the
+# exit code. esm_runscripts additionally disables keyword error checking for every
+# non-compute job (observe.py). So a bare `exit 1` here is invisible: the workflow
+# advances and the next leg runs on stale/half-written coupling files. Drop a
+# sentinel that observe.py checks, then exit.
+if ! command -v couple_fail >/dev/null 2>&1 ; then
+    couple_fail() {
+        echo " *** $1 ***"
+        if [ -n "${COUPLE_DIR:-}" ] ; then
+            mkdir -p "${COUPLE_DIR}" 2>/dev/null
+            echo "$1" > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        fi
+        exit 1
+    }
+fi
+
+function ice2fesom {
+    echo " *** S T A R T I N G    ice2fesom ***"
+
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+    . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
+
+    echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
+    if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
+        echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
+    else
+        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+    fi
+
+    # Concurrent coupling: this leg consumes the sibling's chunk-(N-1) products.
+    # Require the marker (belt-and-braces; the Python park/revive already
+    # guaranteed it), then restage the tagged geometry onto the fixed name this
+    # function reads (fixed name is AWI-chain-private in concurrent mode).
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ] && [ "${CHUNK_NUMBER:-1}" -gt 1 ]; then
+        _i2f_tag=$(( CHUNK_NUMBER - 1 ))
+        require_coupling_marker "${COUPLE_DIR}/pism_chunk_${_i2f_tag}.done"
+        cp "${COUPLE_DIR}/latest_ice_geometry.chunk_${_i2f_tag}.nc" \
+           "${COUPLE_DIR}/latest_ice_geometry.nc" || \
+            couple_fail "ice2fesom FAILED: missing latest_ice_geometry.chunk_${_i2f_tag}.nc"
+        CONCURRENT_EXFILE_TAG=".chunk_${_i2f_tag}"
+        unset _i2f_tag
+    fi
+
+    # Build the dynamic submesh from the max-mesh and the PISM ice geometry
+    # (latest_ice_geometry.nc, produced by pism2esm), then remap the previous
+    # chunk's FESOM restart from the old mesh onto the new submesh before the
+    # next FESOM run picks it up.
+    if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
+        couple_timer "ice2fesom: build_submesh"
+        build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
+        # The FESOM node count changed, so the OASIS feom grid description and the
+        # feom remap weights baked for the previous mesh are stale (MCT aborts on
+        # the first exchange: length of x /= columns of sMat). Regenerate them for
+        # the new submesh. Gated on REGEN_OASIS_WEIGHTS so setups without pyOASIS
+        # are unaffected.
+        if [[ "x${REGEN_OASIS_WEIGHTS:-0}" == "x1" ]]; then
+            # remap_fesom_restart and regenerate_oasis_weights are independent:
+            # both consume only latest_submesh and write disjoint outputs
+            # (restart_remapped/ vs oasis_regen/). Only remap_oasis_restart needs
+            # both. So overlap them -- run the long (~19 min) weight-gen in the
+            # background while the ~1 min F90 restart remap runs in the foreground,
+            # then wait for the weight-gen before remap_oasis_restart. Backgrounding
+            # a function runs it in a subshell, so its env/cd changes do not leak.
+            couple_timer "ice2fesom: remap_fesom_restart || regenerate_oasis_weights"
+            _rgw_log=${COUPLE_DIR}/regenerate_oasis_weights.bg.log
+            regenerate_oasis_weights > "${_rgw_log}" 2>&1 &
+            _rgw_pid=$!
+
+            if ! remap_fesom_restart ; then
+                echo " *** ice2fesom FAILED: remap_fesom_restart ***"
+                kill ${_rgw_pid} 2>/dev/null ; wait ${_rgw_pid} 2>/dev/null
+                echo "----- backgrounded regenerate_oasis_weights output -----"; cat "${_rgw_log}" 2>/dev/null
+                exit 1
+            fi
+
+            wait ${_rgw_pid} ; _rgw_rc=$?
+            echo "----- regenerate_oasis_weights output (ran concurrently with remap_fesom_restart) -----"
+            cat "${_rgw_log}" 2>/dev/null
+            echo "----- end regenerate_oasis_weights output (rc=${_rgw_rc}) -----"
+            if [ ${_rgw_rc} -ne 0 ] ; then
+                echo " *** ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc}) ***"; exit 1
+            fi
+            unset _rgw_log _rgw_pid _rgw_rc
+
+            # Carry the OASIS coupling state across the mesh change: remap the feom
+            # fields in the coupling restarts (rstos/rstas) onto the new node set,
+            # same node correspondence as the FESOM restart. Without this they would
+            # mismatch the new feom grid and $NNOREST T would zero them (a coupling
+            # transient at the first exchange of every mesh-change leg). Needs BOTH
+            # the remapped FESOM restart and the fresh weights -> after the wait.
+            couple_timer "ice2fesom: remap_oasis_restart"
+            remap_oasis_restart  || couple_fail "ice2fesom FAILED: remap_oasis_restart"
+        else
+            couple_timer "ice2fesom: remap_fesom_restart"
+            remap_fesom_restart  || couple_fail "ice2fesom FAILED: remap_fesom_restart"
+        fi
+    fi
+    couple_timer "ice2fesom: DONE"
+
+    # opt-in serial harvest of the AWI-side concurrent bootstrap set (off-path)
+    if [ "${HARVEST_PARALLEL_INI:-0}" = "1" ]; then
+        . ${FUNCTION_PATH}/../general/harvest.functions
+        harvest_awi_bootstrap
+    fi
+
+    return
+    # ---- legacy regrid path below (unreachable) ----
+    #
+    # ==> if [[ $ICE_TO_FESOM -ge 1 ]]; then
+    #x
+    # ice2fesom
+    #             4) Remap/Regrid to FESOM grid
+    #             5) FESOM Names
+    #
+    CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
+
+    INTERPOL_TYPE_OCE=${INTERPOL_TYPE_OCE:-"dis"} #Standard=dis : "bil" "con" "dis" "nn"
+
+    WEIGHTS_ICE2OCE=${WEIGHTS_ICE2OCE:-weights_ice2oce.${INTERPOL_TYPE_OCE}.nc}
+    GRIDDES_OCE=${GRIDDES_OCE:-ocean.griddes}
+    OCEAN_PISM_FORCING_FILE="pism_forcing4ocean_verXXXX.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_awicm}.nc"
+    COMBINED_OUTPUT=ice_file_at_ocean.combined.nc
+
+
+    iterative_coupling_ice_fesom1x_write_names
+
+    read_names ice fesom
+    save_griddes ocean
+
+    NOCOLOR='\033[0m'
+    GREEN='\033[32m'
+
+    echo "Grid method (ocean) : ${iter_coup_regrid_method_ice2oce}"
+    echo -e "   --> Grid method >>> ${GREEN}${iter_coup_regrid_method_ice2oce}${NOCOLOR} <<< ocean"
+    case $iter_coup_regrid_method_ice2oce in
+        "INTERPOLATE"|"REMAP")
+            iterative_coupling_ice_ocean_regrid_interpolate
+            ;;
+        "EXTRAPOLATE")
+            iterative_coupling_ice_ocean_regrid_interpolate
+            iterative_coupling_ice_ocean_regrid_extrapolate
+            ;;
+        "NONE")
+	    # Ocean and ice sheet grid are identical !!
+	    INTERPOL_TYPE_OCE=none
+            iterative_coupling_ice_ocean_regrid_none
+            ;;
+        *)
+            echo " UNKNOWN regrid method selected!"
+	    echo "   Known: INTERPOLATE = REMAP, EXTRAPOLATE, NONE"
+	    echo " S T O P   2"
+            exit 2
+    esac
+
+    for file in ${cleanup_list} ; do test -f $file && rm $file ; done
+    unset cleanup_list file
+    unset NOCOLOR GREEN
+
+    echo "     ...done."
+
+    # stamp the final section (its duration is otherwise never emitted:
+    # only the NEXT mark prints it, and there isn't one at the end)
+    couple_timer_end
+}
+
+function build_submesh {
+    echo " *** Building dynamic submesh from MAXMESH ***"
+
+    # Promote the CURRENT submesh to previous_submesh BEFORE we replace it. The
+    # restart remap needs the mesh the PREVIOUS leg actually ran on. previous_submesh
+    # was read in several places but NEVER created anywhere, so every mesh-change leg
+    # silently fell back to the mother (full) mesh. That happens to be right for the
+    # first mesh change after a full-mesh chunk 1, and wrong for every leg after that
+    # -- it would remap against the wrong old mesh and produce a garbage restart.
+    #
+    # RERUN GUARD: promote ONLY if latest_submesh belongs to a DIFFERENT chunk
+    # than the one being built now. On a rerun of the SAME chunk (couple_in
+    # failed mid-way and was restarted), latest_submesh already points at THIS
+    # chunk's new submesh; promoting it makes old==new, every node classifies
+    # as UNCHANGED, and the remap copies the old restart's sub-ice ZEROS into
+    # the newly-opened levels verbatim -> 0 psu surface water -> density
+    # catastrophe -> CFLz blowup at mstep=1 (movcav16 chunk-3, 2026-07-14).
+    if [ -e "${COUPLE_DIR}/latest_submesh" ] ; then
+        _prev_target=$(readlink -f "${COUPLE_DIR}/latest_submesh" 2>/dev/null)
+        if [ -n "${_prev_target}" ] && [ -f "${_prev_target}/nod2d.out" ] ; then
+            if [ "$(basename "${_prev_target}")" = "submesh_${CHUNK_END_DATE_fesom}" ] ; then
+                echo " *   latest_submesh already targets THIS chunk (submesh_${CHUNK_END_DATE_fesom})"
+                echo " *   -> rerun detected; keeping existing previous_submesh untouched"
+            else
+                rm -rf "${COUPLE_DIR}/previous_submesh"
+                ln -sfn "${_prev_target}" "${COUPLE_DIR}/previous_submesh"
+                echo " *   previous submesh: ${_prev_target} ($(head -1 ${_prev_target}/nod2d.out | awk '{print $1}') nodes)"
+            fi
+        fi
+    fi
+
+    SUBMESH_DIR=submesh_${CHUNK_END_DATE_fesom}/
+    MAXMESH_DIR_fesom=$MAX_MESH
+    echo " *   target submesh dir: ${SUBMESH_DIR}"
+    echo " *   max mesh dir:       ${MAXMESH_DIR_fesom}"
+    mkdir -p $SUBMESH_DIR
+    rm -rf $SUBMESH_DIR/*
+
+    # 1. Regrid PISM ice geometry to ocean resolution and onto the max-mesh nodes.
+    # The categorical mask must be remapped nearest-neighbour: bilinear
+    # averaging of categories lets small islands (few ice-free-land cells
+    # surrounded by mask=4 ocean) smear to ~3.x and round to ocean, deleting
+    # the island from the submesh. Continuous fields stay bilinear. remapnn
+    # extrapolates beyond the PISM domain, which would erase the mask=5
+    # outside-domain marker the reduction tool relies on -- rebuild it from a
+    # bilinear domain indicator (valid inside, missing outside).
+    couple_timer "ice2fesom: regrid ice geometry"
+    echo " *   regridding ice geometry to max-mesh nodes (mask: remapnn + domain indicator)"
+    cdo -setmisstoc,5 -remapbil,T512grid -delname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_cont.nc
+    cdo -remapbil,T512grid -expr,"ind=mask*0+1" ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_ind.nc
+    cdo -remapnn,T512grid -selname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_nn.nc
+    cdo -setmisstoc,5 -mul tmp1_nn.nc tmp1_ind.nc tmp1_mask.nc
+    cdo merge tmp1_cont.nc tmp1_mask.nc tmp1.nc
+    cdo -remapnn,${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom} tmp1.nc tmp2.nc
+    ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
+    rm tmp1_cont.nc tmp1_ind.nc tmp1_nn.nc tmp1_mask.nc tmp1.nc tmp2.nc
+
+    # 2. Derive node flags (topo_raw, cavity_raw, mask) from the regridded geometry
+    couple_timer "ice2fesom: mesh_flags.py"
+    echo " *   generating mesh flags (mesh_flags.py)"
+    export PATH2COUPLE=${COUPLE_DIR}
+    export GEOMETRY_FILE=latest_ice_geometry_for_fesom.nc
+    python3 ${FUNCTION_PATH}/../pism/mesh_flags.py > mesh_flags.log 2>&1
+
+    # 3. Compile and run the mesh-reduction tool to carve a submesh out of the max mesh
+    couple_timer "ice2fesom: compile + fesom_submesh.x (mesh reduction)"
+    echo " *   compiling fesom_submesh.x and running mesh reduction"
+    cp ${MESH_DIR_fesom}/*.txt .
+    gfortran -o fesom_submesh.x ${FUNCTION_PATH}/../pism/fesom_submesh.F90 > compile_submesh.log 2>&1
+    rm -rf ${COUPLE_DIR}/${SUBMESH_DIR}/*
+    ./fesom_submesh.x ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/
+
+    # Safety valve: the reduced submesh must retain a sane fraction of the
+    # cavity nodes the classifier flagged. A collapse here (e.g. a sweep or
+    # criterion change cascading through the narrow cavity bands) produces a
+    # formally valid but cavity-less ocean that runs "stably" while being
+    # scientifically void. Abort the leg instead.
+    _n_flag=$(python3 -c "
+import numpy as np
+m=np.loadtxt('mask.txt'); c=np.loadtxt('cavity_raw.txt')
+print(int(((m==1)&(c<-1e-3)).sum()))")
+    _n_kept=$(python3 -c "
+import numpy as np
+print(int((np.loadtxt('${COUPLE_DIR}/${SUBMESH_DIR}/cavity_depth.out')<-1e-3).sum()))")
+    echo " *   cavity nodes: classifier-flagged ${_n_flag}, kept in submesh ${_n_kept}"
+    if [ "${_n_flag}" -gt 100 ] && [ $((_n_kept * 2)) -lt "${_n_flag}" ]; then
+        couple_fail "ice2fesom FAILED: submesh kept <50% of flagged cavity nodes (${_n_kept}/${_n_flag}) - cavity amputation guard"
+    fi
+    rm -rf ${COUPLE_DIR}/latest_submesh
+
+    # 4. Partition the submesh and produce the CDO grid description, NATIVELY.
+    #    Replaces the meshtools-creator Singularity container (mesh-partition +
+    #    mesh-griddes apps): it needs unprivileged user namespaces, which are
+    #    disabled cluster-wide on levante (max_user_namespaces=0), so every
+    #    `singularity run` fails to create its namespace and build_submesh dies.
+    #      - partition : native FESOM partitioner fesom_meshpart (built into the
+    #                    -is fesom via -DBUILD_MESHPARTITIONER=ON; reads
+    #                    namelist.config, writes edges/levels/cavity levels +
+    #                    dist_${NPROC_fesom}/).
+    #      - griddes   : pyfesom2's port of spheRlab writeCDO
+    #                    (fesom_mesh_to_cdo.py -> read_fesom_ascii_grid +
+    #                    write_mesh_to_netcdf) -> mesh_cst.nc.
+    local mesh_dir=${COUPLE_DIR}/${SUBMESH_DIR}
+    couple_timer "ice2fesom: fesom_meshpart (partition)"
+    echo " *   partitioning submesh (fesom_meshpart) + CDO griddes (pyfesom2)"
+
+    # fesom_meshpart (fvom_init) AND pyfesom2's read_fesom_ascii_grid both read
+    # the cavity draft as cavity_depth@node.out, but fesom_submesh.x writes it as
+    # cavity_depth.out. Rename BEFORE partitioning (else fesom_meshpart can't find
+    # the cavity file, stops, and writes no nlvls.out/dist_/cavity_nlvls). The
+    # rename in the OCE_flag block below then becomes a no-op.
+    [ -f ${mesh_dir}/cavity_depth.out ] \
+        && mv ${mesh_dir}/cavity_depth.out ${mesh_dir}/cavity_depth@node.out
+
+    local meshpart_bin=${FESOM_BIN_DIR}/fesom_meshpart
+    if [ ! -x "${meshpart_bin}" ]; then
+        echo " *   build_submesh ERROR: fesom_meshpart not found (${meshpart_bin})"
+        echo " *   rebuild the -is fesom: esm_master recomp-awiesm3-${version:-develop-is}/fesom"
+        return 1
+    fi
+    cat > ${mesh_dir}/namelist.config <<NML
+&modelname
+runid='fesom'
+/
+&paths
+MeshPath='${mesh_dir}/'
+/
+&geometry
+cartesian=.false.
+fplane=.false.
+cyclic_length=360
+rotated_grid=.true.
+/
+&run_config
+use_cavity=.true.
+/
+&machine
+n_levels=1
+n_part=${NPROC_fesom}
+/
+NML
+    # fesom_meshpart links libfesom_meshpart_C.so, installed to <fesom>/lib
+    # (= FESOM_BIN_DIR/../lib) but not on the binary's rpath -- add it here.
+    ( cd ${mesh_dir} \
+      && LD_LIBRARY_PATH=${FESOM_BIN_DIR}/../lib:${LD_LIBRARY_PATH} ${meshpart_bin} ) \
+        || { echo " *   build_submesh ERROR: fesom_meshpart failed"; return 1; }
+
+    couple_timer "ice2fesom: fesom_mesh_to_cdo.py (griddes)"
+    local griddes_py=${OCP_WEIGHTGEN_DRIVER_PY:-python}   # needs pyfesom2
+    ${griddes_py} ${FUNCTION_PATH}/fesom_mesh_to_cdo.py "${mesh_dir}" "${mesh_dir}/mesh_cst.nc" \
+        || { echo " *   build_submesh ERROR: fesom_mesh_to_cdo.py failed"; return 1; }
+
+    rm -f ${mesh_dir}/tmp*.nc
+    ln -sf ${COUPLE_DIR}/submesh_$CHUNK_END_DATE_fesom ${COUPLE_DIR}/latest_submesh
+
+    # 5. Build OCE_flag / GLAC_flag masks from the cavity-level file, if any
+    couple_timer "ice2fesom: OCE_flag/GLAC_flag masks (cdo)"
+    if [ -f "${mesh_dir}/cavity_nlvls.out" ]; then
+        echo " *   cavity_nlvls.out found -> building OCE_flag/GLAC_flag from cavity levels"
+        cdo -L -f nc -b F64 input,${mesh_dir}/mesh_cst.nc cavity_nlvls_tmp.nc < ${mesh_dir}/cavity_nlvls.out
+        cdo -L -f nc -b F64 -setname,OCE_flag -setvrange,0.99,1.01 cavity_nlvls_tmp.nc OCE_flag_tmp.nc
+        cdo -L -f nc -b F64 -setname,GLAC_flag -setrtoc,1.01,100,1 -setrtomiss,0.99,1.01 cavity_nlvls_tmp.nc GLAC_flag_tmp.nc
+        cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
+    else
+        echo " *   no cavity_nlvls.out -> OCE_flag set to 1 everywhere"
+        cdo -L -f nc -b F64 -setname,OCE_flag -const,1,${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc
+        cdo -L -f nc -b F64 -setname,GLAC_flag -setctomiss,1 -const,1,${mesh_dir}/mesh_cst.nc GLAC_flag_tmp.nc
+        cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
+    fi
+
+    # Rename cavity_depth.out to pyfesom2-standard name (cavity_depth@node.out)
+    if [[ -f ${mesh_dir}/cavity_depth.out ]]; then
+        mv ${mesh_dir}/cavity_depth.out ${mesh_dir}/cavity_depth@node.out
+        echo " *   renamed cavity_depth.out -> cavity_depth@node.out"
+    fi
+
+    cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
+    rm -f *.out *_tmp.nc
+
+    # Verify the submesh has the files the restart remap and FESOM need. The
+    # partition/griddes steps (singularity) can fail silently, so guard here.
+    for f in nod2d.out elem2d.out aux3d.out nlvls.out mesh_cst.nc; do
+        if [ ! -s "${mesh_dir}/${f}" ]; then
+            echo " *   build_submesh ERROR: missing ${mesh_dir}/${f}"
+            return 1
+        fi
+    done
+    echo "     ...done."
+}
+
+function remap_fesom_restart {
+    echo " *** Remapping FESOM restart from old to new mesh ***"
+
+    local remap_bin=${FUNCTION_PATH}/../fesom/remap_restart/remap_restart
+    if [ ! -x "${remap_bin}" ]; then
+        echo " *   binary not found, building: ${remap_bin}"
+        bash ${FUNCTION_PATH}/../fesom/remap_restart/build.sh
+        if [ ! -x "${remap_bin}" ]; then
+            echo " *   build FAILED: ${remap_bin}"
+            return 1
+        fi
+    fi
+
+    local nod2d_base
+    nod2d_base=$(head -1 ${MAXMESH_DIR_fesom}/nod2d.out | awk '{print $1}')
+
+    # First chunk fallback: no previous_submesh -> stage a synthetic copy of
+    # the mother mesh with an identity map_nod.out (every base node maps to
+    # itself), since the F90 tool requires map_nod.out to exist.
+    local path_old
+    if [ -d "${COUPLE_DIR}/previous_submesh" ]; then
+        path_old="${COUPLE_DIR}/previous_submesh/"
+        echo " *   old mesh: previous_submesh"
+    elif [ -n "${CHUNK1_MESH:-}" ] && [ -f "${CHUNK1_MESH}/nod2d.out" ]; then
+        # First mesh-change leg after a chunk-1 that ran on a PRE-STAGED submesh
+        # (pool; couple_in skipped there, so no previous_submesh was ever recorded).
+        # The old mesh is that submesh -- NOT the mother mesh. Getting this wrong
+        # makes remap_oasis_restart read a full-mesh map against a submesh-sized
+        # restart: "old_feom_size=211567 ... Source restart does not match old_map".
+        path_old="${CHUNK1_MESH%/}/"
+        echo " *   old mesh: chunk-1 pre-staged submesh ${path_old} ($(head -1 ${CHUNK1_MESH}/nod2d.out | awk '{print $1}') nodes)"
+    else
+        path_old="${COUPLE_DIR}/mother_as_old/"
+        echo " *   old mesh: mother mesh staged at ${path_old}"
+        mkdir -p "${path_old}"
+        # cavity_nlvls.out is ESSENTIAL: the remap mesh reader loads it into
+        # ulevels_nod2D. Without it the mother mesh is read as cavity-free
+        # (ulevel=1 everywhere), so every submesh node whose cavity retreated is
+        # mis-classified FLAG_UNCHANGED and the remapper naively copies the
+        # mother's dry-cavity ZERO temp/salt into the new wet levels -> zero
+        # salinity -> density blowup -> cfl_z runaway at ocean step 1.
+        for f in nod2d.out elem2d.out aux3d.out nlvls.out elvls.out cavity_nlvls.out cavity_elvls.out edgenum.out edges.out edge_tri.out; do
+            [ -e "${MAXMESH_DIR_fesom}/${f}" ] && ln -sf "${MAXMESH_DIR_fesom}/${f}" "${path_old}/${f}"
+        done
+        seq 1 ${nod2d_base} > "${path_old}/map_nod.out"
+        # dist_<nproc> too: remap_oasis_restart needs the mother's rpart.out to
+        # un-permute the runtime-ordered OASIS restart before the nod2d gather.
+        [ -d "${MAXMESH_DIR_fesom}/dist_${NPROC_fesom}" ] && \
+            ln -sfn "${MAXMESH_DIR_fesom}/dist_${NPROC_fesom}" "${path_old}/dist_${NPROC_fesom}"
+    fi
+
+    local restart_year=${CHUNK_START_DATE_fesom%%-*}
+    # FESOM resumes year <restart_year> from the restart written at the end of
+    # the previous year, stored in fesom.<restart_year-1>.oce.restart/.
+    local restart_year_old=$(( restart_year - 1 ))
+    local outdir=${COUPLE_DIR}/restart_remapped
+    mkdir -p ${outdir}
+
+    cat > ${COUPLE_DIR}/namelist.remap <<NML
+&remap_config
+    path_base        = '${MAXMESH_DIR_fesom}/'
+    path_old         = '${path_old}'
+    path_new         = '${COUPLE_DIR}/latest_submesh/'
+    path_restart_old = '${RESTART_DIR_fesom}/fesom.${restart_year_old}.oce.restart/'
+    path_restart_new = '${outdir}/'
+    restart_year     = ${restart_year}
+    nod2D_base       = ${nod2d_base}
+/
+NML
+
+    echo " *   running ${remap_bin}"
+    # Large temp arrays inside remap_restart can blow the default stack
+    # (Levante netcdf-fortran is known to need this — same setting as FESOM).
+    ( cd ${COUPLE_DIR} && ulimit -s unlimited && ${remap_bin} )
+    local rc=$?
+    if [ ${rc} -ne 0 ]; then
+        echo " *   remap_restart FAILED (rc=${rc})"
+        return ${rc}
+    fi
+
+    # --- Freezing-point cap on newly-under-ice columns ------------------------
+    # Where the moving geometry puts new ice over previously-open water
+    # (ulevels_new > ulevels_old) the remap carries the above-freezing
+    # open-ocean temperature straight under the new ice shelf; FESOM then melts
+    # against it in a runaway (large basal heat/freshwater flux into the thin
+    # ice-base layer) -> cfl_z blowup within a few days, ringing the whole
+    # margin. Cap T at the in-situ freezing point on those columns so there is
+    # no spurious thermal driving (salinity untouched).
+    local cap_py=${OCP_WEIGHTGEN_DRIVER_PY:-python}   # needs xarray + numpy
+    local cap_script=${FUNCTION_PATH}/../fesom/remap_restart/cap_new_cavity_temp.py
+    if [ -f "${cap_script}" ]; then
+        echo " *   capping new-cavity temperature to freezing (cap_new_cavity_temp.py)"
+        ${cap_py} "${cap_script}" \
+            "${COUPLE_DIR}/latest_submesh" \
+            "${MAXMESH_DIR_fesom}/cavity_nlvls.out" \
+            "${outdir}/temp.nc" "${outdir}/salt.nc" \
+            || { echo " *   cap_new_cavity_temp FAILED"; return 1; }
+    else
+        echo " *   WARNING: cap_new_cavity_temp.py not found (${cap_script}); skipping freezing cap"
+    fi
+
+    echo "     ...done. remapped restart -> ${outdir}"
+}
+
+function remap_oasis_restart {
+    # Remap the OASIS coupling restarts (rstos.nc, rstas.nc) onto the new feom
+    # node set, using the same old/new submesh node correspondence as the FESOM
+    # ocean restart. The feom-grid fields (sst_feom, sie_feom, ... in rstos; the
+    # atm->feom fields in rstas) carry the coupling state across the mesh change;
+    # the fixed A096/atm-grid fields are left untouched. Output replaces the
+    # stale (old node count) restarts the oasis3mct staging would otherwise pick.
+    echo " *** Remapping OASIS coupling restarts (rstos/rstas) to the new submesh ***"
+    local py=${OCP_WEIGHTGEN_DRIVER_PY:-python}   # needs xarray (+ scipy for nn-fill)
+    local script=${FUNCTION_PATH}/../fesom/remap_restart/remap_oasis_restart.py
+    local outdir=${COUPLE_DIR}/restart_remapped
+    mkdir -p ${outdir}
+
+    # Same old/new node maps that remap_fesom_restart used.
+    local new_map=${COUPLE_DIR}/latest_submesh/map_nod.out
+    local old_map
+    if [ -f "${COUPLE_DIR}/previous_submesh/map_nod.out" ]; then
+        old_map=${COUPLE_DIR}/previous_submesh/map_nod.out
+    elif [ -n "${CHUNK1_MESH:-}" ] && [ -f "${CHUNK1_MESH%/}/map_nod.out" ]; then
+        # chunk 1 ran on a pre-staged (pool) submesh -- that, not the mother mesh,
+        # is the mesh the previous leg's OASIS restart lives on.
+        old_map=${CHUNK1_MESH%/}/map_nod.out
+    else
+        old_map=${COUPLE_DIR}/mother_as_old/map_nod.out
+    fi
+    if [ ! -f "${new_map}" ] || [ ! -f "${old_map}" ]; then
+        echo " *   node maps missing (${old_map} / ${new_map}); skipping OASIS restart remap"
+        return 0
+    fi
+    local old_n new_n
+    old_n=$(wc -l < "${old_map}")
+    new_n=$(wc -l < "${new_map}")
+    local new_nod2d=${COUPLE_DIR}/latest_submesh/nod2d.out
+
+    # rpart.out of the old and new meshes: OASIS restarts are RUNTIME-ordered
+    # (Apple partition), the map_nod gather lives in nod2d space, and the
+    # regenerated weights expect new-mesh runtime order -- the remapper needs
+    # both partitions for the un-permute / re-permute sandwich. Missing rpart
+    # is a hard error: a scrambled rstos gives OIFS a jigsaw SST for the first
+    # coupling interval and nondeterministic convection blowups (movcav16
+    # attempts 2/3, forrtl in cubasen.F90).
+    local old_rpart="$(dirname "${old_map}")/dist_${NPROC_fesom}/rpart.out"
+    local new_rpart="$(dirname "${new_map}")/dist_${NPROC_fesom}/rpart.out"
+    if [ ! -f "${old_rpart}" ] || [ ! -f "${new_rpart}" ]; then
+        echo " *   rpart.out missing (${old_rpart} / ${new_rpart}); cannot order-correct OASIS restarts"
+        return 1
+    fi
+
+    # OASIS restarts written by the previous awiesm3 chunk.
+    local oasis_rst_dir=${COUPLE_DIR}/../restart/oasis3mct
+    for rst in rstos rstas; do
+        local src=${oasis_rst_dir}/${rst}.nc
+        if [ ! -f "${src}" ]; then
+            echo " *   ${rst}.nc not found at ${src}; skipping (NNOREST will zero it)"
+            continue
+        fi
+        echo " *   remapping ${rst}.nc (${old_n} -> ${new_n} nodes)"
+        ${py} ${script} "${src}" "${outdir}/${rst}.nc" \
+            "${old_map}" "${new_map}" "${new_nod2d}" "${old_n}" "${new_n}" \
+            "${old_rpart}" "${new_rpart}" \
+            || { echo " *   remap_oasis_restart FAILED for ${rst}"; return 1; }
+        # rstos carries the feom-grid fields, so its output MUST contain the
+        # new node count as a dimension and must NOT still contain the old one.
+        # A silent mis-size (e.g. a stale source that skipped remapping) only
+        # surfaces as an OASIS 'av gsize mismatch' abort deep in init; catch it
+        # here. NOTE the file legitimately holds BOTH grids (OASIS writes the
+        # A096-side A_* fields into the same restart, nx=40320), so checking
+        # "the first nx" is wrong -- the feom fields live on nx_2 or similar.
+        # (rstas is on the fixed A096 grid, so it is not size-checked.)
+        if [ "${rst}" = "rstos" ]; then
+            local _dims
+            _dims=$(ncdump -h "${outdir}/${rst}.nc" 2>/dev/null \
+                | sed -n '/^dimensions:/,/^variables:/p' | grep -oE '= [0-9]+ ;' | grep -oE '[0-9]+')
+            if ! echo "${_dims}" | grep -qx "${new_n}" ; then
+                echo " *   remap_oasis_restart: ${rst}.nc has no dimension of size ${new_n} (dims: $(echo ${_dims} | tr '\n' ' ')); aborting"
+                return 1
+            fi
+            if [ "${old_n}" != "${new_n}" ] && echo "${_dims}" | grep -qx "${old_n}" ; then
+                echo " *   remap_oasis_restart: ${rst}.nc still contains old node count ${old_n}; aborting"
+                return 1
+            fi
+        fi
+    done
+
+    # --- Sanitize the A096/atm-side fields against the NEW coastline -------
+    # The regenerated ICMGG flips a few atm cells land->ocean; the A096-side
+    # restart fields are carried over untouched, so those cells keep A_SST=0 K
+    # and OIFS's voskin cool-skin scheme overflows at the first step
+    # (forrtl (72), voskin_mod.F90:282). Nearest-ocean-fill A_SST (and floor
+    # A_Ice_temp) at every ocean-per-new-lsm cell holding a stale land value.
+    local new_icmgg=${COUPLE_DIR}/oasis_regen/ICMGGab45INIT_feomdyn
+    if [ -f "${new_icmgg}" ] && [ -f "${outdir}/rstos.nc" ]; then
+        ${py} ${FUNCTION_PATH}/../fesom/remap_restart/sanitize_oasis_restart_atm.py \
+            "${outdir}/rstos.nc" "${new_icmgg}" \
+            || { echo " *   sanitize_oasis_restart_atm FAILED"; return 1; }
+    fi
+    echo "     ...done. remapped OASIS restarts -> ${outdir}"
+}
+
+function fix_namcouple_feom_dim {
+    # The namcouple's feom grid dimension is written by prepcompute from the
+    # static full-mesh fesom.nx. On a moving-cavity leg the running feom grid is
+    # the submesh, so OASIS registers the feom grid at the full-mesh size while
+    # the partition/weights/data are the submesh. That is invisible to EXPORTED
+    # coupling but makes OASIS abort when a feom field is written per step
+    # (EXPOUT), because the output file is sized by the grid nx. Rewrite the feom
+    # dimension in the work-dir namcouple to the current submesh node count.
+    # Runs after prepcompute (which regenerates the namcouple); no-op if the
+    # submesh equals the full mesh or the namcouple is absent.
+
+    # --- Stage the per-leg OIFS land-ice plit mask into work/ --------------
+    # suorog reads {ISMRGNPFX}_pism2ece.nc = antar_pism2ece.nc from cwd (work/)
+    # at leg init. ice2fesom generated it into COUPLE_DIR; esm_tools' OIFS
+    # add_input_sources override (couple/ -> work/) is NOT honored by prepcompute
+    # (it resolves the source to input/oifs/antar_pism2ece.nc and fails to find
+    # it), so stage it here. This subjob is run_after: prepcompute, so work/
+    # already exists and won't be wiped afterwards. Done first so it happens
+    # regardless of the namcouple early-returns below.
+    if [ -f "${COUPLE_DIR}/antar_pism2ece.nc" ]; then
+        cp -f "${COUPLE_DIR}/antar_pism2ece.nc" "${WORK_DIR_fesom}/antar_pism2ece.nc" \
+            && echo " *   staged OIFS plit -> ${WORK_DIR_fesom}/antar_pism2ece.nc" \
+            || echo " *   WARNING: failed to stage antar_pism2ece.nc into work/"
+    else
+        echo " *   note: ${COUPLE_DIR}/antar_pism2ece.nc absent -- no plit to stage"
+    fi
+
+    local nc=${WORK_DIR_fesom}/namcouple
+    if [ ! -f "${nc}" ]; then
+        echo " *   fix_namcouple_feom_dim: no namcouple at ${nc}, skipping"
+        return 0
+    fi
+
+    # --- Optional instrumentation: EXPOUT on the ocean->atm fields ---------
+    # OASIS then dumps every exchanged o2a field (source and target side) to
+    # netcdf in work/. Debug tool for poisoned-exchange hunts: after a crash,
+    # scan the last records for the insane cell. Opt-in via the runscript
+    # (fesom: oasis_expout_o2a: 1 -> env_fesom.py). EXPOUT = EXPORTED + write,
+    # it does not change the coupling itself.
+    if [ "${OASIS_EXPOUT_O2A:-0}" = "1" ]; then
+        local nflip
+        nflip=$(grep -c 'rstos\.nc EXPORTED' "${nc}" || true)
+        sed -i '/rstos\.nc EXPORTED/s/EXPORTED/EXPOUT/' "${nc}"
+        echo " *   EXPOUT instrumentation: ${nflip} o2a field lines flipped to EXPOUT"
+    fi
+
+    local full sub meshpath maxmesh
+    # MAXMESH_DIR_fesom is assigned inside build_submesh (couple_in). This function
+    # runs as its own subjob (couple_namcouple) in a separate shell, where that
+    # assignment never happened -> the var is UNSET, full='' and the guard below
+    # refused to patch. Silently no-op'd on every leg; it only never mattered
+    # because no submesh leg had ever survived to the end-of-leg restart write.
+    # env_fesom.py exports MAX_MESH -- use that (keep the others as fallbacks).
+    maxmesh=${MAX_MESH:-${MAXMESH_DIR_fesom:-${MESH_DIR_fesom}}}
+    full=$(head -1 ${maxmesh}/nod2d.out 2>/dev/null | awk '{print $1}')
+    # Take the node count from the mesh FESOM is ACTUALLY running on, i.e. the
+    # MeshPath in the staged namelist.config. On a mesh-change leg that is
+    # ${COUPLE_DIR}/latest_submesh; on chunk 1 it can be a pre-staged pool mesh
+    # (couple_in is skipped there, so ${COUPLE_DIR}/latest_submesh does not exist
+    # and reading it would leave `sub` empty -> the guard below would refuse to
+    # patch, and OASIS would abort writing the feom restart at the end of the leg).
+    meshpath=$(grep -i "^\s*meshpath" ${WORK_DIR_fesom}/namelist.config 2>/dev/null \
+               | head -1 | sed "s/.*=\s*'\?//; s/'\?\s*$//")
+    if [ -n "${meshpath}" ] && [ -f "${meshpath}/nod2d.out" ]; then
+        sub=$(head -1 "${meshpath}/nod2d.out" 2>/dev/null | awk '{print $1}')
+        echo " *   fix_namcouple_feom_dim: mesh from namelist MeshPath = ${meshpath}"
+    else
+        sub=$(head -1 ${COUPLE_DIR}/latest_submesh/nod2d.out 2>/dev/null | awk '{print $1}')
+    fi
+    # HARD guard: both counts MUST be positive integers. If either is empty
+    # (e.g. build_submesh failed, so the submesh nod2d.out is missing), a naive
+    # `sed s/\b${full}\b/${sub}/g` with an empty pattern wraps EVERY token in the
+    # replacement and destroys the namcouple -> OASIS aborts at init. Refuse.
+    if ! [[ "${full}" =~ ^[0-9]+$ ]] || ! [[ "${sub}" =~ ^[0-9]+$ ]]; then
+        echo " *   fix_namcouple_feom_dim ERROR: bad node counts (full='${full}' sub='${sub}')"
+        echo " *   refusing to edit the namcouple (likely build_submesh failed upstream)"
+        return 1
+    fi
+    if [ "${full}" = "${sub}" ]; then
+        echo " *   fix_namcouple_feom_dim: submesh(${sub})==fullmesh(${full}), nothing to do"
+        return 0
+    fi
+    sed -i "s/\b${full}\b/${sub}/g" "${nc}"
+    echo " *   fix_namcouple_feom_dim: feom grid dim ${full} -> ${sub} in ${nc}"
+}
+
+function regenerate_oasis_weights {
+    # Regenerate the OASIS feom grid description and the feom remap weights for
+    # the new submesh, using ocp-tool driving the coupled model's own pyOASIS.
+    # Output goes to ${COUPLE_DIR}/oasis_regen/ (grids.nc/masks.nc/areas.nc +
+    # rmp_*feom*.nc); the awiesm3 compute leg stages these via an oasis3mct input
+    # redirect gated on chunk_number>1.
+    #
+    # Required environment (exported by env_fesom.py / the runscript):
+    #   OASIS_BUILD_PATH          model OASIS build (has python/pyoasis + lib/liboasis.cbind.so)
+    #   OCP_TOOL_DIR              ocp-tool source dir (added to PYTHONPATH)
+    #   OCP_WEIGHTGEN_DRIVER_PY   python with pyfesom2 + eccodes (runs ocp-tool)
+    #   OCP_WEIGHTGEN_WORKER_PY   python with OpenMPI mpi4py + pyoasis (srun worker)
+    #   OCP_TEMPLATE_CONFIG       ocp-tool config template (e.g. configs/TCO95_CORE2.yaml)
+    #                             whose input/ dirs hold the base ICMGG to modify
+    # Optional: OASIS_REMAP_METHOD (existing|conserv, default existing),
+    #           OCP_WEIGHTGEN_THREADS (default 8),
+    #           OCP_REGEN_GRID_TAG (output tag + ICMGG suffix, default feomdyn)
+    echo " *   regenerating atm-side LSM (OASIS grids/masks + ICMGG + runoff + slt) + feom weights for the new submesh"
+    : "${OASIS_BUILD_PATH:?regenerate_oasis_weights: OASIS_BUILD_PATH not set}"
+    : "${OCP_TOOL_DIR:?regenerate_oasis_weights: OCP_TOOL_DIR not set}"
+    : "${OCP_WEIGHTGEN_DRIVER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_DRIVER_PY not set}"
+    : "${OCP_WEIGHTGEN_WORKER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_WORKER_PY not set}"
+    : "${OCP_TEMPLATE_CONFIG:?regenerate_oasis_weights: OCP_TEMPLATE_CONFIG not set}"
+
+    local out_dir=${COUPLE_DIR}/oasis_regen
+    local submesh=${COUPLE_DIR}/latest_submesh
+    rm -rf "${out_dir}"
+    mkdir -p "${out_dir}"
+
+    export PYTHONNOUSERSITE=1
+    export LD_LIBRARY_PATH=${OASIS_BUILD_PATH}/lib:${LD_LIBRARY_PATH}
+    export PYTHONPATH=${OASIS_BUILD_PATH}/python:${OCP_TOOL_DIR}:${PYTHONPATH}
+
+    # Driver: full ocp-tool atm-side LSM regen for the submesh, then pyOASIS
+    # per-link weight gen. A moving coastline means the OIFS land-sea mask (ICMGG
+    # lsm/slt), the OASIS A096 atmosphere mask, the runoff LSM and the LPJ-GUESS
+    # slt must all come from the SAME new mask as the feom ocean grid, so we drive
+    # the whole ocp-tool pipeline (one process_land_sea_mask -> consistent set)
+    # rather than only refreshing feom. Weights are generated in a second step
+    # because ocp-tool's built-in rmp call can't reach the model's pyOASIS build
+    # or the OpenMPI worker interpreter.
+    local grid_tag=${OCP_REGEN_GRID_TAG:-feomdyn}
+    local pyscript=${out_dir}/run_regen.py
+    cat > "${pyscript}" <<PYEOF
+from pathlib import Path
+from ocp_tool.dynamic_regen import regenerate_for_submesh
+from ocp_tool.oasis_weights import (
+    generate_weights, _set_feom_mask_active, _strip_feom_corners)
+
+method = '${OASIS_REMAP_METHOD:-existing}'
+use_corners = (method == 'conserv')
+
+# 1. Consistent grids/masks/areas (updated A096 + feom) + modified ICMGG + runoff
+#    LSM + LPJ-GUESS slt for the new submesh. No weights yet (generate_rmp=False).
+regenerate_for_submesh(
+    mesh_dir='${submesh}', grid_name='${grid_tag}', out_dir='${out_dir}',
+    template='${OCP_TEMPLATE_CONFIG}', ocp_tool_dir='${OCP_TOOL_DIR}',
+    python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False)
+
+# 2a. Permute feom.* to FESOM's RUNTIME exchange ordering (my_list / Apple
+#     partition) BEFORE the weights are generated. Without this the weights are
+#     built in nod2d.out order and every A096<->feom exchange is geographically
+#     tile-translocated at runtime (the jigsaw ocean: OIFS saw Weddell ice
+#     fraction 0.04 while FESOM had 0.95). Idempotent (stamps feom_node_order).
+import subprocess
+subprocess.check_call(['${OCP_WEIGHTGEN_DRIVER_PY}',
+                       '${FUNCTION_PATH}/permute_feom_to_runtime.py',
+                       '${out_dir}', '${submesh}', '${NPROC_fesom}'])
+
+# 2. Prep feom for the weight gen: ocp-tool writes feom corners, which the
+#    centre-based (non-conservative) profile must not pass as a source grid;
+#    forcing feom.msk=0 is a safety no-op (ocp-tool already writes it active).
+_set_feom_mask_active(Path('${out_dir}') / 'masks.nc', prefix='feom')
+if not use_corners:
+    _strip_feom_corners(Path('${out_dir}') / 'grids.nc', prefix='feom')
+
+# 3. rmp weights using the model's own pyOASIS build + OpenMPI worker interpreter.
+generate_weights('${out_dir}', atm_grid='A096', method=method,
+                 threads=${OCP_WEIGHTGEN_THREADS:-8}, use_corners=use_corners,
+                 worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
+                 oasis_build_path='${OASIS_BUILD_PATH}')
+
+# 4. VALIDATE: apply the fresh weights to the runtime-ordered node latitudes and
+#    require they land at the right latitudes on the other grid. Seconds, and
+#    catches any ordering regression before it can scramble a coupled year.
+subprocess.check_call(['${OCP_WEIGHTGEN_DRIVER_PY}',
+                       '${FUNCTION_PATH}/validate_feom_weights.py',
+                       '${out_dir}', '${submesh}', '${NPROC_fesom}'])
+PYEOF
+
+    local nlinks=${OCP_WEIGHTGEN_NLINKS:-4}
+    if [ -n "${SLURM_JOB_ID:-}" ]; then
+        # Already inside an allocation (couple_in on a compute node): the per-link
+        # srun steps run within it (concurrent if it has >= nlinks nodes/tasks).
+        ${OCP_WEIGHTGEN_DRIVER_PY} "${pyscript}" \
+            || { echo " *   regenerate_oasis_weights: weight generation FAILED"; return 1; }
+    else
+        # No allocation (couple_in on the login node): submit ONE sized job and
+        # wait, so all links run concurrently across nlinks nodes -- one queue
+        # wait, not one per link. --export=ALL carries the env (modules etc.).
+        local sb=${out_dir}/run_weightgen.sbatch
+        cat > "${sb}" <<SBEOF
+#!/bin/bash -l
+#SBATCH --job-name=ocpw_regen
+#SBATCH --nodes=${nlinks}
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=${OCP_WEIGHTGEN_THREADS:-8}
+#SBATCH --time=${OCP_WEIGHTGEN_TIME:-00:30:00}
+#SBATCH --account=${OCP_WEIGHTGEN_ACCOUNT}
+#SBATCH --partition=${OCP_WEIGHTGEN_PARTITION:-compute}
+#SBATCH --output=${out_dir}/weightgen_%j.log
+${OCP_WEIGHTGEN_DRIVER_PY} ${pyscript}
+SBEOF
+        echo " *   submitting weight-gen as one ${nlinks}-node job (sbatch --wait)"
+        sbatch --wait "${sb}" \
+            || { echo " *   regenerate_oasis_weights: weight-gen sbatch FAILED"; tail -30 ${out_dir}/weightgen_*.log 2>/dev/null; return 1; }
+    fi
+
+    # Sanity: all four feom remap-weight files must be present.
+    local n
+    n=$(ls "${out_dir}"/rmp_*feom*.nc 2>/dev/null | wc -l)
+    if [ "${n}" -lt 4 ]; then
+        echo " *   regenerate_oasis_weights: expected 4 rmp_*feom*.nc, found ${n}"
+        return 1
+    fi
+
+    # Carry over the mesh-independent remap weights (e.g. runoff R096->RnfA) by
+    # symlinking them from the existing rmp set, so the OASIS staging finds the
+    # complete rmp_*.nc set in oasis_regen. The regenerated feom weights already
+    # present are left untouched.
+    if [ -n "${OASIS_RMP_TEMPLATE_DIR}" ]; then
+        for f in "${OASIS_RMP_TEMPLATE_DIR}"/rmp_*.nc; do
+            [ -e "${f}" ] || continue
+            local bn; bn=$(basename "${f}")
+            [ -e "${out_dir}/${bn}" ] || ln -sf "${f}" "${out_dir}/${bn}"
+        done
+    fi
+    # Stage the regenerated submesh OASIS descriptor + weight files into the
+    # experiment's oasis3mct restart dir. That dir (${exp}/restart/oasis3mct/) is
+    # where the next awiesm3 leg's prepcompute actually reads grids/masks/areas +
+    # rmp_*.nc from, via restart_in_sources. The config-level chunk>1 redirect to
+    # oasis_regen cannot reach these: grids/masks/areas stage through
+    # restart_in_sources (an input_sources override is the wrong key), and rmp
+    # goes through a wild-card restart source that drops the override; both would
+    # otherwise fall back to the stale full-mesh (pre-cavity-change) files, and
+    # MCT aborts on the remap-matrix size mismatch. Dereference symlinks (cp -L)
+    # so the restart holds real files, not links into ${out_dir}.
+    local oasis_restart
+    oasis_restart="$(cd "${COUPLE_DIR}/.." 2>/dev/null && pwd)/restart/oasis3mct"
+    if [ -d "${oasis_restart}" ]; then
+        echo "     ...syncing submesh OASIS grids/masks/areas + rmp weights -> ${oasis_restart}"
+        for f in grids.nc masks.nc areas.nc; do
+            [ -e "${out_dir}/${f}" ] && cp -Lf "${out_dir}/${f}" "${oasis_restart}/${f}"
+        done
+        for f in "${out_dir}"/rmp_*.nc; do
+            [ -e "${f}" ] && cp -Lf "${f}" "${oasis_restart}/$(basename "${f}")"
+        done
+    else
+        echo " *   WARNING: oasis3mct restart dir not found (${oasis_restart}); mesh-change OASIS files not staged to restart"
+    fi
+
+    # The modified OIFS gridpoint init lands in ${out_dir} as ICMGG<expid>INIT_<tag>;
+    # the next awiesm3 leg stages it for OIFS via an oifs input redirect (chunk>1).
+    local icmgg
+    icmgg=$(ls "${out_dir}"/ICMGG*INIT_* 2>/dev/null | head -1)
+    if [ -n "${icmgg}" ]; then
+        echo "     ...regenerated modified OIFS init: $(basename "${icmgg}")"
+        # Stage it into the experiment oifs input dir, where OIFS actually reads
+        # ICMGG<expid>INIT from. The runscript chunk>1 add_input_sources
+        # ICMGG_INIT -> oasis_regen redirect does not resolve (same failure as the
+        # oasis3mct override), so OIFS would otherwise keep the STATIC full-mesh
+        # LSM. That LSM must match the regenerated A096 OASIS mask -- ocp-tool
+        # changes both together (verified cell-for-cell). If they disagree, OIFS
+        # ocean cells that OASIS masks get no coupled SST -> 0 K skin temperature
+        # -> divide-by-zero in the aerosol physics (climaer_layer/radaca).
+        local oifs_in tgt
+        oifs_in="$(cd "${COUPLE_DIR}/.." 2>/dev/null && pwd)/input/oifs"
+        if [ -d "${oifs_in}" ]; then
+            for tgt in "${oifs_in}"/ICMGG*INIT; do
+                [ -e "${tgt}" ] || continue
+                cp -Lf "${icmgg}" "${tgt}" && \
+                    echo "     ...staged regenerated ICMGG -> input/oifs/$(basename "${tgt}")"
+            done
+        else
+            echo " *   WARNING: oifs input dir not found (${oifs_in}); OIFS LSM stays static"
+        fi
+
+        # --- per-leg OIFS land-ice plit mask for the moving coastline ---
+        # Derive plit_oifs (Antarctic-cap land mask, OIFS gridpoint order)
+        # straight from the just-regenerated ICMGG lsm and write the
+        # {prefix}_pism2ece.nc that suorog reads. This tracks THIS leg's submesh
+        # coastline (reusing another leg's file flips the wrong cells). The
+        # updtim KSTEP=0 hook then flips the newly-grounded sea cells to land and
+        # seeds a freezing skin/soil T, preventing the SURFPP divide-by-zero.
+        local plit_py plit_out
+        plit_py=${FUNCTION_PATH}/make_plit_oifs.py
+        plit_out=${COUPLE_DIR}/antar_pism2ece.nc
+        if [ -f "${plit_py}" ]; then
+            ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${plit_py}" "${icmgg}" "${plit_out}" \
+                && echo "     ...generated per-leg OIFS plit mask -> $(basename "${plit_out}")" \
+                || echo " *   WARNING: make_plit_oifs failed; OIFS landice flip falls back to the degenerate-skin-T trigger"
+        else
+            echo " *   WARNING: make_plit_oifs.py not found (${plit_py}); skipping plit generation"
+        fi
+    else
+        echo " *   WARNING: no regenerated ICMGG*INIT_* found in ${out_dir} (OIFS LSM will be stale)"
+    fi
+    echo "     ...done. regenerated atm-side LSM set + feom weights -> ${out_dir}"
+}
+
+function iterative_coupling_ice_fesom1x_write_names {
+    echo "Writing fesom1x input names and units for use with generic ocean_file_for_ice.nc"
+    :> ice_names_for_fesom.dat
+
+    #
+    # FESOM names
+    #
+    echo ""; echo " *   freshwater flux"
+    echo "fesom_name_freshwater_flux=wnet" >> ice_names_for_fesom.dat
+    echo "fesom_units_freshwater_flux=W/m2" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   heat flux"
+    echo "fesom_name_heat_flux=qnet" >> ice_names_for_fesom.dat
+    #echo "fesom_units_heat_flux=kg/m2/s" >> ice_names_for_fesom.dat
+    echo "fesom_units_heat_flux=m" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   basal ice shelf temperature gradient"
+    echo "fesom_name_temperature_gradient=dTdz" >> ice_names_for_fesom.dat
+    echo "fesom_unit_temperature_gradient=K/m" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   landmask"
+    echo "fesom_name_landmask=mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_landmask=1" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   oceanmask"
+    echo "fesom_name_oceanmask=mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_oceanmask=1" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   iceshelfmask"
+    echo "fesom_name_iceshelfmask=mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_iceshelfmask=1" >> ice_names_for_fesom.dat
+
+    add_to $(pwd)/ice_names_for_fesom.dat ice_names_for_fesom.dat couple
+    echo "     ...done."
+
+}
+
+#
+# Regrid: Interpolation and extrapolation
+#
+function iterative_coupling_ice_ocean_regrid_interpolate {
+    echo " *   Interpolate GCM forcing..."
+
+    ierr=20
+    for file in ${GRIDDES_OCE:?Missing variable} ${COMBINED_OUTPUT:?Missing variable} ; do
+	ierr=$(( ierr + 1 ))
+	test_file_or_exit $file $ierr #ierr=++20
+    done
+
+    build_weights4remap \
+	${COMBINED_OUTPUT:?Missing variable} \
+	${GRIDDES_OCE:?Missing variable} \
+	${WEIGHTS_ICE2OCE:?Missing variable} \
+	${INTERPOL_TYPE_OCE:?Missing variable} \
+	couple
+    test_file_or_exit $WEIGHTS_ICE2OCE 29
+
+    echo "     => remap,$GRIDDES_OCE,$WEIGHTS_ICE2OCE"
+    $cdo remap,$GRIDDES_OCE,$WEIGHTS_ICE2OCE \
+	${COMBINED_OUTPUT} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
+
+    cleanup_list="${cleanup_list} $(pwd)/${COMBINED_OUTPUT}"
+}
+
+
+function iterative_coupling_ice_ocean_regrid_extrapolate {
+    #
+    # This has to be called after the interpolation, because after the
+    # interpolation we have landpoints that does not exist in the
+    # FESOM ocean grid
+    regrid_pism_ocean_extrapolate_misstoc=${regrid_pism_ocean_extrapolate_misstoc:-0}
+    iterative_coupling_pism_ocean_regrid_extra_type=${iterative_coupling_pism_ocean_regrid_extra_type:-setmisstoc}
+    echo " *   Extrapolate GCM forcing with method >>${iterative_coupling_pism_ocean_regrid_extra_type}<< ..."
+
+    _cdo_flag=$( return_allowed_cdo_miss_replace_flags ${iterative_coupling_pism_ocean_regrid_extra_type} ${regrid_pism_ocean_extrapolate_misstoc} )
+
+    _tmp_file=ice_file_at_ocean.${INTERPOL_TYPE_OCE}_before_extrapolation.nc
+    mv ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc ${_tmp_file}
+
+    $cdo $_cdo_flag ${_tmp_file} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
+
+    echo " ... done"
+    cleanup_list="${cleanup_list} $(pwd)/${_tmp_file}"
+    unset _cdo_flag _tmp_file
+}
+
+
+function iterative_coupling_ice_ocean_regrid_none {
+    echo " *   Grid-identical GCM forcing (no interpolation)..."
+
+    test_file_or_exit ${COMBINED_OUTPUT} 10
+
+    mv ${COMBINED_OUTPUT} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc
+
+    cleanup_list="${cleanup_list} $(pwd)/${COMBINED_OUTPUT}"
+}
+
+
+function iterative_coupling_ice_fesom_rename_vars {
+    echo " *   Set final FESOM variable names..."
+
+    test_file_or_exit ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc 11
+
+    ncrename \
+	-v .wnet,${fesom_name_freshwater_flux} \
+	-v .qnet,${fesom_name_heat_flux} \
+	-v .dTdz,${fesom_name_temperature_gradient} \
+	-v .landmask,${fesom_name_landmask} \
+	-v .oceanmask,${fesom_name_oceanmask} \
+	-v .iceshelfmask,${fesom_name_iceshelfmask} \
+	ice_file_at_ocean.${INTERPOL_TYPE_OCE}.nc \
+	${OCEAN_PISM_FORCING_FILE}
+
+    cleanup_list="${cleanup_list} $(pwd)/ice_file_for_ocean.${INTERPOL_TYPE_OCE}.nc"
+}
+
+########################################################################
+########################################################################
+# Lars Ackermann 07.09.2020
+########################################################################
+function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
+    echo " *** preparing iceberg-model forcing from PISM discharge ***"
+
+    # Resolve the PISM output dir from OUTPUT_DIR_pism (set by esm-tools / test
+    # harness); fall back to the conventional sibling-of-COUPLE_DIR layout for
+    # back-compat with older runscripts.
+    local pism_outdir=${OUTPUT_DIR_pism:-${COUPLE_DIR}/../outdata/pism}
+    # concurrent mode reads the sibling's tagged ex-file (fixed name is
+    # pism-chain-internal there); serial keeps the fixed name
+    local latest_pism_output=${pism_outdir}/latest_ex_file_pism${CONCURRENT_EXFILE_TAG:-}.nc
+
+    counter=0
+    COUNT_MAX=12
+    while [ ${counter} -lt ${COUNT_MAX} ]; do
+        if [ -f ${latest_pism_output} ]; then
+            break
+        fi
+        echo " *   waiting for ${latest_pism_output} (attempt ${counter}/${COUNT_MAX})"
+        sleep 10
+        counter=$((counter+1))
+    done
+
+    if [[ -f ${latest_pism_output} ]]; then
+        pism_discharge_file=${latest_pism_output}
+    elif [[ -f ${SPINUP_FILE_pism} ]]; then
+        pism_discharge_file=${SPINUP_FILE_pism}
+    fi
+    echo " *   PISM discharge file: ${pism_discharge_file}"
+
+    cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+
+    use_icesheet_coupling=1
+    echo "     ...done."
+}
+
+############################################################################
+############################################################################
+
+
+# -- last line

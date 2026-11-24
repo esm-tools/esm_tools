@@ -1,0 +1,16 @@
+# Multi-segment transect for the FESOM-2.7 ship-track / mooring curtain
+# feature (io_tracks.F90, feature/tracks branch). Same 7 vertices used by
+# track_densify_demo.py to visualize the densify-and-snap pipeline.
+#
+# Path: subpolar N. Atlantic -> Iceland -> Nordic Seas -> Fram Strait.
+# At track_resolution_km = 5.0 (default), this densifies to ~639 dense
+# samples that resolve to ~152 unique CORE2 mesh nodes.
+#
+# Format: lon, lat
+-35.0,  55.0
+-30.0,  57.5
+-25.0,  60.0
+-20.0,  62.5
+-15.0,  65.0
+ -8.0,  70.0
+  5.0,  78.0

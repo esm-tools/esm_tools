@@ -1,0 +1,62 @@
+# LPJ-GUESS CMIP Configuration
+#
+# This file provides CMIP-specific defaults for LPJ-GUESS.
+# Set lpj_guess.mip to "cmip6" or "cmip7" to select the appropriate defaults.
+# Individual settings can still be overridden in the runscript.
+
+lpj_guess:
+    # Default MIP version and scenario
+    mip: "cmip7"
+    scenario: piControl
+    fourxCO2: false
+    onepcCO2: false
+
+
+    # CO2 forcing file paths
+    co2_file_cmip6: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+    co2_file_cmip7: ${lpj_guess.input_dir}/cmip7_forcing/co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
+    co2_workname_cmip6: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+    co2_workname_cmip7: co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
+
+    choose_mip:
+        "cmip6":
+            co2_source_file: ${co2_file_cmip6}
+            co2_work_file: ${co2_workname_cmip6}
+            ndep_cmip_dir: ""
+            use_luh3_input: 0  # CMIP6 uses LUH2 text files
+
+        "cmip7":
+            co2_source_file: ${co2_file_cmip7}
+            co2_work_file: ${co2_workname_cmip7}
+
+            ndep_cmip_dir: "../ndep/"
+
+            use_luh3_input: 1  # CMIP7 uses LUH3 NetCDF files
+            luh3_input_dir: ${lpj_guess.input_dir}/land_use/regridded/
+            use_luh3_yearly_transitions: 0
+            file_luh3_transitions_dir: "${lpj_guess.input_dir}/land_use/transitions_yearly"
+            file_luh3_transitions: "${lpj_guess.input_dir}/land_use/regridded/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${lpj_guess.resolution}.nc"
+            file_luh3_states: "${lpj_guess.input_dir}/land_use/regridded/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.resolution}.nc"
+            file_luh3_management: "${lpj_guess.input_dir}/land_use/regridded/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.resolution}.nc"
+            run_landcover: 1
+            run_natural: 1
+            run_crop: 1
+            run_pasture: 1
+            run_barren: 0  # Disabled for LUH3 - calculated as residual internally
+            run_urban: 1
+            run_peatland: 1  # Disabled for now.
+            firemodel: BLAZE
+
+    choose_scenario:
+        "piControl":
+            fixed_CO2: 1850
+            fixed_ndep: 1850
+            fixed_LU: 1850
+        "historical":
+            fixed_CO2: -1
+            fixed_ndep: -1
+            fixed_LU: -1
+        "abrupt4xCO2":
+            fourxCO2: true
+        "1pctCO2":
+            onepcCO2: true

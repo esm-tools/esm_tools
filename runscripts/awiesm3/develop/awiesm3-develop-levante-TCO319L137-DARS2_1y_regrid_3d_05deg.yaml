@@ -1,0 +1,115 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    use_venv: false
+    account: "ab0246"
+    compute_time: "04:30:00"
+    initial_date: "1586-01-01"
+    final_date: "1587-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    force_overwrite_in_file_movements: True
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "DARS2"
+    namelist_dir: "${general.esm_namelist_dir}/fesom2/CMIP7_HR"
+    time_step: 360
+    nproc: 2560
+    omp_num_threads: 4
+    lresume: true
+    restart_rate: 1
+    restart_unit: 'y'
+    restart_first: 1
+    ini_parent_exp_id: "foo"
+    cmip7_cmor_output: True
+    regrid_surface_output: True
+    regrid_3d_output: True
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.1/AWI-ESM3-VEG-HR-CMIP7-Spinup_cont2/restart/fesom/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.1649.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1649.ice.restart/*.nc
+
+    add_namelist_changes:
+        namelist.dyn:
+            dynamics_general:
+                ab_order: 3
+        namelist.ice:
+            ice_dyn:
+                whichevp: 2
+                delta_min: 2.0e-9
+
+lpj_guess:
+    resolution: "TCO319"
+    mip: cmip7
+    scenario: piControl
+    daily_output: False
+    nproc: 64
+    omp_num_threads: 16
+    lresume: true
+    ini_parent_exp_id: "foo"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.1/AWI-ESM3-VEG-HR-CMIP7-Spinup_cont2/restart/lpj_guess/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_1650/*
+    fixed_CO2: 1850
+    fixed_ndep: 1850
+    fixed_LU: 1850
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: abns
+    input_expid: awi3
+    wam: true
+    time_step: 1200
+    nproc: 640
+    omp_num_threads: 4
+    mip: "cmip7"
+    scenario: "piControl"
+    lresume: false
+    cmip7_cmor_output: True
+    add_namelist_changes:
+        fort.4:
+            NAMCLDP:
+                RVICE: 0.16
+            NAEPHY:
+                LRDALB: false
+    add_input_files:
+        dust_clim: dust_clim
+    add_input_sources:
+        dust_clim: '/work/ab0246/a270092/input/oifs-48r1/cmip7-data/dust/onlinedust_v4_rmp.nc'
+    add_input_in_work:
+        dust_clim: 'composition/onlinedust_v4_rmp.nc'
+
+oasis3mct:
+    use_lucia: true
+    lresume: true
+    time_step: 3600
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 16
+    omp_num_threads: 128
+    compression_level: 3
+    # 0.5deg regular grids for both OIFS and FESOM regrid output
+    regular_res_lon: 720
+    regular_res_lat: 360
+    fesom_regular_res_lon: 720
+    fesom_regular_res_lat: 360

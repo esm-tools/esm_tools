@@ -1,0 +1,74 @@
+# Clean OIFS-AMIP TCO95 spin-up WITHOUT LPJG, configured to output the daily
+# surface fields LPJ-GUESS needs as offline forcing (tas/tasmin/tasmax/pr/
+# rsns/rlns/sfcWind + tdps/ps/psl/clt/prsn/evspsbl/prw + sd/rsn).
+#
+# Purpose: AMIP uses prescribed (observed) SST/sea-ice, so the atmosphere has
+# NO coupled ocean/LPJG cold-bias feedback -> a realistic, feedback-free climate
+# to drive the offline LPJG re-spin (the decisive climate-vs-competition test).
+#
+# The only difference from oifsamip-cy48-levante-TCO95L91.yaml is the xios
+# add_config_sources override that swaps in file_def_lpjg_spinup + field_def_lpjg_safe.
+general:
+    user: !ENV ${USER}
+    setup_name: "oifsamip"
+    version: "cy48"
+    compute_time: "02:00:00"   # single job for the whole decade (10 x ~8 min/yr + margin)
+    # PI-representative decade: earliest observed AMIP SST is 1870 (tosbcs 1870-2015),
+    # 1870-1880 avoids Krakatoa(1883); GHG fixed at 1850 (piControl) below. This drives
+    # the LPJG re-spin at ~PI, NOT present-day (would be ~1.3K too warm -> over-forest).
+    initial_date: "1870-01-01"
+    final_date: "1880-01-01"      # 10-yr clean ~PI forcing decade
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    account: "ab0246"
+    nday: 0
+    nmonth: 0
+    nyear: 10
+    use_venv: false
+
+computer:
+    taskset: true
+
+oifsamip:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    # (ICMGG_INIT_name "_AMIP" is now the oifsamip setup default -> ICMGGab45INIT_AMIP)
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    # CMIP6 forcing block (matches the proven base runscript). The pure-cmip7 path
+    # made OIFS expect aerosol init fields 117-120 that awi3 INIT lacks -> ABOR1
+    # GRID_IN MISSING FIELD; restoring NAMECECMIP6 fixes it. GHG scenario is
+    # immaterial for driving the offline LPJG re-spin.
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP6:
+                LCMIP6: True
+                CMIP6DATADIR: '/work/ab0246/a270092/input/oifs-48r1/cmip6-data/'
+                NCMIPFIXYR: 1850
+                SSPNAME: 'historical'
+            NAMECETUNING:
+                TMPRALBSEAD: 0.075
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 86400
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32
+    # Emit the daily LPJG-driving surface fields instead of the default OIFS output.
+    # context_ifs.xml includes ./file_def.xml and ./field_def.xml by fixed name, so
+    # we override those two config *sources*; field_def_lpjg_safe is standalone
+    # (defines both the raw fields and the LPJG-derived tas/sfcWind/etc.).
+    add_config_sources:
+        file_def:  "${xios.xml_dir}/file_def_lpjg_spinup.xml.j2"
+        field_def: "${xios.xml_dir}/field_def_lpjg_safe.xml"

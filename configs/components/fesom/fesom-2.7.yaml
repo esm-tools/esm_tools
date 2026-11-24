@@ -2,11 +2,11 @@
 #
 fesom:
     model: fesom
-    branch: "2.7"
+    branch: "2.7.0"
     version: "2.7"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DASYNCHRONOUS_IO_THREADS=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -17,35 +17,54 @@ fesom:
 
     wiso_code: false
     with_wiso: false
-
     with_recom: false
 
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
+    # NOTE: Starting with FESOM 2.7.4, recom is bundled as a git submodule of
+    # the fesom2 repository. Versions >= 2.7.4 (and the main branch) therefore
+    # must be cloned with ``--recurse-submodules`` so that recom is pulled in.
+    # Earlier versions (2.7, 2.7.2, 2.7.3) do not carry the submodule.
     choose_version:
       "2.7":
         branch: "2.7.0"
         namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
-
       "2.7.0":
         branch: "2.7.0"
         namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
-
+      "2.7.2":
+        branch: "2.7.2"
       "2.7.3":
         branch: "2.7.3"
         destination: "fesom-2.7.3"
         namelist_dir: "${model_dir}/config/"
-
+      "2.7.4":
+        branch: "2.7.4"
+        repo_options: "--recurse-submodules"
+      "2.7.5":
+        branch: "2.7.5"
+        repo_options: "--recurse-submodules"
+      "2.7.6":
+        branch: "2.7.6"
+        repo_options: "--recurse-submodules"
+      "2.7.7":
+        branch: "2.7.7"
+        repo_options: "--recurse-submodules"
       "2.7-paleodyn":
         branch: "2.7.0"
         wiso_code: true
         icb_code: true
         namelist_dir: "${model_dir}/config/"
-
       "2.7-main":
-        branch: "main"
-        namelist_dir: "${model_dir}/config/"
+        # INTERIM (until FESOM PR #957 merges to fesom2 main): the awiesm3 develop*
+        # variants build the coupled-slab ice-surftemp branch that provides the
+        # sit_feom send (so the namcouple's sit_feom is filled -- fixes the -cc
+        # "namcouple variable not used" abort). Only awiesm3 develop* use 2.7-main;
+        # revert branch to "main" once #957 is merged.
+        branch: "awiesm3-implicit-ice-surftemp"
+        repo_options: "--recurse-submodules"
+        #namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.7"
     install_bins: bin/fesom.x
@@ -89,6 +108,7 @@ fesom:
     forcing_data_dir: "${pool_dir}/forcing/"
     mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
     ini_data_dir: "${pool_dir}/pool-data/"
+    namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
 
     opbnd_dir: "somepath"
     tide_forcing_dir: "somepath"
@@ -119,6 +139,13 @@ fesom:
                     whichEVP: 0
                     alpha_evp: 250          # constant that control numerical stability of mEVP.
                     beta_evp: 250           # constant that control numerical stability of mEVP.
+            CORE3:
+                    nx: 211567
+                    mesh_dir: "${fesom.mesh_base_dir}/core3/"
+                    nproc: 128
+                    whichEVP: 1
+                    alpha_evp: 300          # constant that control numerical stability of mEVP.
+                    beta_evp: 300           # constant that control numerical stability of mEVP.
             pi:
                     nx: 3140
                     mesh_dir: "${fesom.mesh_base_dir}/pi/"
@@ -174,6 +201,11 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.
+            DARS2:
+                    nx: 3146761
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             ROS2:
                     nx: 26306560
                     whichEVP: 1
@@ -189,6 +221,22 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 900          # constant that control numerical stability of mEVP.
                     beta_evp: 900           # constant that control numerical stability of mEVP.
+            jack:
+                    nx: 30041537
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
+            palk:
+                    nx: 1724005
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
+            next:
+                    nx: 12952215
+                    whichEVP: 1
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
+
             SO3:
                     nx: 11087062
                     whichEVP: 1
@@ -261,8 +309,12 @@ fesom:
 
     outdata_sources:
             fesom: "*.fesom.*.nc"
+            fesom_xios: "*.fesom_${start_date!syear}-${end_date!syear}.nc"
+            fesom_reg_xios: "*.fesom.reg_${start_date!syear}-${end_date!syear}.nc"
     outdata_targets:
             fesom: "*.fesom.*.nc"
+            fesom_xios: "*.fesom.${start_date!syear}.nc"
+            fesom_reg_xios: "*.fesom.gr.${start_date!syear}.nc"
 
     choose_with_icb:
             True:
@@ -507,7 +559,6 @@ fesom:
 
                             nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
                             nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
-                            nm_chl_data_file: "${forcing_data_dir}/Sweeney/Sweeney_2005.nc"
 
                             runoff_data_source: ${runoff_data_source}
                             sss_data_source: ${sss_data_source}
@@ -516,6 +567,54 @@ fesom:
                             whichEVP: ${whichEVP}
                             alpha_evp: ${alpha_evp}
                             beta_evp: ${beta_evp}
+
+    with_cavity: false
+    choose_with_cavity:
+            true:
+                    add_namelist_changes:
+                            namelist.config:
+                                    run_config:
+                                            use_cavity: true
+
+    with_xios: false
+    # Opt-in switch: when true, route FESOM XIOS file_def/field_def to the
+    # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
+    # upstream-namelist.io-style minimal monthly output.
+    cmip7_cmor_output: false
+
+    # REcoM/BGC XIOS output gates consumed by file_def_fesom.xml.j2. These mirror
+    # the REcoM &parecomsetup logicals (enable_3zoo2det/enable_coccos) and the
+    # per-tracer ltra_diag switch, so the BGC <file> blocks are only enabled when
+    # the corresponding tracers/diagnostics actually exist (avoids fill-only files).
+    # Defaults off; awiesm3 sets the parecomsetup flags from recom_setting.
+    recom_enable_3zoo2det: false
+    recom_enable_coccos: false
+    recom_ltra_diag: false
+    # When true, add regridded (regular lat/lon) output for all 2D fields
+    # alongside the native unstructured output. Each regrid file is produced
+    # at the same frequency as its native counterpart (daily for fesom_1d
+    # fields, monthly for fesom_1mo 2D fields). CMIP7 file_def only.
+    # Requires xios.fesom_regular_res_lon/lat and xios.interpolation_order.
+    # Default ON for CMIP7: validated <1% wall-time penalty (HR Test_20 vs
+    # baseline) and <1 GB/year disk overhead at 0.5deg.
+    regrid_surface_output: true
+    # When true, also regrid 3D fields (temp, salt, unod, vnod, w, bolus_*,
+    # N2, Kv, u, v, *temp, *salt, Av, dMOC density-coord, ...). Default ON
+    # for CMIP7: HR Test_21 (vs Test_20) measured +0.4% wall time and +8 GB
+    # / simulated year of additional disk volume — essentially free thanks
+    # to XIOS server-rank async IO. Set to false only for diagnostics-style
+    # runs where the 3D regridded set isn't wanted.
+    regrid_3d_output: true
+    choose_with_xios:
+            true:
+                    # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work
+                    # dir. fesom_xios and fesom_reg_xios file labels account for
+                    # this different name pattern and ensures that the files are
+                    # renamed when copied/moved to the outdata dir with the legacy
+                    # pattern.
+                    add_outdata_files:
+                            fesom_xios: fesom_xios
+                            fesom_reg_xios: fesom_reg_xios
 
     use_landice_water: False
     choose_general.iterative_coupling:
@@ -622,6 +721,8 @@ fesom:
                     grid: feom
             v_feom:
                     grid: feom
+            FCO2_feom:
+                    grid: feom
             taux_oce:
                     grid: feom
             tauy_oce:
@@ -653,6 +754,8 @@ fesom:
             u10w_oce:
                     grid: feom
             v10w_oce:
+                    grid: feom
+            XCO2_oce:
                     grid: feom
 
 
@@ -696,6 +799,7 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

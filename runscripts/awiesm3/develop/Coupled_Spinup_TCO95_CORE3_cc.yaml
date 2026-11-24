@@ -1,0 +1,136 @@
+# AWI-ESM3 20-year Test for develop-cc CO2 coupling fix
+# Based on Coupled_Spinup_TCO95_CORE3_500Y.yaml
+# Tests the MPI_Bcast CO2 fix in eceframework.cpp
+
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop-cc"
+    account: "ab0246"
+    compute_time: "08:00:00"
+    initial_date: "1900-01-01"
+    final_date: "1900-12-31"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    #use_venv: true
+    use_venv: false
+    install_esm_tools_branch: 'feat/awiesm3-v3.4-co2'
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE3"
+    with_cavity: false
+    #with_cavity: true
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 1
+    # Override the v3.4 dynamics defaults that blow up CORE3 at dt=1200s (CFLz).
+    # Matches the stable movcav2 physics: zstar vertical coord, no metric_factor_zero,
+    # vertical-velocity splitting on. Pure dynamics fix; unrelated to BGC/XIOS output.
+    add_namelist_changes:
+        namelist.config:
+            ale_def:
+                which_ale: 'zstar'
+            geometry:
+                metric_factor_zero: false
+        namelist.dyn:
+            dynamics_general:
+                use_wsplit: true
+    restart_rate: 1
+    restart_unit: 'y'
+    restart_first: 1
+    tar_binary_restarts: false
+    #tar_binary_restarts: true
+    lresume: false
+    #lresume: true
+    ini_parent_exp_id: "CORE3_restart"
+    ini_parent_date: "2000-01-01"
+    ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/CORE3"
+    namelist_dir: "${fesom.model_dir}/config/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.2000.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.2000.ice.restart/*.nc
+    cmip7_cmor_output: false # full CMIP7 XIOS output set for FESOM       error in line 3333 io_meandata.F90
+    #cmip7_cmor_output: true 
+
+lpj_guess:
+    resolution: "TCO95"
+    mip: cmip7
+    scenario: piControl
+    fixed_CO2: 1850
+    fixed_ndep: 1850
+    fixed_LU: 1850
+    daily_output: true
+    nproc: 64
+    omp_num_threads: 4
+    lresume: true
+    ini_parent_exp_id: "LPJG-SPINUP_54"
+    ini_parent_date: "3849-12-31"
+    ini_restart_dir: "/work/bb1469/a270270/runtime/lpjg-spinup/LPJG-SPINUP_54_100YRES_2000YSPINUP_TCO95_CORE3/restart/lpj_guess/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_3850/*
+            restart_in_in_work:
+                state: lpjg_state_${initial_date!syear}/*
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+    cmip7_cmor_output: false
+    #cmip7_cmor_output: true
+    add_namelist_changes:
+        fort.4:
+            NAMCLDP:
+                RVICE: 0.16
+            NAEPHY:
+                LRDALB: False
+            NAMGFL:
+                # INIUA file has modern CO2 (~403 ppm, paramId 210061).
+                # NREQIN=-1 overrides with REFVALI for pre-industrial.
+                # 4.3144e-4 kg/kg ≈ 284 ppm (year-1850 CO2).
+                YGHG_NL(1)%NREQIN: -1
+                YGHG_NL(1)%REFVALI: 4.3144e-4
+                # Use proportional mass fixer (BETAMFBC=-1) instead of
+                # additive (BETAMFBC=2). The additive fixer with exponent 2
+                # overflows for nearly-uniform CO2 because ZDIFF^2 → 0
+                # makes ZSUMW ≈ 0, so ZLAMBDA = ZDM/ZSUMW → ∞.
+                YGHG_NL(1)%BETAMFBC: -1
+
+oasis3mct:
+    use_lucia: false
+    #lresume: false
+    lresume: true
+    time_step: 7200
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 32
+    omp_num_threads: 8
+    #xml_dir: /home/a/a270270/esm_tools/namelists/oifs/48r1/xios/cmip7/
+    #config_sources:
+        # CO2 flux fields (210067-210080) not in GFP_PHYDS → SUFPPHY abort.
+        # This template disables co2of/co2nbf/co2apf/co2fire output but keeps co2_pl.
+    #    file_def:  ${xml_dir}/file_def_oifs_cmip7_spinup_no_co2_diag.xml.j2
+    #    field_def: ${xml_dir}/field_def_cmip7.xml.j2

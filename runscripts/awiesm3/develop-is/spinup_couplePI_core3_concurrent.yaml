@@ -1,0 +1,39 @@
+# CONCURRENT iterative coupling: both models integrate each cycle at the same
+# time on a one-cycle lag (PISM cycle N runs on AWI N-1 forcing). One
+# esm_runscripts chain per model; event-driven park/revive does the per-cycle
+# rendezvous (no waiting processes; see esm_runscripts/concurrent_coupling.py).
+#
+# Launch / restart / recover (all the same command):
+#   esm_runscripts spinup_couplePI_core3_concurrent.yaml -e <expid> --coupling-chain all
+# Single chain: --coupling-chain awiesm3 | pism
+#
+# Chunk-1 bootstrap comes from the pool (harvested by a serial run with
+# general.harvest_parallel_ini; see general.pism_cavity_ini_dir and
+# pism.bootstrap_forcing_dir).
+general:
+        add_other_components:                       # esm-tools >=6.54: whitelist the model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        coupling_mode: "concurrent"
+        use_venv: False
+        user: !ENV ${USER}
+        # Both iteratively-coupled models MUST resolve to the SAME experiment_dir.
+        # awiesm3 and pism have different setup_name-version, so we pin the LITERAL
+        # awiesm3-develop-is (not ${setup_name}-${version}, which would diverge) in
+        # all three runscripts -> runtime/awiesm3-develop-is/<expid> for both.
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        account: ab0246
+        with_recom: False
+
+model1:
+        setup_name: awiesm3
+        runscript: awiesm3_dyn_ocean_core3.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: spinup_pismPI.yaml
+        chunk_size: 10
+        chunk_unit: "years"

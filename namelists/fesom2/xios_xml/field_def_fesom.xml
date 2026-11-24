@@ -1,0 +1,211 @@
+<field_definition level="1" prec="4" enabled="true" operation="average" default_value="9.969209968386869e+36">
+
+  <!-- Minimal FESOM-2 field definition: mirrors the 28 variables requested by
+       the upstream default config/namelist.io on FESOM/fesom2:main (otracers
+       is omitted — it is a placeholder for optional passive tracers). -->
+
+  <!-- 2D fields on NODES -->
+  <field_group id="fesom_2d_nod" grid_ref="grid_2d_nod" prec="4">
+    <field id="sst"    long_name="sea surface temperature"            standard_name="sea_surface_temperature"        unit="degC"/>
+    <field id="sss"    long_name="sea surface salinity"               standard_name="sea_surface_salinity"           unit="1e-3"/>
+    <field id="ssh"    long_name="sea surface height"                 standard_name="sea_surface_height_above_geoid" unit="m"/>
+    <field id="uice"   long_name="sea-ice zonal velocity"             unit="m s-1" detect_missing_value="true"/>
+    <field id="vice"   long_name="sea-ice meridional velocity"        unit="m s-1" detect_missing_value="true"/>
+    <field id="a_ice"  long_name="sea-ice area fraction"              standard_name="sea_ice_area_fraction" unit="1" detect_missing_value="true"/>
+    <field id="m_ice"  long_name="sea-ice mass per area"              standard_name="sea_ice_thickness"     unit="m" detect_missing_value="true"/>
+    <field id="m_snow" long_name="snow on ice mass per area"          standard_name="surface_snow_thickness" unit="m" detect_missing_value="true"/>
+    <field id="alb"    long_name="sea-ice albedo"                     unit="1" detect_missing_value="true"/>
+    <field id="apnd"   long_name="melt pond area fraction"            unit="1" detect_missing_value="true"/>
+    <field id="hpnd"   long_name="melt pond depth"                    unit="m" detect_missing_value="true"/>
+    <field id="ipnd"   long_name="melt pond ice lid thickness"        unit="m" detect_missing_value="true"/>
+    <field id="MLD1"   long_name="mixed layer depth (Large 1997)"     unit="m"/>
+    <field id="MLD2"   long_name="mixed layer depth (Levitus)"        unit="m"/>
+    <field id="MLD3"   long_name="mixed layer depth (Griffies)"       unit="m"/>
+    <field id="fw"     long_name="freshwater flux"                    unit="m s-1"/>
+    <field id="fh"     long_name="surface heat flux"                  unit="W m-2"/>
+  </field_group>
+
+  <!-- 2D fields on ELEMENTS -->
+  <field_group id="fesom_2d_elem" grid_ref="grid_2d_elem" prec="4">
+    <field id="tx_sur" long_name="zonal surface stress to ocean"      unit="N m-2"/>
+    <field id="ty_sur" long_name="meridional surface stress to ocean" unit="N m-2"/>
+  </field_group>
+
+  <!-- 3D fields on NODES, cell-center / nz-1 -->
+  <field_group id="fesom_3d_nod" grid_ref="grid_3d_nod" prec="4">
+    <field id="temp" long_name="sea water potential temperature" unit="degC"/>
+    <field id="salt" long_name="sea water salinity"              unit="1e-3" prec="8"/>
+    <field id="unod" long_name="zonal velocity at nodes"         unit="m s-1"/>
+    <field id="vnod" long_name="meridional velocity at nodes"    unit="m s-1"/>
+  </field_group>
+
+  <!-- 3D fields on NODES, interface levels / nl -->
+  <field_group id="fesom_3d_nod_nz1" grid_ref="grid_3d_nod_nz1" prec="4">
+    <field id="w"       long_name="vertical velocity"               unit="m s-1"/>
+    <field id="bolus_w" long_name="GM bolus vertical velocity"      unit="m s-1"/>
+    <field id="N2"      long_name="Brunt-Vaisala frequency squared" unit="s-2"/>
+    <field id="Kv"      long_name="vertical tracer diffusivity"     unit="m2 s-1"/>
+  </field_group>
+
+  <!-- 3D fields on ELEMENTS, cell-center -->
+  <field_group id="fesom_3d_elem" grid_ref="grid_3d_elem" prec="4">
+    <field id="u"       long_name="zonal velocity at elements"      unit="m s-1"/>
+    <field id="v"       long_name="meridional velocity at elements" unit="m s-1"/>
+    <field id="bolus_u" long_name="GM bolus zonal velocity"         unit="m s-1"/>
+    <field id="bolus_v" long_name="GM bolus meridional velocity"    unit="m s-1"/>
+  </field_group>
+
+  <!-- 3D fields on ELEMENTS, interface levels -->
+  <field_group id="fesom_3d_elem_nz1" grid_ref="grid_3d_elem_nz1" prec="4">
+    <field id="Av" long_name="vertical momentum viscosity" unit="m2 s-1"/>
+  </field_group>
+
+  <!-- dMOC density-coordinate fields on ELEMENTS (std_dens_N sigma-2 classes) -->
+  <field_group id="fesom_rho_elem" grid_ref="grid_rho_elem" prec="4">
+    <field id="U_rho_x_DZ"    long_name="zonal velocity transport within density class"      unit="m2 s-1"/>
+    <field id="V_rho_x_DZ"    long_name="meridional velocity transport within density class" unit="m2 s-1"/>
+    <field id="std_heat_flux"  long_name="heat buoyancy flux within density class"           unit="kg m s-1"/>
+    <field id="std_rest_flux"  long_name="restoring buoyancy flux within density class"      unit="kg m s-1"/>
+    <field id="std_frwt_flux"  long_name="freshwater buoyancy flux within density class"     unit="kg m s-1"/>
+    <field id="std_dens_dVdT"  long_name="rate of change of density class volume"           unit="m3 s-1"/>
+    <field id="std_dens_Z"     long_name="mean depth of density class"                      unit="m"/>
+    <field id="std_dens_H"     long_name="thickness of density class"                       unit="m"/>
+  </field_group>
+
+  <!-- dMOC density-coordinate fields on NODES (std_dens_N sigma-2 classes) -->
+  <field_group id="fesom_rho_nod" grid_ref="grid_rho_nod" prec="4">
+    <field id="std_dens_DIV"      long_name="divergence within density class"          unit="m3 s-1"/>
+    <field id="std_dens_DIVbolus" long_name="GM bolus divergence within density class" unit="m3 s-1"/>
+  </field_group>
+
+  <!-- dMOC sigma-2 density on z-levels (grid_3d_nod, nl-1 levels) -->
+  <field_group id="fesom_dmoc_dens" grid_ref="grid_3d_nod" prec="4">
+    <field id="density_dMOC" long_name="potential density referenced to 2000 m" unit="kg m-3"/>
+  </field_group>
+
+
+  <!-- ===== REcoM / carbon-cycle BGC fields (units verbatim from def_stream) ===== -->
+  <field_group id="fesom_2d_nod_bgc" grid_ref="grid_2d_nod" prec="4">
+    <field id="dpCO2s"      long_name="Difference of oceanic pCO2 minus atmospheric pCO2" unit="uatm"/>
+    <field id="pCO2s"       long_name="Partial pressure of oceanic CO2" unit="uatm"/>
+    <field id="CO2f"        long_name="CO2-flux into the surface water" unit="mmolC/m2/d"/>
+    <field id="O2f"         long_name="O2-flux into the surface water" unit="mmolO/m2/d"/>
+    <field id="Hp"          long_name="Mean of H-plus ions in the surface water" unit="mol/kg"/>
+    <field id="aFe"         long_name="Atmospheric iron input" unit="umolFe/m2/s"/>
+    <field id="aN"          long_name="Atmospheric DIN input" unit="mmolN/m2/s"/>
+    <field id="benN"        long_name="Benthos Nitrogen" unit="mmol"/>
+    <field id="benC"        long_name="Benthos Carbon" unit="mmol"/>
+    <field id="benSi"       long_name="Benthos silicon" unit="mmol"/>
+    <field id="benCalc"     long_name="Benthos calcite" unit="mmol"/>
+    <field id="NPPn"        long_name="Mean NPP nanophytoplankton" unit="mmolC/m2/d"/>
+    <field id="NPPd"        long_name="Mean NPP diatoms" unit="mmolC/m2/d"/>
+    <field id="GPPn"        long_name="Mean GPP nanophytoplankton" unit="mmolC/m2/d"/>
+    <field id="GPPd"        long_name="Mean GPP diatoms" unit="mmolC/m2/d"/>
+    <field id="NNAn"        long_name="Net N-assimilation nanophytoplankton" unit="mmolN/m2/d"/>
+    <field id="NNAd"        long_name="Net N-assimilation diatoms" unit="mmolN/m2/d"/>
+    <field id="ChlDegn"     long_name="Chlorophyll degradation nanophytoplankton" unit="1/d"/>
+    <field id="ChlDegd"     long_name="Chlorophyll degradation diatoms" unit="1/d"/>
+    <field id="xCO2atm"     long_name="atmospheric CO2 mass mixing ratio" unit="mole fraction"/>
+    <field id="NPPc"        long_name="Mean NPP coccolithophores" unit="mmolC/(m2*d)"/>
+    <field id="GPPc"        long_name="Mean GPP coccolithophores" unit="mmolC/(m2*d)"/>
+    <field id="NNAc"        long_name="Net N-assimilation coccolithophores" unit="mmolN/(m2*d)"/>
+    <field id="ChlDegc"     long_name="Chlorophyll degradation coccolithophores" unit="1/d"/>
+    <field id="NPPp"        long_name="Mean NPP phaeocystis" unit="mmolC/(m2*d)"/>
+    <field id="GPPp"        long_name="Mean GPP phaeocystis" unit="mmolC/(m2*d)"/>
+    <field id="NNAp"        long_name="Net N-assimilation phaeocystis" unit="mmolN/(m2*d)"/>
+    <field id="ChlDegp"     long_name="Chlorophyll degradation phaeocystis" unit="1/d"/>
+  </field_group>
+
+  <field_group id="fesom_3d_nod_bgc" grid_ref="grid_3d_nod" prec="4">
+    <field id="PAR"         long_name="PAR" unit="W/m2"/>
+    <field id="respmeso"    long_name="Respiration rate of mesozooplankton" unit="mmolC/m2/d"/>
+    <field id="calcdiss"    long_name="Calcite dissolution" unit="mmolC/m2/d"/>
+    <field id="calcif"      long_name="Calcification" unit="mmolC/m2/d"/>
+    <field id="aggn"        long_name="Aggregation of small phytoplankton" unit="mmolC/m2/d"/>
+    <field id="aggd"        long_name="Aggregation of diatoms" unit="mmolC/m2/d"/>
+    <field id="docexn"      long_name="DOC excretion by small phytoplankton" unit="mmolC/m2/d"/>
+    <field id="docexd"      long_name="DOC excretion by diatoms" unit="mmolC/m2/d"/>
+    <field id="respn"       long_name="Respiration by small phytoplankton" unit="mmolC/m2/d"/>
+    <field id="respd"       long_name="Respiration by diatoms" unit="mmolC/m2/d"/>
+    <field id="NPPn3D"      long_name="Net primary production of small phytoplankton" unit="mmolC/m2/d"/>
+    <field id="NPPd3D"      long_name="Net primary production of diatoms" unit="mmolC/m2/d"/>
+    <field id="DIN"         long_name="Dissolved Inorganic Nitrogen" unit="[mmol/m3]"/>
+    <field id="DIC"         long_name="Dissolved Inorganic C" unit="[mmol/m3]"/>
+    <field id="Alk"         long_name="Total Alkalinity" unit="[mmol/m3]"/>
+    <field id="PhyN"        long_name="Intracellular conc of Nitrogen in small phytoplankton" unit="[mmol/m3]"/>
+    <field id="PhyC"        long_name="Intracellular conc of Carbon in small phytoplankton" unit="[mmol/m3]"/>
+    <field id="PhyChl"      long_name="Current intracellular ChlA conc." unit="[mg/m3]"/>
+    <field id="DetN"        long_name="Conc of N in Detritus" unit="[mmol/m3]"/>
+    <field id="DetC"        long_name="Conc of C in Detritus" unit="[mmol/m3]"/>
+    <field id="HetN"        long_name="Conc of N in heterotrophs" unit="[mmol/m3]"/>
+    <field id="HetC"        long_name="Conc of C in heterotrophs" unit="[mmol/m3]"/>
+    <field id="DON"         long_name="Dissolved organic N in the water" unit="[mmol/m3]"/>
+    <field id="DOC"         long_name="Dissolved Organic C in the water" unit="[mmol/m3]"/>
+    <field id="DiaN"        long_name="DiaN" unit="[mmol/m3]"/>
+    <field id="DiaC"        long_name="DiaC" unit="[mmol/m3]"/>
+    <field id="DiaChl"      long_name="DiaChl" unit="[mg/m3]"/>
+    <field id="DiaSi"       long_name="DiaSi" unit="[mmol/m3]"/>
+    <field id="DetSi"       long_name="DetSi" unit="[mmol/m3]"/>
+    <field id="DSi"         long_name="DSi" unit="[mmol/m3]"/>
+    <field id="DFe"         long_name="DFe" unit="[mmol/m3]"/>
+    <field id="PhyCalc"     long_name="PhyCalc" unit="[mmol/m3]"/>
+    <field id="DetCalc"     long_name="DetCalc" unit="[mmol/m3]"/>
+    <field id="O2"          long_name="O2" unit="[mmol/m3]"/>
+    <field id="CO2_aq"      long_name="Aqueous CO2 concentration (MOCSY)" unit="[mol/m3]"/>
+    <field id="pH"          long_name="pH on total scale (MOCSY)" unit="total_scale"/>
+    <field id="pCO2"        long_name="CO2 partial pressure (MOCSY)" unit="uatm"/>
+    <field id="HCO3"        long_name="Bicarbonate ion concentration (MOCSY)" unit="[mol/m3]"/>
+    <field id="CO3"         long_name="Carbonate ion concentration" unit="[mol/m3]"/>
+    <field id="OmegaC"      long_name="Calcite saturation state" unit="none"/>
+    <field id="respmacro"   long_name="Respiration rate of macrozooplankton" unit="mmolC/m2/d"/>
+    <field id="respmicro"   long_name="Respiration rate of microzooplankton" unit="mmolC/m2/d"/>
+    <field id="Zoo2N"       long_name="Intracellular conc of Nitrogen in second zooplankton" unit="[mmol/m3]"/>
+    <field id="Zoo2C"       long_name="Intracellular conc of Carbon in second zooplankton" unit="[mmol/m3]"/>
+    <field id="idetz2n"     long_name="idetz2n" unit="[mmol/m3]"/>
+    <field id="idetz2c"     long_name="idetz2c" unit="[mmol/m3]"/>
+    <field id="idetz2si"    long_name="idetz2si" unit="[mmol/m3]"/>
+    <field id="idetz2calc"  long_name="idetz2calc" unit="[mmol/m3]"/>
+    <field id="Zoo3N"       long_name="Zoo3N" unit="[mmol/m3]"/>
+    <field id="Zoo3C"       long_name="Zoo3C" unit="[mmol/m3]"/>
+    <field id="aggc"        long_name="Aggregation of coccolithophores" unit="mmolC/m2/d"/>
+    <field id="docexc"      long_name="DOC excretion by coccolithophores" unit="mmolC/m2/d"/>
+    <field id="respc"       long_name="Respiration by coccolithophores" unit="mmolC/(m2*d)"/>
+    <field id="NPPc3D"      long_name="Net primary production of coccolithophores" unit="mmolC/m2/d"/>
+    <field id="NPPp3D"      long_name="Net primary production of phaeocystis" unit="mmolC/(m2*d)"/>
+    <field id="CoccoN"      long_name="CoccoN" unit="[mmol/m3]"/>
+    <field id="CoccoC"      long_name="CoccoC" unit="[mmol/m3]"/>
+    <field id="CoccoChl"    long_name="CoccoChl" unit="[mg/m3]"/>
+    <field id="PhaeoN"      long_name="PhaeoN" unit="[mmol/m3]"/>
+    <field id="PhaeoC"      long_name="PhaeoC" unit="[mmol/m3]"/>
+    <field id="PhaeoChl"    long_name="PhaeoChl" unit="[mg/m3]"/>
+    <field id="DIC_hor_adv" long_name="Horizontal advection part of dissolved Inorganic C" unit="[mmol/m3/s]"/>
+    <field id="DIC_ver_adv" long_name="Vertical advection part of dissolved Inorganic C" unit="[mmol/m3/s]"/>
+    <field id="DIC_tra_diff_part_hor_redi" long_name="Horizontal diffusion of dissolved Inorganic C (includes Redi diffusivity if Redi=.true.)" unit="[mmol/m3/s]"/>
+    <field id="DIC_tra_diff_part_ver_expl" long_name="Vertical diffusion of dissolved Inorganic C (Explicit)" unit="[mmol/m3/s]"/>
+    <field id="DIC_tra_diff_part_ver_redi_expl" long_name="Projection of horizontal Redi diffussivity onto vertical for dissolved Inorganic C (Explicit)" unit="[mmol/m3/s]"/>
+    <field id="DIC_tra_diff_part_ver_impl" long_name="Vertical diffusion of dissolved Inorganic C (Implicit)" unit="[mmol/m3/s]"/>
+    <field id="DIC_recom_sms" long_name="Recom SMS" unit="[mmol/m3/s]"/>
+    <field id="TCoccoCO2"   long_name="Effect of CO2 of phyto growth/PS" unit="per day"/>
+    <field id="TCphotLL_cocco" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TCphotLL_dia" long_name="Light limitation on diatoms PS" unit="per day"/>
+    <field id="TCphotLL_phaeo" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TCphotLL_phyto" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TCphot_cocco" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TCphot_diatoms" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TCphot_phaeo" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TCphot_phyto" long_name="Light limitation on phyto PS" unit="per day"/>
+    <field id="TDiaCO2"     long_name="Effect of CO2 of phyto growth/PS" unit="per day"/>
+    <field id="TPhaeoCO2"   long_name="Effect of CO2 of phyto growth/PS" unit="per day"/>
+    <field id="TPhyCO2"     long_name="Effect of CO2 of phyto growth/PS" unit="per day"/>
+    <field id="TSi_assimDia" long_name="Silicate assimilation" unit="per day"/>
+    <field id="TTemp_cocco" long_name="Temperature dependence of coccolithophores PS" unit="per day"/>
+    <field id="TTemp_diatoms" long_name="Temperature dependence of diatoms PS" unit="per day"/>
+    <field id="TTemp_phaeo" long_name="Temperature dependence of phaeocystis PS" unit="per day"/>
+    <field id="TTemp_phyto" long_name="Temperature dependence of small phytoplankton PS" unit="per day"/>
+    <field id="TqLF_cocco"  long_name="Nutrient limitation effect of diatoms PS" unit="per day"/>
+    <field id="TqLF_diatoms" long_name="Nutrient limitation effect of diatoms PS" unit="per day"/>
+    <field id="TqLF_phaeo"  long_name="Nutrient limitation effect of diatoms PS" unit="per day"/>
+    <field id="TqLF_phyto"  long_name="Nutrient limitation effect of phyto PS" unit="per day"/>
+  </field_group>
+
+</field_definition>

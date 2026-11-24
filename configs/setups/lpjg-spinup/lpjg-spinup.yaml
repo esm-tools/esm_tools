@@ -1,0 +1,196 @@
+#########################################################################################
+######################### AWIESM3 YAML CONFIGURATION FILE  ###############################
+#########################################################################################
+general:
+
+    model: lpjg-spinup
+
+    model_dir: ${esm_master_dir}/lpj_guess-${general.version}
+
+    lresume: false
+    coupled_setup: true
+
+    include_models:
+        - lpj_guess
+        - oasis3mct
+
+    available_versions:
+        - 'v3.4.0'
+        - 'develop'
+
+    choose_version:
+        v3.4.0:
+            couplings:
+                - lpjg-spinup_v3.4.0
+            major_version: v3.4
+            oasis_with_yac: false
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        develop:
+            couplings:
+                - lpj_guess-4.1.2+oasis
+            major_version: v3.4
+            oasis_with_yac: false
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            
+    version: "v3.4"
+    resolution: TL255
+    postprocessing: false
+    post_time: "00:05:00"
+    compute_time: "00:30:00"
+    parallel_file_movements: 'threads'
+
+    reusable_filetypes: [input, bin, src]
+
+    with_co2_coupling: false
+
+    choose_computer.name:
+        levante:
+            pool_dir: "/work/ab0246/a270092/input"
+        juwels:
+            pool_dir: "/p/project/chhb19/jstreffi/input"
+        aleph:
+            pool_dir: "/proj/awi/input"
+        albedo:
+            pool_dir: "/albedo/pool/"
+        "*":
+            pool_dir: "TO-BE-DEFINED-BY-THE-USER"
+
+    # Load general environment for the whole coupled setup
+    dr_hook_ignore_signals: -1
+
+#########################################################################################
+########### necessary changes to submodels compared to standalone setups ################
+#########################################################################################
+
+
+lpj_guess:
+    version: "4.1.2"
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
+        make -j8; cd .."                                                                                          #without debug.
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
+    execution_command: ${executable} -parallel ${runscript_name}
+
+    resolution: TL255
+    fesom_resolution: CORE2
+    openifsspinup: true
+    daily_output: false
+    
+    # Disable CMIP N-Dep file reading for spinup - use pre-industrial constant values instead
+    ndep_cmip_dir: ""
+
+    nproc: 128
+    proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+    proc_list: $(( ${proc_list_entry} ))
+
+    # run_year: Chunk start year - used for restart file naming
+    run_year: ${start_date!syear}
+    # initial_year: Experiment start year - used for continuous output years
+    initial_year: ${initial_date!syear}
+    run_month: 1
+    run_day: 1
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+    co2_coupling: 0
+    fourxCO2: f
+    onepcCO2: f
+    fixed_CO2: -1
+    fixed_ndep: -1
+    fixed_LU: -1
+    # nyear_spinup and freenyears should only apply to the first leg.
+    # For continuation legs, disable the internal spinup to avoid
+    # re-running N-free years and causing soil C discontinuities.
+    choose_general.run_number:
+        1:
+            nyear_spinup: ${nyear}
+            # freenyears: N limitation delay years (must be <= nyear_spinup)
+            # Set equal to nyear_spinup for full N limitation delay during spinup
+            freenyears: ${nyear}
+        "*":
+            nyear_spinup: 1
+            freenyears: 0
+
+    config_sources:
+        tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
+        ins_files: ${namelist_dir}/*.ins
+        lpjg_output_ins: ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
+        "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins.j2
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2 
+        "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
+
+    config_in_work:
+        tmp_yaml_file: lpjg_steps.yaml
+        ins_files: /*.ins
+        lpjg_output_ins: lpjg_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_output.ins
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
+
+        "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
+
+    forcing_sources:
+        oifs_forcing: ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
+
+    forcing_in_work:
+        oifs_forcing: ifs_spinup_forcing/AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
+        soil_layer_type: slt_${lpj_guess.resolution}.nc
+
+    add_forcing_files:
+        oifs_forcing: oifs_forcing
+
+    # Create empty folders for landuse and fire in work
+    create_folders:
+        - ${work_dir}/landuse
+        - ${work_dir}/fire
+
+    # Disable output copying for spinup runs
+    outdata_files: {}
+
+
+
+oasis3mct:
+    input_dir: ${oasis3mct.pool_dir}/oasis/cy48r1/${lpj_guess.resolution}-${lpj_guess.fesom_resolution}
+    process_ordering:
+        - lpj_guess
+
+    input_sources:
+        areas: ${input_dir}/areas.nc
+        masks: ${input_dir}/masks.nc
+        grids: ${input_dir}/grids.nc
+
+    input_in_work:
+        areas: areas.nc
+        masks: masks.nc
+        grids: grids.nc
+
+computer:
+    # Activates the taskset approach for heterogeneous parallelization, by default
+    # since hetjob approach doesn't seem to work (second run showing mpi/pmix
+    # problems)
+    taskset: true
+    merge_component_envs:
+        compile: true
+
+    choose_general.major_version:
+        v3.4:
+            choose_name:
+                juwels:
+                    iolibraries: system_libs
+                    compiler_mpi: gnu2023_ompi2023
+                levante:
+                    iolibraries: system_gnu_libs
+                    compiler_mpi: gnu11_ompi4
+        '*':
+            foo: bar

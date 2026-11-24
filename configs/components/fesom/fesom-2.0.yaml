@@ -157,8 +157,14 @@ fesom:
                     nx: 1306775
             jane:
                     nx: 33348172
+            jack:
+                    nx: 30041537
             SO3:
                     nx: 11087062
+            palk:
+                    nx: 1724005
+            next:
+                    nx: 12952215
 
     mesh_dir: "${pool_dir}/${resolution}/"
 

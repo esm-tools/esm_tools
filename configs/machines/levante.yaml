@@ -130,7 +130,9 @@ computer:
                 OMPI_MCA_btl: self
                 OMPI_MCA_coll: "^ml"
                 OMPI_MCA_coll_hcoll_enable: "1"
-                OMPI_MCA_io: "romio321"
+                # OMPI_MCA_io moved per-iolibraries block (2026-05-20):
+                # openmpi 4.1.2 ships romio321, openmpi 5.0.10 ships romio341
+                # — they cannot share one global value.
                 OMPI_MCA_osc: "pt2pt"
                 OMPI_MCA_pml: "ucx"
 
@@ -183,6 +185,7 @@ computer:
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
            intel2022_impi2021:
+                    launcher_flags: "-l --mpi=pmi2" # Fix for Intel MPI PMI2_Job_GetId errors
                     python_version: "python3/2023.01-gcc-11.2.0"
                     # ESM-Tools vars necessary for ``system_libs`` case
                     mod_netcdf_c: netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
@@ -224,12 +227,54 @@ computer:
                             CXX: mpicxx
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
                             MPI_HOME: $MPIROOT
                             MPI_ROOT: $MPIROOT
                             mpi_ROOT: $MPIROOT
                             MPI_DIR: $MPIROOT
                             mpi_DIR: $MPIROOT
+
+           # Intel oneAPI 2025.3.2 + OpenMPI 5.0.10 stack, added 2026-05-19
+           # to escape the UCX 1.12 MPI_Finalize segfault in the
+           # intel2022_openmpi (openmpi/4.1.2) stack. Pair with
+           # iolibraries: system_libs_oneapi2025_ompi5. Note that
+           # both modules live in /sw/spack-levante/spack/modules-experimental.
+           oneapi2025_openmpi5:
+                    # OpenMPI 5.0.10 is built against PMIx 5.0.5; SLURM's
+                    # default MpiDefault is pmix_v3 which mismatches and
+                    # makes MPI_Init_thread abort with 'on a NULL
+                    # communicator'. Mirror intel2022_impi2021's pattern
+                    # (line 163) and pin the SLURM MPI plugin here.
+                    launcher_flags: "-l --mpi=pmix_v5"
+                    python_version: "python3"
+                    mod_netcdf_c: netcdf-c/4.10.0-openmpi-5.0.10-oneapi-2025.3.2
+                    mod_netcdf_f: netcdf-fortran/4.6.2-openmpi-5.0.10-oneapi-2025.3.2
+                    mod_hdf5: hdf5/1.14.6-openmpi-5.0.10-oneapi-2025.3.2
+                    add_module_actions:
+                            - "load intel-oneapi-compilers/2025.3.2-gcc-13.4.0"
+                            # MKL stays at 2022 — no newer build on Levante;
+                            # backward-compatible with newer oneAPI compilers.
+                            - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
+                            - "load openmpi/5.0.10-oneapi-2025.3.2"
+
+                    add_export_vars:
+                            # Wrapper dir for mpicc/mpif90/mpicxx that prepends
+                            # -L and -Wl,-rpath-link to gcc-13.4.0's lib64.
+                            # Needed because the ectrans sub-project's link.txt
+                            # files do NOT inherit CMAKE_EXE_LINKER_FLAGS via
+                            # ecbuild, and ld can't find libstdc++.so.6.0.32
+                            # (which has GLIBCXX_3.4.32 emitted by icpx 2025)
+                            # via indirect-dep resolution alone. Prepending
+                            # to PATH so any `mpicc`/`mpif90`/`mpicxx`
+                            # invocation by cmake hits the wrapper first.
+                            PATH: /work/ab0246/a270092/software/mpi-oneapi2025-wrappers:$PATH
+                            FC: mpif90
+                            F77: mpif90
+                            MPICC: mpicc
+                            MPIFC: mpif90
+                            CC: mpicc
+                            CXX: mpicxx
+                            MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+                            MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
     choose_iolibraries:
         awi_gnu_libs: #Copy paste from DE IFS env.sh
@@ -310,6 +355,9 @@ computer:
                 - "load hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0"
                   #- "load fftw/3.3.10-gcc-11.2.0"
             add_export_vars:
+                # openmpi/4.1.2 ships romio321 (kept here so the global
+                # default that was moved out of execution_mode is preserved).
+                OMPI_MCA_io: romio321
                 IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
 
                 # NOTE: Could be set by the module
@@ -359,6 +407,118 @@ computer:
                 # kh 07.03.22 currently required to use Intel MPI
                 LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
 
+
+        # Intel oneAPI 2025.3.2 + OpenMPI 5.0.10 IO stack. All modules
+        # live under /sw/spack-levante/spack/modules-experimental. Pair
+        # with compiler_mpi: oneapi2025_openmpi5. Added 2026-05-19
+        # alongside system_libs (4.1.2 stack), not replacing it.
+        system_libs_oneapi2025_ompi5:
+            add_module_actions:
+                - "load netcdf-c/4.10.0-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load netcdf-fortran/4.6.2-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load hdf5/1.14.6-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load eccodes/2.46.0-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load libaec/1.0.5-oneapi-2025.0.4"
+
+            add_export_vars:
+                IO_LIB_ROOT: "/sw/spack-levante"
+                HDF5ROOT: "/sw/spack-levante/hdf5-1.14.6-cz2y6n"
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.6.2-yuo6bc
+                NETCDFROOT: /sw/spack-levante/netcdf-c-4.10.0-wplcog
+                NETCDF_PATH: $NETCDFROOT
+                NETCDF_ROOT: $NETCDFFROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+                ECCODESROOT: /sw/spack-levante/eccodes-2.46.0-77f24p
+
+                MPI_HOME: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                MPI_ROOT: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                mpi_ROOT: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                MPI_DIR: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                mpi_DIR: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+
+                # OpenMPI 5.0.10 is built against PMIx 5.0.5
+                # (libpmix.so.2 in /opt/pmix/5.0.5/lib). Levante SLURM's
+                # default is pmix_v3 which mismatches and causes
+                # MPI_Init_thread to abort with 'on a NULL communicator'.
+                # Use the explicit v5 plugin instead of the unversioned alias.
+                SLURM_MPI_TYPE: pmix_v5
+
+                # OpenMPI 5 ships romio341 (not romio321). The global
+                # OMPI_MCA_io=romio321 export (at line ~130) would make
+                # MPI_Init abort with 'no module found' on every rank.
+                # Override here to use the version openmpi 5 actually has.
+                OMPI_MCA_io: romio341
+
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
+                # flags required for ECHAM6 (and possibly other models)
+                PSMPIFLAGS: '"-lrt -lm -ldl"'
+
+                # Linear Algebra (LAPACK) via MKL
+                LAPACK_LIB: "'-mkl=sequential'"
+
+                ZLIBROOT: /usr
+
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+                PERL5LIB: /usr/lib64/perl5
+
+                # TBB ships with intel-oneapi-compilers 2025.3.2; needed
+                # for OIFS / ifs_sp which links -ltbbmalloc_proxy.
+                # In 2025 the layout is tbb/2022.3/lib (no intel64/gcc4.8
+                # subdir like the old 2021 TBB).
+                TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2025.3.2-hrqlez/tbb/2022.3
+                TBBMALLOC_DIR: $TBBROOT/lib
+
+                # Also keep AEC paths used by eccodes / netcdf consumers.
+                # /sw/spack-levante/libaec-1.0.5-3nwqlc is the actual install
+                # dir behind the libaec/1.0.5-oneapi-2025.0.4 module.
+                AEC_ROOT: /sw/spack-levante/libaec-1.0.5-3nwqlc
+                aec_ROOT: /sw/spack-levante/libaec-1.0.5-3nwqlc
+
+                # gcc-13.4's libstdc++ provides GLIBCXX_3.4.32 which icpx
+                # 2025 emits. The intel-oneapi-compilers/2025.3.2 module
+                # does NOT add this to LD_LIBRARY_PATH itself, so linker
+                # falls back to /lib64/libstdc++.so.6 (system gcc-8.5,
+                # max GLIBCXX_3.4.25) and emits undefined references to
+                # std::ios_base_library_init@GLIBCXX_3.4.32.
+                # Also: esm_tools 6.60.3 pulls dask/python via mambaforge,
+                # whose lib dir leaks into CMake's -rpath-link BEFORE the
+                # gcc-13.4 -rpath. Mambaforge ships an OLDER libstdc++,
+                # so ld picks that and rejects GLIBCXX_3.4.32. The
+                # LDFLAGS below force gcc-13.4 to be the first -rpath-link
+                # entry so the linker finds the right libstdc++ first.
+                LD_LIBRARY_PATH[(0)]: /sw/spack-levante/gcc-13.4.0-c4mgfk/lib64:$MPI_HOME/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$ECCODESROOT/lib64:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
+                LD_RUN_PATH: $LD_LIBRARY_PATH
+                LIBRARY_PATH: /sw/spack-levante/gcc-13.4.0-c4mgfk/lib64:$LIBRARY_PATH
+                LDFLAGS: '"-Wl,-rpath-link,/sw/spack-levante/gcc-13.4.0-c4mgfk/lib64 -L/sw/spack-levante/gcc-13.4.0-c4mgfk/lib64"'
+
+                # Keep MKL on LD_LIBRARY_PATH as in system_libs
+                LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+
+                # ─── UCX 1.19 + OpenMPI 5 runtime overrides ──────────────
+                # These override the global top-level / execution_mode.run
+                # defaults (which target UCX 1.12 + OMPI 4.1.2). Only fire
+                # when this iolibraries arm is selected.
+                # UCX_TLS: 'mm,knem,cma,dc_mlx5,dc_x,self' (UCX 1.12 names)
+                # doesn't match ANY UCX 1.19 transport — ucx_info -d shows
+                # actual transports are: dc_mlx5, knem, posix, rc_mlx5,
+                # rc_verbs, self, sysv, tcp, ud_mlx5, ud_verbs, xpmem.
+                # Use 'all' to let UCX 1.19 auto-select.
+                UCX_TLS: all
+                # UCX_UNIFIED_MODE=y initialises ucp_context.tl_bitmap to 0
+                # (ucp_context.c:1908), deferring TL selection to worker
+                # creation. Designed for homogeneous clusters; misbehaves
+                # for heterogeneous MPMD where the trailing component
+                # ends up alone on a node.
+                UCX_UNIFIED_MODE: n
+
         system_intel_libs: # Attempt to make intel work for OpenIFS 48r1, currently disfunctional
             libaec_version: 1.0.5-intel-2021.5.0
             libaec_path: /sw/spack-levante/libaec-1.0.5-gij7yv
@@ -371,11 +531,18 @@ computer:
                 - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
                 - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
             add_export_vars:
-                LD_RUN_PATH: $LD_LIBRARY_PATH
+                # openmpi/4.1.2 ships romio321 (preserves the old default
+                # that lived in choose_general.execution_mode).
+                OMPI_MCA_io: romio321
+                LD_RUN_PATH: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gcc-11.2.0-bcn7mb/lib64:$LD_LIBRARY_PATH
+                # AEC_ROOT/aec_ROOT intentionally NOT set here: they are
+                # provided by choose_computer.load_libaec (via libaec_path).
+                # Defining them here too caused a choose_ conflict after the
+                # v3.4-co2 merge.
+                UCXROOT: /sw/spack-levante/ucx-1.12.0-nlas56
                 HDF5ROOT: /sw/spack-levante/hdf5-1.12.1-tvymb5
                 HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
                 HDF5_ROOT: $HDF5ROOT
-                MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                 NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
                 NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
                 NETCDF_PATH: $NetCDF_C_ROOT
@@ -387,12 +554,17 @@ computer:
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
 
-                MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                LD_LIBRARY_PATH[(0)]: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:${lib_aec}${lib_tbbmalloc}$LD_LIBRARY_PATH
+                # MPI_HOME / MPI_ROOT / mpi_ROOT / MPI_DIR / mpi_DIR are set
+                # by choose_compiler_mpi.intel2022_openmpi (via $MPIROOT
+                # derived from `mpif90 -show`), so we don't duplicate them
+                # here to avoid the choose-block-conflict detector.
+                # AEC_ROOT, TBBROOT, TBBMALLOC_DIR are set by
+                # choose_computer.load_libaec / load_tbb (enabled per-component,
+                # e.g. via oifs48.env.yaml). ${lib_aec} / ${lib_tbbmalloc}
+                # expand to "$AEC_ROOT/lib:" / "$TBBMALLOC_DIR:" when on,
+                # to "" when off — keeps OIFS's UCX 1.12 + AEC + TBB path
+                # without colliding with the global choose_ blocks.
+                LD_LIBRARY_PATH[(0)]: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:${lib_aec}$UCXROOT/lib:${lib_tbbmalloc}$LD_LIBRARY_PATH
                 LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
                 LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
                 # For OASIS3-MCT5 from CERFACS
@@ -415,13 +587,16 @@ computer:
                 HDF5ROOT: /sw/spack-levante/hdf5-1.12.1-jmeuy3
                 HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
                 HDF5_ROOT: $HDF5ROOT
-                MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                 NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-7dq6g2
                 NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-r5r3ev
                 NETCDF_PATH: $NetCDF_C_ROOT
                 NETCDF_ROOT: $NetCDF_Fortran_ROOT
                 NETCDFROOT: $NetCDF_C_ROOT
                 NETCDFFROOT: $NetCDF_Fortran_ROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
                 MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
                 MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
                 mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t

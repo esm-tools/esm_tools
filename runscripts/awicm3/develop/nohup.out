@@ -1,0 +1,76 @@
+ OpenIFS preprocessing 
+ ===================== 
+ 
+ Machine: levante5.lvt.dkrz.de 
+ grib_set: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/bin/grib_set 
+ cdo -V: 
+Climate Data Operators version 2.0.5 (https://mpimet.mpg.de/cdo)
+System: x86_64-conda-linux-gnu
+CXX Compiler: /home/conda/feedstock_root/build_artifacts/cdo_1647515505590/_build_env/bin/x86_64-conda-linux-gnu-c++ -std=gnu++14 -fPIC -DPIC -g -O2 -std=c++14 -fopenmp -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/cdo_1647515505590/work=/usr/local/src/conda/cdo-2.0.5 -fdebug-prefix-map=/sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg=/usr/local/src/conda-prefix  -fopenmp -pthread
+CXX version : unknown
+C Compiler: /home/conda/feedstock_root/build_artifacts/cdo_1647515505590/_build_env/bin/x86_64-conda-linux-gnu-cc -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/cdo_1647515505590/work=/usr/local/src/conda/cdo-2.0.5 -fdebug-prefix-map=/sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg=/usr/local/src/conda-prefix  -fopenmp -pthread -pthread
+C version : unknown
+F77 Compiler: /home/conda/feedstock_root/build_artifacts/cdo_1647515505590/_build_env/bin/x86_64-conda-linux-gnu-gfortran -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/cdo_1647515505590/work=/usr/local/src/conda/cdo-2.0.5 -fdebug-prefix-map=/sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg=/usr/local/src/conda-prefix 
+F77 version : GNU Fortran (GCC) 10.3.0
+Features: 501GB 256threads C++14 OpenMP45 Fortran PTHREADS HDF5 NC4/HDF5/threadsafe OPeNDAP UDUNITS2 PROJ XML2 MAGICS CURL FFTW3 SSE3
+Libraries: HDF5/1.12.1 proj/9.0.0 xml2/2.9.12 curl/7.86.0(h7.82.0) magics/4.11.0
+CDI data types: SizeType=size_t  DateType=int64_t
+CDI file types: srv ext ieg grb1 grb2 nc1 nc2 nc4 nc4c nc5 
+     CDI library version : 2.0.5
+ cgribex library version : 2.0.1
+ ecCodes library version : 2.26.0
+  NetCDF library version : 4.8.1 of Apr 25 2022 17:44:24 $
+    hdf5 library version : 1.12.1 threadsafe
+    exse library version : 1.4.2
+    FILE library version : 1.9.1
+
+ 
+ Input dir: /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs// 
+ Output dir: /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs// 
+ InExp ID: awi3 
+ OutExp ID: awi3 
+ Start date: 20000101 
+ Perturb: 0 
+ New date: 20000101 
+ Initial time: 2000-01-01T00:00:00 
+ Start time: 2000-01-01T00:00:00 
+ 
+ * Change dataDate in files: 
+  
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///ICMGGawi3INIT  with date  20000101
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///ICMGGawi3INIUA  with date  20000101
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///ICMSHawi3INIT  with date  20000101
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///cdwavein  with date  20000101
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///sfcwindin  with date  20000101
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///specwavein  with date  20000101
+ Made new file:  /work/bb1469/a270092/runtime/awicm3-develop//rmp1280/run_20000101-20000101/input/oifs///uwavein  with date  20000101
+Run number for internal OpenIFS timekeeping: 1
+Submitted batch job 20794094
+Initializing run_number=1 and date=2000-01-01
+First year, checking if we need to compile...
+
+================================================================================
+STARTING SIMULATION JOB!
+Experiment ID = rmp1280
+Setup = awicm3
+This setup consists of:
+- fesom
+- oifs
+- rnfmap
+- oasis3mct
+- xios
+Experiment is installed in:
+       /work/bb1469/a270092/runtime/awicm3-develop//rmp1280
+================================================================================
+nproc: 1280
+tasks: 1280
+nproc: 128
+tasks: 1408
+nproc: 1
+tasks: 1409
+nproc: 4
+tasks: 1413
+resubmit tasks: 1413
+Submitting jobscript to batch system...
+Output written by slurm:
+Initializing run_number=1 and date=2000-01-01

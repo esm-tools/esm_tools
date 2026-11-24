@@ -8,7 +8,30 @@ import yaml
 import esm_parser
 from esm_calendar import Date
 from esm_runscripts import prev_run
+from esm_tools import user_error
 from loguru import logger
+
+
+def _coupling_mode(config):
+    """'serial' (default, alternating chain) or 'concurrent' (one chain per model)."""
+    return config.get("general", {}).get("coupling_mode", "serial")
+
+
+def _chain_name(config):
+    """setup_name of the chain this invocation drives (concurrent mode only)."""
+    chain = config.get("general", {}).get("coupling_chain")
+    valid, index = [], 1
+    while "model" + str(index) in config:
+        valid.append(config["model" + str(index)]["setup_name"])
+        index += 1
+    if not chain or chain not in valid:
+        user_error(
+            "Concurrent iterative coupling",
+            f"coupling_mode is 'concurrent' but --coupling-chain is "
+            f"``{chain}`` (must be one of {valid}). Launch one chain per "
+            f"model: esm_runscripts <driver> -e <expid> --coupling-chain <setup_name>",
+        )
+    return chain
 
 
 def setup_correct_chunk_config(config):
@@ -89,14 +112,18 @@ def set_chunk_calendar(config):
     initial_date = config["general"]["initial_date"]
     next_date = config["general"]["next_date"]
 
-    number_of_chunks_done = this_chunk_number // number_of_models
+    if _coupling_mode(config) == "concurrent":
+        # per-chain chunk numbers count own legs, so chunk N = cycle N
+        number_of_chunks_done = int(config["general"]["chunk_number"]) - 1
+    else:
+        number_of_chunks_done = this_chunk_number // number_of_models
 
-    # LA: get right number_of_chunks_done for last year in chunk
-    if "model_queue" in config["general"]:
-        if config["general"]["model_queue"][0] == "model1" and config["general"].get(
-            "last_run_in_chunk"
-        ):
-            number_of_chunks_done = number_of_chunks_done - 1
+        # LA: get right number_of_chunks_done for last year in chunk
+        if "model_queue" in config["general"]:
+            if config["general"]["model_queue"][0] == "model1" and config[
+                "general"
+            ].get("last_run_in_chunk"):
+                number_of_chunks_done = number_of_chunks_done - 1
 
     passed_time = (
         number_of_chunks_done * chunk_delta_date[0],
@@ -137,6 +164,13 @@ def set_chunk_calendar(config):
     else:
         config["general"]["next_run_in_chunk"] = "middle"
 
+    if _coupling_mode(config) == "concurrent":
+        # fresh invocations (cold start / recovery / revival) rendezvous here;
+        # in-tail resubmissions checked at the previous leg's end
+        from . import concurrent_coupling  # non-top-level: avoid circular import
+
+        config = concurrent_coupling.entry_park_check(config)
+
     return config
 
 
@@ -144,8 +178,11 @@ def _update_chunk_date_file(config):
     if not config["general"].get("iterative_coupling", False):
         return config
 
-    # to be called at the end of tidy
-    with open(config["general"]["chunk_date_file"], "w+") as chunk_dates:
+    # to be called at the end of tidy; atomic (tmp + rename) so a killed leg
+    # can never leave a half-written cursor
+    chunk_date_file = config["general"]["chunk_date_file"]
+    tmp_file = chunk_date_file + ".tmp"
+    with open(tmp_file, "w+") as chunk_dates:
         chunk_dates.write(
             str(config["general"]["next_chunk_number"])
             + " "
@@ -153,6 +190,7 @@ def _update_chunk_date_file(config):
             + " "
             + config["general"]["next_run_in_chunk"]
         )
+    os.replace(tmp_file, chunk_date_file)
     # config["general"]["setup_name"] = config["general"]["next_setup_name"]
     # config["general"]["chunk_number"] = config["general"]["next_chunk_number"]
     return config
@@ -171,7 +209,13 @@ def update_command_line_config(config):
         + ".date"
     )
 
-    if config["general"]["next_run_in_chunk"] == "first":
+    # concurrent: next model == self, so the freshly incremented date/run_number
+    # are already correct -- reading our own (stale) .date here would loop the
+    # same chunk forever. Serial keeps the cross-model handoff read.
+    if (
+        config["general"]["next_run_in_chunk"] == "first"
+        and _coupling_mode(config) != "concurrent"
+    ):
         if os.path.isfile(next_log_file):
             with open(next_log_file, "r") as date_file:
                 next_start_date, next_run_number = date_file.read().split()
@@ -246,6 +290,39 @@ def prev_chunk_info(config):
 ########################################   END OF API ###############################################
 
 
+def _early_resolve(config, value):
+    """Expand ``${...}`` references in ``value`` against ``config["general"]``
+    (falling back to environment variables), for use BEFORE esm_parser's
+    variable-resolution pass.
+
+    chunky_parts builds filesystem paths (the chunk_date file, the per-model
+    ``.date`` files, the finished_config paths) at SimulationSetup
+    initialization -- earlier than esm_parser resolves variables. A base_dir
+    such as ``/work/ab0246/${user}/runtime/`` would otherwise be probed
+    verbatim; the silent ``isfile()`` miss then makes iterative coupling fall
+    back to model1/chunk 1 and the model handoff never happens.
+
+    Nested references are expanded iteratively; unresolvable references are
+    left in place (and will surface as a missing-file condition downstream).
+    """
+    import re
+
+    def _sub(match):
+        key = match.group(1).split(".")[-1]  # allow ${user} and ${general.user}
+        val = config.get("general", {}).get(key)
+        if val is None:
+            val = os.environ.get(key, os.environ.get(key.upper()))
+        if val is None or not isinstance(val, (str, int, float)):
+            return match.group(0)  # leave unresolved
+        return str(val)
+
+    prev = None
+    while isinstance(value, str) and prev != value:
+        prev = value
+        value = re.sub(r"\$\{([^}$]+)\}", _sub, value)
+    return value
+
+
 def _called_from_tidy_job(config):  # not called from anywhere
     """
     At the beginning of a prepare job, the date file isn't read yet,
@@ -277,18 +354,32 @@ def _store_original_config(config):
 
 def _read_chunk_date_file_if_exists(config):
     config["general"]["chunk_date_file"] = (
-        config["general"]["base_dir"]
+        _early_resolve(config, config["general"]["base_dir"])
         + "/"
         + config["general"]["expid"]
         + "/scripts/"
         + config["general"]["expid"]
         + "_chunk_date"
     )
+    # concurrent: one cursor per chain, next to the (never created) serial one
+    if _coupling_mode(config) == "concurrent":
+        config["general"]["chunk_date_file"] += "." + _chain_name(config)
+    logger.debug(f"chunk_date file probed: {config['general']['chunk_date_file']}")
 
     if os.path.isfile(config["general"]["chunk_date_file"]):
         with open(config["general"]["chunk_date_file"], "r") as chunk_dates:
             chunk_number, setup_name, run_in_chunk = chunk_dates.read().split()
 
+        if (
+            _coupling_mode(config) == "concurrent"
+            and setup_name != _chain_name(config)
+        ):
+            user_error(
+                "Concurrent iterative coupling",
+                f"Cursor file {config['general']['chunk_date_file']} names "
+                f"``{setup_name}`` but this invocation drives "
+                f"``{_chain_name(config)}`` -- refusing to continue.",
+            )
         config["general"]["setup_name"] = setup_name
         config["general"]["chunk_number"] = int(chunk_number)
         config["general"]["run_in_chunk"] = run_in_chunk
@@ -331,7 +422,7 @@ def _read_model_date_file(config, model):
         nothing.
     """
     expid = config["general"]["expid"]
-    base_dir = config["general"]["base_dir"]
+    base_dir = _early_resolve(config, config["general"]["base_dir"])
     model_date_file = f"{base_dir}/{expid}/scripts/{expid}_{model}.date"
 
     if os.path.isfile(model_date_file):
@@ -368,7 +459,7 @@ def _find_model_finished_config(config, model, model_date):
         If a more than one file matches the date.
     """
     expid = config["general"]["expid"]
-    base_dir = config["general"]["base_dir"]
+    base_dir = _early_resolve(config, config["general"]["base_dir"])
     file_path = f"{base_dir}/{expid}/config/{expid}_{model}_finished_config.yaml"
     time_stamps = [f"_*-{model_date[:8]}", f"_*-{model_date}", ""]
 
@@ -386,11 +477,22 @@ def _find_model_finished_config(config, model, model_date):
 
 
 def _initialize_chunk_date_file(config):
-    config["general"]["setup_name"] = config["model1"]["setup_name"]
+    # serial: model1 opens the alternating chain; concurrent: each chain seeds
+    # from its own model block (chunk numbers then count own legs 1,2,3...)
+    seed_model = "model1"
+    if _coupling_mode(config) == "concurrent":
+        chain = _chain_name(config)
+        index = 1
+        while "model" + str(index) in config:
+            if config["model" + str(index)]["setup_name"] == chain:
+                seed_model = "model" + str(index)
+                break
+            index += 1
+    config["general"]["setup_name"] = config[seed_model]["setup_name"]
     config["general"]["chunk_number"] = 1
     config["general"]["run_in_chunk"] = "first"
-    config["general"]["this_chunk_size"] = int(config["model1"]["chunk_size"])
-    config["general"]["this_chunk_unit"] = config["model1"]["chunk_unit"]
+    config["general"]["this_chunk_size"] = int(config[seed_model]["chunk_size"])
+    config["general"]["this_chunk_unit"] = config[seed_model]["chunk_unit"]
     return config
 
 
@@ -433,25 +535,34 @@ def _is_last_run_in_chunk(config):
     return config
 
 
-def _find_next_model_to_run(config):
-    if config["general"]["last_run_in_chunk"]:
-        config["general"].super_setitem(
-            "next_setup_name", config["general"]["model_named_queue"][0]
-        )
+def _gen_set(config, key, val):
+    """Set config["general"][key], preserving provenance when available.
+
+    The v3.4-co2 esm_parser merge yields a plain dict for config["general"] in
+    the prepare recipe (no super_setitem); fall back to plain assignment so
+    iterative coupling works whichever type esm_parser produces.
+    """
+    setter = getattr(config["general"], "super_setitem", None)
+    if callable(setter):
+        setter(key, val)
     else:
-        config["general"].super_setitem(
-            "next_setup_name", config["general"]["setup_name"]
-        )
+        config["general"][key] = val
+
+
+def _find_next_model_to_run(config):
+    # concurrent: no handoff -- each chain always continues itself
+    if _coupling_mode(config) == "concurrent":
+        _gen_set(config, "next_setup_name", config["general"]["setup_name"])
+    elif config["general"]["last_run_in_chunk"]:
+        _gen_set(config, "next_setup_name", config["general"]["model_named_queue"][0])
+    else:
+        _gen_set(config, "next_setup_name", config["general"]["setup_name"])
     return config
 
 
 def _find_next_chunk_number(config):
     if config["general"]["last_run_in_chunk"]:
-        config["general"].super_setitem(
-            "next_chunk_number", config["general"]["chunk_number"] + 1
-        )
+        _gen_set(config, "next_chunk_number", config["general"]["chunk_number"] + 1)
     else:
-        config["general"].super_setitem(
-            "next_chunk_number", config["general"]["chunk_number"]
-        )
+        _gen_set(config, "next_chunk_number", config["general"]["chunk_number"])
     return config

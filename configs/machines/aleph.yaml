@@ -71,6 +71,7 @@ computer:
             - "load fftw/2.1.5.9"
             - "load nco/4.9.4"
             - "load proj4/5.1.0"
+            - "load git/2.40.0"
             - "list"
 
     export_vars:
@@ -108,6 +109,8 @@ computer:
 
             # for the fesom cmake setup
             ENABLE_ALEPH_CRAYMPICH_WORKAROUNDS: ''
+            GIT_PYTHON_REFRESH: quiet
+
             FC: ${fc}
             CC: ${cc}
             CXX: ${cxx}
@@ -125,3 +128,6 @@ computer:
 
     further_reading:
             - batch_system/pbs.yaml
+
+dask:
+    interconnect_interface: ipogif0

@@ -1,7 +1,8 @@
 # TODO (PG): Change to ghcr hosting at some point in the future.
 
-# Use Ubuntu 25 as the base image
-FROM ubuntu:25.04
+# Use Ubuntu 24.04 (LTS) as the base image. 25.04 reached its end of life (January
+# 2026), its apt repositories are gone and the image cannot be rebuilt
+FROM ubuntu:24.04
 
 # Set non-interactive mode for apt
 ENV DEBIAN_FRONTEND=noninteractive
@@ -38,7 +39,10 @@ RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/downloa
 SHELL ["/bin/bash", "-c"]
 
 # Optionally, create a new Conda environment (uncomment to use)
-RUN mamba create -n esm_tools python=3.9 setuptools=65.5.1
+# Same python and setuptools as ``environment.yaml``. setuptools < 66.1 has a
+# ``pkg_resources`` that does not work with Python 3.12, and >= 81 no longer has
+# ``pkg_resources`` (imported by esm_tools)
+RUN mamba create -n esm_tools python=3.12 setuptools=67.6.1
 
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8

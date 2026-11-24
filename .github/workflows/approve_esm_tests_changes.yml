@@ -1,78 +1,230 @@
-# ESM-Tools pre-merge automation
-# ==============================
-# In a pull-request, if a comment contains #approve-changes, the following steps are triggered:
-#   1. runs esm_tests for each computer with the saving of the laste_tested flag true
-#   2. commits those changes to the esm_tests_info repo
+# ESM-Tools approval of esm_tests changes
+# =======================================
+# In a pull-request, a comment containing #approve-changes:
+#   1. authorize: checks that the commenter has write (or admin) permission in the
+#      repository and pins the head commit of the pull-request at that moment. Later
+#      pushes to the pull-request are not approved.
+#   2. discover + test: runs esm_tests (check mode, saving to last_tested) for every
+#      (computer, model, runscript) of the pinned commit, as in the PR checks. These
+#      jobs run the code of the pull-request, so they have no secrets and a read-only
+#      token. Each uploads its changed last_tested files as an artifact.
+#   3. summary: problems and differences being approved, in the run summary.
+#   4. push: only if all the test jobs succeeded. Checks the artifacts (paths under
+#      last_tested/<computer>/, same content for the files saved by several jobs) and
+#      pushes them to esm_tests_info in a single commit. Never runs pull-request code.
+#
+# The workflow can also be run manually (Actions tab > approve esm_tests changes > Run
+# workflow) for a pull-request, by default as a dry run (shows the changes, no push).
+# ``issue_comment`` always uses this file from the default branch, so this is also the
+# way to try changes to this workflow from another branch.
 
 name: approve esm_tests changes
 
-# Triggers the workflow on an issue comment
 on:
   issue_comment:
     types: [created]
-    
-  # Allows you to run this workflow manually from the Actions tab
+
   workflow_dispatch:
- 
+    inputs:
+      pr_number:
+        description: "Number of the pull-request to approve"
+        required: true
+        type: string
+      dry_run:
+        description: "Only show the changes, do not push them to esm_tests_info"
+        type: boolean
+        default: true
+      esm_tests_info_branch:
+        description: "esm_tests_info branch to compare with and push to"
+        type: string
+        default: release
+
+permissions:
+  contents: read
+
 jobs:
-  # Sequence of tasks that will be executed as part of the job
-  ollie:
-        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
-        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+  authorize:
+    # Only for ``#approve-changes`` comments in pull-requests
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+      sha: ${{ steps.pr.outputs.sha }}
+      actor: ${{ steps.permission.outputs.actor }}
+      resources_branch: ${{ steps.inputs.outputs.resources_branch }}
+      dry_run: ${{ steps.inputs.outputs.dry_run }}
+    steps:
+      - id: permission
+        name: check permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.event.comment.user.login || github.actor }}
+        run: |
+          # ``maintain`` is reported as ``write``, ``triage`` as ``read``
+          permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$ACTOR/permission" --jq .permission)
+          echo "'$ACTOR' has '$permission' permission";
+          case "$permission" in
+            admin|write) ;;
+            *) echo "::error::Only users with write permission can approve esm_tests changes ('$ACTOR' has '$permission')"; exit 1;;
+          esac
+          echo "actor=$ACTOR" >> "$GITHUB_OUTPUT";
+
+      - id: inputs
+        name: check inputs
+        env:
+          RESOURCES_BRANCH: ${{ inputs.esm_tests_info_branch || 'release' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          # The branch ends up in ``esm_tests`` command lines
+          if ! [[ "$RESOURCES_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "::error::Invalid esm_tests_info branch '$RESOURCES_BRANCH'"; exit 1;
+          fi
+          echo "resources_branch=$RESOURCES_BRANCH" >> "$GITHUB_OUTPUT";
+          echo "dry_run=$DRY_RUN" >> "$GITHUB_OUTPUT";
+
+      - id: pr
+        name: pin the pull-request commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number || inputs.pr_number }}
+          ACTOR: ${{ steps.permission.outputs.actor }}
+          RESOURCES_BRANCH: ${{ steps.inputs.outputs.resources_branch }}
+          DRY_RUN: ${{ steps.inputs.outputs.dry_run }}
+        run: |
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid pull-request number '$PR_NUMBER'"; exit 1;
+          fi
+          read -r state sha < <(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --json state,headRefOid --jq '"\(.state) \(.headRefOid)"')
+          if [ "$state" != "OPEN" ]; then
+            echo "::error::Pull-request #$PR_NUMBER is not open ($state)"; exit 1;
+          fi
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT";
+          echo "sha=$sha" >> "$GITHUB_OUTPUT";
+          {
+            echo "## Approving esm_tests changes";
+            echo "";
+            echo "- Pull-request: #$PR_NUMBER";
+            echo "- Commit: $sha";
+            echo "- Requested by: @$ACTOR";
+            echo "- esm_tests_info branch: \`$RESOURCES_BRANCH\`";
+            if [ "$DRY_RUN" = "true" ]; then echo "- **Dry run**: nothing is pushed"; fi
+          } >> "$GITHUB_STEP_SUMMARY";
+
+  discover:
+    needs: authorize
+    uses: ./.github/workflows/esm_tests_discover.yml
+    with:
+      ref: ${{ needs.authorize.outputs.sha }}
+      resources_branch: ${{ needs.authorize.outputs.resources_branch }}
+
+  test:
+    needs: [authorize, discover]
+    if: ${{ needs.discover.outputs.matrix != '{"include":[]}' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+      computer: ${{ matrix.computer }}
+      model: ${{ matrix.model }}
+      runscript: ${{ matrix.runscript }}
+      ref: ${{ needs.authorize.outputs.sha }}
+      test_flags: -cngu -s True -r ${{ needs.authorize.outputs.resources_branch }}
+      upload_last_tested: true
+
+  summary:
+    needs: test
+    if: ${{ !cancelled() && needs.test.result != 'skipped' }}
+    permissions:
+      contents: read
+      # To list the jobs of this run (conclusions and links to the logs)
+      actions: read
+    uses: ./.github/workflows/esm_tests_summary.yml
+
+  push:
+    # Only if every test job succeeded: all or nothing is approved
+    needs: [authorize, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # One push to esm_tests_info at a time (approvals of different pull-requests).
+    # Note: GitHub keeps only one pending job per group, a third approval while one
+    # pushes and one waits cancels the waiting one
+    concurrency:
+      group: esm_tests_info-push
+      cancel-in-progress: false
+    env:
+      PR_NUMBER: ${{ needs.authorize.outputs.pr_number }}
+      SHA: ${{ needs.authorize.outputs.sha }}
+      ACTOR: ${{ needs.authorize.outputs.actor }}
+      RESOURCES_BRANCH: ${{ needs.authorize.outputs.resources_branch }}
+      DRY_RUN: ${{ needs.authorize.outputs.dry_run }}
+    steps:
+      # Only the scripts, from the default branch (or the branch of a manual run),
+      # never from the pull-request
+      - uses: actions/checkout@v4
         with:
-          computer: ollie1
-          update_esm_tests_info: true
-          test_flags: -cngu -s True
-        secrets:
-          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
-  levante:
-        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
-        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
         with:
-          computer: levante1
-          update_esm_tests_info: true
-          test_flags: -cngu -s True
-        secrets:
-          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
-  juwels:
-        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
-        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+          repository: esm-tools/esm_tests_info
+          ref: ${{ needs.authorize.outputs.resources_branch }}
+          path: esm_tests_info
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
         with:
-          computer: jwlogin01.juwels
-          update_esm_tests_info: true
-          test_flags: -cngu -s True
-        secrets:
+          pattern: last_tested-*
+          path: last_tested_artifacts
+
+      - name: merge last_tested
+        run: python3 .github/scripts/esm_tests_merge_last_tested.py last_tested_artifacts esm_tests_info
+
+      - name: commit and push
+        env:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
-  aleph:
-        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
-        uses: ./.github/workflows/esm_tests_computer_workflow.yml
-        with:
-          computer: elogin1
-          update_esm_tests_info: true
-          test_flags: -cngu -s True
-        secrets:
-          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
-  blogin:
-        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
-        uses: ./.github/workflows/esm_tests_computer_workflow.yml
-        with:
-          computer: blogin1
-          update_esm_tests_info: true
-          test_flags: -cngu -s True
-        secrets:
-          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
-  albedo:
-        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
-        uses: ./.github/workflows/esm_tests_computer_workflow.yml
-        with:
-          computer: albedo1
-          update_esm_tests_info: true
-          test_flags: -cngu -s True
-        secrets:
-          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          cd esm_tests_info;
+          git add -A last_tested;
+          if git diff --cached --quiet; then
+            echo "No changes to approve";
+            echo "No changes to approve in esm_tests_info." >> "$GITHUB_STEP_SUMMARY";
+            exit 0;
+          fi
+          {
+            echo "## Changes for esm_tests_info (\`$RESOURCES_BRANCH\`)";
+            echo "";
+            echo '```';
+            git diff --cached --stat;
+            echo '```';
+          } >> "$GITHUB_STEP_SUMMARY";
+          if [ "$DRY_RUN" = "true" ]; then
+            git diff --cached;
+            echo "Dry run, not pushed." >> "$GITHUB_STEP_SUMMARY";
+            exit 0;
+          fi
+          git -c user.name=esmtools-bot -c user.email=esmtools-bot@users.noreply.github.com \
+            commit -q -F - <<EOF
+          approved changes from esm_tools PR #$PR_NUMBER
+
+          Commit: $GITHUB_REPOSITORY@$SHA
+          Approved by: @$ACTOR
+          Run: $RUN_URL
+          EOF
+          # Token in a header, not in the URL (not stored, not printed by git)
+          auth=$(printf 'esmtools-bot:%s' "$ESM_TOOLS_BOT" | base64 -w0);
+          echo "::add-mask::$auth";
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            push origin "HEAD:$RESOURCES_BRANCH";
+          commit=$(git rev-parse HEAD);
+          echo "Pushed esm-tools/esm_tests_info@$commit" >> "$GITHUB_STEP_SUMMARY";
+        shell: bash

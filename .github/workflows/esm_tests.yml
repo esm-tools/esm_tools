@@ -1,33 +1,40 @@
 # ESM-Tests in check mode for all computers
 # =========================================
+#
+# Discovers every (computer, model, runscript) combination with ``esm_tests --list``
+# (``esm_tests_discover.yml``). Each combination runs as an independent matrix job. The
+# ``summary`` job collects the problems (errors, failed jobs) and the differences of
+# all jobs in the run summary (``esm_tests_summary.yml``).
 
 name: esm_tests
 
 # Triggers the workflow on a push or a pull
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
-  ollie:
+  discover:
+    uses: ./.github/workflows/esm_tests_discover.yml
+
+  test:
+    needs: discover
+    if: ${{ needs.discover.outputs.matrix != '{"include":[]}' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
-        computer: ollie1
-  levante:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: levante1
-  juwels:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: jwlogin01.juwels
-  aleph:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: elogin1
-  # blogin:
-  #   uses: ./.github/workflows/esm_tests_computer_workflow.yml
-  #   with:
-  #       computer: blogin1
-  albedo:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: albedo1
+        computer: ${{ matrix.computer }}
+        model: ${{ matrix.model }}
+        runscript: ${{ matrix.runscript }}
+
+  summary:
+    needs: test
+    if: ${{ !cancelled() && needs.test.result != 'skipped' }}
+    permissions:
+      contents: read
+      # To list the jobs of this run (conclusions and links to the logs)
+      actions: read
+    uses: ./.github/workflows/esm_tests_summary.yml

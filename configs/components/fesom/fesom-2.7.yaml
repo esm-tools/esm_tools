@@ -29,10 +29,16 @@ fesom:
     choose_version:
       "2.7":
         branch: "2.7.0"
+        namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
+      "2.7.0":
+        branch: "2.7.0"
+        namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
       "2.7.2":
         branch: "2.7.2"
       "2.7.3":
         branch: "2.7.3"
+        destination: "fesom-2.7.3"
+        namelist_dir: "${model_dir}/config/"
       "2.7.4":
         branch: "2.7.4"
         repo_options: "--recurse-submodules"
@@ -45,6 +51,11 @@ fesom:
       "2.7.7":
         branch: "2.7.7"
         repo_options: "--recurse-submodules"
+      "2.7-paleodyn":
+        branch: "2.7.0"
+        wiso_code: true
+        icb_code: true
+        namelist_dir: "${model_dir}/config/"
       "2.7-main":
         # INTERIM (until FESOM PR #957 merges to fesom2 main): the awiesm3 develop*
         # variants build the coupled-slab ice-surftemp branch that provides the
@@ -144,6 +155,8 @@ fesom:
                     beta_evp: 250           # constant that control numerical stability of mEVP.
             LGM:
                     nx: 95239
+                    # [TODO] @christian-stepanek - move mesh to pool and update path
+                    # suggested: mesh_dir: "/work/ab0246/pool/FESOM2/meshes/glac1d_m1_512/"
                     mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
                     nproc: 1024
                     whichEVP: 0
@@ -156,7 +169,9 @@ fesom:
                     beta_evp: 250           # constant that control numerical stability of mEVP.
             CAVCORE2:
                     nx: 72411
-                    mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
+                    # [TODO] @patrickscholz - move mesh to pool and update path
+                    # suggested: mesh_dir: "${fesom.mesh_base_dir}/cavity_72k/"
+                    mesh_dir: "/albedo/work/user/pscholz/mesh_fesom2.0/cavity_72k/"
                     nproc: 288
                     whichEVP: 0
                     alpha_evp: 250          # constant that control numerical stability of mEVP.

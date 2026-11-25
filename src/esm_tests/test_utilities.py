@@ -222,6 +222,9 @@ def clean_user_specific_info(info, str2clean, protected_strings=[]):
             line = re.sub(rf"<{key}>//+", f"<{key}>/", line)
             # Ensure there is a one slash after <key>
             line = re.sub(rf"<{key}>(?=[^/\s])", f"<{key}>/", line)
+            # No trailing slash when <key> ends the value (editable installs return
+            # e.g. the configs dir with a trailing slash, standard installs don't)
+            line = re.sub(rf"<{key}>/(?=\s|$)", f"<{key}>", line)
 
         # Restore protected strings
         for token, original in tokens.items():

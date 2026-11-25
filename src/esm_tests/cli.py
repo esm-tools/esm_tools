@@ -122,6 +122,15 @@ def main():
 
     # Ignore conda configs
     info["ignore"]["finished_config"].append("launched_with_conda:")
+    # Ignore conda activation lines in .run files (only written when launched from
+    # an active conda environment, see ``batch_system.get_conda_activate_commands``)
+    info["ignore"].setdefault(".run", []).extend(
+        [
+            r"^\s*# Activate conda environment",
+            r"^\s*source .*/bin/activate\s*$",
+            r"^\s*conda activate ",
+        ]
+    )
 
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")

@@ -13,6 +13,14 @@
 #     RFMIP (Pincus et al. 2016) uses the model's own piControl climatology instead; we have
 #     no R2B5 piControl with this AMIP atmosphere, so the observed pre-industrial climatology
 #     of the same SST product is used (switch sstice to change it).
+#     CAVEAT (sea ice, not decided yet): HadISST 2.2.1.0 sea ice is a fixed climatology
+#     (identical every year) before 1901 in the NH and before 1940 in the SH, so the
+#     1850-1879 sea ice is this reconstruction, not observations. Its SH ice is ~4e6 km2
+#     more than in the 1980s (raw 1x1 annual mean 16.3 vs 11.9e6 km2, September 25.9 vs
+#     19.1) and jumps from 6.3 (March) to 13.1e6 km2 (April). R2B5 annual means of r0005:
+#     SST 290.84 K, ice area NH 11.78 / SH 14.79e6 km2 (amip r0003 in 1979: 291.26 K,
+#     11.44 / 10.93). Alternatives: another PI sea-ice product, a later sea-ice period, or
+#     the model's own piControl climatology (RFMIP). Decide before starting this run.
 #   period 1979-2024 (the climatological SST has no end date; amip member 1 ends in 2021)
 # The effective radiative forcing is piclim-histall minus a piClim-control run (same SST,
 # PI-CTRL forcing as in icon-2025.10-amip-sst-r2b5-hadisst2p4-nesh_1979-2021.yaml), which

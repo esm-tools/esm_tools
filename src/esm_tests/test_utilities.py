@@ -387,6 +387,21 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                     num = 1
                 subpaths.append(f"{cf_path}/{cfiles[num].split('/')[-1]}")
                 break
+    # taskset wrappers (``prog_<model>.sh``, ``script_<model>.sh``), one per model,
+    # written in ``work`` with ``rank_placement``. Only for taskset runs
+    elif cfile in ("prog_", "script_"):
+        ldir = sorted(os.listdir(f"{user_info['test_dir']}/{this_test_dir}"))
+        for f in ldir:
+            # Take the first run directory
+            if "run_" in f:
+                cf_path = f"{this_test_dir}/{f}/work/"
+                cfiles = sorted(
+                    glob.glob(f"{user_info['test_dir']}/{cf_path}/{cfile}*.sh")
+                )
+                for cf in cfiles:
+                    if os.path.isfile(cf) and not os.path.islink(cf):
+                        subpaths.append(f"{cf_path}{os.path.basename(cf)}")
+                break
     elif cfile == "namelists":
         # Get path of the finished_config
         s_config_yaml, _ = get_rel_paths_compare_files(

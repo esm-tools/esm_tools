@@ -66,6 +66,10 @@ icon:
    #                 ensemble member 002 / 003 (for CERESMIP ensemble members 2 and 3)
    #   pcmdi-1-1-10: CMIP7 PCMDI-AMIP-1-1-10 (HadISST1 + OISST v2.1) as used by
    #                 Trang's ICON-XPP AMIP setup, 1949-01 .. 2022-01-16
+   #   hadisst2p4-clim1850-1879: pre-industrial climatology (monthly means 1850-1879)
+   #                 of the hadisst2p4 products (SST member 001, sea ice HadISST 2.2.1.0),
+   #                 the same annual cycle every year, 1949-01-01 .. 2025-01-16, for
+   #                 CERESMIP piclim-histall (SST/sea ice fixed at PI), see r0005/README.md
    sstice: hadisst1p1
    choose_sstice:
       hadisst1p1:
@@ -89,6 +93,9 @@ icon:
       pcmdi-1-1-10:
          sstice_dir: ${input_dir}/${grid_id}/sst_and_seaice/r0001
          sstice_name: CMIP_PCMDI-AMIP-1-1-10_194901-202112
+      hadisst2p4-clim1850-1879:
+         sstice_dir: ${input_dir}/${grid_id}_geomar/sst_and_seaice/r0005
+         sstice_name: HadISST.2.4.0.0-member001_SIC-HadISST.2.2.1.0-clim1850-1879-midmonth_194901-202412
    # extpar file, JSBACH land files and surface namelist settings used if
    # amip: True (see choose_amip_surface in choose_amip below). The extpar file
    # and the JSBACH files must belong together (same land-sea mask; JSBACH

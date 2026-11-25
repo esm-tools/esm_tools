@@ -168,7 +168,8 @@ def clean_user_specific_info(info, str2clean, protected_strings=[]):
         String to be cleaned
     protected_strings : list, optional
         Strings that must not be modified during cleanup (e.g. hardcoded
-        test-data paths in runscripts).
+        test-data paths in runscripts). The global ``protected_strings`` from
+        ``ignore_compare.yaml`` (``info["ignore"]``) are always added.
 
     Returns
     -------
@@ -178,6 +179,15 @@ def clean_user_specific_info(info, str2clean, protected_strings=[]):
 
     this_path = os.getcwd()
     clean_str = str2clean
+
+    # Per-model protected strings plus the global ones. Longest first, so a shorter
+    # string cannot break a longer one that contains it.
+    protected_strings = sorted(
+        set(protected_strings)
+        | set((info.get("ignore") or {}).get("protected_strings", [])),
+        key=len,
+        reverse=True,
+    )
 
     # Transform into a list if necessary
     if isinstance(str2clean, str):

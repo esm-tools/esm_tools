@@ -117,11 +117,22 @@ def main():
     # Special actions for running from GitHub servers
     if info["in_github"]:
         info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
-        # Ignore the globbing variables
-        info["ignore"]["finished_config"].append("_glob_[0-9]*: ")
+
+    # Ignore the globbing expansions (``<descr>_glob_<i>``): they depend on the files
+    # present on each machine (none on GitHub)
+    info["ignore"]["finished_config"].append("_glob_[0-9]+: ")
 
     # Ignore conda configs
     info["ignore"]["finished_config"].append("launched_with_conda:")
+    # Ignore conda activation lines in .run files (only written when launched from
+    # an active conda environment, see ``batch_system.get_conda_activate_commands``)
+    info["ignore"].setdefault(".run", []).extend(
+        [
+            r"^\s*# Activate conda environment",
+            r"^\s*source .*/bin/activate\s*$",
+            r"^\s*conda activate ",
+        ]
+    )
 
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")

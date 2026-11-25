@@ -19,7 +19,15 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists", "hostfile_"],
+    "run": [
+        ".run",
+        "finished_config",
+        "namelists",
+        "hostfile_",
+        "rank_placement",
+        "prog_",
+        "script_",
+    ],
 }
 
 """
@@ -111,8 +119,9 @@ def comp_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     this_computer = info["this_computer"]
-    # Pass the computer to ``esm_master`` if it was given with ``--computer``
-    computer_flag = f" --computer {this_computer}" if info["computer_explicit"] else ""
+    # Always pass the computer to ``esm_master`` (from ``--computer`` or the hostname),
+    # so the output is the same on the HPCs and on GitHub (which uses ``--computer``)
+    computer_flag = f" --computer {this_computer}"
 
     # Set the regex formats for check compilations
     cd_format = re.compile("         cd (.*)")
@@ -297,10 +306,10 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
-    # Pass the computer to ``esm_runscripts`` if it was given with ``--computer``
-    computer_flag = (
-        f" --computer {info['this_computer']}" if info["computer_explicit"] else ""
-    )
+    # Always pass the computer to ``esm_runscripts`` (from ``--computer`` or the
+    # hostname), so the output is the same on the HPCs and on GitHub (which uses
+    # ``--computer``)
+    computer_flag = f" --computer {info['this_computer']}"
     run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0

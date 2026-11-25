@@ -56,6 +56,7 @@
 # =============================================================================
 
 fesom:
+    with_tripyview: true
     vis_project: ${general.account}
     vis_user: !ENV ${USER}
     vis_server: NOT_SET
@@ -82,15 +83,17 @@ fesom:
         Tripy1: "${general.experiment_scripts_dir}/${model}/Subjob_tripy.sh"
         Tripy2: "${general.experiment_scripts_dir}/${model}/ESM_auto_tripy.yaml"
 
-    workflow:
-        next_run_triggered_by: tidy
-        subjobs:
-            Tripy_Fesom:
-                batch_or_shell: batch
-                order_in_cluster: concurrent
-                run_on_queue: ${computer.partitions.pp.name}
-                run_after: tidy
-                script_dir: ${base_dir}/${expid}/scripts/fesom
-                submit_to_batch_system: true
-                script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir} ${general.base_dir} ${general.expid} ${fesom.tripyview_conda_module} ${fesom.vis_sync} ${fesom.vis_server} ${fesom.vis_publicdir}"
-                nproc: 1
+    choose_with_tripyview:
+        true:
+            workflow:
+                next_run_triggered_by: tidy
+                subjobs:
+                    Tripy_Fesom:
+                        batch_or_shell: batch
+                        order_in_cluster: concurrent
+                        run_on_queue: ${computer.partitions.pp.name}
+                        run_after: tidy
+                        script_dir: ${base_dir}/${expid}/scripts/fesom
+                        submit_to_batch_system: true
+                        script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir} ${general.base_dir} ${general.expid} ${fesom.tripyview_conda_module} ${fesom.vis_sync} ${fesom.vis_server} ${fesom.vis_publicdir}"
+                        nproc: 1

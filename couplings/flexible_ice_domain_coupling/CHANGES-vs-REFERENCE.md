@@ -177,6 +177,22 @@ hard-coded T63 name.
 
 *To reproduce the reference behaviour:* `jsbach_init_update: full`.
 
+**Maximum LAI on cells whose glacier changed.** JSBACH sets the dynamic
+maximum LAI `laiMax_dyn` (veg restart) only on a cold start, to
+`MaxLAI(cover_type)`, and never raises it again (`update_maximum_lai` is
+commented out in `mo_phenology.f90` of echam-6.3.05p2). Glacier cells carry
+`LAI_negligible` (1e-5) on every tile, so a deglaciated cell kept that value and
+could never grow leaves: in the T2 deglaciation runs formerly glaciated Canada
+and Scandinavia stayed about 75 % desert at 127 ka (LAI 0.1-0.3, July T2m
+7-15 K too warm), and in `flextest_20261123` all 23 deglaciated cells had
+`laiMax_dyn` = 0 on all tiles. The veg-restart update now sets `laiMax_dyn` on
+deglaciated cells to `MaxLAI(cover_type)` from the run's `lctlib.def` (what
+every other land cell holds) and to 0 on new glaciers
+(`utils/jsbach_reset_laimax_dyn.py`; exit 79 without `lctlib.def`).
+
+*To reproduce the reference behaviour:* not switchable; the reference left
+`laiMax_dyn` untouched.
+
 **Albedo on deglaciated cells.** Where `unit.24` has a glacier and the ice
 sheet has none (inside a domain), `ALB` kept the glacier value (mean 0.63 on 47
 cells in `dual_hemisphere_t02`). It now takes the albedo of the nearest land
@@ -434,6 +450,15 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
 11. **`apply_hosing_correction.py`** takes any number of
     `--pair DISCHARGE AREA` and sums the integrals; the old four-positional form
     still works.
+12. **`FESOM_DISCH_FILES` is comma separated.** ESM-Tools writes the environment
+    as unquoted `export NAME=value`, so the space-separated list kept only the
+    first file and the disch_file check stopped with exit 76 although both
+    domains were listed (`flextest_20261123`, 3141).
+13. **`latest_discharge.nc` keeps its x/y axes.** `-setgrid` with a lon/lat-only
+    `ice.griddes` (from `make_ice_griddes.py`) dropped them; the iceberg plugin
+    then took 1 m cells and seeded no Antarctic bergs (`flextest_20261123`
+    3141/3142, about 3000 Gt/yr of calving). x/y are copied back from the PISM
+    file, and a cell size that is not a PISM cell in metres stops with exit 42.
 
 ---
 

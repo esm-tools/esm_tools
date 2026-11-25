@@ -331,7 +331,7 @@ function ice2fesom_prepare_iceberg_discharge {
 ## no domain wrote this chunk (no iceberg_coupling, a typo, an old path) is
 ## missing or stale. The plugin itself already checks that basin_file and
 ## domain match disch_file in length.
-## disch_file comes from env_awiesm.py (FESOM_DISCH_FILES); it is not set in
+## disch_file comes from env_awiesm.py (FESOM_DISCH_FILES, comma separated); it is not set in
 ## the first chunk, where FESOM reads ini_disch_file, and the check is skipped.
 ## Stops with exit 76.
 ice2fesom_check_disch_files() {
@@ -342,7 +342,8 @@ ice2fesom_check_disch_files() {
         fi
         # compare normalised paths (the runscript paths often carry "//")
         _cd_expect=" $(for _cd_f in $1; do echo ${_cd_f} | tr -s /; done | sort -u | tr '\n' ' ')"
-        _cd_given=" $(for _cd_f in ${FESOM_DISCH_FILES}; do echo ${_cd_f} | tr -s /; done | sort -u | tr '\n' ' ')"
+        # comma separated (env_awiesm.fesom_disch_files); spaces tolerated
+        _cd_given=" $(for _cd_f in $(echo "${FESOM_DISCH_FILES}" | tr ',' ' '); do echo ${_cd_f} | tr -s /; done | sort -u | tr '\n' ' ')"
         for _cd_f in ${_cd_expect}; do
                 case "${_cd_given}" in *" ${_cd_f} "*) ;; *) _cd_missing="${_cd_missing} ${_cd_f}" ;; esac
         done
@@ -1053,6 +1054,28 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             -setgrid,${ICE_COUPLE_DIR}/ice.griddes ${pism_discharge_file} \
             ${ICE_COUPLE_DIR}/latest_discharge.nc \
         || { echo " * ERROR: cdo failed to create ${ICE_COUPLE_DIR}/latest_discharge.nc"; exit 42; }
+
+    # The iceberg plugin (fesom_icb_pism) takes the cell size from the x/y
+    # axes in metres. -setgrid with a lon/lat-only ice.griddes (e.g. one made
+    # by make_ice_griddes.py, without the projection section CDO's griddes
+    # has) drops them, the plugin then sees 1 m cells and seeds nothing
+    # (flextest_20261123 3141/3142: no Antarctic icebergs for 3000 Gt/yr of
+    # calving). Put x/y back from the PISM file.
+    if ! ncdump -h ${ICE_COUPLE_DIR}/latest_discharge.nc | grep -q "[[:space:]]x(x)"; then
+        echo " *   latest_discharge.nc lost the x/y axes with -setgrid; copying them from ${pism_discharge_file}"
+        ncks -A -v x,y ${pism_discharge_file} ${ICE_COUPLE_DIR}/latest_discharge.nc \
+            || { echo " * ERROR: could not add x/y to ${ICE_COUPLE_DIR}/latest_discharge.nc"; echo " S T O P  42"; exit 42; }
+    fi
+    typeset _ld_dx
+    _ld_dx=$(ncks --trd -H -C -v x -d x,0,1 ${ICE_COUPLE_DIR}/latest_discharge.nc 2>/dev/null \
+             | sed -n 's/.*x\[[0-9]*\]=\([-0-9.eE+]*\).*/\1/p' | awk 'NR==1{a=$1} NR==2{d=$1-a; print (d<0?-d:d)}')
+    if [ -z "${_ld_dx}" ] || awk -v d="${_ld_dx}" 'BEGIN{exit !(d < 100)}'; then
+        echo " !!! latest_discharge.nc of ${ICE_DOMAIN}: x spacing '${_ld_dx}' is not a PISM cell size in m;"
+        echo " !!! the iceberg plugin would seed (almost) nothing for this domain."
+        echo " S T O P  42"
+        exit 42
+    fi
+    echo " *   latest_discharge.nc of ${ICE_DOMAIN}: x/y in m, cell ${_ld_dx} m"
 
     use_icesheet_coupling=1
 }

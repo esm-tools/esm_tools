@@ -29,8 +29,11 @@ def fesom_use_cavity(config):
 
 
 def fesom_disch_files(config):
-    """FESOM's disch_file (the iceberg plugin's input) as a space separated list.
+    """FESOM's disch_file (the iceberg plugin's input) as a comma separated list.
 
+    Comma, not space: ESM-Tools writes the environment as unquoted
+    ``export NAME=value`` lines, so a space would keep only the first file
+    (flextest_20261123, chunk 4: exit 76 with both files in disch_file).
     Empty when FESOM has no icebergs, and in the first chunk, where the plugin
     reads ini_disch_file instead (ice2fesom_check_disch_files then skips).
     """
@@ -38,8 +41,8 @@ def fesom_disch_files(config):
         return ""
     value = config["fesom"].get("disch_file", "")
     if isinstance(value, (list, tuple)):
-        return " ".join(str(v) for v in value if v)
-    return str(value or "")
+        return ",".join(str(v) for v in value if v)
+    return ",".join(str(value or "").split())
 
 
 def prepare_environment(config):

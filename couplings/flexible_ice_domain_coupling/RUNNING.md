@@ -259,7 +259,7 @@ bit-identical to before (checked).
 
 | key | default | effect |
 |---|---|---|
-| `jsbach_init_update` | `changed_cells` | how the JSBACH init file follows the new glacier mask. It is regenerated each coupling from the pool's maps (`jsbach_init_file`). `changed_cells`: the regenerated values are taken only on the cells whose glacier mask changed, the current `jsbach.nc` stays everywhere else (keeps a paleo land surface outside the ice sheets; `utils/jsbach_merge_changed_cells.py`). `full`: the regenerated file replaces `jsbach.nc` everywhere (legacy) |
+| `jsbach_init_update` | `changed_cells` | how the JSBACH init file follows the new glacier mask. It is regenerated each coupling from the pool's maps (`jsbach_init_file`). `changed_cells`: the regenerated values are taken only on the cells whose glacier mask changed, the current `jsbach.nc` stays everywhere else (keeps a paleo land surface outside the ice sheets; `utils/jsbach_merge_changed_cells.py`). `full`: the regenerated file replaces `jsbach.nc` everywhere (legacy). In both cases the veg restart's `laiMax_dyn` is reset on cells whose glacier changed (deglaciated: `MaxLAI(cover_type)` from `lctlib.def`, taken from `FORCING_DIR_jsbach` or `LCTLIB_FILE`; new glacier: 0); without `lctlib.def` exit 79 |
 | `jsbach_init_year` | `1850` | year of the pool's cover types and fractions in the regenerated file |
 | `jsbach_init_dynveg` | `True` | regenerated file for dynamic vegetation |
 

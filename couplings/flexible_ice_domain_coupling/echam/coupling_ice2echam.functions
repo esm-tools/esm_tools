@@ -2044,6 +2044,40 @@ set_glacial_mask_jsbach_update_restart_veg() {
                                         2d_restart_${EXP_ID}_veg_${var}.tmp
                                 mv 2d_restart_${EXP_ID}_veg_${var}.tmp 2d_restart_${EXP_ID}_veg_${var}.nc
                                 ;;
+                        laiMax_dyn )
+                                # Dynamic maximum LAI (phenology). JSBACH sets
+                                # it only on a cold start, to MaxLAI of the
+                                # cover type, and never raises it again
+                                # (update_maximum_lai is commented out in
+                                # mo_phenology.f90). Glacier cells carry 0, so
+                                # a deglaciated cell would never grow leaves.
+                                # Set it as JSBACH carries it on such cells:
+                                # deglaciated -> MaxLAI(cover_type) from
+                                # lctlib.def (what every other land cell
+                                # holds), new glacier -> 0 (floored to
+                                # LAI_negligible by JSBACH, as on all glacier
+                                # cells). Not -1: JSBACH would then reset the
+                                # whole nproma block.
+                                _lctlib=${LCTLIB_FILE:-${FORCING_DIR_jsbach}/lctlib.def}
+                                if [ ! -f "${_lctlib}" ]; then
+                                        echo -e "\t\t !!! no lctlib.def (${_lctlib}); set LCTLIB_FILE."
+                                        echo -e "\t\t !!! Without it deglaciated cells keep laiMax_dyn = 0 and never grow vegetation."
+                                        echo " S T O P  79"
+                                        exit 79
+                                fi
+                                echo -e "\t\t- Resetting ${var} on changed glacier cells to MaxLAI(cover_type) from ${_lctlib}"
+                                if ! ( module load python3 >/dev/null 2>&1
+                                       python3 ${FUNCTION_PATH}/../utils/jsbach_reset_laimax_dyn.py \
+                                        2d_restart_${EXP_ID}_veg_${var}.nc \
+                                        ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                                        ${_lctlib} \
+                                        ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                        ${COUPLE_DIR}/update_veg/new_glaciers.nc ); then
+                                        echo -e "\t\t !!! jsbach_reset_laimax_dyn.py failed"
+                                        echo " S T O P  79"
+                                        exit 79
+                                fi
+                                ;;
                         bare_fpc )
                                 # For bare fpc, we need the fraction of "bare" under glaciers to be 1
                                 cdo -s ifthenelse \

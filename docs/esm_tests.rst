@@ -137,11 +137,16 @@ Last-state
 
 The ``last-state`` files are https://github.com/esm-tools/esm_tets_info repository, in
 the ``release`` branch. The files stored in the ``last-state`` are:
+
 * compilation scripts (``comp-*.sh``)
 * namelists
 * namcouple
 * finished_config
 * batch scripts (``.run``)
+* ``hostfile_srun`` (``srun --multi-prog`` file)
+* ``rank_placement`` (rank placement of ``taskset`` runs, see
+  :ref:`cookbook:Rank placement with taskset`)
+* ``prog_<model>.sh`` and ``script_<model>.sh`` (``taskset`` wrappers of each model)
 
 Check test status
 -----------------

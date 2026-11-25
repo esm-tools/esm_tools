@@ -117,8 +117,10 @@ def main():
     # Special actions for running from GitHub servers
     if info["in_github"]:
         info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
-        # Ignore the globbing variables
-        info["ignore"]["finished_config"].append("_glob_[0-9]*: ")
+
+    # Ignore the globbing expansions (``<descr>_glob_<i>``): they depend on the files
+    # present on each machine (none on GitHub)
+    info["ignore"]["finished_config"].append("_glob_[0-9]+: ")
 
     # Ignore conda configs
     info["ignore"]["finished_config"].append("launched_with_conda:")

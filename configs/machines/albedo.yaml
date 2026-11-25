@@ -175,7 +175,7 @@ computer:
         - "load ${eccodes_module}"
         - "load ${libaec_module}"
         # General Tools:
-        - "load cdo/2.0.5"
+        - "load cdo/2.5.2"
         - "load nco/5.0.1"
         - "load git/2.35.2"
         - "load perl/5.35.0-gcc12.1.0"

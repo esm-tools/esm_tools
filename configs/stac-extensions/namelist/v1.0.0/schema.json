@@ -25,7 +25,7 @@
   },
   "oneOf": [
     {
-      "$comment": "Item: nml:{component}:{file}:{group}:{key} live in properties.",
+      "$comment": "Item: nml__{component}__{file}__{group}__{key} live in properties.",
       "type": "object",
       "required": [
         "type",
@@ -69,11 +69,11 @@
         },
         "nml:parameters": {
           "title": "Flattened namelist parameters",
-          "description": "Maps 'component:file:group:key' to the parameter's value (a repeated group is indexed as 'group[N]'), for CQL2 filtering. Component-qualified so two components sharing a filename cannot collide.",
+          "description": "Maps 'component__file__group__key' to the parameter's value (a repeated group is indexed as 'group_N'), for CQL2 filtering. Component-qualified so two components sharing a filename cannot collide. Keys are JSON-path-safe (only [A-Za-z0-9_]) so pgstac can filter them without queryables registration.",
           "type": "object",
           "propertyNames": {
-            "$comment": "Exactly four colon-separated, non-empty segments: component:file:group:key. Assumes colon-free components and filenames (basenames such as 'namelist.echam').",
-            "pattern": "^[^:]+:[^:]+:[^:]+:[^:]+$"
+            "$comment": "A flattened key: word characters and the '__' segment separator only; every other character in a segment is sanitised to '_'.",
+            "pattern": "^[A-Za-z0-9_]+$"
           },
           "additionalProperties": {
             "$ref": "#/definitions/queryable_value"
@@ -110,14 +110,14 @@
     },
     "item_fields": {
       "title": "Namelist item fields",
-      "description": "STAC Item properties: every 'nml:{component}:{file}:{group}:{key}' key maps to a queryable value; foreign (non-nml:) core properties are unconstrained.",
+      "description": "STAC Item properties: every 'nml__{component}__{file}__{group}__{key}' key maps to a queryable value; foreign (non-nml__) core properties are unconstrained.",
       "type": "object",
       "propertyNames": {
-        "$comment": "Foreign props pass; nml: keys must have exactly four colon-separated tail segments (component:file:group:key).",
-        "pattern": "^(?!nml:)|^nml:[^:]+:[^:]+:[^:]+:[^:]+$"
+        "$comment": "Foreign props pass; nml__ keys are JSON-path-safe (word characters and the '__' separator only).",
+        "pattern": "^(?!nml__)|^nml__[A-Za-z0-9_]+$"
       },
       "patternProperties": {
-        "^nml:[^:]+:[^:]+:[^:]+:[^:]+$": {
+        "^nml__[A-Za-z0-9_]+$": {
           "$ref": "#/definitions/queryable_value"
         }
       }

@@ -2,6 +2,9 @@
 
 computer:
     name: levante
+    # Computing center hosting this machine, emitted as the STAC "host"
+    # provider (canonical WCRP-universe organisation record).
+    hosted_by: "https://esgvoc.ipsl.fr/resource/universe/organisation/dkrz"  # DKRZ
     #hyper_flag: "--cpus-per-task=1"
     #additional_flags: ["--mem=0"] # TODO@Sebastian: why was this line commented out?
     account: None

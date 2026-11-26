@@ -12,6 +12,7 @@ from __future__ import annotations
 import pystac
 
 from esm_catalog.models import Contact
+from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 
@@ -37,3 +38,9 @@ def add_contacts_collection_extension(
     collection.extra_fields["contacts"] = [contact.to_stac() for contact in contacts]
     # remote schema (upstream stac-extensions) — nothing local to validate against
     apply_extension(collection, Extension.contacts, validate=False)
+
+
+@hookimpl
+def apply_to_collection(collection, exp_metadata, hints) -> None:
+    """Register this extension for the collection contract (no item-level counterpart)."""
+    add_contacts_collection_extension(collection, exp_metadata.contacts)

@@ -10,6 +10,7 @@ pandas
 pyyaml
 questionary
 sphinxcontrib-napoleon
+sphinxcontrib-mermaid
 sphinx-copybutton
 sphinx-tabs
 sphinx-toolbox

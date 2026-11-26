@@ -7,7 +7,12 @@ from datetime import datetime, timezone
 import pytest
 from pystac import Collection, Item
 
-from esm_catalog.collection import make_collection, update_extent
+from esm_catalog.collection import (
+    make_collection,
+    update_extent,
+    update_variable_summary,
+    update_vcs_summary,
+)
 from esm_catalog.models import Contact
 from esm_catalog.registry import EXTENSION_URLS
 
@@ -58,8 +63,8 @@ def test_collection_lists_all_experiment_components():
     collection = make_collection(exp_metadata)
     assert collection.extra_fields["components"] == ["echam", "fesom"]
     params = collection.extra_fields["nml:parameters"]
-    assert params["echam:namelist.echam:runctl:delta_time"] == 450
-    assert params["fesom:namelist.fesom:clockinit:yearnew"] == 1850
+    assert params["echam__namelist_echam__runctl__delta_time"] == 450
+    assert params["fesom__namelist_fesom__clockinit__yearnew"] == 1850
 
 
 def test_update_extent_expands_temporal(collection):
@@ -180,3 +185,96 @@ def test_collection_wires_contacts_and_registers_extension():
     collection = make_collection(make_exp_metadata(contacts=contacts))
     assert collection.extra_fields["contacts"] == [c.to_stac() for c in contacts]
     assert EXTENSION_URLS["contacts"] in collection.stac_extensions
+
+
+# --------------------------------------------------------------------------- #
+# update_variable_summary — summaries.variable, a plain STAC field stock       #
+# stac-browser already renders as a browse/filter facet                       #
+# --------------------------------------------------------------------------- #
+
+
+def _item_with_variable(variable):
+    return Item(
+        id="test",
+        geometry=None,
+        bbox=None,
+        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+        properties={"variable": variable},
+    )
+
+
+def test_update_variable_summary_adds_first_variable(collection):
+    update_variable_summary(collection, _item_with_variable("temp2"))
+    assert collection.summaries.lists["variable"] == ["temp2"]
+
+
+def test_update_variable_summary_accumulates_distinct_variables_sorted(collection):
+    for variable in ("temp2", "precip", "temp2"):
+        update_variable_summary(collection, _item_with_variable(variable))
+    assert collection.summaries.lists["variable"] == ["precip", "temp2"]
+
+
+def test_update_variable_summary_noop_without_a_variable(collection):
+    update_variable_summary(
+        collection,
+        Item(
+            id="test",
+            geometry=None,
+            bbox=None,
+            datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+            properties={},
+        ),
+    )
+    assert "variable" not in collection.summaries.lists
+
+
+def test_update_variable_summary_appears_in_collection_to_dict(collection):
+    update_variable_summary(collection, _item_with_variable("temp2"))
+    assert collection.to_dict()["summaries"] == {"variable": ["temp2"]}
+
+
+# --------------------------------------------------------------------------- #
+# update_vcs_summary — summaries.vcs:revision/vcs:branch, flat and deduped     #
+# across every component (NOT the abandoned per-component dict design, see    #
+# esm_catalog.vcs's module docstring)                                         #
+# --------------------------------------------------------------------------- #
+
+
+def _item_with_vcs(revision=None, branch=None):
+    properties = {}
+    if revision:
+        properties["vcs:revision"] = revision
+    if branch:
+        properties["vcs:branch"] = branch
+    return Item(
+        id="test",
+        geometry=None,
+        bbox=None,
+        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+        properties=properties,
+    )
+
+
+def test_update_vcs_summary_adds_revision_and_branch(collection):
+    update_vcs_summary(collection, _item_with_vcs(revision="abc123", branch="release"))
+    assert collection.summaries.lists["vcs:revision"] == ["abc123"]
+    assert collection.summaries.lists["vcs:branch"] == ["release"]
+
+
+def test_update_vcs_summary_accumulates_across_components_sorted(collection):
+    update_vcs_summary(collection, _item_with_vcs(revision="abc123"))
+    update_vcs_summary(collection, _item_with_vcs(revision="def456"))
+    update_vcs_summary(collection, _item_with_vcs(revision="abc123"))  # duplicate
+    assert collection.summaries.lists["vcs:revision"] == ["abc123", "def456"]
+
+
+def test_update_vcs_summary_noop_without_vcs_fields(collection):
+    update_vcs_summary(collection, _item_with_vcs())
+    assert "vcs:revision" not in collection.summaries.lists
+    assert "vcs:branch" not in collection.summaries.lists
+
+
+def test_update_vcs_summary_revision_without_branch(collection):
+    update_vcs_summary(collection, _item_with_vcs(revision="abc123"))
+    assert collection.summaries.lists["vcs:revision"] == ["abc123"]
+    assert "vcs:branch" not in collection.summaries.lists

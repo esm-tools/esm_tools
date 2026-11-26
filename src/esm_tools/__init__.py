@@ -26,6 +26,7 @@ __email__ = "dirk.barbi@awi.de"
 __version__ = "6.72.0"
 
 import functools
+import importlib.resources
 import inspect
 import operator
 import os
@@ -34,7 +35,6 @@ import shutil
 import site
 import sys
 
-import pkg_resources
 import yaml
 from loguru import logger
 
@@ -211,7 +211,10 @@ def _get_real_dir_from_pth_file(subfolder):
 
 
 def _get_namelist_filepath_standard_install(namelist):
-    return pkg_resources.resource_filename("esm_tools.namelists", namelist)
+    path = str(importlib.resources.files("esm_tools.namelists") / namelist.lstrip("/"))
+    if namelist.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_namelist_filepath_editable_install(namelist):
@@ -219,7 +222,10 @@ def _get_namelist_filepath_editable_install(namelist):
 
 
 def _get_config_filepath_standard_install(config):
-    return pkg_resources.resource_filename("esm_tools.configs", config)
+    path = str(importlib.resources.files("esm_tools.configs") / config.lstrip("/"))
+    if config.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_config_filepath_editable_install(config):
@@ -227,7 +233,10 @@ def _get_config_filepath_editable_install(config):
 
 
 def _get_runscript_filepath_standard_install(runscript):
-    return pkg_resources.resource_filename("esm_tools.runscripts", runscript)
+    path = str(importlib.resources.files("esm_tools.runscripts") / runscript.lstrip("/"))
+    if runscript.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_runscript_filepath_editable_install(runscript):
@@ -235,7 +244,10 @@ def _get_runscript_filepath_editable_install(runscript):
 
 
 def _get_coupling_filepath_standard_install(coupling):
-    return pkg_resources.resource_filename("esm_tools.couplings", coupling)
+    path = str(importlib.resources.files("esm_tools.couplings") / coupling.lstrip("/"))
+    if coupling.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_coupling_filepath_editable_install(coupling):
@@ -243,11 +255,14 @@ def _get_coupling_filepath_editable_install(coupling):
 
 
 def get_config_as_str(config):
-    return pkg_resources.resource_string("esm_tools.configs", config)
+    return importlib.resources.files("esm_tools.configs").joinpath(config.lstrip("/")).read_bytes()
 
 
 def _list_config_dir_standard_install(dir_path):
-    return pkg_resources.resource_listdir("esm_tools.configs", dir_path)
+    return [
+        p.name
+        for p in importlib.resources.files("esm_tools.configs").joinpath(dir_path.lstrip("/")).iterdir()
+    ]
 
 
 def _list_config_dir_editable_install(dir_path):
@@ -272,8 +287,7 @@ def _read_config_standard_install(config):
     """
     if not config.endswith(".yaml"):
         config += ".yaml"
-    configstr = pkg_resources.resource_string("esm_tools.configs", config)
-    # configstr = pkg_resources.resource_string("configs", config)
+    configstr = importlib.resources.files("esm_tools.configs").joinpath(config.lstrip("/")).read_bytes()
     configdict = yaml.load(configstr, Loader=yaml.FullLoader)
     return configdict
 
@@ -293,7 +307,7 @@ def _read_namelist_standard_install(nml):
         A string representation of the namelist file. This should later be
         passed to the f90nml package.
     """
-    return pkg_resources.resource_string("esm_tools.namelists", nml)
+    return importlib.resources.files("esm_tools.namelists").joinpath(nml.lstrip("/")).read_bytes()
 
 
 def _read_config_editable_install(config):
@@ -318,7 +332,7 @@ def _read_config_editable_install(config):
 
 
 def _copy_config_folder_standard_install(dest_path):
-    src_path = pkg_resources.resource_filename("esm_tools.configs", ".")
+    src_path = str(importlib.resources.files("esm_tools.configs"))
     return shutil.copytree(src_path, dest_path)
 
 
@@ -328,7 +342,7 @@ def _copy_config_folder_editable_install(dest_path):
 
 
 def _copy_namelist_folder_standard_install(dest_path):
-    src_path = pkg_resources.resource_filename("esm_tools.namelists", ".")
+    src_path = str(importlib.resources.files("esm_tools.namelists"))
     return shutil.copytree(src_path, dest_path)
 
 
@@ -338,7 +352,7 @@ def _copy_namelist_folder_editable_install(dest_path):
 
 
 def _copy_runscript_folder_standard_install(dest_path):
-    src_path = pkg_resources.resource_filename("esm_tools.runscripts", ".")
+    src_path = str(importlib.resources.files("esm_tools.runscripts"))
     return shutil.copytree(src_path, dest_path)
 
 
@@ -348,7 +362,7 @@ def _copy_runscript_folder_editable_install(dest_path):
 
 
 def _copy_coupling_folder_standard_install(dest_path):
-    src_path = pkg_resources.resource_filename("esm_tools.couplings", ".")
+    src_path = str(importlib.resources.files("esm_tools.couplings"))
     return shutil.copytree(src_path, dest_path)
 
 

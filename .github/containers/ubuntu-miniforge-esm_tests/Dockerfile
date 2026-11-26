@@ -1,4 +1,5 @@
-# TODO (PG): Change to ghcr hosting at some point in the future.
+# Built and pushed to ghcr.io/esm-tools/esm_tools by
+# .github/workflows/build-container.yml.
 
 # Use Ubuntu 24.04 (LTS) as the base image. 25.04 reached its end of life (January
 # 2026), its apt repositories are gone and the image cannot be rebuilt
@@ -8,6 +9,18 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update the system and install essential tools
+#
+# tzdata: pyarrow's temporal COMPUTE kernels (pc.strftime, used by
+# stac_geoparquet when serializing timestamps back to STAC JSON) resolve
+# timezones through Arrow's own discover_tz_dir(), which searches a fixed
+# list of standard OS paths (/usr/share/zoneinfo chief among them) and does
+# NOT consult TZDIR or any conda-installed copy for this specific lookup --
+# verified directly: pointing TZDIR at either conda location had zero effect,
+# identical "Cannot locate timezone 'UTC': discover_tz_dir failed to find
+# zoneinfo" either way, while array construction/cast/to_pylist (a different,
+# more lenient Arrow code path) worked fine regardless. Only real system
+# tzdata at one of those hardcoded paths satisfies it. See below for the
+# conda-side TZDIR, which is unrelated and kept for other consumers.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     curl \
@@ -15,7 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsqlite3-dev \
     ca-certificates \
     bzip2 \
-    git && \
+    git \
+    tzdata && \
     rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US.UTF-8 && \
@@ -49,6 +63,23 @@ ENV LC_ALL=en_US.UTF-8
 
 # Set working directory inside the container
 WORKDIR /esm
+
+# catalog-grib needs the ecCodes C library at runtime; cfgrib/eccodes (the pip
+# packages) only bind to it. conda-forge bundles the compiled library, which
+# is far more reliable here than pip alone -- see setup.py's own comment on
+# the extra. Everything else (catalog + esm_tools itself) is plain pip.
+#
+# conda-forge's tzdata (installed below) covers the plain array
+# construction/cast/to_pylist code paths, which DO respect TZDIR -- but not
+# the temporal compute kernels (pc.strftime and friends), which need the
+# real system tzdata installed above instead. Kept for completeness/in case
+# some other consumer in this env does read TZDIR; not load-bearing for the
+# geoparquet push failure this was originally added for -- see the tzdata
+# apt-get comment above for the actual fix and how that was verified.
+COPY . .
+RUN mamba install -n esm_tools -y -c conda-forge eccodes tzdata && \
+    mamba run -n esm_tools pip install --no-cache-dir -e ".[catalog,catalog-grib]"
+ENV TZDIR=/opt/conda/envs/esm_tools/share/zoneinfo
 
 # Use the Conda environment by default (uncomment if using an environment)
 RUN echo "conda activate esm_tools" >> ~/.bashrc

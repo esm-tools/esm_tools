@@ -18,6 +18,7 @@ requirements = [
     "colorama==0.4.5",
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
+    "bokeh!=3.0.*,>=2.4.2",  # distributed's own dashboard dependency pin
     "gfw-creator==0.2.2",
     "gitpython==3.2.1",
     "jinja2==3.1.6",
@@ -49,6 +50,7 @@ requirements = [
     "xdgenvpy==2.3.5",
     "pydantic>=2",
     "h5netcdf>=0.8.1",
+    "universal-pathlib>=0.2",
 ]
 
 setup_requirements = []
@@ -93,17 +95,57 @@ setup(
             "esm_utilities=esm_utilities.cli:main",
             "esm-catalog=esm_catalog.cli:main",
         ],
+        # Discovered via pluggy's load_setuptools_entrypoints(...) -- declared
+        # here rather than hardcoded in each plugin manager, so none of these
+        # model-specific modules need special-casing in esm_catalog itself if
+        # they move to their own package later (see esm-tools/esm_tools#1614).
+        "esm_catalog.enrichers": [
+            "echam=esm_catalog.scan.model_plugins.enrichers.grib.echam",
+            "oifs=esm_catalog.scan.model_plugins.enrichers.netcdf.oifs",
+            "fesom=esm_catalog.scan.model_plugins.enrichers.netcdf.fesom",
+        ],
+        "esm_catalog.fastpath.grib": [
+            "echam=esm_catalog.scan.model_plugins.fastpath.grib.echam",
+        ],
+        "esm_catalog.path_facet_data": [
+            "echam=esm_catalog.scan.model_plugins.path_facets.grib.echam",
+            "jsbach=esm_catalog.scan.model_plugins.path_facets.grib.jsbach",
+            "fesom=esm_catalog.scan.model_plugins.path_facets.netcdf.fesom",
+            "oifs=esm_catalog.scan.model_plugins.path_facets.netcdf.oifs",
+        ],
+        "esm_catalog.formats": [
+            "lpj_guess=esm_catalog.scan.model_plugins.readers.lpj_guess",
+            "opaque=esm_catalog.scan.model_plugins.readers.opaque",
+        ],
+        "esm_catalog.readers": [
+            "lpj_guess=esm_catalog.scan.model_plugins.readers.lpj_guess",
+            "opaque=esm_catalog.scan.model_plugins.readers.opaque",
+        ],
     },
     extras_require={
         "catalog": [
             "pystac>=1.8",
             "shapely>=2.0",
             "universal-pathlib>=0.2",
+            "sshfs>=2023.12.0",
             "f90nml>=1.4",
             "jsonschema>=4.0",
             "pydantic>=2",
+            "rich-click>=1.7",
+            "xarray>=2023.1",
+            "cf-xarray>=0.8",
+            "pyarrow>=14",
+            "stac-geoparquet>=0.6",
+            "pluggy>=1.0",
+            "httpx>=0.27",
+            "pydantic-settings>=2.2",
+            "platformdirs>=4.0",
+            "pyyaml>=6.0",
+            # Parses/compares the paleo: extension's geological-time strings
+            # (unbounded, optionally negative years RFC3339 can't express) --
+            # used by paleo.py to compute the paleo:year range summary.
+            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
-        # Only needed to run tests/test_esm_catalog.
         # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
         # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5
         # needed) and the memory:// (fsspec) scan path reopens them through the
@@ -112,7 +154,19 @@ setup(
             "pytest>=7.4",
             "scipy>=1.10",
             "h5py>=3.8",
-            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
+        ],
+        # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
+        # is heavy and awkward in CI, so the scanner treats GRIB as unsupported
+        # (a clean skip) unless this extra is installed.
+        "catalog-grib": [
+            "cfgrib>=0.9",
+            "eccodes>=1.5",
+        ],
+        # CV validation for cmip6.py's declared DRS facets (esm_catalog.esgvoc_validate)
+        # is opt-in: it needs a locally-installed CV database (`esgvoc use <project>@latest`)
+        # and is a publish-time check, not something scanning depends on.
+        "catalog-esgvoc": [
+            "esgvoc>=6.0",
         ],
     },
     install_requires=requirements,
@@ -141,6 +195,7 @@ setup(
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
         "esm_tools.couplings": ["../couplings/*"],
+        "esm_catalog": ["distributed/templates/*.j2"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",

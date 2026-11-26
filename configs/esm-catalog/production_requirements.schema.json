@@ -2,15 +2,29 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://esm-tools.github.io/esm-catalog/production_requirements/v1.0.0/schema.json",
   "title": "ESM-Catalog Production Requirements",
-  "description": "DRAFT. Production-only requirements for a valid ESM-Tools STAC catalog, recovered from the deleted src/esm_catalog/context.py production checkers. This profile expresses ONLY the requirements that pystac.validate() and the pydantic models do not already enforce: PI/author contacts on the experiment and the fields each contact must carry. context.py enforced these at the CollectionContext (whole-experiment) level, so this profile targets the Collection. Contacts are experiment-wide and are not stamped on individual Items, so there is no Item requirement here. STAC-core required fields (Collection description/license/extent) are not restated because pystac.validate() already enforces them. Apply this in addition to pystac.validate(), and only in 'production' mode (the dev path leaves contacts optional).",
+  "description": "DRAFT. Production-only requirements for a valid ESM-Tools STAC catalog, recovered from the deleted src/esm_catalog/context.py production checkers. This profile requires real experiment metadata: a description, a data license, and at least one PI/author contact with the fields each contact must carry. context.py enforced these at the CollectionContext (whole-experiment) level, so this profile targets the Collection. Contacts are experiment-wide and are not stamped on individual Items, so there is no Item requirement here. pystac.validate() checks that description and license are merely present; make_collection fills them with the experiment id and 'proprietary' when the experiment's general.metadata is empty, so those defaults pass pystac but not production. Enforce this profile against the experiment's sourced metadata (pre-fallback) so a missing description/license/contacts fails. Apply in addition to pystac.validate(), and only in 'production' mode (the dev path leaves these optional).",
   "type": "object",
   "required": [
     "type",
+    "description",
+    "license",
     "contacts"
   ],
   "properties": {
     "type": {
       "const": "Collection"
+    },
+    "description": {
+      "title": "Description",
+      "description": "Experiment description, from general.metadata Description. Required in production. make_collection falls back to the experiment id to keep STAC valid, so an empty general.metadata still yields a (non-real) description; enforce against the sourced metadata to catch that.",
+      "type": "string",
+      "minLength": 1
+    },
+    "license": {
+      "title": "License",
+      "description": "Experiment data license, from general.metadata License. Required in production. make_collection defaults to 'proprietary'; enforce against the sourced metadata to catch a missing license.",
+      "type": "string",
+      "minLength": 1
     },
     "contacts": {
       "$ref": "#/definitions/contacts"

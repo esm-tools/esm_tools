@@ -6,6 +6,7 @@ import sys
 import ruamel.yaml
 import yaml
 from loguru import logger
+from upath import UPath
 from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
 
@@ -196,13 +197,13 @@ def yaml_file_to_dict(filepath, register_sections=True):
     esm_tools_loader = EsmToolsLoader()
     for extension in YAML_AUTO_EXTENSIONS:
         try:
-            with open(filepath + extension) as yaml_file:
+            with UPath(str(filepath) + extension).open() as yaml_file:
                 # Check for duplicates
                 check_duplicates(yaml_file)
                 # Back to the beginning of the file
                 yaml_file.seek(0, 0)
                 # Actually load the file
-                esm_tools_loader.set_filename(yaml_file)
+                esm_tools_loader.set_filename(str(filepath) + extension)
                 yaml_load, provenance = esm_tools_loader.load(yaml_file)
 
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
@@ -844,7 +845,10 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         stream : file object
             The file object of the yaml file
         """
-        self.set_filename(stream.name)
+        # Local file handles expose ``.name``; remote fsspec handles (opened via
+        # UPath over ssh/scoutfs/s3/...) may not, so fall back to the filename the
+        # caller already set from the path.
+        self.set_filename(getattr(stream, "name", None) or self.filename)
         self.set_file_categorty()
         self.set_file_subcategory()
         mapping_with_tuple_prov = super().load(stream)[0]

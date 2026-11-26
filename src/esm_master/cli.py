@@ -98,6 +98,16 @@ def main():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--computer",
+        dest="computer_name",
+        default=None,
+        help=(
+            "Use the configuration of this machine instead of detecting it from "
+            "the hostname (name as in 'configs/machines/<name>.yaml')"
+        ),
+    )
+
     parsed_args = vars(parser.parse_intermixed_args())
     parsed_args["overrides"] = esm_parser.cli_overrides_to_dict(
         parsed_args["overrides"], separator=parsed_args["separator"]

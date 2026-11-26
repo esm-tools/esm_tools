@@ -1,0 +1,23 @@
+general:
+        user: !ENV ${USER}
+        account: "paleodyn.paleodyn"
+        setup_name: fesom
+        compute_time: "12:00:00"
+        initial_date: '1958-01-01'
+        final_date: '2021-01-01'
+        base_dir: "/albedo/work/projects/p_awiesm3_cmip7/runtime/${general.setup_name}-2.8/"
+        nyear: 10
+        use_venv: False
+
+fesom:
+        # 2.8.0 built with -DFESOM_WITH_XIOS=ON. Output is XIOS only:
+        # namelist.io is not read, file_def_fesom.xml decides.
+        version: "2.8.0-xios"
+        model_dir: "/albedo/scratch/user/jstreffi/model_codes/fesom-2.8/"
+        resolution: "CORE2"
+        time_step: 1800
+        nproc: 768
+        lresume: false
+        restart_rate: 10
+        restart_first: 10
+        restart_unit: 'y'

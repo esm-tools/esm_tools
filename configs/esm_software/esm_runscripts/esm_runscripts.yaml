@@ -78,6 +78,7 @@ choose_job_type:
         prepcompute:
                 recipe:
                         - "compile_model"
+                        - "snapshot_model_dir"
                         - "_show_simulation_info"
                         - "create_new_files"
                         - "create_empty_folders"

@@ -39,6 +39,7 @@ core:
 
                 prepcompute:
                         - "compile_model"
+                        - "snapshot_model_dir"
                         - "_write_finalized_config"
                         - "_show_simulation_info"
                         - "assemble_filelists"

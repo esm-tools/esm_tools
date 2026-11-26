@@ -147,8 +147,14 @@ def compile_model(config):
             config["general"]["model_dir"] = (
                 config["general"]["experiment_src_dir"] + f"/{model}-{version}"
             )
-    config = snapshot_model_sources(config)
     return config
+
+
+def snaphot_model_dir(config):
+    if not config["general"].get("snapshot_model_src_dirs", False):
+        return config
+    config = snapshot_model_sources(config)
+    return
 
 
 def all_files_to_copy_append(

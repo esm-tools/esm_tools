@@ -1,0 +1,14 @@
+.github/workflows/esm_tests_computer_workflow.yml
+  h_7e65f110106296 48-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b871784da3bf0d39767c7bb53fb77d05e54cc5d9",
+  "prompts": {},
+  "humans": {
+    "h_7e65f110106296": {
+      "author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

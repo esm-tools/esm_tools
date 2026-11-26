@@ -211,7 +211,7 @@ def _get_real_dir_from_pth_file(subfolder):
 
 
 def _get_namelist_filepath_standard_install(namelist):
-    return str(importlib.resources.files("esm_tools.namelists") / namelist)
+    return str(importlib.resources.files("esm_tools.namelists") / namelist.lstrip("/"))
 
 
 def _get_namelist_filepath_editable_install(namelist):
@@ -219,7 +219,7 @@ def _get_namelist_filepath_editable_install(namelist):
 
 
 def _get_config_filepath_standard_install(config):
-    return str(importlib.resources.files("esm_tools.configs") / config)
+    return str(importlib.resources.files("esm_tools.configs") / config.lstrip("/"))
 
 
 def _get_config_filepath_editable_install(config):
@@ -227,7 +227,7 @@ def _get_config_filepath_editable_install(config):
 
 
 def _get_runscript_filepath_standard_install(runscript):
-    return str(importlib.resources.files("esm_tools.runscripts") / runscript)
+    return str(importlib.resources.files("esm_tools.runscripts") / runscript.lstrip("/"))
 
 
 def _get_runscript_filepath_editable_install(runscript):
@@ -235,7 +235,7 @@ def _get_runscript_filepath_editable_install(runscript):
 
 
 def _get_coupling_filepath_standard_install(coupling):
-    return str(importlib.resources.files("esm_tools.couplings") / coupling)
+    return str(importlib.resources.files("esm_tools.couplings") / coupling.lstrip("/"))
 
 
 def _get_coupling_filepath_editable_install(coupling):
@@ -243,13 +243,13 @@ def _get_coupling_filepath_editable_install(coupling):
 
 
 def get_config_as_str(config):
-    return importlib.resources.files("esm_tools.configs").joinpath(config).read_bytes()
+    return importlib.resources.files("esm_tools.configs").joinpath(config.lstrip("/")).read_bytes()
 
 
 def _list_config_dir_standard_install(dir_path):
     return [
         p.name
-        for p in importlib.resources.files("esm_tools.configs").joinpath(dir_path).iterdir()
+        for p in importlib.resources.files("esm_tools.configs").joinpath(dir_path.lstrip("/")).iterdir()
     ]
 
 
@@ -275,7 +275,7 @@ def _read_config_standard_install(config):
     """
     if not config.endswith(".yaml"):
         config += ".yaml"
-    configstr = importlib.resources.files("esm_tools.configs").joinpath(config).read_bytes()
+    configstr = importlib.resources.files("esm_tools.configs").joinpath(config.lstrip("/")).read_bytes()
     configdict = yaml.load(configstr, Loader=yaml.FullLoader)
     return configdict
 
@@ -295,7 +295,7 @@ def _read_namelist_standard_install(nml):
         A string representation of the namelist file. This should later be
         passed to the f90nml package.
     """
-    return importlib.resources.files("esm_tools.namelists").joinpath(nml).read_bytes()
+    return importlib.resources.files("esm_tools.namelists").joinpath(nml.lstrip("/")).read_bytes()
 
 
 def _read_config_editable_install(config):

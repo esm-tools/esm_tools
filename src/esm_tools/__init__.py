@@ -211,7 +211,10 @@ def _get_real_dir_from_pth_file(subfolder):
 
 
 def _get_namelist_filepath_standard_install(namelist):
-    return str(importlib.resources.files("esm_tools.namelists") / namelist.lstrip("/"))
+    path = str(importlib.resources.files("esm_tools.namelists") / namelist.lstrip("/"))
+    if namelist.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_namelist_filepath_editable_install(namelist):
@@ -219,7 +222,10 @@ def _get_namelist_filepath_editable_install(namelist):
 
 
 def _get_config_filepath_standard_install(config):
-    return str(importlib.resources.files("esm_tools.configs") / config.lstrip("/"))
+    path = str(importlib.resources.files("esm_tools.configs") / config.lstrip("/"))
+    if config.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_config_filepath_editable_install(config):
@@ -227,7 +233,10 @@ def _get_config_filepath_editable_install(config):
 
 
 def _get_runscript_filepath_standard_install(runscript):
-    return str(importlib.resources.files("esm_tools.runscripts") / runscript.lstrip("/"))
+    path = str(importlib.resources.files("esm_tools.runscripts") / runscript.lstrip("/"))
+    if runscript.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_runscript_filepath_editable_install(runscript):
@@ -235,7 +244,10 @@ def _get_runscript_filepath_editable_install(runscript):
 
 
 def _get_coupling_filepath_standard_install(coupling):
-    return str(importlib.resources.files("esm_tools.couplings") / coupling.lstrip("/"))
+    path = str(importlib.resources.files("esm_tools.couplings") / coupling.lstrip("/"))
+    if coupling.endswith("/") and not path.endswith("/"):
+        path += "/"
+    return path
 
 
 def _get_coupling_filepath_editable_install(coupling):

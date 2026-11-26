@@ -1,0 +1,20 @@
+tests/test_esm_catalog/test_fake_experiment.py
+  s_aa6e43cd355f7a::t_2fbd0788035642 135,142,149,156
+  s_aa6e43cd355f7a::t_a53dcce5a52bc4 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "4802234cb7e7a1a12b1f5dd57862293840b4b6e2",
+  "prompts": {},
+  "sessions": {
+    "s_aa6e43cd355f7a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ffe2c7a-79c0-44c0-9c48-a038ab03a4c1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

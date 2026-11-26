@@ -1,0 +1,25 @@
+src/esm_tools/__init__.py
+  s_aa6e43cd355f7a::t_ee52a18036238b 298
+  s_aa6e43cd355f7a::t_021d7c412c616b 222
+  s_aa6e43cd355f7a::t_420207b06b843f 230
+  s_aa6e43cd355f7a::t_fac339c50c173e 278
+  s_aa6e43cd355f7a::t_92982520dd46c6 214
+  s_aa6e43cd355f7a::t_2881929d119c56 238
+  s_aa6e43cd355f7a::t_40fa12c5391ff5 246,252
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a8ef4d9bc06cf082db6ccd52f5189806929784db",
+  "prompts": {},
+  "sessions": {
+    "s_aa6e43cd355f7a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ffe2c7a-79c0-44c0-9c48-a038ab03a4c1",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

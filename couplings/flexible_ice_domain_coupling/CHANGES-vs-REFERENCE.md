@@ -187,8 +187,12 @@ and Scandinavia stayed about 75 % desert at 127 ka (LAI 0.1-0.3, July T2m
 7-15 K too warm), and in `flextest_20261123` all 23 deglaciated cells had
 `laiMax_dyn` = 0 on all tiles. The veg-restart update now sets `laiMax_dyn` on
 deglaciated cells to `MaxLAI(cover_type)` from the run's `lctlib.def` (what
-every other land cell holds) and to 0 on new glaciers
-(`utils/jsbach_reset_laimax_dyn.py`; exit 79 without `lctlib.def`).
+every other land cell holds; never lower than before) and leaves it unchanged
+on new glaciers (`utils/jsbach_reset_laimax_dyn.py`; exit 79 without
+`lctlib.def`). New glaciers must keep it: the coupling does not reset the LAI in
+the jsbach restart, so they still carry their vegetation's LAI, and JSBACH stops
+with "LAI larger than maximum LAI on input" where it exceeds `laiMax_dyn`
+(`flextest_20261123` 3143, after a first version set 0 there).
 
 *To reproduce the reference behaviour:* not switchable; the reference left
 `laiMax_dyn` untouched.
@@ -459,6 +463,18 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
     then took 1 m cells and seeded no Antarctic bergs (`flextest_20261123`
     3141/3142, about 3000 Gt/yr of calving). x/y are copied back from the PISM
     file, and a cell size that is not a PISM cell in metres stops with exit 42.
+14. **A rerun of `ice2echam` starts from the model's restarts.** With
+    `update_glacial_mask`, `ice2echam` edits the ECHAM, JSBACH and veg restarts
+    of the previous chunk in place. A rerun of the same coupling edited the
+    edited files again, and the ECHAM backup
+    (`*_backup_before_glacial_mask_replacement.nc`) was overwritten with the
+    edited file on every run; JSBACH/veg backups piled up with a timestamp on
+    every run. Now `ice2echam_restore_restarts` keeps
+    `<restart>_pre_ice2echam.nc` (the model's file) and
+    `<restart>_pre_ice2echam.state` next to each edited restart and puts the
+    saved copy back before a rerun edits again; a restart the model wrote anew
+    is saved again (details and the one uncovered case in the function's
+    header). Missing restart: exit 80. The three old backups are gone.
 
 ---
 

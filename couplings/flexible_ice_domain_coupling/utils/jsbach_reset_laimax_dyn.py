@@ -15,13 +15,19 @@ cell can never grow leaves: deglaciated land stays bare, dry and too warm
 (T2 deglaciation runs, 127 ka: about 75 % desert, LAI 0.1-0.3, July T2m
 7-15 K too warm).
 
-This script sets laiMax_dyn where the glacier mask changed to the values a
-run carries on such cells (checked on flextest_20261123: on non-glacier land
-laiMax_dyn equals MaxLAI(cover_type) on every tile, on glacier cells it is
-LAI_negligible = 1e-5 on every tile):
+This script sets laiMax_dyn on deglaciated cells to the value a run carries
+on land (checked on flextest_20261123: on non-glacier land laiMax_dyn equals
+MaxLAI(cover_type) on every tile, on glacier cells it is LAI_negligible = 1e-5
+on every tile):
 
     new land    laiMax_dyn(tile) = MaxLAI(cover_type(tile))   (lctlib.def)
-    new glacier laiMax_dyn(tile) = 0  (JSBACH floors it to LAI_negligible)
+    new glacier laiMax_dyn unchanged
+
+New glacier cells must keep their laiMax_dyn: the coupling does not reset the
+LAI in the jsbach restart, so they still carry the LAI of their vegetation
+(1.0-1.6 in flextest_20261123 3143), and update_phenology stops with "LAI
+larger than maximum LAI on input" wherever lai > laiMax_dyn. Lowering it to the
+glacier value killed 3143 of flextest_20261123 on 4 new glacier cells.
 
 Cells deglaciated by an earlier coupling that did not reset the field (an
 older coupling version, or a restart from another run) are repaired too: every
@@ -42,7 +48,9 @@ LAIMAX_2D        unpacked veg restart variable laiMax_dyn(tiles, lat, lon), chan
 INIT_FILE        the new JSBACH init file (cover_type(ntiles, lat, lon))
 LCTLIB           lctlib.def of the run (line "MaxLAI v1 v2 ...", one value per LctNumber)
 NEW_LAND_MASK    (lat, lon), > 0.5 where a glacier cell became land
-NEW_GLACIER_MASK (lat, lon), > 0.5 where land became glacier
+NEW_GLACIER_MASK (lat, lon), > 0.5 where land became glacier (only checked
+                 against NEW_LAND_MASK and excluded from the repair; laiMax_dyn
+                 is not changed there)
 """
 
 import sys
@@ -146,33 +154,33 @@ def main(argv):
             sys.exit(f"jsbach_reset_laimax_dyn.py: {int(both.sum())} cell(s) in both masks")
         trapped = land & ~glac_new & ~to_land & ~to_glac & np.all(lai <= TRAPPED_MAX, axis=0)
         print(f" * laiMax_dyn: {int(to_land.sum())} deglaciated cell(s) -> MaxLAI(cover_type),"
-              f" {int(to_glac.sum())} new glacier cell(s) -> 0,"
+              f" {int(to_glac.sum())} new glacier cell(s) unchanged,"
               f" {int(trapped.sum())} earlier deglaciated cell(s) still at the glacier value -> MaxLAI(cover_type)")
         to_land = to_land | trapped
-        if not (to_land.any() or to_glac.any()):
+        if not to_land.any():
             return
         unknown = set()
         new = lai.copy()
         for t in range(lai.shape[0]):
-            before = new[t][to_land | to_glac]
-            if to_land.any():
-                ct = ctype[t][to_land]
-                vals = np.array([maxlai.get(int(c), np.nan) for c in ct])
-                unknown |= {int(c) for c, v in zip(ct, vals) if not np.isfinite(v)}
-                vals = np.where(np.isfinite(vals), vals, 0.0)  # unknown type: no leaves
-                if (ct == 1).any():
-                    print(f" ! tile {t + 1}: {int((ct == 1).sum())} deglaciated cell(s) still"
-                          f" have cover type 1 (glacier) in {init_file}")
-                new[t][to_land] = vals
-            new[t][to_glac] = 0.0
-            after = new[t][to_land | to_glac]
+            before = new[t][to_land]
+            ct = ctype[t][to_land]
+            vals = np.array([maxlai.get(int(c), np.nan) for c in ct])
+            unknown |= {int(c) for c, v in zip(ct, vals) if not np.isfinite(v)}
+            vals = np.where(np.isfinite(vals), vals, 0.0)  # unknown type: keep the old value (fmax below)
+            if (ct == 1).any():
+                print(f" ! tile {t + 1}: {int((ct == 1).sum())} deglaciated cell(s) still"
+                      f" have cover type 1 (glacier) in {init_file}")
+            # never below what is there: the LAI in the jsbach restart must stay <= laiMax_dyn
+            new[t][to_land] = np.fmax(vals, before)
+            after = new[t][to_land]
             print(f"   tile {t + 1:2d}: before {np.nanmin(before):6.3f}..{np.nanmax(before):6.3f}"
                   f"  after {after.min():6.3f}..{after.max():6.3f}")
         if unknown:
-            print(f" ! cover types without MaxLAI in {lctlib_file}: {sorted(unknown)} -> 0")
+            print(f" ! cover types without MaxLAI in {lctlib_file}: {sorted(unknown)} -> laiMax_dyn left as it was")
         var[:] = np.ma.masked_array(new.reshape(raw.shape), mask=fill_mask)
         var.setncattr("reset_on_glacier_change",
-                      "deglaciated (now or trapped earlier): MaxLAI(cover_type) from lctlib.def; new glacier: 0")
+                      "deglaciated (now or trapped earlier): max(MaxLAI(cover_type) from lctlib.def, old value);"
+                      " new glacier: unchanged")
 
 
 if __name__ == "__main__":

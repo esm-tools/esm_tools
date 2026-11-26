@@ -76,6 +76,12 @@ ice2echam() {
         # anomalies and fluxes of the domains are added up: no overlaps
         ice_domain_check_overlap ${RES_echam}grid
 
+        # A rerun of this coupling starts from the restarts the model wrote,
+        # not from the ones an earlier attempt already edited.
+        if [ "$ISM_TO_ECHAM_update_glacial_mask" -eq 1 ]; then
+                ice2echam_restore_restarts
+        fi
+
         # The high-resolution orography before this chunk, chosen once for
         # all domains (and, at the first update, checked against the restart).
         if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
@@ -202,6 +208,109 @@ ice2echam_global() {
         if [ "$ISM_TO_ECHAM_update_land_runoff" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_land_runoff
         fi
+        if [ "$ISM_TO_ECHAM_update_glacial_mask" -eq 1 ]; then
+                ice2echam_mark_restarts
+        fi
+}
+
+## ---------------------------------------------------------------------------
+## Restarts edited in place
+## ---------------------------------------------------------------------------
+## With update_glacial_mask, ice2echam_global rewrites three restarts of the
+## previous chunk in place: glac in the ECHAM restart, the cover fractions in
+## the JSBACH restart, cover fractions and laiMax_dyn in the veg restart. A
+## second run of the same coupling (resubmitting the chunk after a later step
+## failed) used to edit the already edited files again, and the ECHAM backup
+## was overwritten with the edited file each time.
+##
+## Next to each edited restart <file>.nc this keeps
+##   <file>_pre_ice2echam.nc     the restart as the model wrote it (cp -p)
+##   <file>_pre_ice2echam.state  "editing" while ice2echam works on it, the
+##                               md5 of the edited file once it is done
+## and at the start of every coupling decides per restart:
+##   no saved copy yet                 first coupling: save the restart
+##   restart == saved copy             nothing was edited yet
+##   state "editing" or md5 of the     edited by an earlier ice2echam (done or
+##     restart == state                interrupted): put the saved copy back
+##   otherwise                         the model wrote this restart anew (the
+##                                     chunk was rerun): save it again
+## Not covered: a chunk rerun after an ice2echam that was interrupted while
+## editing. Its new restart is replaced by the saved copy of the old one; the
+## log names both files.
+
+## @fn ice2echam_edited_restarts()
+## The files ice2echam_global edits: the targets of the restart links.
+ice2echam_edited_restarts() {
+        for _er_link in ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc \
+                        ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc \
+                        ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc; do
+                readlink -f ${_er_link}
+        done
+}
+
+## @fn ice2echam_restore_restarts()
+## GLOBAL, before anything reads or edits the restarts. Exit 80 if a restart
+## is missing or cannot be saved or put back.
+ice2echam_restore_restarts() {
+        echo; echo "                *   Restarts edited by this coupling: starting from the model's own files"
+        # all of them first, so that a stop leaves every state file as it was
+        for _rr_file in $(ice2echam_edited_restarts); do
+                if [ ! -f "${_rr_file}" ]; then
+                        echo " !!! ice2echam: restart ${_rr_file} not found"
+                        echo " S T O P  80"
+                        exit 80
+                fi
+        done
+        for _rr_file in $(ice2echam_edited_restarts); do
+                _rr_orig=${_rr_file%.nc}_pre_ice2echam.nc
+                _rr_state=${_rr_file%.nc}_pre_ice2echam.state
+                _rr_mark=$(cat ${_rr_state} 2>/dev/null)
+                if [ ! -f "${_rr_orig}" ]; then
+                        _rr_action=save
+                        _rr_why="first coupling of this restart"
+                elif cmp -s ${_rr_file} ${_rr_orig}; then
+                        _rr_action=none
+                        _rr_why="not edited yet"
+                elif [ "${_rr_mark}" = editing ]; then
+                        _rr_action=restore
+                        _rr_why="an earlier ice2echam was interrupted while editing it"
+                elif [ -n "${_rr_mark}" ] && [ "${_rr_mark}" = "$(md5sum < ${_rr_file} | cut -d' ' -f1)" ]; then
+                        _rr_action=restore
+                        _rr_why="already edited by an earlier ice2echam"
+                else
+                        _rr_action=save
+                        _rr_why="differs from the saved copy and is not the edited file: written anew by the model"
+                fi
+                echo "                -   $(basename ${_rr_file}): ${_rr_why}"
+                case ${_rr_action} in
+                        save)
+                                if ! { cp -p ${_rr_file} ${_rr_orig}.tmp && mv ${_rr_orig}.tmp ${_rr_orig}; }; then
+                                        echo " !!! ice2echam: could not save ${_rr_file} as ${_rr_orig}"
+                                        echo " S T O P  80"
+                                        exit 80
+                                fi
+                                echo "                    saved as $(basename ${_rr_orig})"
+                                ;;
+                        restore)
+                                if ! { cp -p ${_rr_orig} ${_rr_file}.tmp && mv ${_rr_file}.tmp ${_rr_file}; }; then
+                                        echo " !!! ice2echam: could not restore ${_rr_file} from ${_rr_orig}"
+                                        echo " S T O P  80"
+                                        exit 80
+                                fi
+                                echo "                    restored from $(basename ${_rr_orig}) (the model's file of $(date -r ${_rr_orig} '+%F %T'))"
+                                ;;
+                esac
+                echo editing > ${_rr_state}
+        done
+}
+
+## @fn ice2echam_mark_restarts()
+## GLOBAL, after the last edit: record what the edited restarts look like, so
+## that the next coupling of the same chunk recognises them.
+ice2echam_mark_restarts() {
+        for _mr_file in $(ice2echam_edited_restarts); do
+                md5sum < ${_mr_file} | cut -d' ' -f1 > ${_mr_file%.nc}_pre_ice2echam.state
+        done
 }
 
 ## @fn define_echam_names()
@@ -1273,7 +1382,7 @@ set_glacial_mask_echam_restart_file() {
         # Restrict the ice mask on the echam grid to only be valid where echam land
         cdo -s -setmisstoc,0 -ifthen -selvar,slm $ECHAM_RESTART_FILE $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile
 
-        cp $ECHAM_RESTART_FILE ${ECHAM_RESTART_FILE%.*}_backup_before_glacial_mask_replacement.nc
+        # the restart as the model wrote it: ${ECHAM_RESTART_FILE%.nc}_pre_ice2echam.nc (ice2echam_restore_restarts)
         cp $ECHAM_RESTART_FILE echam_with_ice_mask.nc
 
         echo "                -   Preforming replacement"
@@ -1678,9 +1787,7 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         fi
 
         newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
-        # Make a backup copy
-        #cp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
-        cp ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
+        # the restart as the model wrote it: *_pre_ice2echam.nc (ice2echam_restore_restarts)
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then
@@ -1960,8 +2067,7 @@ set_glacial_mask_jsbach_update_restart_veg() {
         fi
 
         newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc)
-        # Make a backup copy
-        cp ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg_backup_$(date +%Y%m%d%H%M%S).nc
+        # the restart as the model wrote it: *_pre_ice2echam.nc (ice2echam_restore_restarts)
         echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
         # Ensure that the unpack binary is here:
         if [ ! -f unpack ]; then

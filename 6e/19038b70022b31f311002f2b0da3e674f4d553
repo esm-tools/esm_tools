@@ -1,0 +1,18 @@
+configs/esm_software/esm_runscripts/esm_plugins.yaml
+  h_7e65f110106296 42
+configs/esm_software/esm_runscripts/esm_runscripts.yaml
+  h_7e65f110106296 81
+src/esm_runscripts/prepcompute.py
+  h_7e65f110106296 153-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "6e19038b70022b31f311002f2b0da3e674f4d553",
+  "prompts": {},
+  "humans": {
+    "h_7e65f110106296": {
+      "author": "Paul Gierz <paul.gierz@awi.de>"
+    }
+  }
+}

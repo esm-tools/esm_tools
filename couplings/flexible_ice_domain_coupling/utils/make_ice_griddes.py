@@ -212,7 +212,45 @@ def main():
         fh.write(block("xbounds", lon_b) + "\n")
         fh.write(block("yvals", lat_c) + "\n")
         fh.write(block("ybounds", lat_b) + "\n")
+        # The projection section, as CDO's own griddes of a PISM file has it.
+        # Without it, cdo remap/setgrid onto this grid write lon/lat only and
+        # no x/y axis: dEBM then passes x = y = 0 on to PISM, which stops with
+        # "input x coordinate has to be strictly increasing"
+        # (smallLIS_core2_ocn127k_spin133, first coupling 2026-11-26).
+        fh.write(projection_section(ds, x, y))
     print(f" * wrote {args.output}")
+
+
+def _cdo_value(v):
+    """Format a netCDF attribute value the way CDO's griddes does."""
+    if isinstance(v, (bytes, str)):
+        return '"' + (v.decode() if isinstance(v, bytes) else v) + '"'
+    v = np.atleast_1d(v)
+    return " ".join(f"{float(a):g}" for a in v)
+
+
+def projection_section(ds, x, y):
+    """gridID 2: the projected x/y axis and the mapping attributes."""
+    nx, ny = len(x), len(y)
+    out = ["#\n# gridID 2 -- projection, written by make_ice_griddes.py\n#\n",
+           "gridtype  = projection\n",
+           f"gridsize  = {nx * ny}\n",
+           f"xsize     = {nx}\n",
+           f"ysize     = {ny}\n",
+           'xname     = x\nxunits    = "m"\n',
+           'yname     = y\nyunits    = "m"\n',
+           f"xfirst    = {x[0]:.10g}\n",
+           f"xinc      = {x[1] - x[0]:.10g}\n",
+           f"yfirst    = {y[0]:.10g}\n",
+           f"yinc      = {y[1] - y[0]:.10g}\n"]
+    if "mapping" in ds.variables:
+        m = ds.variables["mapping"]
+        out.append("grid_mapping = mapping\n")
+        for name in m.ncattrs():
+            if name in ("proj_params", "proj4", "_FillValue"):
+                continue
+            out.append(f"{name} = {_cdo_value(m.getncattr(name))}\n")
+    return "".join(out)
 
 
 if __name__ == "__main__":

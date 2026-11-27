@@ -475,6 +475,15 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
     saved copy back before a rerun edits again; a restart the model wrote anew
     is saved again (details and the one uncovered case in the function's
     header). Missing restart: exit 80. The three old backups are gone.
+15. **A derived `ice.griddes` carries the projection section.** When no
+    `ice.griddes` is in the couple directory yet, `ice_griddes_ensure_corners`
+    (couple_in) writes one with `make_ice_griddes.py` before the pool file is
+    copied. That file had the curvilinear lon/lat grid only, so remapping onto it
+    wrote no x/y: the dEBM output and `latest_atmo_forcing_file.nc` had x = y = 0
+    and PISM stopped with "input x coordinate has to be strictly increasing"
+    (`smallLIS_core2_*_spin133`, first coupling). `make_ice_griddes.py` now adds
+    gridID 2 (projection: xfirst/xinc/yfirst/yinc and the `mapping` attributes)
+    as CDO's griddes of a PISM file has it; remaps then match the pool griddes.
 
 ---
 

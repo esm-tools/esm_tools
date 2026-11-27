@@ -110,6 +110,12 @@ def prepare_environment(config):
             # where the T63 OROMEA comes from (see update_orography_to_echam_grid
             # and update_orography_lo_res_from_high_res)
             "oro_regrid_method": config["echam"].get("oro_regrid_method", "remapcon"),
+            # check of the new OROMEA against the ice sheet surface
+            # (update_orography_check_against_ice)
+            "oro_ice_check": config["echam"].get("oro_ice_check", "warn"),
+            "oro_ice_check_mean_tolerance": config["echam"].get("oro_ice_check_mean_tolerance", 50),
+            "oro_ice_check_p95_tolerance": config["echam"].get("oro_ice_check_p95_tolerance", 200),
+            "oro_ice_check_min_thk": config["echam"].get("oro_ice_check_min_thk", 500),
             "oro_lo_res_source": config["echam"].get("oro_lo_res_source", "high_res"),
             # ECHAM-grid partner of the T511 orography reference and its check
             # (update_orography_lo_res_reference). Empty = ${INIT_DIR_echam}/unit.24.

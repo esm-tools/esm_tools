@@ -135,6 +135,21 @@ Verified: the mode-6 block of
 and the mode-1 block here are identical apart from one commented-out line.
 Modes 3, 4, 5 and 7 do not exist here — neither reference experiment uses them.
 
+A value other than `0` or `1` (for example a `6` left in a migrated runscript)
+stops `ice2echam` with exit 43 before anything is changed. It used to be
+noticed only after this chunk's change had been added to the high-resolution
+orography, and the run went on without a new target orography; fixing the
+runscript and resubmitting then added the change twice.
+
+**Defaults changed.** The old tree has no defaults for these options. Here
+`oro_update_mod` defaults to `1` (`envs/env_awiesm.py`) and
+`orog_reference_pism` to `1` (`envs/env_ice.py`, `envs/env_ice2awiesm.py`).
+An old runscript that never set `orog_reference_pism` behaved like `0`
+(anomaly against the chunk's PISM input); here it hands ECHAM the absolute ice
+sheet surface at the first coupling. Set `orog_reference_pism: 0` explicitly to
+keep the old behaviour, for example when continuing a run whose ECHAM
+orography should stay as it is.
+
 ## 4b. `oro_update_var` must now be spelled `OROMEA` or `GEOSP`
 
 `echam_ice_select_relevant_variables` here tests

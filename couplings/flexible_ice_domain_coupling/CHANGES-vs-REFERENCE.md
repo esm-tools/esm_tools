@@ -501,6 +501,25 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
     `MASS_LOSS_BUDGET_WARN_PERCENT` (default 3 %). In the test that flags the
     two runs after the fresh start (about 5 %) and not the later ones (1–2 %).
     The check after a remapping keeps the native net and 10 %.
+19. **ECHAM's orography is checked against the ice sheet surface.** Only the
+    change of the surface reaches ECHAM in each chunk, so an offset between
+    `OROMEA` and the ice sheet at the start of the coupling stays for good
+    (constant over 650 years in `ssp585_1x1_to_ssp460_fix_oro`). Nothing
+    showed it. `pism2atmosphere` now also writes `ice_surface.nc` (surface
+    and thickness of the chunk's restart, stamped with the chunk), and
+    `update_orography_check_against_ice` compares it with the new `OROMEA` on
+    thick, grounded land ice per domain. Options `oro_ice_check`
+    (`warn`/`abort`/`off`), `oro_ice_check_mean_tolerance` (50 m),
+    `oro_ice_check_p95_tolerance` (200 m), `oro_ice_check_min_thk` (500 m).
+    In `flextest_20261123`, year 3144: Greenland mean −94 m, mean |·| 147 m,
+    p95 381 m; Antarctica −51 m, 101 m, 442 m.
+20. **An invalid `oro_update_mod` stops before anything is changed.** It was
+    noticed only in `update_orography_generate_target_orography_file`, whose
+    `return 42` nobody checked: the high-resolution orography already carried
+    the chunk's change, `lupdate_orog` was switched on, and
+    `latest_target_orography.nc` pointed to a file that was never written.
+    `update_orography_check_options` now checks it (exit 43) at the start of
+    `ice2echam`, and a failed target file stops the run (exit 42).
 
 ---
 

@@ -76,6 +76,12 @@ ice2echam() {
         # ... and delivered them anew, not last chunk's again
         ice_domain_check_fresh
 
+        # Misspelt orography options stop here, before any restart or
+        # orography file is touched.
+        if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
+                update_orography_check_options
+        fi
+
         define_echam_names
 
         # anomalies and fluxes of the domains are added up: no overlaps
@@ -328,7 +334,33 @@ define_echam_names() {
 ## other behaviour.
 ##   oro_regrid_method  remapcon (default) | remapbil (legacy)
 ##   oro_lo_res_source  high_res (default) | restart  (legacy)
+##   oro_update_mod     1 (default, masked) | 0 (legacy)
+##   oro_ice_check      warn (default) | abort | off, with its tolerances
+## Called by ice2echam before anything is changed: an invalid oro_update_mod
+## used to be noticed only after this chunk's change had been added to the
+## high-resolution orography, and the run went on without a target file.
 update_orography_check_options() {
+        case "x${oro_update_mod:-1}" in
+            x0|x1) ;;
+            *)  echo " !!! oro_update_mod must be 0 (legacy) or 1 (masked), not >${oro_update_mod}<"
+                echo " !!!   (modes 2-7 of the old tree are gone; old 6 is the new 1, old 2 the new 0,"
+                echo " !!!    see MIGRATION.md section 4)"
+                echo " S T O P  43"; exit 43 ;;
+        esac
+        case "x${oro_ice_check:-warn}" in
+            xwarn|xabort|xoff) ;;
+            *)  echo " !!! oro_ice_check must be 'warn', 'abort' or 'off', not >${oro_ice_check}<"
+                echo " S T O P  49"; exit 49 ;;
+        esac
+        typeset _co_v
+        for _co_v in "${oro_ice_check_mean_tolerance:-50}" "${oro_ice_check_p95_tolerance:-200}" \
+                     "${oro_ice_check_min_thk:-500}"; do
+                if ! awk -v v="${_co_v}" 'BEGIN { exit !(v ~ /^[0-9]+([.][0-9]*)?$/) }'; then
+                        echo " !!! oro_ice_check_mean_tolerance, oro_ice_check_p95_tolerance and"
+                        echo " !!!   oro_ice_check_min_thk must be numbers (metres), not >${_co_v}<"
+                        echo " S T O P  49"; exit 49
+                fi
+        done
         case "x${oro_regrid_method:-remapcon}" in
             xremapcon|xremapbil) ;;
             *)  echo " !!! oro_regrid_method must be 'remapcon' or 'remapbil', not >${oro_regrid_method}<"
@@ -494,7 +526,15 @@ iterative_coupling_ice_echam6_update_orography() {
             update_orography_prepare_calnoro
         fi
         update_orography_run_calnoro
-        update_orography_generate_target_orography_file
+        if ! update_orography_generate_target_orography_file; then
+                # Do not switch on lupdate_orog with a target file that was not
+                # written: the run would go on with the old orography while the
+                # high-resolution file already carries this chunk's change.
+                echo " !!! ice2echam: the target orography file could not be built"
+                echo " S T O P  42"
+                exit 42
+        fi
+        update_orography_check_against_ice
         #set_in_jsbach_restart_file elevation ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc OROMEA unpack
         update_orography_set_namelist_modifications_next_echam_run
         echo; echo "                 ...done."; echo
@@ -1290,6 +1330,142 @@ update_orography_generate_target_orography_file() {
 	#	ncwa -a time $ofile tmp; mv tmp $ofile
 	#fi
         echo; echo -e "\t\t-   finished with target orography generation"
+}
+
+## @fn update_orography_check_against_ice()
+## GLOBAL, after the target orography is written. Compares the new OROMEA with
+## the ice sheet surface of each domain (ice_surface.nc from pism2atmosphere,
+## remapped like the orography change) on that domain's thick, grounded land
+## ice. Only the change of the surface reaches ECHAM in every chunk, so an
+## offset between the two at the start of the coupling is carried along for
+## good; orog_reference_pism=1 hands the absolute surface over once to remove
+## it. This check makes such an offset visible.
+##
+##   oro_ice_check                 warn (default) | abort (exit 51) | off
+##   oro_ice_check_mean_tolerance  mean |OROMEA - surface|, m      (default 50)
+##   oro_ice_check_p95_tolerance   95th percentile of |...|, m      (default 200)
+##   oro_ice_check_min_thk         cells compared: mean ice thickness above
+##                                 this (m, default 500), glacier mask of the
+##                                 domain, land in unit.24
+## OROMEA is a land-fraction mean on a coarse grid, so a residual of tens of
+## metres is normal, more at steep margins.
+## Writes ${COUPLE_DIR}/oro_ice_check_<domain>.txt.
+update_orography_check_against_ice() {
+        typeset _oc_mode=${oro_ice_check:-warn}
+        echo; echo "                *   checking OROMEA against the ice sheet surface (oro_ice_check=${_oc_mode})"
+        if [ "x${_oc_mode}" = "xoff" ]; then
+                echo "                -   switched off"
+                return 0
+        fi
+        OROCHECK_TARGET=${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc
+        if [ ! -s ${OROCHECK_TARGET} ]; then
+                echo "                -   no ${OROCHECK_TARGET}: skipped"
+                return 0
+        fi
+        if ice_domain_foreach update_orography_check_against_ice_domain; then
+                echo "                -   OROMEA follows the ice sheet surface within the tolerances"
+                return 0
+        fi
+        if [ "x${_oc_mode}" = "xabort" ]; then
+                echo " !!! ice2echam: ECHAM's OROMEA is too far from the ice sheet surface (see above)."
+                echo " !!!   Set oro_ice_check: warn to go on anyway."
+                echo " S T O P  51"
+                exit 51
+        fi
+        echo "                !   WARNING: ECHAM's OROMEA is too far from the ice sheet surface (see above);"
+        echo "                !   oro_ice_check=warn, going on"
+        return 0
+}
+
+## @fn update_orography_check_against_ice_domain()
+## PER DOMAIN, for update_orography_check_against_ice. Returns 1 if a
+## tolerance is exceeded, 0 otherwise (also when the check cannot run).
+update_orography_check_against_ice_domain() {
+        ice_domain_require_selected update_orography_check_against_ice_domain
+        typeset _od_s=${ICE_COUPLE_DIR}/ice_surface.nc _od_d=${ICE_COUPLE_DIR}/oro_check
+        typeset _od_n_s _od_n_f _od_method _od_out _od_n _od_mean _od_amean _od_p95 _od_rc=0
+        typeset _od_tm=${oro_ice_check_mean_tolerance:-50} _od_tp=${oro_ice_check_p95_tolerance:-200}
+        typeset _od_thk=${oro_ice_check_min_thk:-500}
+        if [ ! -s ${_od_s} ]; then
+                echo "                -   ${ICE_DOMAIN}: no ice_surface.nc, skipped"
+                return 0
+        fi
+        # the surface of this chunk, not of an earlier one
+        _od_n_s=$(ncdump -h ${_od_s} | sed -n 's/.*:coupling_chunk_number = \([0-9]*\).*/\1/p')
+        _od_n_f=$(ncdump -h ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc | sed -n 's/.*:coupling_chunk_number = \([0-9]*\).*/\1/p')
+        if [ "x${_od_n_s}" = "x" ] || [ "x${_od_n_s}" != "x${_od_n_f}" ]; then
+                echo "                -   ${ICE_DOMAIN}: ice_surface.nc is from chunk >${_od_n_s}<, the forcing from >${_od_n_f}<: skipped"
+                return 0
+        fi
+        rm -rf ${_od_d}; mkdir -p ${_od_d}
+
+        # Same regridding as the orography (update_orography_to_echam_grid):
+        # mean over the part of the ECHAM cell that the ice grid covers.
+        _od_method=${oro_regrid_method:-remapcon}
+        if [ "x${_od_method}" = "xremapcon" ] && ! ice_griddes_has_corners "${ICE_COUPLE_DIR}/ice.griddes"; then
+                _od_method=remapbil
+        fi
+        if [ "x${_od_method}" = "xremapcon" ]; then
+                CDO_REMAP_NORM=frac cdo -s remapcon,${RES_echam}grid \
+                        -setgrid,${ICE_COUPLE_DIR}/ice.griddes ${_od_s} ${_od_d}/surface.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+        else
+                cdo -s remapbil,${RES_echam}grid -setgrid,${ICE_COUPLE_DIR}/ice.griddes \
+                        ${_od_s} ${_od_d}/surface.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+        fi
+
+        # Cells compared: thick ice, glacier in this domain's mask, land.
+        # Floating ice and coasts are left out: there OROMEA (a land mean)
+        # and the ice sheet surface do not describe the same thing.
+        _od_out=${_od_d}/mask.nc
+        if [ -s ${ICE_COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc ]; then
+                cdo -s -mul -gtc,${_od_thk} -selname,thk ${_od_d}/surface.nc \
+                        -gtc,0.5 -setmisstoc,0 ${ICE_COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
+                        ${_od_d}/mask_ice.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+        else
+                cdo -s -gtc,${_od_thk} -selname,thk ${_od_d}/surface.nc ${_od_d}/mask_ice.nc \
+                        2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+        fi
+        if [ -f ${INIT_DIR_echam}/unit.24 ]; then
+                cdo -s -mul ${_od_d}/mask_ice.nc -gtc,0.5 -selname,SLM ${INIT_DIR_echam}/unit.24 \
+                        ${_od_out} 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+        else
+                cp ${_od_d}/mask_ice.nc ${_od_out}
+        fi
+        # OROMEA - surface on those cells, missing elsewhere
+        cdo -s -setname,diff -ifthen -setmisstoc,0 ${_od_out} \
+                -sub -selname,OROMEA -setmisstoc,0 ${OROCHECK_TARGET} \
+                     -selname,surface -setmisstoc,0 ${_od_d}/surface.nc \
+                ${_od_d}/diff.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+        if [ ! -s ${_od_d}/diff.nc ]; then
+                echo "                -   ${ICE_DOMAIN}: could not compute OROMEA - surface (see cdo_stderr_ice2echam), skipped"
+                return 0
+        fi
+        _od_n=$(cdo -s -outputf,%.0f -fldsum -setmisstoc,0 ${_od_out} 2>/dev/null | head -1)
+        if [ "x${_od_n:-0}" = "x0" ]; then
+                echo "                -   ${ICE_DOMAIN}: no ${RES_echam} cell with more than ${_od_thk} m of grounded ice, skipped"
+                return 0
+        fi
+        _od_mean=$(cdo -s -outputf,%.1f -fldmean ${_od_d}/diff.nc 2>/dev/null | head -1)
+        _od_amean=$(cdo -s -outputf,%.1f -fldmean -abs ${_od_d}/diff.nc 2>/dev/null | head -1)
+        _od_p95=$(cdo -s -outputf,%.1f -fldpctl,95 -abs ${_od_d}/diff.nc 2>/dev/null | head -1)
+        {
+                echo "chunk ${CHUNK_START_DATE_echam} domain ${ICE_DOMAIN} cells ${_od_n}"
+                echo "mean(OROMEA-surface) ${_od_mean} m"
+                echo "mean|OROMEA-surface| ${_od_amean} m (tolerance ${_od_tm})"
+                echo "p95|OROMEA-surface| ${_od_p95} m (tolerance ${_od_tp})"
+        } > ${COUPLE_DIR}/oro_ice_check_${ICE_DOMAIN}.txt
+        echo "                -   ${ICE_DOMAIN}: ${_od_n} cells with > ${_od_thk} m ice: OROMEA - surface mean ${_od_mean} m,"
+        echo "                -     mean |.| ${_od_amean} m (tolerance ${_od_tm}), 95th percentile |.| ${_od_p95} m (tolerance ${_od_tp})"
+        if awk -v a="${_od_amean}" -v p="${_od_p95}" -v ta="${_od_tm}" -v tp="${_od_tp}" \
+                'BEGIN { exit !(a == "" || p == "" || a + 0 > ta + 0 || p + 0 > tp + 0) }'; then
+                echo "                !   ${ICE_DOMAIN}: above the tolerance. An offset that was there at the start of"
+                echo "                !     the coupling stays: only the change of the surface reaches ECHAM."
+                echo "                !     With orog_reference_pism: 0, or a branch from a run with such an offset,"
+                echo "                !     consider orog_reference_pism: 1 for a fresh coupling start."
+                _od_rc=1
+        fi
+        rm -rf ${_od_d}
+        return ${_od_rc}
 }
 
 ## @fn update_orography_set_namelist_modifications_next_echam_run() 

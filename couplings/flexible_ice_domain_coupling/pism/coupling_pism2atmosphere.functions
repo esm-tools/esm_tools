@@ -312,6 +312,12 @@ function pism_atmosphere_assemble_final_file {
                 -a coupling_chunk,global,o,c,"${CHUNK_START_DATE_pism} - ${CHUNK_END_DATE_pism}" \
                 ${ICE_COUPLE_DIR}/ice_file_for_atmosphere.nc
 
+        # The absolute surface at the end of the chunk, with the same
+        # definition as the orography change, and the ice thickness. Only for
+        # the check of ECHAM's orography against the ice sheet
+        # (update_orography_check_against_ice); ECHAM itself gets the change.
+        pism_atmosphere_write_surface
+
         # Where this domain may hold ice: its footprint for ECHAM's glaciers,
         # sub-grid orography and albedo (set_glacial_mask_to_echam_grid). Cells
         # the prescribed front retreat keeps ice-free stay outside, so their
@@ -432,6 +438,31 @@ function generate_ice_thickness_anomaly_over_pism_run {
                 -sub -selvar,thk ${last_year_in_chunk_restart} \
                      -selvar,thk ${first_year_in_chunk_input} \
                 ${ICE_COUPLE_DIR}/ice_thk_difference.nc 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm
+}
+
+## @fn pism_atmosphere_write_surface()
+## Writes ${ICE_COUPLE_DIR}/ice_surface.nc: surface (m, pism_surface_elevation_expr)
+## and thk (m) of the chunk's last restart, without time. Stamped with the
+## chunk like ice_file_for_atmosphere.nc, so that ice2echam does not check
+## against an old file. A failure only costs the check, not the run.
+pism_atmosphere_write_surface() {
+        typeset _ws_expr _ws_f=${ICE_COUPLE_DIR}/ice_surface.nc
+        echo "                  -   ice sheet surface and thickness -> ice_surface.nc"
+        rm -f ${_ws_f}
+        _ws_expr=$(pism_surface_elevation_expr)
+        _ws_expr="surface=${_ws_expr#*=};thk=thk;"
+        if cdo -s -O -expr,"${_ws_expr}" -selname,thk,topg ${last_year_in_chunk_restart} \
+                        ${_ws_f}.tmp 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm \
+           && ncwa -O -a time ${_ws_f}.tmp ${_ws_f} 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2atm; then
+                ncatted -O -h -a units,surface,o,c,"m" -a units,thk,o,c,"m" \
+                        -a surface_definition,surface,o,c,"${orog_surface_definition:-physical}" \
+                        -a coupling_chunk_number,global,o,l,${CHUNK_NUMBER_pism} \
+                        ${_ws_f}
+        else
+                echo "                  !   could not write ice_surface.nc; ECHAM's orography check will skip this domain"
+                rm -f ${_ws_f}
+        fi
+        rm -f ${_ws_f}.tmp
 }
 
 ## @fn pism_surface_elevation_expr()

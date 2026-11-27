@@ -659,7 +659,9 @@ function generate_mass_loss_flux {
 ## which for the NH domain there matched the change of ice_mass (+250 vs
 ## +251 Gt/yr). The pattern stays that of the thickness difference; the
 ## difference is spread in proportion to |F| (conserve_remapped_flux.py).
-## The log shows both totals every chunk.
+## The log shows both totals every chunk. A correction of more than
+## MASS_LOSS_BUDGET_WARN_PERCENT (default 3) % of the gross flux sum(|F| A)
+## is warned about (flextest_20261123: 5 % after a fresh start, 1-2 % later).
 ##
 ## MASS_LOSS_TOTAL (ice domain key mass_loss_total):
 ##   pism_budget (default)  as above; without the ts file or its variables a
@@ -719,7 +721,8 @@ function mass_loss_correct_to_pism_budget {
         if ! ( module load python3 >/dev/null 2>&1
                python3 ${FUNCTION_PATH}/../utils/ice_cell_area.py ${_f} ${_f%.nc}.cell_area.nc \
                && python3 ${FUNCTION_PATH}/../utils/conserve_remapped_flux.py - - \
-                       ${_f} ${_f%.nc}.cell_area.nc --target-integral=${_kgs} ); then
+                       ${_f} ${_f%.nc}.cell_area.nc --target-integral=${_kgs} \
+                       --warn-percent=${MASS_LOSS_BUDGET_WARN_PERCENT:-3} ); then
                 echo " !!! could not set the total of ${_f} to PISM's budget"
                 echo " S T O P  42"
                 exit 42

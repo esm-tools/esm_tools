@@ -28,9 +28,17 @@ integral of a native field (pism2atmosphere: the mass change PISM's own
 budget reports for the chunk).
 
 The correction fixes the total, not a broken pattern. When it exceeds
---warn-percent (default 10) a warning says so: after a remapping that usually
-means the ice grid had no cell corners and was remapped bilinearly; against
-PISM's budget, that the chunk's input differed from where PISM started.
+--warn-percent (default 10) a warning says so:
+
+* after a remapping (NATIVE given), measured against the native net
+  integral: a large one usually means the ice grid had no cell corners and
+  was remapped bilinearly;
+* against PISM's budget (--target-integral), measured against the gross flux
+  sum(|F| * A): a large one means the chunk's input differed from where PISM
+  started. Gains and losses of an ice sheet nearly cancel in some chunks, and
+  against the net a small mismatch looked like a large one
+  (flextest_20261123, Antarctica: +50.8 % of a net of -56 Gt/yr, which was
+  28 Gt/yr, about 1 % of the gross).
 """
 
 import argparse
@@ -89,11 +97,17 @@ def main(argv):
         r = float(np.sum(f_rem * a_rem))
         w = float(np.sum(np.abs(f_rem) * a_rem))
         rel = (r - n) / abs(n) if n != 0 else 0.0
+        rel_gross = (r - n) / w if w != 0 else 0.0
         label = "target" if args.target_integral is not None else "native"
         print(f" * {args.varname}: {label} {n:.6e} kg/s, field {r:.6e} kg/s "
-              f"({100 * rel:+.3f} %)")
-        if abs(100 * rel) > args.warn_percent:
-            print(f" !!! WARNING: correction of {100 * rel:+.1f} % (more than"
+              f"({100 * rel:+.3f} % of the net, {100 * rel_gross:+.3f} % of the"
+              f" gross {w:.6e} kg/s)")
+        if args.target_integral is not None:
+            test, ref = rel_gross, "of the gross flux"
+        else:
+            test, ref = rel, "of the native total"
+        if abs(100 * test) > args.warn_percent:
+            print(f" !!! WARNING: correction of {100 * test:+.1f} % {ref} (more than"
                   f" {args.warn_percent:g} %) in {args.remapped}.")
             if args.target_integral is None:
                 print(" !!!   The total is fixed, the pattern is not: the remapping was"

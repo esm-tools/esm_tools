@@ -59,6 +59,11 @@ ice2echam() {
 
         ice_domain_report
 
+        # A rerun of the coupling-in does not rerun the ice couple_out, which
+        # removes these: without this, a run that stops halfway would leave
+        # last attempt's links for ECHAM's prepcompute to start on.
+        ice_domain_invalidate_echam_products
+
         :> nco_stderr_ice2echam; :> cdo_stderr_ice2echam
 
         # Every domain must have delivered its ice_file_for_atmosphere.nc
@@ -2335,6 +2340,13 @@ update_land_runoff_prepare_for_oasis() {
         ifile=${COUPLE_DIR}/gfw_atmo.nc
         ofile=${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc 
         ncrename -v total_ice_mass_loss_flux,gfw_atmo $ifile tmp; mv tmp $ifile
+        # update_land_runoff_fill_missing turned PISM's mass flux (kg m-2 s-1,
+        # gain positive) into water (divided by 1000, sign flipped): fix the
+        # attributes the ice mass flux brought along.
+        ncatted -O -h -a units,gfw_atmo,o,c,"m s-1" \
+                -a standard_name,gfw_atmo,d,, \
+                -a long_name,gfw_atmo,o,c,"glacial freshwater flux to the HD model (water equivalent, ice-sheet mass loss positive)" \
+                $ifile
         ncrename -d lon,nx $ifile tmp; mv tmp $ifile
         ncrename -d lat,ny $ifile tmp; mv tmp $ifile
         ncks -A ${FUNCTION_PATH}/../utils/axis_366.nc $ifile

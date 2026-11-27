@@ -598,3 +598,22 @@ ice_domain_report() {
         echo "                =================================================================="
         unset _icp_domain _icp_box _icp_weight
 }
+
+## @fn ice_domain_invalidate_echam_products()
+## The global products of ice2echam that ECHAM's prepcompute waits for
+## (general.files_to_wait_for). Each ice domain's couple_out removes them, so
+## that ECHAM cannot start on last chunk's forcing; ice2echam removes them
+## again when it starts, so that a rerun of the coupling-in (which does not
+## rerun the couple_out) never leaves stale links behind if it stops halfway.
+ice_domain_invalidate_echam_products() {
+        typeset _iep_f
+        for _iep_f in latest_gfw_atmo.nc \
+                      latest_jsbach_init_file.nc \
+                      latest_jsbach_restart_file.nc \
+                      latest_veg_restart_file.nc \
+                      latest_target_orography.nc ; do
+                if [ -e ${COUPLE_DIR}/${_iep_f} ] || [ -L ${COUPLE_DIR}/${_iep_f} ]; then
+                        rm -f ${COUPLE_DIR}/${_iep_f}
+                fi
+        done
+}

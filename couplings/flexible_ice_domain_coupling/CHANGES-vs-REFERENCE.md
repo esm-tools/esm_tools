@@ -484,6 +484,23 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
     (`smallLIS_core2_*_spin133`, first coupling). `make_ice_griddes.py` now adds
     gridID 2 (projection: xfirst/xinc/yfirst/yinc and the `mapping` attributes)
     as CDO's griddes of a PISM file has it; remaps then match the pool griddes.
+16. **`gfw_atmo` says what it holds.** The field is water in m/s (PISM's mass
+    flux divided by 1000, sign flipped), but kept `units = "kg m-2 s-1"` and the
+    ice-mass `standard_name` of PISM's field. Now `units = "m s-1"`, no
+    standard_name, and a long_name that gives the sign.
+17. **`ice2echam` removes the five `latest_*` links ECHAM waits for.** Only
+    the ice couple_out removed them (`pism2awiesm`), so a rerun of the
+    coupling-in alone found last attempt's links, and they had to be removed by
+    hand. Both now call `ice_domain_invalidate_echam_products`
+    (`general/ice_domains.functions`), which also removes dangling links.
+18. **The budget-correction warning is measured against the gross flux.**
+    Against the net, a chunk where gains and losses nearly cancel warned of
+    +50.8 % for a 28 Gt/yr mismatch (`flextest_20261123`, Antarctica, PISM
+    run 4). `conserve_remapped_flux.py --target-integral` now compares with
+    sum(|F| A) and `mass_loss_correct_to_pism_budget` warns above
+    `MASS_LOSS_BUDGET_WARN_PERCENT` (default 3 %). In the test that flags the
+    two runs after the fresh start (about 5 %) and not the later ones (1–2 %).
+    The check after a remapping keeps the native net and 10 %.
 
 ---
 

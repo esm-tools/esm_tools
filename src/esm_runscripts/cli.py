@@ -177,6 +177,14 @@ def parse_shargs():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--computer",
+        help="Use the configuration of this machine instead of detecting it from the "
+        "hostname (name as in ``configs/machines/<name>.yaml``)",
+        dest="computer_name",
+        default=None,
+    )
+
     return parser.parse_args()
 
 

@@ -168,7 +168,8 @@ def clean_user_specific_info(info, str2clean, protected_strings=[]):
         String to be cleaned
     protected_strings : list, optional
         Strings that must not be modified during cleanup (e.g. hardcoded
-        test-data paths in runscripts).
+        test-data paths in runscripts). The global ``protected_strings`` from
+        ``ignore_compare.yaml`` (``info["ignore"]``) are always added.
 
     Returns
     -------
@@ -178,6 +179,15 @@ def clean_user_specific_info(info, str2clean, protected_strings=[]):
 
     this_path = os.getcwd()
     clean_str = str2clean
+
+    # Per-model protected strings plus the global ones. Longest first, so a shorter
+    # string cannot break a longer one that contains it.
+    protected_strings = sorted(
+        set(protected_strings)
+        | set((info.get("ignore") or {}).get("protected_strings", [])),
+        key=len,
+        reverse=True,
+    )
 
     # Transform into a list if necessary
     if isinstance(str2clean, str):
@@ -212,6 +222,9 @@ def clean_user_specific_info(info, str2clean, protected_strings=[]):
             line = re.sub(rf"<{key}>//+", f"<{key}>/", line)
             # Ensure there is a one slash after <key>
             line = re.sub(rf"<{key}>(?=[^/\s])", f"<{key}>/", line)
+            # No trailing slash when <key> ends the value (editable installs return
+            # e.g. the configs dir with a trailing slash, standard installs don't)
+            line = re.sub(rf"<{key}>/(?=\s|$)", f"<{key}>", line)
 
         # Restore protected strings
         for token, original in tokens.items():
@@ -321,7 +334,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         Relative paths of the file in the ``last_tested`` folder
     """
     # File types to check
-    some_compare_files = [".run", "finished_config", "hostfile_"]
+    some_compare_files = [".run", "finished_config", "hostfile_", "rank_placement"]
     # Load relevant variables from ``info``
     user_info = info["user"]
     # Initialize ``subpaths`` list
@@ -346,6 +359,8 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         files_to_folders = {
             ".run": "scripts",
             "hostfile_": "scripts",
+            # taskset rank placement, only written for taskset runs
+            "rank_placement": "work",
             "finished_config": "config",
             "prepcompute_filelist": "log",
         }
@@ -371,6 +386,21 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                 ):
                     num = 1
                 subpaths.append(f"{cf_path}/{cfiles[num].split('/')[-1]}")
+                break
+    # taskset wrappers (``prog_<model>.sh``, ``script_<model>.sh``), one per model,
+    # written in ``work`` with ``rank_placement``. Only for taskset runs
+    elif cfile in ("prog_", "script_"):
+        ldir = sorted(os.listdir(f"{user_info['test_dir']}/{this_test_dir}"))
+        for f in ldir:
+            # Take the first run directory
+            if "run_" in f:
+                cf_path = f"{this_test_dir}/{f}/work/"
+                cfiles = sorted(
+                    glob.glob(f"{user_info['test_dir']}/{cf_path}/{cfile}*.sh")
+                )
+                for cf in cfiles:
+                    if os.path.isfile(cf) and not os.path.islink(cf):
+                        subpaths.append(f"{cf_path}{os.path.basename(cf)}")
                 break
     elif cfile == "namelists":
         # Get path of the finished_config

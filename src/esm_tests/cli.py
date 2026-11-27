@@ -3,6 +3,8 @@
 A small wrapper that combines the shell interface and the Python interface
 """
 
+import contextlib
+import json
 import os
 import sys
 
@@ -47,13 +49,32 @@ def main():
 
     # Parsing
     save_flag, print_state, delete_tests = info.argparse()
-    print(info["resources_branch"])
+    logger.debug(f"esm_tests_info branch: {info['resources_branch']}")
+
+    # List the tests and exit. With ``--json`` only the JSON goes to stdout, everything
+    # else to stderr
+    if info["list"]:
+        with contextlib.redirect_stdout(sys.stderr):
+            update_resources_submodule(info)
+            tests = list_tests(info)
+        if info["json"]:
+            print(
+                json.dumps(
+                    [
+                        {k: t[k] for k in ("computer", "model", "runscript")}
+                        for t in tests
+                    ]
+                )
+            )
+        else:
+            print_list(tests, info)
+        sys.exit(0)
 
     # Update ``resources``
     update_resources_submodule(info)
 
-    info["this_computer"] = (
-        determine_computer_yaml_from_hostname().split("/")[-1].replace(".yaml", "")
+    info["this_computer"] = get_computer_name(
+        info["computers"][0] if info["computer_explicit"] else None
     )
     info["last_tested_dir"] = get_last_tested_dir()
 
@@ -96,11 +117,22 @@ def main():
     # Special actions for running from GitHub servers
     if info["in_github"]:
         info["rm_user_info"]["HOME_DIR"] = "/__w/esm_tools"
-        # Ignore the globbing variables
-        info["ignore"]["finished_config"].append("_glob_[0-9]*: ")
+
+    # Ignore the globbing expansions (``<descr>_glob_<i>``): they depend on the files
+    # present on each machine (none on GitHub)
+    info["ignore"]["finished_config"].append("_glob_[0-9]+: ")
 
     # Ignore conda configs
     info["ignore"]["finished_config"].append("launched_with_conda:")
+    # Ignore conda activation lines in .run files (only written when launched from
+    # an active conda environment, see ``batch_system.get_conda_activate_commands``)
+    info["ignore"].setdefault(".run", []).extend(
+        [
+            r"^\s*# Activate conda environment",
+            r"^\s*source .*/bin/activate\s*$",
+            r"^\s*conda activate ",
+        ]
+    )
 
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")
@@ -129,6 +161,10 @@ def main():
     # Print results
     results = format_results(info)
     print_results(results, info)
+
+    # Write the errors and differences (before ``check_perfect``, which can exit)
+    if info["results_file"]:
+        write_results_file(info)
 
     # Check if all tests passed
     if info["system_exit_on_errors"]:

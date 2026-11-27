@@ -520,6 +520,16 @@ you compare against `feat/pism_coupling_clean_up_and_merge` as it stands.
     `latest_target_orography.nc` pointed to a file that was never written.
     `update_orography_check_options` now checks it (exit 43) at the start of
     `ice2echam`, and a failed target file stops the run (exit 42).
+21. **Iceberg iron restarts are carried over** (`configs/components/fesom/fesom-2.6.yaml`).
+    FESOM builds with the passive iceberg iron tracer write
+    `iceberg.restart.iron` and `iceberg.restart.iron.ISM` next to the iceberg
+    restarts. esm_tools did not know them: they landed in `unknown/`, were
+    never staged, and FESOM reset every berg to `icb_iron_const` each year
+    without an error (`icb_sh_fe02`, 2121–2320). New switch
+    `fesom.with_icb_iron` (default false; needs `with_icb`) adds both files to
+    the restart in/out lists and sets `&icebergs use_icb_iron`. The name differs
+    from the namelist key on purpose: a choose on `use_icb_iron` that also sets
+    `use_icb_iron` is a cyclic dependency for the parser.
 
 ---
 

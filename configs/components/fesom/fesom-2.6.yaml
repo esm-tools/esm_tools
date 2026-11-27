@@ -13,6 +13,12 @@ fesom:
     # below) whose source code contains the icebergs implementation
     with_icb: false
     use_icebergs: false
+    # Passive iceberg iron tracer (needs with_icb and a FESOM build with
+    # use_icb_iron). Sets namelist.config &icebergs use_icb_iron and makes
+    # esm_tools carry the side-car restarts iceberg.restart.iron and
+    # iceberg.restart.iron.ISM from run to run. Setting only the namelist entry
+    # loses them: FESOM then silently resets every berg to icb_iron_const.
+    with_icb_iron: false
     use_icesheet_coupling: false
 
     wiso_code: false
@@ -252,6 +258,8 @@ fesom:
             wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear!month}
             icb_restart_ISM: iceberg.restart.ISM
+            icb_restart_iron: iceberg.restart.iron
+            icb_restart_iron_ISM: iceberg.restart.iron.ISM
     restart_in_sources:
             par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
             par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
@@ -262,6 +270,8 @@ fesom:
             wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear!month}
             icb_restart_ISM: iceberg.restart.ISM
+            icb_restart_iron: iceberg.restart.iron
+            icb_restart_iron_ISM: iceberg.restart.iron.ISM
 
     restart_out_files:
             par_oce_restart: par_oce_restart
@@ -283,6 +293,8 @@ fesom:
             wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear}
             icb_restart_ISM: iceberg.restart.ISM
+            icb_restart_iron: iceberg.restart.iron
+            icb_restart_iron_ISM: iceberg.restart.iron.ISM
     restart_out_sources:
             par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
             par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
@@ -295,6 +307,8 @@ fesom:
             wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear}
             icb_restart_ISM: iceberg.restart.ISM
+            icb_restart_iron: iceberg.restart.iron
+            icb_restart_iron_ISM: iceberg.restart.iron.ISM
 
     outdata_sources:
             fesom: "*.fesom.*.nc"
@@ -339,6 +353,19 @@ fesom:
                 add_restart_out_files:
                         icb_restart: icb_restart
                         icb_restart_ISM: icb_restart_ISM
+
+                choose_with_icb_iron:
+                        true:
+                                add_restart_in_files:
+                                        icb_restart_iron: icb_restart_iron
+                                        icb_restart_iron_ISM: icb_restart_iron_ISM
+                                add_restart_out_files:
+                                        icb_restart_iron: icb_restart_iron
+                                        icb_restart_iron_ISM: icb_restart_iron_ISM
+                                add_namelist_changes:
+                                        namelist.config:
+                                                icebergs:
+                                                        use_icb_iron: true
 
                 add_outdata_targets:
                         buoys_track: "buoys_track.nc_${run_datestamp}"

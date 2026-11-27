@@ -80,6 +80,18 @@ computer:
     # seb-wahl: choose libaries below, default is the system libs via modules
     iolibraries: system_libs
 
+    # Reset LD_LIBRARY_PATH before "module purge". Chained jobs (compute ->
+    # tidy -> couple -> next compute) inherit the environment of the job that
+    # submitted them, and every job script prepends/appends to LD_LIBRARY_PATH
+    # (export_vars below, fesom/pism env changes, per-run work/lib paths).
+    # "module purge" does not remove these manual entries, so the variable grows
+    # with every job until it exceeds the kernel limit for a single environment
+    # string (128 KiB) and every command fails with "Argument list too long".
+    # A fresh login shell on levante has no LD_LIBRARY_PATH, so this restores
+    # exactly that state; modules and export_vars then rebuild it as usual.
+    general_actions:
+            - "unset LD_LIBRARY_PATH"
+
     module_actions:
             - "purge"
             - ${computer.load_python_command}
